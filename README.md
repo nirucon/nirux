@@ -29,7 +29,9 @@ cd nirux
 
 That installs the packages listed below with sudo, downloads the released
 binaries into `~/.local/bin`, adds the session to the display manager and
-installs the PAM service for the lock screen. Log out and choose **NIRUWM**.
+installs the PAM service for the lock screen, and copies `nirux` itself to
+`~/.local/bin` so `nirux update` works from anywhere. Log out and choose
+**NIRUWM**.
 
 | Command | What it does |
 | --- | --- |
@@ -37,6 +39,7 @@ installs the PAM service for the lock screen. Log out and choose **NIRUWM**.
 | `./nirux install --minimal` | binaries and session only, no packages |
 | `./nirux update` | install the newest release of everything |
 | `./nirux status` | what is installed, what is missing, and whether NIRUPI is present |
+| `./nirux doctor` | every program's own checks: libraries, keyboard, lock screen, settings |
 | `./nirux uninstall` | remove the programs, keep your settings |
 | `./nirux uninstall --purge` | remove the programs and your settings |
 
@@ -74,11 +77,29 @@ Fedora names them `kitty rofi dejavu-sans-mono-fonts dunst picom feh maim
 xidlehook xkeyboard-config`. On openSUSE use `zypper install kitty rofi
 dejavu-fonts dunst picom feh maim xidlehook xkeyboard-config`.
 
+On these systems `./nirux doctor` still works; the doctor only reads.
+
 ## Settings
 
 `~/.config/niruwm/config.toml` is shared by the window manager and the bar;
 `~/.config/niruui/` holds the screensaver and lock settings. Both are documented
 inline. After editing, run `niructl reload` or press Super+R.
+
+## Example configs
+
+The first time a program runs without a settings file it uses documented
+built-in defaults. Two files are worth starting from, because they list every
+option:
+
+- `~/.config/niruwm/config.toml`: the window manager, the bar, the key
+  bindings and the idle ladder. The full list ships as `config.example.toml`
+  in the [niruwm](https://github.com/nirucon/niruwm) repository; `niruwm
+  --dump-config > ~/.config/niruwm/config.toml` writes it out.
+- `~/.config/niruui/screensaver.toml`: when the screen sleeps, locks and turns
+  off. One file decides the whole ladder for the window manager, the idle
+  timer, the screensaver and the lock screen.
+
+`nirux doctor` reports which files exist and which values are in use.
 
 ## Uninstall
 

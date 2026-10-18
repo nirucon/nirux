@@ -1,10 +1,11 @@
 #!/bin/sh
-# NIRUX — install, update and remove the NIRU desktop suite.
+# NIRUX — install, update, check and remove the NIRU desktop suite.
 #
 #   ./nirux install          the suite and the programs it uses
 #   ./nirux install --minimal   window manager and bar only
 #   ./nirux update           install the newest release of everything
 #   ./nirux status           what is installed and what is missing
+#   ./nirux doctor           run every program's own checks
 #   ./nirux uninstall        remove the suite, keeping your settings
 #   ./nirux uninstall --purge   remove the suite and your settings
 #
@@ -13,7 +14,7 @@
 # binaries.
 set -eu
 
-SUITE_VERSION="0.1.0"
+SUITE_VERSION="0.3.0"
 
 # Where the binaries go. No sudo: everything is per user.
 PREFIX="${NIRUX_PREFIX:-$HOME/.local}"
@@ -23,7 +24,7 @@ say() { printf '%s\n' "$*"; }
 die() { printf 'nirux: %s\n' "$*" >&2; exit 1; }
 
 usage() {
-  sed -n '2,12p' "$0" | sed 's/^# \{0,1\}//'
+  sed -n '2,13p' "$0" | sed 's/^# \{0,1\}//'
 }
 
 # ── Distribution ────────────────────────────────────────────────────────────
@@ -108,13 +109,25 @@ fetch() {
   fi
 }
 
+fetch_text() {
+  url="$1"
+  if command -v curl >/dev/null 2>&1; then
+    curl -fsSL --retry 3 "$url"
+  elif command -v wget >/dev/null 2>&1; then
+    wget -qO- "$url"
+  else
+    die "curl or wget is required"
+  fi
+}
+
 latest_version() {
   # Ask the GitHub API for the newest release tag, so `nirux update` follows
-  # the suite instead of pinning a version in this file.
+  # the suite instead of pinning a version in this file. Both curl and wget
+  # work: a machine with only wget could not update before.
   repo="$1"
-  tag=$(curl -fsSL "https://api.github.com/repos/nirucon/$repo/releases/latest" 2>/dev/null |
-    sed -n 's/.*"tag_name": *"v\?\([^"]*\)".*/\1/p' | head -1)
-  [ -n "$tag" ] || die "cannot look up the latest release of $repo"
+  body=$(fetch_text "https://api.github.com/repos/nirucon/$repo/releases/latest" 2>/dev/null) || body=""
+  tag=$(printf '%s\n' "$body" | sed -n 's/.*"tag_name": *"v\?\([^"]*\)".*/\1/p' | head -1)
+  [ -n "$tag" ] || die "cannot look up the latest release of $repo (is the network up?)"
   printf '%s' "$tag"
 }
 
@@ -144,11 +157,15 @@ install_repo() {
 
 install_binaries() {
   say "Installing NIRU $SUITE_VERSION to $BINDIR"
-  # niruwm's release also carries nirubar, niructl and niruidle.
-  install_repo niruwm "nirubar niructl niruidle"
+  # niruwm's release carries niructl and niruidle; the bar has its own, so each
+  # program updates on its own schedule instead of waiting for the window
+  # manager to catch up first.
+  install_repo niruwm "niructl niruidle"
+  install_repo nirubar
   install_repo niruscreensaver
   install_repo nirulock
   install_session_script
+  install_self
 }
 
 # The session entry point and the SDDM file live in the niruwm repository, so
@@ -159,6 +176,18 @@ install_session_script() {
     die "cannot download the session script"
   install -m 0755 "$tmp" "$BINDIR/niruwm-session"
   rm -f "$tmp"
+}
+
+# Keep the installer itself in PATH, so `nirux update` works from anywhere and
+# is the file that was just improved rather than an old copy in a clone.
+install_self() {
+  here="$(cd "$(dirname "$0")" && pwd)"
+  self="$here/$(basename "$0")"
+  if [ -f "$self" ] && [ ! "$self" -ef "$BINDIR/nirux" ]; then
+    mkdir -p "$BINDIR"
+    install -m 0755 "$self" "$BINDIR/nirux.new"
+    mv -f "$BINDIR/nirux.new" "$BINDIR/nirux"
+  fi
 }
 
 # Report a missing sudo instead of dying halfway through with a bare shell error.
@@ -228,7 +257,7 @@ cmd_install() {
   install_pam_service
   say ""
   say "Done. Log out and choose NIRUWM in the display manager."
-  say "Check it with: $BINDIR/niruwm --doctor"
+  say "Check it with: nirux doctor"
   case "$(nirupi_state)" in
     present*)
       say ""
@@ -241,7 +270,8 @@ cmd_install() {
 cmd_update() {
   install_binaries
   install_pam_service
-  say "Updated."
+  say "Updated. A running session uses the new programs after the next login,"
+  say "except the bar, which can be restarted now with: niructl reload"
 }
 
 # NIRUPI is a separate desktop by the same author. NIRUX never installs or
@@ -282,12 +312,50 @@ cmd_status() {
   else
     echo "  missing  session entry (run: ./nirux install)"
   fi
-  if [ -f /etc/pam.d/nirulock ]; then
-    echo "  ok       PAM service for nirulock"
-  else
-    echo "  missing  PAM service (run: ./nirux install)"
+  if [ -x "$BINDIR/nirulock" ] &&
+    ldd "$BINDIR/nirulock" 2>/dev/null | grep -q "not found"; then
+    echo "  warn     nirulock cannot find a library it needs; see: ldd $BINDIR/nirulock"
   fi
-  return "$missing"
+  # A screen that locks and cannot be unlocked is the one failure nobody
+  # forgives, so the lock path is checked rather than assumed.
+  if [ ! -f /etc/pam.d/nirulock ]; then
+    echo "  missing  PAM service for nirulock (run: ./nirux install)"
+  elif [ "$(stat -c %a /etc/pam.d/nirulock 2>/dev/null || echo 0)" != "644" ]; then
+    echo "  warn     /etc/pam.d/nirulock has the wrong mode; run: sudo chmod 644 /etc/pam.d/nirulock"
+  else
+    echo "  ok       lock path: nirulock, PAM service, mode 0644"
+  fi
+  [ "$missing" -eq 0 ] && return 0 || return 1
+}
+
+cmd_doctor() {
+  rc=0
+  echo "== niruwm"
+  if [ -x "$BINDIR/niruwm" ]; then
+    "$BINDIR/niruwm" --doctor 2>&1 || rc=1
+  else
+    echo "  missing niruwm"
+    rc=1
+  fi
+  for run in "niructl --check-config" "niruidle --config" "nirubar --check-config" "niruscreensaver --config" "nirulock --config"; do
+    set -- $run
+    echo ""
+    echo "== $1"
+    if [ -x "$BINDIR/$1" ]; then
+      "$BINDIR/$1" $2 2>&1 || rc=1
+    else
+      echo "  missing $1"
+      rc=1
+    fi
+  done
+  echo ""
+  echo "== settings"
+  for f in "${XDG_CONFIG_HOME:-$HOME/.config}/niruwm/config.toml" \
+    "${XDG_CONFIG_HOME:-$HOME/.config}/niruui/screensaver.toml" \
+    "${XDG_CONFIG_HOME:-$HOME/.config}/niruui/lock.toml"; do
+    if [ -f "$f" ]; then echo "  ok       $f"; else echo "  default  $f (not created; built-in defaults are used)"; fi
+  done
+  return "$rc"
 }
 
 cmd_uninstall() {
@@ -296,7 +364,7 @@ cmd_uninstall() {
     [ "$a" = "--purge" ] && purge=1
   done
   echo "Removing NIRU programs from $BINDIR:"
-  for b in niruwm nirubar niructl niruidle niruscreensaver nirulock niruwm-session; do
+  for b in niruwm nirubar niructl niruidle niruscreensaver nirulock niruwm-session nirux; do
     if [ -e "$BINDIR/$b" ]; then
       rm -f "$BINDIR/$b"
       echo "  removed $b"
@@ -316,7 +384,8 @@ cmd_uninstall() {
     rm -rf "${XDG_CONFIG_HOME:-$HOME/.config}/niruwm" \
       "${XDG_CONFIG_HOME:-$HOME/.config}/niruui" \
       "${XDG_STATE_HOME:-$HOME/.local/state}/niruwm" \
-      "${XDG_STATE_HOME:-$HOME/.local/state}/niruscreensaver"
+ XX
+      "${XDG_STATE_HOME:-$HOME/.local/state}/nirulock"
     echo "Removed settings."
   else
     echo ""
@@ -330,6 +399,7 @@ case "${1:-}" in
   install) shift; cmd_install "$@" ;;
   update) shift; cmd_update ;;
   status) shift; cmd_status ;;
+  doctor) shift; cmd_doctor ;;
   uninstall) shift; cmd_uninstall "$@" ;;
   -h | --help | help) usage ;;
   "") usage; exit 2 ;;
