@@ -86,7 +86,7 @@ Dependencies: M0 findings. Repositories: all four components, then nirux.
 - [x] B1: remove always-running timer/X connection; separate probe cadence from
       animation cadence; include progress changes in invalidation.
 - [x] S1: persistent renderers and host cache; deadline-driven visible updates.
-- [ ] Regression tests, measured comparison, component releases, pinned nirux
+- [x] Regression tests, measured comparison, component releases, pinned nirux
       release. Do not force the user's running WM to restart.
 
 Acceptance: a short legacy timeout and NIRULOCK_SAFE_SECONDS cannot unlock;
@@ -181,8 +181,10 @@ introducing an unstable shared crate. New repo: `nirucon/nirunotify`.
 
 ## Handoff / checkpoint
 
-M1 implementation is complete; final suite release/CI validation is the last
-unchecked gate above. Component checkpoints: niruwm 0.16.4 (`ea266f3`), nirubar
+M0/M1 are complete and published as nirux 0.6.0. Real pinned-release installation,
+diagnostics, startx/Xvfb and uninstall passed on Arch, Debian and Void in CI
+[39167349029](https://github.com/nirucon/nirux/actions/runs/39167349029).
+Component checkpoints: niruwm 0.16.4 (`ea266f3`), nirubar
 0.16.5 (`db42bf6`), niruscreensaver 0.8.0 (`d932519`), nirulock 0.16.5 (`dbaf437`).
 The intermediate nirulock 0.16.4 was superseded after a new failing regression
 demonstrated that its prompt could appear before input was acquired.
@@ -192,6 +194,10 @@ singleton/progress-only redraw and lock timeout/input isolation/startup refusal;
 non-root correct/wrong-password/Escape checks; actual WM shortcut isolation during
 lock and restoration after authentication. Resource measurements are in
 MEASUREMENTS.md. Physical GPU, hotplug and suspend/resume remain M5 work.
+Void was offline at the end of this checkpoint, so no physical-machine upgrade
+was performed. On returning online: `~/.local/bin/nirux update`, then log out/in
+to replace the old running idle daemon, WM and session. Do not restart a user's
+live session or launch a test locker on their real display without coordination.
 
 Repositories created: nirulauncher `6ce48e0`, nirunotify `441a91a`, each containing
 README, MIT license and DESIGN.md. These are design checkpoints, NOT executable
