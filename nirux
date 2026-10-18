@@ -42,18 +42,18 @@ distro() {
 # Every package below is used by a default key binding or by the session.
 # `nirux install --minimal` skips them; the window manager still starts, but a
 # key bound to a missing program does nothing.
-EXTRA_PACKAGES="kitty rofi fontconfig dunst picom feh maim xidlehook xkeyboard-config"
+EXTRA_PACKAGES="kitty rofi fontconfig dunst picom feh maim xidlehook xkeyboard-config playerctl"
 
 packages_for() {
   case "$1" in
     void)
-      printf '%s\n' "kitty rofi fontconfig dejavu-fonts-ttf dunst picom feh maim xrdb xsetroot xidlehook xkeyboard-config setxkbmap"
+      printf '%s\n' "kitty rofi fontconfig dejavu-fonts-ttf dunst picom feh maim xrdb xsetroot xidlehook xkeyboard-config setxkbmap playerctl"
       ;;
     arch)
-      printf '%s\n' "kitty rofi fontconfig ttf-dejavu dunst picom feh maim xorg-xrdb xorg-xsetroot xidlehook xkeyboard-config xorg-setxkbmap"
+      printf '%s\n' "kitty rofi fontconfig ttf-dejavu dunst picom feh maim xorg-xrdb xorg-xsetroot xidlehook xkeyboard-config xorg-setxkbmap playerctl"
       ;;
     debian)
-      printf '%s\n' "kitty rofi fontconfig fonts-dejavu-core dunst picom feh maim x11-xserver-utils xidlehook xkb-data x11-xkb-utils"
+      printf '%s\n' "kitty rofi fontconfig fonts-dejavu-core dunst picom feh maim x11-xserver-utils xidlehook xkb-data x11-xkb-utils playerctl"
       ;;
   esac
 }

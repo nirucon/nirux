@@ -56,6 +56,7 @@ uses each one:
 | Screenshot | `maim` | `maim` | `maim` |
 | Idle timing | `xidlehook` | `xidlehook` | `xidlehook` |
 | Keyboard layout | `setxkbmap`, `xkeyboard-config` | `xorg-setxkbmap`, `xkeyboard-config` | `x11-xkb-utils`, `xkb-data` |
+| Media and playback | `playerctl` | `playerctl` | `playerctl` |
 
 The binaries are static where possible, so no Rust is needed. Nirulock links
 the system libpam, which is present on every system that can log in.
