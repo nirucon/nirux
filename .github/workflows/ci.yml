@@ -17,3 +17,45 @@ jobs:
         run: |
           ./nirux --help | head -5
           HOME=/tmp/nh ./nirux status || true
+          HOME=/tmp/nh ./nirux doctor || true
+
+  # The installer is the only way most people meet the suite, and its
+  # downloads depend on the shape of the GitHub releases. This job installs
+  # from the real releases into a throwaway prefix, on all three systems,
+  # and then asks `status` whether what landed is what was expected.
+  install:
+    strategy:
+      fail-fast: false
+      matrix:
+        image: [debian:bookworm-slim, archlinux:base, voidlinux/voidlinux:latest]
+    runs-on: ubuntu-latest
+    container: ${{ matrix.image }}
+    steps:
+      - name: Bootstrap
+        shell: sh
+        run: |
+          case "${{ matrix.image }}" in
+            debian*) apt-get update && apt-get install -y ca-certificates curl git tar gzip ;;
+            arch*) pacman -Syu --noconfirm --needed ca-certificates curl git tar gzip ;;
+            void*)
+              for d in /etc/xbps.d /usr/share/xbps.d; do
+                for conf in "$d"/*.conf; do
+                  [ -f "$conf" ] || continue
+                  sed -i 's#alpha.de.repo.voidlinux.org#repo-default.voidlinux.org#g' "$conf"
+                done
+              done
+              xbps-install -Suy xbps && xbps-install -Suy
+              xbps-install -Sy ca-certificates curl git tar gzip
+              ;;
+          esac
+      - uses: actions/checkout@v4
+      - name: Install into a throwaway prefix
+        shell: sh
+        run: |
+          export HOME=/tmp/nh NIRUX_PREFIX=/tmp/nh/.local
+          mkdir -p "$HOME"
+          # update installs the binaries and the session script; the PAM step
+          # needs sudo and a real system, so it is the one thing left out.
+          ./nirux update
+          ./nirux status
+          ./nirux doctor || true
