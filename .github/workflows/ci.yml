@@ -1,61 +1,62 @@
 name: CI
-
 on: [push, pull_request]
-
 jobs:
   check:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Syntax
-        run: sh -n nirux
-      - name: Shellcheck
-        run: |
-          docker run --rm -v "$PWD":/src:ro koalaman/shellcheck:stable \
-            -S warning -s sh -e SC1007 /src/nirux
-      - name: Help and status run without a suite
-        run: |
-          ./nirux --help | head -5
-          HOME=/tmp/nh ./nirux status || true
-          HOME=/tmp/nh ./nirux doctor || true
-
-  # The installer is the only way most people meet the suite, and its
-  # downloads depend on the shape of the GitHub releases. This job installs
-  # from the real releases into a throwaway prefix, on all three systems,
-  # and then asks `status` whether what landed is what was expected.
-  install:
+      - run: sh -n nirux && for script in tests/*.sh; do sh -n "$script"; done
+      - run: docker run --rm -v "$PWD":/src:ro koalaman/shellcheck:stable -S warning -s sh /src/nirux /src/tests/integration.sh /src/tests/startx-smoke.sh /src/tests/release-smoke.sh
+      - run: sh tests/integration.sh
+  distros:
+    runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
         image: [debian:bookworm-slim, archlinux:base, voidlinux/voidlinux:latest]
-    runs-on: ubuntu-latest
     container: ${{ matrix.image }}
     steps:
       - name: Bootstrap
         shell: sh
         run: |
-          case "${{ matrix.image }}" in
-            debian*) apt-get update && apt-get install -y ca-certificates curl git tar gzip ;;
-            arch*) pacman -Syu --noconfirm --needed ca-certificates curl git tar gzip ;;
+          case '${{ matrix.image }}' in
+            debian*) apt-get update && apt-get install -y git ca-certificates curl ;;
+            arch*) pacman -Syu --noconfirm --needed git ca-certificates curl ;;
             void*)
-              for d in /etc/xbps.d /usr/share/xbps.d; do
-                for conf in "$d"/*.conf; do
-                  [ -f "$conf" ] || continue
-                  sed -i 's#alpha.de.repo.voidlinux.org#repo-default.voidlinux.org#g' "$conf"
+              for directory in /etc/xbps.d /usr/share/xbps.d; do
+                for config in "$directory"/*.conf; do
+                  [ ! -f "$config" ] || sed -i 's#alpha.de.repo.voidlinux.org#repo-default.voidlinux.org#g' "$config"
                 done
               done
-              xbps-install -Suy xbps && xbps-install -Suy
-              xbps-install -Sy ca-certificates curl git tar gzip
+              xbps-install -Suy xbps && xbps-install -Suy && xbps-install -Sy git ca-certificates curl
               ;;
           esac
       - uses: actions/checkout@v4
-      - name: Install into a throwaway prefix
+      - name: Regression tests with the distribution shell
+        run: sh tests/integration.sh
+      - name: Full vanilla dependency installation
         shell: sh
         run: |
-          export HOME=/tmp/nh NIRUX_PREFIX=/tmp/nh/.local
+          export HOME=/tmp/niru-home NIRUX_LIBRARY=1
           mkdir -p "$HOME"
-          # update installs the binaries and the session script; the PAM step
-          # needs sudo and a real system, so it is the one thing left out.
-          ./nirux update
-          ./nirux status
-          ./nirux doctor || true
+          . ./nirux
+          OS=$(distro); DM=startx
+          install_packages
+          for command in startx Xorg xauth dbus-run-session kitty rofi; do command -v "$command"; done
+      - name: Optional display managers exist
+        shell: sh
+        run: |
+          case '${{ matrix.image }}' in
+            debian*) apt-cache show sddm lightdm lightdm-gtk-greeter >/dev/null ;;
+            arch*) pacman -Si sddm lightdm lightdm-gtk-greeter >/dev/null ;;
+            void*) xbps-query -R sddm >/dev/null && xbps-query -R lightdm >/dev/null && xbps-query -R lightdm-gtk-greeter >/dev/null ;;
+          esac
+      - name: Startx and real release integration
+        shell: sh
+        run: |
+          case '${{ matrix.image }}' in
+            debian*) apt-get install -y --no-install-recommends xvfb ;;
+            arch*) pacman -S --needed --noconfirm xorg-server-xvfb xorg-xwininfo ;;
+            void*) xbps-install -Sy xorg-server-xvfb xwininfo ;;
+          esac
+          sh tests/release-smoke.sh

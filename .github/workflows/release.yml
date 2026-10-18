@@ -1,0 +1,39 @@
+name: Release
+on:
+  push:
+    tags: ['v*']
+permissions:
+  contents: write
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: sh tests/integration.sh
+      - name: Verify release identity
+        run: |
+          test "$(./nirux --version | awk '{print $2}')" = "${GITHUB_REF_NAME#v}"
+          test "$(awk '$1 == "suite" {print $2}' manifest)" = "${GITHUB_REF_NAME#v}"
+      - name: Verify pinned component assets
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          for repo in niruwm nirubar niruscreensaver nirulock; do
+            version=$(awk -v repo="$repo" '$1 == repo {print $2}' manifest)
+            gh release view "v$version" -R "nirucon/$repo" --json assets --jq '.assets[].name' > /tmp/assets
+            grep -qx "$repo" /tmp/assets
+            grep -qx SHA256SUMS /tmp/assets
+            case "$repo" in
+              niruwm) grep -qx niruwm-session /tmp/assets ;;
+              nirulock) for distro in arch debian void; do grep -qx "pam-$distro" /tmp/assets; done ;;
+            esac
+          done
+      - run: sha256sum nirux manifest > SHA256SUMS
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            nirux
+            manifest
+            SHA256SUMS
+          make_latest: true
+          generate_release_notes: true

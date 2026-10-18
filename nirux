@@ -1,461 +1,411 @@
 #!/bin/sh
-# NIRUX — install, update, check and remove the NIRU desktop suite.
-#
-#   ./nirux install          the suite and the programs it uses
-#   ./nirux install --minimal   window manager and bar only
-#   ./nirux update           install the newest release of everything
-#   ./nirux status           what is installed and what is missing
-#   ./nirux doctor           run every program's own checks
-#   ./nirux uninstall        remove the suite, keeping your settings
-#   ./nirux uninstall --purge   remove the suite and your settings
-#
-# Supports Void Linux, Arch Linux and Debian. On other systems the packages
-# are named in README.md and `./nirux install --no-packages` installs only the
-# binaries.
+# NIRUX: install a complete X11 desktop, or maintain an existing installation.
 set -eu
 
-SUITE_VERSION="0.4.1"
-
-# Where the binaries go. No sudo: everything is per user.
-PREFIX="${NIRUX_PREFIX:-$HOME/.local}"
-BINDIR="$PREFIX/bin"
+VERSION=0.5.0
+PREFIX=${NIRUX_PREFIX:-$HOME/.local}
+BIN=$PREFIX/bin
+STATE=$PREFIX/share/nirux
+ROOT=${NIRUX_SYSTEM_ROOT:-}
+PROGRAMS="niruwm niructl niruidle nirubar niruscreensaver nirulock niruwm-session nirux"
+WORK=
+LOCKED=0
 
 say() { printf '%s\n' "$*"; }
-die() { printf 'nirux: %s\n' "$*" >&2; exit 1; }
-
+die() { say "nirux: $*" >&2; exit 1; }
 usage() {
-  sed -n '2,13p' "$0" | sed 's/^# \{0,1\}//'
+  say "NIRUX $VERSION"
+  say "Usage: nirux install [--minimal|--no-packages] [--display-manager auto|startx|sddm|lightdm]"
+  say "       nirux update [--release VERSION] | rollback | status | doctor"
+  say "       nirux uninstall [--purge] | --version | --help"
+  say "Default: keep an existing display manager; otherwise offer startx (default), SDDM or LightDM."
+  say "--minimal/--no-packages: binaries and integration only; required OS packages must already exist."
 }
-
-# ── Distribution ────────────────────────────────────────────────────────────
+cleanup() {
+  [ -z "$WORK" ] || rm -rf "$WORK"
+  [ "$LOCKED" = 0 ] || rmdir "$STATE/.lock" 2>/dev/null || :
+}
+lock() {
+  mkdir -p "$STATE"
+  mkdir "$STATE/.lock" 2>/dev/null || die "another operation is running ($STATE/.lock)"
+  LOCKED=1
+  WORK=$(mktemp -d "$STATE/.work.XXXXXX")
+  trap cleanup EXIT
+  trap 'exit 130' INT
+  trap 'exit 143' TERM HUP
+}
 distro() {
-  if [ -f /etc/void-release ] || command -v xbps-install >/dev/null 2>&1; then
-    echo void
-  elif [ -f /etc/arch-release ] || command -v pacman >/dev/null 2>&1; then
-    echo arch
-  elif [ -f /etc/debian_version ] || command -v apt-get >/dev/null 2>&1; then
-    echo debian
-  else
-    echo unknown
+  if [ -r /etc/os-release ]; then
+    os_id=$(. /etc/os-release; printf '%s' "${ID:-}")
+    case "$os_id" in void|arch|debian) say "$os_id"; return ;; esac
+  fi
+  if [ -f /etc/void-release ] || command -v xbps-install >/dev/null 2>&1; then say void
+  elif [ -f /etc/arch-release ]; then say arch
+  elif [ -f /etc/debian_version ]; then say debian
+  else die "supported distributions: Void, Arch and Debian"
   fi
 }
-
-# Every package below is used by a default key binding or by the session.
-# `nirux install --minimal` skips them; the window manager still starts, but a
-# key bound to a missing program does nothing.
-EXTRA_PACKAGES="kitty rofi fontconfig dunst picom feh maim xidlehook xkeyboard-config playerctl"
-
+platform() {
+  [ "$(uname -m)" = x86_64 ] || die "release binaries currently support x86_64 only"
+  getconf GNU_LIBC_VERSION >/dev/null 2>&1 || die "release binaries require glibc; Void musl is not supported yet"
+}
+as_root() {
+  if [ "$(id -u)" = 0 ]; then "$@"; return; fi
+  command -v sudo >/dev/null 2>&1 || die "install sudo and grant this user access, then retry"
+  if ! sudo -n true 2>/dev/null; then
+    if [ -t 0 ]; then
+      sudo -v || return $?
+    else
+      printf 'Password for sudo: ' >&2
+      IFS= read -r password || die "sudo needs a password (use a terminal or pipe one line on stdin)"
+      if printf '%s\n' "$password" | sudo -S -p '' -v; then
+        unset password
+      else
+        result=$?
+        unset password
+        return "$result"
+      fi
+    fi
+  fi
+  sudo -n "$@"
+}
 packages_for() {
   case "$1" in
-    void)
-      printf '%s\n' "kitty rofi fontconfig dejavu-fonts-ttf dunst picom feh maim xrdb xsetroot xidlehook xkeyboard-config setxkbmap playerctl"
-      ;;
-    arch)
-      printf '%s\n' "kitty rofi fontconfig ttf-dejavu dunst picom feh maim xorg-xrdb xorg-xsetroot xidlehook xkeyboard-config xorg-setxkbmap playerctl"
-      ;;
-    debian)
-      printf '%s\n' "kitty rofi fontconfig fonts-dejavu-core dunst picom feh maim x11-xserver-utils xidlehook xkb-data x11-xkb-utils playerctl"
-      ;;
+    arch) say "xorg-server xorg-xinit xorg-xauth xorg-xrandr xorg-xset xorg-xprop xorg-xdpyinfo xorg-xrdb xorg-xsetroot xorg-setxkbmap xkeyboard-config dbus pam pipewire pipewire-audio pipewire-pulse wireplumber alsa-utils fontconfig ttf-dejavu kitty rofi dunst picom feh maim playerctl libnotify procps-ng util-linux" ;;
+    debian) say "xserver-xorg xinit xauth x11-xserver-utils x11-utils x11-xkb-utils xkb-data dbus-x11 dbus-user-session libpam0g pipewire pipewire-pulse wireplumber alsa-utils fontconfig fonts-dejavu-core kitty rofi dunst picom feh maim playerctl libnotify-bin procps util-linux" ;;
+    void) say "xorg-minimal xinit xauth xrandr xset xprop xdpyinfo xrdb xsetroot setxkbmap xkeyboard-config dbus elogind pam pam-base pipewire wireplumber alsa-utils fontconfig dejavu-fonts-ttf kitty rofi dunst picom feh maim playerctl libnotify procps-ng util-linux" ;;
   esac
 }
-
 install_packages() {
-  os="$(distro)"
-  pkgs="$(packages_for "$os")"
-  [ -n "$pkgs" ] || {
-    say "This system is not Void, Arch or Debian."
-    say "Install these yourself: $EXTRA_PACKAGES"
-    return 0
-  }
-  command -v sudo >/dev/null 2>&1 || die "sudo is needed to install packages"
-  say "Installing packages with $os:"
-  say "  $pkgs"
+  pkgs="curl ca-certificates $(packages_for "$OS")"
+  case "$OS" in
+    arch) pkgs="$pkgs mesa" ;;
+    debian) pkgs="$pkgs libgl1-mesa-dri" ;;
+    void) pkgs="$pkgs mesa-dri" ;;
+  esac
+  case "$DM" in
+    sddm) pkgs="$pkgs sddm" ;;
+    lightdm) pkgs="$pkgs lightdm lightdm-gtk-greeter" ;;
+  esac
+  say "Installing $OS packages: $pkgs"
+  # Package names are fixed above; splitting this list is intentional.
   # shellcheck disable=SC2086
-  case "$os" in
-    void) sudo_run xbps-install -Sy $pkgs || die "package installation failed" ;;
-    arch) sudo_run pacman -S --needed --noconfirm $pkgs || die "package installation failed" ;;
-    debian) {
-      sudo_run apt-get update
-      # xidlehook is not in older releases; a missing optional package must not
-      # stop the suite from being installed.
-      # shellcheck disable=SC2086
-      sudo_run apt-get install -y $pkgs || {
-        say "Retrying without xidlehook, which is optional."
-        pkgs=$(echo "$pkgs" | sed 's/ xidlehook//')
-        # shellcheck disable=SC2086
-        sudo_run apt-get install -y $pkgs || die "package installation failed"
-      }
-    } ;;
+  case "$OS" in
+    arch) as_root pacman -Syu --needed --noconfirm $pkgs ;;
+    debian) as_root apt-get update; as_root env DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends $pkgs ;;
+    void) as_root xbps-install -Suy; as_root xbps-install -Sy $pkgs ;;
   esac
 }
-
-# ── Binaries ────────────────────────────────────────────────────────────────
-sha256() {
-  if command -v sha256sum >/dev/null 2>&1; then
-    sha256sum "$1" | cut -d' ' -f1
-  else
-    shasum -a 256 "$1" | cut -d' ' -f1
-  fi
+existing_dm() {
+  dm_unit=$ROOT/etc/systemd/system/display-manager.service
+  if [ -L "$dm_unit" ]; then basename "$(readlink "$dm_unit")" .service; return; fi
+  for candidate in sddm lightdm gdm lxdm xdm ly; do
+    if [ -e "$ROOT/var/service/$candidate" ] || command -v "$candidate" >/dev/null 2>&1; then
+      say "$candidate"; return
+    fi
+  done
 }
-
+choose_dm() {
+  EXISTING_DM=$(existing_dm)
+  if [ "$DM" = auto ]; then
+    if [ -n "$EXISTING_DM" ]; then DM=keep
+    elif [ -t 0 ]; then
+      say "No display manager found. Choose: 1) startx (default) 2) SDDM 3) LightDM"
+      printf 'Choice [1]: '
+      IFS= read -r answer || answer=1
+      case "$answer" in ''|1|startx) DM=startx ;; 2|sddm) DM=sddm ;; 3|lightdm) DM=lightdm ;; *) die "invalid display-manager choice" ;; esac
+    else DM=startx
+    fi
+  fi
+  case "$DM" in
+    startx|keep) ;;
+    sddm|lightdm)
+      [ -z "$EXISTING_DM" ] || [ "$EXISTING_DM" = "$DM" ] || die "existing display manager is $EXISTING_DM; disable it explicitly before choosing $DM"
+      ;;
+    *) die "display manager must be auto, startx, sddm or lightdm" ;;
+  esac
+  say "Session entry: $DM${EXISTING_DM:+ (existing: $EXISTING_DM)}"
+}
 fetch() {
-  url="$1"; out="$2"
   if command -v curl >/dev/null 2>&1; then
-    curl -fsSL --retry 3 -o "$out" "$url"
+    curl -fsSL --connect-timeout 20 --max-time 300 --retry 3 -o "$2" "$1"
   elif command -v wget >/dev/null 2>&1; then
-    wget -qO "$out" "$url"
-  else
-    die "curl or wget is required"
+    wget -q -T 60 -t 3 -O "$2" "$1"
+  else die "install curl or wget and ca-certificates first"
   fi
 }
-
-fetch_text() {
-  url="$1"
-  if command -v curl >/dev/null 2>&1; then
-    curl -fsSL --retry 3 "$url"
-  elif command -v wget >/dev/null 2>&1; then
-    wget -qO- "$url"
-  else
-    die "curl or wget is required"
-  fi
+valid_version() {
+  case "$1" in ''|*[!0-9.]*|.*|*.) return 1 ;; *) return 0 ;; esac
 }
-
-latest_version() {
-  # Ask the GitHub API for the newest release tag, so `nirux update` follows
-  # the suite instead of pinning a version in this file. Both curl and wget
-  # work: a machine with only wget could not update before.
-  repo="$1"
-  body=$(fetch_text "https://api.github.com/repos/nirucon/$repo/releases/latest" 2>/dev/null) || body=""
-  tag=$(printf '%s\n' "$body" | sed -n 's/.*"tag_name": *"v\?\([^"]*\)".*/\1/p' | head -1)
-  [ -n "$tag" ] || die "cannot look up the latest release of $repo (is the network up?)"
-  printf '%s' "$tag"
+verify() {
+  expected=$(awk -v n="$2" '$2 == n {print $1}' "$1/SHA256SUMS")
+  [ "${#expected}" = 64 ] || die "missing or ambiguous checksum for $2"
+  case "$expected" in *[!0-9a-fA-F]*) die "invalid checksum for $2" ;; esac
+  actual=$(sha256sum "$1/$2" | cut -d ' ' -f1)
+  [ "$actual" = "$expected" ] || die "checksum mismatch for $2; current installation kept"
 }
-
-install_repo() {
-  repo="$1"
-  extra="${2:-}"
-  version="$(latest_version "$repo")"
-  base="https://github.com/nirucon/$repo/releases/download/v$version"
-  dir="$(mktemp -d)"
-  say "  $repo $version"
-  for bin in $repo $extra; do
-    fetch "$base/$bin" "$dir/$bin" || die "cannot download $base/$bin"
+release_files() {
+  download_repo=$1; download_version=$2; shift 2
+  valid_version "$download_version" || die "invalid version: $download_version"
+  download_dir=$WORK/download/$download_repo
+  mkdir -p "$download_dir"
+  download_base=https://github.com/nirucon/$download_repo/releases/download/v$download_version
+  fetch "$download_base/SHA256SUMS" "$download_dir/SHA256SUMS"
+  for download_file in "$@"; do
+    fetch "$download_base/$download_file" "$download_dir/$download_file"
+    verify "$download_dir" "$download_file"
   done
-  fetch "$base/SHA256SUMS" "$dir/SHA256SUMS" || die "no checksums for $repo"
-  for bin in $repo $extra; do
-    want="$(awk -v n="$bin" '$2 == n {print $1}' "$dir/SHA256SUMS")"
-    [ -n "$want" ] || die "no checksum for $bin"
-    got="$(sha256 "$dir/$bin")"
-    [ "$want" = "$got" ] || die "checksum mismatch for $bin"
-    chmod 0755 "$dir/$bin"
-    mkdir -p "$BINDIR"
-    install -m 0755 "$dir/$bin" "$BINDIR/$bin.new"
-    mv -f "$BINDIR/$bin.new" "$BINDIR/$bin"
+}
+manifest_version() {
+  value=$(awk -v n="$1" '$1 == n {print $2}' "$WORK/download/nirux/manifest")
+  valid_version "$value" || die "invalid manifest entry: $1"
+  say "$value"
+}
+stage_release() {
+  if [ -z "$RELEASE" ]; then
+    fetch https://api.github.com/repos/nirucon/nirux/releases/latest "$WORK/latest.json"
+    RELEASE=$(sed -n 's/.*"tag_name": *"v\([0-9.]*\)".*/\1/p' "$WORK/latest.json" | head -n 1)
+  fi
+  release_files nirux "$RELEASE" nirux manifest
+  [ "$(manifest_version schema)" = 1 ] || die "unsupported manifest schema"
+  [ "$(manifest_version suite)" = "$RELEASE" ] || die "suite/manifest version mismatch"
+  sh -n "$WORK/download/nirux/nirux"
+  wm_version=$(manifest_version niruwm)
+  bar_version=$(manifest_version nirubar)
+  saver_version=$(manifest_version niruscreensaver)
+  lock_version=$(manifest_version nirulock)
+  release_files niruwm "$wm_version" niruwm niructl niruidle niruwm-session
+  release_files nirubar "$bar_version" nirubar
+  release_files niruscreensaver "$saver_version" niruscreensaver
+  release_files nirulock "$lock_version" nirulock pam-arch pam-debian pam-void
+  mkdir -p "$WORK/generation/bin"
+  for package in nirux niruwm nirubar niruscreensaver nirulock; do
+    case "$package" in
+      niruwm) files="niruwm niructl niruidle niruwm-session" ;;
+      *) files=$package ;;
+    esac
+    for program in $files; do
+      install -m 755 "$WORK/download/$package/$program" "$WORK/generation/bin/$program"
+    done
   done
-  rm -rf "$dir"
+  cp "$WORK/download/nirux/manifest" "$WORK/generation/manifest"
+  cp "$WORK/download/nirulock/pam-$OS" "$WORK/generation/pam"
+  reported=$("$WORK/generation/bin/nirux" --version | awk '{print $2}')
+  [ "$reported" = "$RELEASE" ] || die 'installer/manifest version mismatch'
+  # Running --version also catches missing loaders/shared libraries before activation.
+  for pair in "niruwm $wm_version" "nirubar $bar_version" "niruscreensaver $saver_version" "nirulock $lock_version" "niruidle $wm_version"; do
+    set -- $pair
+    reported=$("$WORK/generation/bin/$1" --version | awk '{print $2}')
+    [ "$reported" = "$2" ] || die "$1 does not report expected version $2"
+  done
 }
-
-install_binaries() {
-  say "Installing NIRU $SUITE_VERSION to $BINDIR"
-  # niruwm's release carries niructl and niruidle; the bar has its own, so each
-  # program updates on its own schedule instead of waiting for the window
-  # manager to catch up first.
-  install_repo niruwm "niructl niruidle"
-  install_repo nirubar
-  install_repo niruscreensaver
-  install_repo nirulock
-  install_session_script
-  install_self
+switch_link() {
+  ln -s "$2" "$STATE/.$1.$$"
+  mv -Tf "$STATE/.$1.$$" "$STATE/$1"
 }
-
-# The session entry point and the SDDM file live in the niruwm repository, so
-# they are fetched from source: they change more often than a binary release.
-install_session_script() {
-  tmp="$(mktemp)"
-  fetch "https://raw.githubusercontent.com/nirucon/niruwm/main/session/niruwm-session" "$tmp" ||
-    die "cannot download the session script"
-  install -m 0755 "$tmp" "$BINDIR/niruwm-session"
-  rm -f "$tmp"
-}
-
-# Keep the installer itself in PATH, so `nirux update` works from anywhere and
-# is the file that was just improved rather than an old copy in a clone.
-install_self() {
-  here="$(cd "$(dirname "$0")" && pwd)"
-  self="$here/$(basename "$0")"
-  if [ -f "$self" ] && [ ! "$self" -ef "$BINDIR/nirux" ]; then
-    mkdir -p "$BINDIR"
-    install -m 0755 "$self" "$BINDIR/nirux.new"
-    mv -f "$BINDIR/nirux.new" "$BINDIR/nirux"
+activate() {
+  mkdir -p "$STATE/generations" "$BIN"
+  # Adopt a legacy flat installation without changing its active versions.
+  if [ ! -L "$STATE/current" ]; then
+    legacy=$STATE/generations/legacy-$(date +%s)-$$
+    mkdir -p "$legacy/bin"
+    for program in $PROGRAMS; do
+      [ ! -f "$BIN/$program" ] || cp -pL "$BIN/$program" "$legacy/bin/$program"
+    done
+    switch_link current "$legacy"
   fi
+  old=$(readlink "$STATE/current")
+  generation=$STATE/generations/$RELEASE-${WORK##*.}
+  mv "$WORK/generation" "$generation"
+  # These front links stay constant; current is the single activation point.
+  for program in $PROGRAMS; do
+    ln -s "$STATE/current/bin/$program" "$BIN/.$program.$$"
+    mv -Tf "$BIN/.$program.$$" "$BIN/$program"
+  done
+  switch_link previous "$old"
+  switch_link current "$generation"
+  say "Activated NIRUX $RELEASE. Previous generation retained for nirux rollback."
 }
-
-# Read the login password once, without a terminal, when sudo needs one.
-#
-# `nirux install` is run over ssh as often as in a terminal, and there sudo has
-# no tty to prompt on: it fails with "a terminal is required", the session
-# entry and the PAM service are silently skipped, and the lock screen does not
-# work. Asking here costs one line and fixes the whole path. The password is
-# used with `sudo -S` and never written anywhere.
-ask_password() {
-  [ "${NIRUX_ASKED:-0}" = 1 ] && return 0
-  NIRUX_ASKED=1
-  # Every sudo setting that prints the password prompt needs this one too.
-  # `sudo -S` reads the password from stdin, which is where `nirux` is typed
-  # in a terminal.
-  local used_stdin="${1:-0}"
-  if [ "$used_stdin" = 0 ] && [ -t 0 ]; then
-    printf 'Password for sudo: ' >&2
-    stty -echo 2>/dev/null || true
-    IFS= read -r SUDO_PASS || SUDO_PASS=""
-    stty echo 2>/dev/null || true
-    printf '\n' >&2
-    export SUDO_PASS
-  elif [ "$used_stdin" = 0 ]; then
-    # Piped: `printf 'pw\n' | nirux install`. The first line is the password,
-    # whatever else comes after it belongs to nothing here.
-    IFS= read -r SUDO_PASS || SUDO_PASS=""
-    export SUDO_PASS
-  fi
-}
-
-# Run a command with sudo, with the password when there is one.
-#
-# A wrong password is said out loud once. Silence was how the first version
-# lost the session entry and the PAM service without a word.
-sudo_run() {
-  if [ -n "${SUDO_PASS:-}" ]; then
-    if printf '%s\n' "$SUDO_PASS" | sudo -S -p '' "$@" 2>/tmp/nirux-sudo.err; then
-      return 0
-    fi
-    rc=$?
-    if grep -qi "password" /tmp/nirux-sudo.err 2>/dev/null; then
-      say "sudo did not accept the password; the system steps were skipped."
-      say "Run this again and type your login password when asked."
-    else
-      cat /tmp/nirux-sudo.err >&2
-    fi
-    return "$rc"
-  fi
-  sudo "$@"
-}
-
-# Report a missing sudo instead of dying halfway through with a bare shell error.
-need_sudo() {
-  command -v sudo >/dev/null 2>&1 || {
-    say "sudo is not installed, so $1 cannot be added."
-    say "Run as root, or add it yourself."
-    return 1
-  }
-}
-
-register_session() {
-  file=/usr/share/xsessions/niruwm.desktop
-  if [ -f "$file" ] && grep -q "niruwm-session" "$file"; then
-    return 0
-  fi
-  need_sudo "$file" || return 0
-  tmp="$(mktemp)"
-  cat > "$tmp" <<EOF
-[Desktop Entry]
-Name=NIRUWM
-Comment=NIRU desktop (X11)
-Exec="$BINDIR/niruwm-session"
-Type=Application
-DesktopNames=NIRUWM
-EOF
-  say "Adding $file (sudo):"
-  sudo_run install -m 0644 "$tmp" "$file"
-  rm -f "$tmp"
-}
-
-install_pam_service() {
-  need_sudo "/etc/pam.d/nirulock" || return 0
-  os="$(distro)"
-  case "$os" in
-    void) body="auth     include   system-auth
-account  include  system-auth" ;;
-    arch | debian) body="auth     include   common-auth
-account  include  common-account" ;;
-    *) return 0 ;;
+owned() { grep -qxF "# NIRUX owner: $PREFIX" "$1"; }
+legacy_owned() {
+  case "$1" in
+    */xsessions/niruwm.desktop) grep -qxF "Exec=\"$BIN/niruwm-session\"" "$1" ;;
+    */pam.d/nirulock) grep -q '^# Installed by nirux\.' "$1" ;;
+    *) return 1 ;;
   esac
-  file=/etc/pam.d/nirulock
-  tmp="$(mktemp)"
-  {
-    say "# Installed by nirux. A lock screen uses the authentication stack only."
-    printf '%s\n' "$body"
-  } > "$tmp"
-  say "Adding $file (sudo):"
-  sudo_run install -m 0644 "$tmp" "$file"
-  rm -f "$tmp"
 }
-
-# ── Commands ────────────────────────────────────────────────────────────────
-cmd_install() {
-  packages=1
-  for a in "$@"; do
-    case "$a" in
-      --minimal) packages=0 ;;
-      --full) packages=1 ;;
-      --no-packages) packages=0 ;;
-      *) die "unknown option: $a" ;;
+write_system() {
+  target=$1; source=$2
+  if [ -f "$target" ] && cmp -s "$source" "$target"; then return; fi
+  if [ -f "$target" ] && ! owned "$target" && ! legacy_owned "$target"; then
+    if grep -q '^# NIRUX owner:' "$target"; then die "$target belongs to another NIRUX installation"; fi
+    [ -f "$target.nirux-backup" ] || as_root cp -p "$target" "$target.nirux-backup"
+  fi
+  as_root install -d -m 755 "$(dirname "$target")"
+  as_root install -m 644 "$source" "$target"
+}
+prepare_pam() {
+  pam_source=$WORK/generation/pam
+  for include in $(awk '$2 == "include" || $2 == "substack" {print $3}' "$pam_source"); do
+    [ -f "$ROOT/etc/pam.d/$include" ] || die "PAM include $include is missing; install the distribution PAM packages"
+  done
+  { say "# NIRUX owner: $PREFIX"; cat "$pam_source"; } > "$WORK/pam"
+  write_system "$ROOT/etc/pam.d/nirulock" "$WORK/pam"
+}
+register_session() {
+  { say "# NIRUX owner: $PREFIX"; say '[Desktop Entry]'; say 'Name=NIRUWM'; say 'Type=Application'; say "Exec=\"$BIN/niruwm-session\""; say 'DesktopNames=NIRUWM'; } > "$WORK/session.desktop"
+  write_system "$ROOT/usr/share/xsessions/niruwm.desktop" "$WORK/session.desktop"
+}
+setup_startx() {
+  # Never replace an existing user's xinitrc, including a symlink.
+  if [ ! -e "$HOME/.xinitrc" ] && [ ! -L "$HOME/.xinitrc" ]; then
+    { say '#!/bin/sh'; say "# NIRUX owner: $PREFIX"; say "exec \"$BIN/niruwm-session\""; } > "$WORK/xinitrc"
+    install -m 755 "$WORK/xinitrc" "$HOME/.xinitrc"
+  fi
+  say "From a local TTY: startx $BIN/niruwm-session"
+  say "If ~/.xinitrc selects NIRU, plain startx works too. Existing ~/.xinitrc is preserved."
+}
+enable_services() {
+  if [ "$OS" = void ]; then
+    for service in dbus elogind; do
+      if [ -d "$ROOT/etc/sv/$service" ] && [ ! -e "$ROOT/var/service/$service" ]; then
+        as_root ln -s "/etc/sv/$service" "$ROOT/var/service/$service"
+      fi
+    done
+    case "$DM" in sddm|lightdm)
+      [ -d "$ROOT/etc/sv/$DM" ] || die "missing runit service for $DM"
+      [ -e "$ROOT/var/service/$DM" ] || as_root ln -s "/etc/sv/$DM" "$ROOT/var/service/$DM"
+      ;; esac
+  else
+    case "$DM" in sddm|lightdm) as_root systemctl enable "$DM.service" ;; esac
+  fi
+}
+check_pam() {
+  [ -f "$ROOT/etc/pam.d/nirulock" ] || { say 'missing PAM service'; return 1; }
+  [ "$(stat -c %a "$ROOT/etc/pam.d/nirulock")" = 644 ] || { say 'incorrect PAM permissions'; return 1; }
+  awk '$1 == "auth" {found=1} END {exit !found}' "$ROOT/etc/pam.d/nirulock" || { say 'PAM service has no authentication rules'; return 1; }
+  for include in $(awk '$2 == "include" || $2 == "substack" {print $3}' "$ROOT/etc/pam.d/nirulock"); do
+    [ -f "$ROOT/etc/pam.d/$include" ] || { say "missing PAM include: $include"; return 1; }
+  done
+}
+status() {
+  result=0
+  say "NIRUX $VERSION ($PREFIX)"
+  for program in $PROGRAMS; do
+    if [ ! -x "$BIN/$program" ]; then say "missing $program"; result=1; continue; fi
+    case "$program" in
+      niructl|niruwm-session) say "installed $program" ;;
+      *)
+        if version_text=$("$BIN/$program" --version 2>&1); then say "installed $version_text"
+        else say "broken $program: $version_text"; result=1
+        fi ;;
     esac
   done
-  [ "$packages" = 1 ] && ask_password
-  [ "$packages" = 1 ] && install_packages
-  install_binaries
+  if [ -f "$ROOT/usr/share/xsessions/niruwm.desktop" ] && grep -qF "$BIN/niruwm-session" "$ROOT/usr/share/xsessions/niruwm.desktop"; then
+    say 'installed display-manager session'
+  else say 'missing or different display-manager session'; result=1
+  fi
+  if check_pam; then say 'PAM includes and permissions OK (password authentication not exercised)'; else result=1; fi
+  if [ -L "$STATE/current" ]; then say "generation: $(readlink "$STATE/current")"; fi
+  if [ -x "$HOME/.local/bin/nirupi-session" ] || [ -f "$ROOT/usr/share/xsessions/nirupi-dwm.desktop" ]; then say 'NIRUPI present (separate session)'; fi
+  return "$result"
+}
+doctor() {
+  result=0
+  status || result=1
+  for tool in startx Xorg xauth dbus-run-session fc-match kitty rofi; do
+    if command -v "$tool" >/dev/null 2>&1; then say "available $tool"; else say "missing $tool"; result=1; fi
+  done
+  for pair in 'niruwm --check-config' 'nirubar --check-config' 'niruidle --config' 'niruscreensaver --config' 'nirulock --config'; do
+    set -- $pair
+    say "== $pair"
+    if [ -x "$BIN/$1" ]; then "$BIN/$1" "$2" || result=1; else result=1; fi
+  done
+  if [ -n "${DISPLAY:-}" ]; then
+    say '== live X session'
+    "$BIN/niructl" status || result=1
+    for program in niruwm nirubar; do
+      if pgrep -u "$(id -u)" -x "$program" >/dev/null; then say "running $program"; else say "not running $program"; result=1; fi
+    done
+  else say 'Live session check skipped: DISPLAY is unset (normal over SSH/TTY).'
+  fi
+  return "$result"
+}
+remove_system() {
+  if [ -f "$1" ] && owned "$1"; then
+    if [ -f "$1.nirux-backup" ]; then as_root mv -f "$1.nirux-backup" "$1"
+    else as_root rm -f "$1"
+    fi
+  fi
+}
+uninstall() {
+  purge=0
+  for option in "$@"; do case "$option" in --purge) purge=1 ;; *) die "unknown option: $option" ;; esac; done
+  lock
+  remove_system "$ROOT/usr/share/xsessions/niruwm.desktop"
+  remove_system "$ROOT/etc/pam.d/nirulock"
+  for program in $PROGRAMS; do
+    if [ -L "$BIN/$program" ] && [ "$(readlink "$BIN/$program")" = "$STATE/current/bin/$program" ]; then rm -f "$BIN/$program"; fi
+  done
+  if [ -f "$HOME/.xinitrc" ] && owned "$HOME/.xinitrc"; then rm -f "$HOME/.xinitrc"; fi
+  if [ "$purge" = 1 ]; then
+    rm -rf "${XDG_CONFIG_HOME:-$HOME/.config}/niruwm" "${XDG_CONFIG_HOME:-$HOME/.config}/niruui" \
+      "${XDG_STATE_HOME:-$HOME/.local/state}/niruwm" "${XDG_STATE_HOME:-$HOME/.local/state}/nirulock"
+  fi
+  rm -rf "$STATE/generations"
+  rm -f "$STATE/current" "$STATE/previous"
+  say 'NIRU removed. OS packages and NIRUPI retained. An already running session exits normally on logout.'
+}
+rollback() {
+  lock
+  [ -L "$STATE/previous" ] || die 'no previous generation'
+  previous=$(readlink "$STATE/previous")
+  [ -x "$previous/bin/niruwm" ] || die 'previous generation is incomplete'
+  current=$(readlink "$STATE/current")
+  switch_link current "$previous"
+  switch_link previous "$current"
+  say 'Previous program generation restored. System packages and PAM configuration are not rolled back.'
+  say 'Log out and back in to use the restored WM and session.'
+}
+install_or_update() {
+  operation=$1; shift
+  packages=1; DM=auto; RELEASE=${NIRUX_RELEASE:-}
+  while [ "$#" -gt 0 ]; do
+    case "$1" in
+      --minimal|--no-packages) packages=0 ;;
+      --full) packages=1 ;;
+      --display-manager) shift; [ "$#" -gt 0 ] || die 'missing display-manager value'; DM=$1 ;;
+      --release) shift; [ "$#" -gt 0 ] || die 'missing release version'; RELEASE=${1#v} ;;
+      *) die "unknown option: $1" ;;
+    esac
+    shift
+  done
+  OS=$(distro)
+  platform
+  if [ "$operation" = install ]; then choose_dm; else packages=0; DM=keep; fi
+  lock
+  if [ "$packages" = 1 ]; then install_packages; fi
+  stage_release
+  # System integration must succeed before switching the active programs.
+  prepare_pam
   register_session
-  install_pam_service
-  say ""
-  say "Done. Log out and choose NIRUWM in the display manager."
-  say "Check it with: nirux doctor"
-  case "$(nirupi_state)" in
-    present*)
-      say ""
-      say "NIRUPI is also installed and was not changed. Both sessions appear"
-      say "in the display manager and either can be used."
-      ;;
+  if [ "$operation" = install ]; then setup_startx; enable_services; fi
+  activate
+  if [ -n "${DISPLAY:-}" ] && "$BIN/niructl" restart-bar; then
+    say 'Running bar restarted. Log out/in to activate the new WM, idle daemon and session.'
+  else say 'Log out/in to activate all updated programs. In a new NIRU session: niructl restart-bar.'
+  fi
+}
+main() {
+  case "${1:-}" in
+    install|update) install_or_update "$@" ;;
+    uninstall) shift; uninstall "$@" ;;
+    rollback) [ "$#" = 1 ] || die 'rollback takes no arguments'; rollback ;;
+    status|doctor) [ "$#" = 1 ] || die "$1 takes no arguments"; "$1" ;;
+    --version) say "NIRUX $VERSION" ;;
+    --help|help) usage ;;
+    '') usage; exit 2 ;;
+    *) die "unknown command: $1" ;;
   esac
 }
-
-cmd_update() {
-  # The PAM service may need adding or fixing; same sudo path as install.
-  ask_password
-  install_binaries
-  install_pam_service
-  say "Updated. A running session uses the new programs after the next login,"
-  say "except the bar, which can be restarted now with: niructl reload"
-}
-
-# NIRUPI is a separate desktop by the same author. NIRUX never installs or
-# changes it, but it reports what it finds so the two are not confused: both
-# offer an X11 session, and the session picker should list what is really there.
-nirupi_state() {
-  if [ -x "$HOME/.local/bin/nirupi-session" ] || [ -f /usr/share/xsessions/nirupi-dwm.desktop ]; then
-    # The version lives next to the installed binaries.
-    version=""
-    for f in "$HOME"/.local/lib/nirupi/*/VERSION; do
-      [ -f "$f" ] || continue
-      version=" $(head -1 "$f")"
-      break
-    done
-    printf 'present%s' "$version"
-  else
-    printf 'not installed'
-  fi
-}
-
-cmd_status() {
-  printf 'nirux %s\n' "$SUITE_VERSION"
-  printf 'distribution: %s\n' "$(distro)"
-  printf 'NIRUPI:       %s\n\n' "$(nirupi_state)"
-  missing=0
-  for b in niruwm nirubar niructl niruidle niruscreensaver nirulock niruwm-session; do
-    if [ -x "$BINDIR/$b" ]; then
-      version="$("$BINDIR/$b" --version 2>/dev/null | awk '{print $2}')"
-      printf '  ok       %-18s %s\n' "$b" "${version:-installed}"
-    else
-      printf '  missing  %s\n' "$b"
-      missing=$((missing + 1))
-    fi
-  done
-  echo ""
-  if [ -f /usr/share/xsessions/niruwm.desktop ]; then
-    echo "  ok       session entry"
-  else
-    echo "  missing  session entry (run: ./nirux install)"
-  fi
-  if [ -x "$BINDIR/nirulock" ] &&
-    ldd "$BINDIR/nirulock" 2>/dev/null | grep -q "not found"; then
-    echo "  warn     nirulock cannot find a library it needs; see: ldd $BINDIR/nirulock"
-  fi
-  # A screen that locks and cannot be unlocked is the one failure nobody
-  # forgives, so the lock path is checked rather than assumed.
-  if [ ! -f /etc/pam.d/nirulock ]; then
-    echo "  missing  PAM service for nirulock (run: ./nirux install)"
-  elif [ "$(stat -c %a /etc/pam.d/nirulock 2>/dev/null || echo 0)" != "644" ]; then
-    echo "  warn     /etc/pam.d/nirulock has the wrong mode; run: sudo chmod 644 /etc/pam.d/nirulock"
-  else
-    echo "  ok       lock path: nirulock, PAM service, mode 0644"
-  fi
-  [ "$missing" -eq 0 ] && return 0 || return 1
-}
-
-cmd_doctor() {
-  rc=0
-  echo "== niruwm"
-  if [ -x "$BINDIR/niruwm" ]; then
-    "$BINDIR/niruwm" --doctor 2>&1 || rc=1
-  else
-    echo "  missing niruwm"
-    rc=1
-  fi
-  for run in "niructl --check-config" "niruidle --config" "nirubar --check-config" "niruscreensaver --config" "nirulock --config"; do
-    set -- $run
-    echo ""
-    echo "== $1"
-    if [ -x "$BINDIR/$1" ]; then
-      "$BINDIR/$1" $2 2>&1 || rc=1
-    else
-      echo "  missing $1"
-      rc=1
-    fi
-  done
-  echo ""
-  echo "== settings"
-  for f in "${XDG_CONFIG_HOME:-$HOME/.config}/niruwm/config.toml" \
-    "${XDG_CONFIG_HOME:-$HOME/.config}/niruui/screensaver.toml" \
-    "${XDG_CONFIG_HOME:-$HOME/.config}/niruui/lock.toml"; do
-    if [ -f "$f" ]; then echo "  ok       $f"; else echo "  default  $f (not created; built-in defaults are used)"; fi
-  done
-  return "$rc"
-}
-
-cmd_uninstall() {
-  ask_password
-  purge=0
-  for a in "$@"; do
-    [ "$a" = "--purge" ] && purge=1
-  done
-  echo "Removing NIRU programs from $BINDIR:"
-  for b in niruwm nirubar niructl niruidle niruscreensaver nirulock niruwm-session nirux; do
-    if [ -e "$BINDIR/$b" ]; then
-      rm -f "$BINDIR/$b"
-      echo "  removed $b"
-    fi
-  done
-  if [ -f /usr/share/xsessions/niruwm.desktop ]; then
-    grep -q niruwm-session /usr/share/xsessions/niruwm.desktop && {
-      echo "Removing the session entry (sudo):"
-      sudo_run rm -f /usr/share/xsessions/niruwm.desktop
-    }
-  fi
-  if [ -f /etc/pam.d/nirulock ]; then
-    echo "Removing the PAM service (sudo):"
-    sudo_run rm -f /etc/pam.d/nirulock
-  fi
-  if [ "$purge" = 1 ]; then
-    rm -rf "${XDG_CONFIG_HOME:-$HOME/.config}/niruwm" \
-      "${XDG_CONFIG_HOME:-$HOME/.config}/niruui" \
-      "${XDG_STATE_HOME:-$HOME/.local/state}/niruwm" \
- XX
-      "${XDG_STATE_HOME:-$HOME/.local/state}/nirulock"
-    echo "Removed settings."
-  else
-    echo ""
-    echo "Settings kept in ~/.config/niruwm and ~/.config/niruui."
-    echo "Run with --purge to remove those too."
-  fi
-  echo "NIRUPI is untouched: $(nirupi_state)."
-}
-
-case "${1:-}" in
-  install) shift; cmd_install "$@" ;;
-  update) shift; cmd_update ;;
-  status) shift; cmd_status ;;
-  doctor) shift; cmd_doctor ;;
-  uninstall) shift; cmd_uninstall "$@" ;;
-  -h | --help | help) usage ;;
-  "") usage; exit 2 ;;
-  *) die "unknown command: $1" ;;
-esac
+[ "${NIRUX_LIBRARY:-0}" = 1 ] || main "$@"

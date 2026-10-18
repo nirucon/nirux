@@ -1,25 +1,24 @@
 # NIRUX
 
-Install, update and remove the NIRU desktop suite on Void Linux, Arch Linux and
-Debian.
+Install and maintain the NIRU X11 desktop on **Void Linux (glibc), Arch Linux
+and Debian**, including a minimal OS installation without a graphical desktop.
+Released binaries currently target x86_64 with glibc. Void musl and other CPU
+architectures are detected before installation and are not supported by these
+binary releases.
 
-**A personal hobby project.** I build this for my own machines. It is public so
-others can read it and try it, but there is no support promise. Early software,
-used at your own risk.
+The suite consists of [niruwm](https://github.com/nirucon/niruwm) (window manager,
+session, `niructl`, `niruidle`), [nirubar](https://github.com/nirucon/nirubar),
+[niruscreensaver](https://github.com/nirucon/niruscreensaver), and
+[nirulock](https://github.com/nirucon/nirulock).
 
-## The suite
-
-| Program | What it does |
-| --- | --- |
-| [niruwm](https://github.com/nirucon/niruwm) | tiling window manager and session |
-| [nirubar](https://github.com/nirucon/nirubar) | status bar with modules |
-| [niruscreensaver](https://github.com/nirucon/niruscreensaver) | idle screen |
-| [nirulock](https://github.com/nirucon/nirulock) | lock screen |
-
-Each installs and runs on its own. NIRUX just does all four at once, with the
-programs they use.
+A personal hobby project. Early software, used at your own risk.
 
 ## Install
+
+Run as your regular login user, with sudo available for OS packages and system
+integration. Root is also supported for provisioning, but binaries and settings
+are installed for the user running the command. You need networking and Git to
+clone; the full installer installs curl and CA certificates with the OS packages.
 
 ```sh
 git clone https://github.com/nirucon/nirux
@@ -27,104 +26,129 @@ cd nirux
 ./nirux install
 ```
 
-That installs the packages listed below with sudo, downloads the released
-binaries into `~/.local/bin`, adds the session to the display manager and
-installs the PAM service for the lock screen, and copies `nirux` itself to
-`~/.local/bin` so `nirux update` works from anywhere. Log out and choose
-**NIRUWM**.
+On a minimal installation this installs Xorg, xinit/startx, Xauth, D-Bus,
+fonts, kitty, rofi, audio tools, notifications and the other default session
+dependencies. It does not depend on NIRUPI. Distribution graphics drivers and
+firmware remain the OS/hardware installation's responsibility.
 
-Run over ssh, `nirux` asks for the sudo password once and uses it for every
-step that needs root, instead of quietly skipping the session entry and the PAM
-service because sudo had no terminal to prompt on.
+### How the graphical session starts
 
-Without a display manager, start it with `startx` and the session script:
+* If a display manager already exists, it is kept and **NIRUWM** is added to its
+  session list.
+* Otherwise an interactive install offers **startx (default)**, **SDDM**, or
+  **LightDM with the GTK greeter**. A noninteractive install defaults to startx.
+* An existing `~/.xinitrc` is preserved. If none exists, NIRUX creates one for
+  NIRUWM. From a local TTY you can always select the session explicitly:
 
 ```sh
-echo 'exec "$HOME/.local/bin/niruwm-session"' >> ~/.xinitrc
-startx
+startx "$HOME/.local/bin/niruwm-session"
 ```
 
-| Command | What it does |
-| --- | --- |
-| `./nirux install` | everything, including packages |
-| `./nirux install --minimal` | binaries and session only, no packages |
-| `./nirux update` | install the newest release of everything |
-| `./nirux status` | what is installed, what is missing, and whether NIRUPI is present |
-| `./nirux doctor` | every program's own checks: libraries, keyboard, lock screen, settings |
-| `./nirux status` | also reports a bar that has died, a missing PAM service, and a wrong mode on it |
-| `./nirux uninstall` | remove the programs, keep your settings |
-| `./nirux uninstall --purge` | remove the programs and your settings |
+To choose without prompting:
 
-## Packages
+```sh
+./nirux install --display-manager startx
+./nirux install --display-manager sddm
+./nirux install --display-manager lightdm
+```
 
-`./nirux install` installs these, because a default key binding or the session
-uses each one:
+NIRUX will not replace another enabled display manager automatically. Selected
+display-manager services are enabled for login (runit on Void, systemd on
+Arch/Debian). On Void, missing dbus/elogind service links are also enabled.
+The session starts a private D-Bus session when one is not already available.
+Log out or reboot when OS/service changes require it; do not run startx over SSH.
 
-| Purpose | Void | Arch | Debian |
-| --- | --- | --- | --- |
-| Terminal | `kitty` | `kitty` | `kitty` |
-| Launcher | `rofi` | `rofi` | `rofi` |
-| Font | `dejavu-fonts-ttf` | `ttf-dejavu` | `fonts-dejavu-core` |
-| Notifications | `dunst` | `dunst` | `dunst` |
-| Compositor | `picom` | `picom` | `picom` |
-| Wallpaper | `feh` | `feh` | `feh` |
-| Screenshot | `maim` | `maim` | `maim` |
-| Idle timing | `xidlehook` | `xidlehook` | `xidlehook` |
-| Keyboard layout | `setxkbmap`, `xkeyboard-config` | `xorg-setxkbmap`, `xkeyboard-config` | `x11-xkb-utils`, `xkb-data` |
-| Media and playback | `playerctl` | `playerctl` | `playerctl` |
-
-The binaries are static where possible, so no Rust is needed. Nirulock links
-the system libpam, which is present on every system that can log in.
-
-### Other distributions
-
-The binary releases are built for x86_64 Linux with glibc and run on most
-distributions. Install the packages above with your own package manager, then:
+### Existing desktop / dependencies already installed
 
 ```sh
 ./nirux install --no-packages
 ```
 
-Fedora names them `kitty rofi dejavu-sans-mono-fonts dunst picom feh maim
-xidlehook xkeyboard-config`. On openSUSE use `zypper install kitty rofi
-dejavu-fonts dunst picom feh maim xidlehook xkeyboard-config`.
+This installs all NIRU programs and system integration, without touching the
+package manager. `--minimal` is an alias for `--no-packages`, not a partial suite.
+PAM dependencies must already be installed. Sudo is requested only when a system
+file or package actually needs changing; failures are returned to the caller.
 
-On these systems `./nirux doctor` still works; the doctor only reads.
+NIRUPI remains a separate session. Existing NIRUPI configuration is preserved.
 
-## Settings
+## Updates and reproducibility
 
-`~/.config/niruwm/config.toml` is shared by the window manager and the bar;
-`~/.config/niruui/` holds the screensaver and lock settings. Both are documented
-inline. After editing, run `niructl reload` or press Super+R.
+```sh
+nirux update
+nirux update --release 0.5.0
+nirux rollback
+```
 
-## Example configs
+Each NIRUX release contains `nirux`, a version manifest, and `SHA256SUMS`.
+The manifest pins every component. The session script is a checksummed asset of
+the same release as the WM; PAM templates are assets of the lock release.
+No installed session is downloaded from a moving main branch.
 
-The first time a program runs without a settings file it uses documented
-built-in defaults. Two files are worth starting from, because they list every
-option:
+An update fetches the newest NIRUX release (or the requested version), including
+the installer itself. All component files are downloaded and verified before
+activation. Missing shared libraries and wrong binary versions fail before
+switching programs. Operations on the same prefix are locked.
 
-- `~/.config/niruwm/config.toml`: the window manager, the bar, the key
-  bindings and the idle ladder. The full list ships as `config.example.toml`
-  in the [niruwm](https://github.com/nirucon/niruwm) repository; `niruwm
-  --dump-config > ~/.config/niruwm/config.toml` writes it out.
-- `~/.config/niruui/screensaver.toml`: when the screen sleeps, locks and turns
-  off. One file decides the whole ladder for the window manager, the idle
-  timer, the screensaver and the lock screen.
+Program generations live in `~/.local/share/nirux/generations`. Stable links in
+`~/.local/bin` point through one `current` link, which is switched atomically.
+Legacy flat installations are adopted with a snapshot of their existing files.
+The previous generation remains available with `nirux rollback`.
 
-`nirux doctor` reports which files exist and which values are in use.
+Rollback restores program files, not OS packages or PAM configuration. Settings
+are not overwritten on update. Existing system integration files are backed up
+before adoption, and restored on uninstall if still owned by this installation.
+
+In an updated running WM, `niructl restart-bar` restarts the bar through its
+owner and waits for acknowledgement. `niructl reload` reloads configuration.
+Older running WMs need a logout/login before they support the restart command.
+The WM, idle daemon and session changes always require a new login.
+
+## Diagnostics
+
+```sh
+nirux status
+nirux doctor
+```
+
+`status` checks program execution, system integration, PAM include files and
+permissions, returning a failure status when required parts are missing.
+It never launches the session script to discover its version.
+
+`doctor` also checks the required launch tools and component settings. With
+`DISPLAY` set it checks the live control channel and WM/bar processes; from
+SSH or a TTY it reports that the live-session check was skipped. Reading PAM
+configuration does not prove that a user's password can authenticate.
 
 ## Uninstall
 
-`./nirux uninstall` removes the binaries, the session entry and the PAM service.
-Your settings stay until you add `--purge`.
+```sh
+nirux uninstall
+nirux uninstall --purge
+```
 
-## NIRUPI
+Only NIRUX-owned links, generated xinitrc and owned system integration are
+removed. Existing backed-up system files are restored. `--purge` also removes
+the NIRU config/state directories. OS packages, the chosen display manager,
+and NIRUPI are retained. Log out to end already running programs.
 
-[NIRUPI](https://github.com/nirucon/nirupi) is a separate desktop by the same
-author. NIRUX never installs it and never changes it. If it is present, `nirux
-status` says so and `nirux install` mentions that both sessions are now in the
-display manager. On a machine without it nothing changes.
+`NIRUX_PREFIX` changes the install prefix (default `$HOME/.local`); XDG config
+and state directories are respected. Use the same prefix for future commands.
 
-## License
+## Tests
+
+```sh
+sh tests/integration.sh
+```
+
+Offline regression tests use isolated homes and mock release downloads. They
+exercise all three distribution mappings, generation switches, rollback,
+checksum failures, status purity, PAM includes and uninstall/purge. CI also
+installs the real vanilla dependency package lists on all three distributions
+and checks that both optional display managers exist in their repositories.
+`sh tests/release-smoke.sh` tests the actual pinned component releases, diagnostics,
+startx/xinit with the generated xinitrc, bar restart and uninstall in an isolated
+home (requires the dependencies and Xvfb). Component repositories additionally
+test bar crash recovery, logout cleanup and real non-root PAM authentication.
+A physical local-TTY/GPU startx boot is separate from container/Xvfb testing.
 
 MIT. Copyright 2026 Nicklas Rudolfsson.
