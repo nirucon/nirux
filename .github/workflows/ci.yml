@@ -1,0 +1,19 @@
+name: CI
+
+on: [push, pull_request]
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Syntax
+        run: sh -n nirux
+      - name: Shellcheck
+        run: |
+          docker run --rm -v "$PWD":/src:ro koalaman/shellcheck:stable \
+            -S warning -s sh -e SC1007 /src/nirux
+      - name: Help and status run without a suite
+        run: |
+          ./nirux --help | head -5
+          HOME=/tmp/nh ./nirux status || true

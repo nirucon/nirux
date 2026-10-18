@@ -1,0 +1,311 @@
+#!/bin/sh
+# NIRUX — install, update and remove the NIRU desktop suite.
+#
+#   ./nirux install          the suite and the programs it uses
+#   ./nirux install --minimal   window manager and bar only
+#   ./nirux update           install the newest release of everything
+#   ./nirux status           what is installed and what is missing
+#   ./nirux uninstall        remove the suite, keeping your settings
+#   ./nirux uninstall --purge   remove the suite and your settings
+#
+# Supports Void Linux, Arch Linux and Debian. On other systems the packages
+# are named in README.md and `./nirux install --no-packages` installs only the
+# binaries.
+set -eu
+
+SUITE_VERSION="0.1.0"
+
+# Where the binaries go. No sudo: everything is per user.
+PREFIX="${NIRUX_PREFIX:-$HOME/.local}"
+BINDIR="$PREFIX/bin"
+
+say() { printf '%s\n' "$*"; }
+die() { printf 'nirux: %s\n' "$*" >&2; exit 1; }
+
+usage() {
+  sed -n '2,12p' "$0" | sed 's/^# \{0,1\}//'
+}
+
+# ── Distribution ────────────────────────────────────────────────────────────
+distro() {
+  if [ -f /etc/void-release ] || command -v xbps-install >/dev/null 2>&1; then
+    echo void
+  elif [ -f /etc/arch-release ] || command -v pacman >/dev/null 2>&1; then
+    echo arch
+  elif [ -f /etc/debian_version ] || command -v apt-get >/dev/null 2>&1; then
+    echo debian
+  else
+    echo unknown
+  fi
+}
+
+# Every package below is used by a default key binding or by the session.
+# `nirux install --minimal` skips them; the window manager still starts, but a
+# key bound to a missing program does nothing.
+EXTRA_PACKAGES="kitty rofi fontconfig dunst picom feh maim xidlehook xkeyboard-config"
+
+packages_for() {
+  case "$1" in
+    void)
+      printf '%s\n' "kitty rofi fontconfig dejavu-fonts-ttf dunst picom feh maim xrdb xsetroot xidlehook xkeyboard-config setxkbmap"
+      ;;
+    arch)
+      printf '%s\n' "kitty rofi fontconfig ttf-dejavu dunst picom feh maim xorg-xrdb xorg-xsetroot xidlehook xkeyboard-config xorg-setxkbmap"
+      ;;
+    debian)
+      printf '%s\n' "kitty rofi fontconfig fonts-dejavu-core dunst picom feh maim x11-xserver-utils xidlehook xkb-data x11-xkb-utils"
+      ;;
+  esac
+}
+
+install_packages() {
+  os="$(distro)"
+  pkgs="$(packages_for "$os")"
+  [ -n "$pkgs" ] || {
+    say "This system is not Void, Arch or Debian."
+    say "Install these yourself: $EXTRA_PACKAGES"
+    return 0
+  }
+  command -v sudo >/dev/null 2>&1 || die "sudo is needed to install packages"
+  say "Installing packages with $os:"
+  say "  $pkgs"
+  # shellcheck disable=SC2086
+  case "$os" in
+    void) sudo xbps-install -Sy $pkgs || die "package installation failed" ;;
+    arch) sudo pacman -S --needed --noconfirm $pkgs || die "package installation failed" ;;
+    debian) {
+      sudo apt-get update
+      # xidlehook is not in older releases; a missing optional package must not
+      # stop the suite from being installed.
+      # shellcheck disable=SC2086
+      sudo apt-get install -y $pkgs || {
+        say "Retrying without xidlehook, which is optional."
+        pkgs=$(echo "$pkgs" | sed 's/ xidlehook//')
+        # shellcheck disable=SC2086
+        sudo apt-get install -y $pkgs || die "package installation failed"
+      }
+    } ;;
+  esac
+}
+
+# ── Binaries ────────────────────────────────────────────────────────────────
+sha256() {
+  if command -v sha256sum >/dev/null 2>&1; then
+    sha256sum "$1" | cut -d' ' -f1
+  else
+    shasum -a 256 "$1" | cut -d' ' -f1
+  fi
+}
+
+fetch() {
+  url="$1"; out="$2"
+  if command -v curl >/dev/null 2>&1; then
+    curl -fsSL --retry 3 -o "$out" "$url"
+  elif command -v wget >/dev/null 2>&1; then
+    wget -qO "$out" "$url"
+  else
+    die "curl or wget is required"
+  fi
+}
+
+latest_version() {
+  # Ask the GitHub API for the newest release tag, so `nirux update` follows
+  # the suite instead of pinning a version in this file.
+  repo="$1"
+  tag=$(curl -fsSL "https://api.github.com/repos/nirucon/$repo/releases/latest" 2>/dev/null |
+    sed -n 's/.*"tag_name": *"v\?\([^"]*\)".*/\1/p' | head -1)
+  [ -n "$tag" ] || die "cannot look up the latest release of $repo"
+  printf '%s' "$tag"
+}
+
+install_repo() {
+  repo="$1"
+  extra="${2:-}"
+  version="$(latest_version "$repo")"
+  base="https://github.com/nirucon/$repo/releases/download/v$version"
+  dir="$(mktemp -d)"
+  say "  $repo $version"
+  for bin in $repo $extra; do
+    fetch "$base/$bin" "$dir/$bin" || die "cannot download $base/$bin"
+  done
+  fetch "$base/SHA256SUMS" "$dir/SHA256SUMS" || die "no checksums for $repo"
+  for bin in $repo $extra; do
+    want="$(awk -v n="$bin" '$2 == n {print $1}' "$dir/SHA256SUMS")"
+    [ -n "$want" ] || die "no checksum for $bin"
+    got="$(sha256 "$dir/$bin")"
+    [ "$want" = "$got" ] || die "checksum mismatch for $bin"
+    chmod 0755 "$dir/$bin"
+    mkdir -p "$BINDIR"
+    install -m 0755 "$dir/$bin" "$BINDIR/$bin.new"
+    mv -f "$BINDIR/$bin.new" "$BINDIR/$bin"
+  done
+  rm -rf "$dir"
+}
+
+install_binaries() {
+  say "Installing NIRU $SUITE_VERSION to $BINDIR"
+  # niruwm's release also carries nirubar, niructl and niruidle.
+  install_repo niruwm "nirubar niructl niruidle"
+  install_repo niruscreensaver
+  install_repo nirulock
+  install_session_script
+}
+
+# The session entry point and the SDDM file live in the niruwm repository, so
+# they are fetched from source: they change more often than a binary release.
+install_session_script() {
+  tmp="$(mktemp)"
+  fetch "https://raw.githubusercontent.com/nirucon/niruwm/main/session/niruwm-session" "$tmp" ||
+    die "cannot download the session script"
+  install -m 0755 "$tmp" "$BINDIR/niruwm-session"
+  rm -f "$tmp"
+}
+
+# Report a missing sudo instead of dying halfway through with a bare shell error.
+need_sudo() {
+  command -v sudo >/dev/null 2>&1 || {
+    say "sudo is not installed, so $1 cannot be added."
+    say "Run as root, or add it yourself."
+    return 1
+  }
+}
+
+register_session() {
+  file=/usr/share/xsessions/niruwm.desktop
+  if [ -f "$file" ] && grep -q "niruwm-session" "$file"; then
+    return 0
+  fi
+  need_sudo "$file" || return 0
+  tmp="$(mktemp)"
+  cat > "$tmp" <<EOF
+[Desktop Entry]
+Name=NIRUWM
+Comment=NIRU desktop (X11)
+Exec="$BINDIR/niruwm-session"
+Type=Application
+DesktopNames=NIRUWM
+EOF
+  say "Adding $file (sudo):"
+  sudo install -m 0644 "$tmp" "$file"
+  rm -f "$tmp"
+}
+
+install_pam_service() {
+  need_sudo "/etc/pam.d/nirulock" || return 0
+  os="$(distro)"
+  case "$os" in
+    void) body="auth     include   system-auth
+account  include  system-auth" ;;
+    arch | debian) body="auth     include   common-auth
+account  include  common-account" ;;
+    *) return 0 ;;
+  esac
+  file=/etc/pam.d/nirulock
+  tmp="$(mktemp)"
+  {
+    say "# Installed by nirux. A lock screen uses the authentication stack only."
+    printf '%s\n' "$body"
+  } > "$tmp"
+  say "Adding $file (sudo):"
+  sudo install -m 0644 "$tmp" "$file"
+  rm -f "$tmp"
+}
+
+# ── Commands ────────────────────────────────────────────────────────────────
+cmd_install() {
+  packages=1
+  for a in "$@"; do
+    case "$a" in
+      --minimal) packages=0 ;;
+      --full) packages=1 ;;
+      --no-packages) packages=0 ;;
+      *) die "unknown option: $a" ;;
+    esac
+  done
+  [ "$packages" = 1 ] && install_packages
+  install_binaries
+  register_session
+  install_pam_service
+  say ""
+  say "Done. Log out and choose NIRUWM in the display manager."
+  say "Check it with: $BINDIR/niruwm --doctor"
+}
+
+cmd_update() {
+  install_binaries
+  install_pam_service
+  say "Updated."
+}
+
+cmd_status() {
+  printf 'nirux %s\n' "$SUITE_VERSION"
+  printf 'distribution: %s\n\n' "$(distro)"
+  missing=0
+  for b in niruwm nirubar niructl niruidle niruscreensaver nirulock niruwm-session; do
+    if [ -x "$BINDIR/$b" ]; then
+      version="$("$BINDIR/$b" --version 2>/dev/null | awk '{print $2}')"
+      printf '  ok       %-18s %s\n' "$b" "${version:-installed}"
+    else
+      printf '  missing  %s\n' "$b"
+      missing=$((missing + 1))
+    fi
+  done
+  echo ""
+  if [ -f /usr/share/xsessions/niruwm.desktop ]; then
+    echo "  ok       session entry"
+  else
+    echo "  missing  session entry (run: ./nirux install)"
+  fi
+  if [ -f /etc/pam.d/nirulock ]; then
+    echo "  ok       PAM service for nirulock"
+  else
+    echo "  missing  PAM service (run: ./nirux install)"
+  fi
+  return "$missing"
+}
+
+cmd_uninstall() {
+  purge=0
+  for a in "$@"; do
+    [ "$a" = "--purge" ] && purge=1
+  done
+  echo "Removing NIRU programs from $BINDIR:"
+  for b in niruwm nirubar niructl niruidle niruscreensaver nirulock niruwm-session; do
+    if [ -e "$BINDIR/$b" ]; then
+      rm -f "$BINDIR/$b"
+      echo "  removed $b"
+    fi
+  done
+  if [ -f /usr/share/xsessions/niruwm.desktop ]; then
+    grep -q niruwm-session /usr/share/xsessions/niruwm.desktop && {
+      echo "Removing the session entry (sudo):"
+      sudo rm -f /usr/share/xsessions/niruwm.desktop
+    }
+  fi
+  if [ -f /etc/pam.d/nirulock ]; then
+    echo "Removing the PAM service (sudo):"
+    sudo rm -f /etc/pam.d/nirulock
+  fi
+  if [ "$purge" = 1 ]; then
+    rm -rf "${XDG_CONFIG_HOME:-$HOME/.config}/niruwm" \
+      "${XDG_CONFIG_HOME:-$HOME/.config}/niruui" \
+      "${XDG_STATE_HOME:-$HOME/.local/state}/niruwm" \
+      "${XDG_STATE_HOME:-$HOME/.local/state}/niruscreensaver"
+    echo "Removed settings."
+  else
+    echo ""
+    echo "Settings kept in ~/.config/niruwm and ~/.config/niruui."
+    echo "Run with --purge to remove those too."
+  fi
+  echo "NIRUPI files were not touched."
+}
+
+case "${1:-}" in
+  install) shift; cmd_install "$@" ;;
+  update) shift; cmd_update ;;
+  status) shift; cmd_status ;;
+  uninstall) shift; cmd_uninstall "$@" ;;
+  -h | --help | help) usage ;;
+  "") usage; exit 2 ;;
+  *) die "unknown command: $1" ;;
+esac
