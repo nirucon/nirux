@@ -229,6 +229,13 @@ cmd_install() {
   say ""
   say "Done. Log out and choose NIRUWM in the display manager."
   say "Check it with: $BINDIR/niruwm --doctor"
+  case "$(nirupi_state)" in
+    present*)
+      say ""
+      say "NIRUPI is also installed and was not changed. Both sessions appear"
+      say "in the display manager and either can be used."
+      ;;
+  esac
 }
 
 cmd_update() {
@@ -237,9 +244,28 @@ cmd_update() {
   say "Updated."
 }
 
+# NIRUPI is a separate desktop by the same author. NIRUX never installs or
+# changes it, but it reports what it finds so the two are not confused: both
+# offer an X11 session, and the session picker should list what is really there.
+nirupi_state() {
+  if [ -x "$HOME/.local/bin/nirupi-session" ] || [ -f /usr/share/xsessions/nirupi-dwm.desktop ]; then
+    # The version lives next to the installed binaries.
+    version=""
+    for f in "$HOME"/.local/lib/nirupi/*/VERSION; do
+      [ -f "$f" ] || continue
+      version=" $(head -1 "$f")"
+      break
+    done
+    printf 'present%s' "$version"
+  else
+    printf 'not installed'
+  fi
+}
+
 cmd_status() {
   printf 'nirux %s\n' "$SUITE_VERSION"
-  printf 'distribution: %s\n\n' "$(distro)"
+  printf 'distribution: %s\n' "$(distro)"
+  printf 'NIRUPI:       %s\n\n' "$(nirupi_state)"
   missing=0
   for b in niruwm nirubar niructl niruidle niruscreensaver nirulock niruwm-session; do
     if [ -x "$BINDIR/$b" ]; then
@@ -297,7 +323,7 @@ cmd_uninstall() {
     echo "Settings kept in ~/.config/niruwm and ~/.config/niruui."
     echo "Run with --purge to remove those too."
   fi
-  echo "NIRUPI files were not touched."
+  echo "NIRUPI is untouched: $(nirupi_state)."
 }
 
 case "${1:-}" in

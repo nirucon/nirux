@@ -36,7 +36,7 @@ installs the PAM service for the lock screen. Log out and choose **NIRUWM**.
 | `./nirux install` | everything, including packages |
 | `./nirux install --minimal` | binaries and session only, no packages |
 | `./nirux update` | install the newest release of everything |
-| `./nirux status` | what is installed, what is missing |
+| `./nirux status` | what is installed, what is missing, and whether NIRUPI is present |
 | `./nirux uninstall` | remove the programs, keep your settings |
 | `./nirux uninstall --purge` | remove the programs and your settings |
 
@@ -82,8 +82,14 @@ inline. After editing, run `niructl reload` or press Super+R.
 ## Uninstall
 
 `./nirux uninstall` removes the binaries, the session entry and the PAM service.
-Your settings stay until you add `--purge`. A NIRUPI installation is never
-touched.
+Your settings stay until you add `--purge`.
+
+## NIRUPI
+
+[NIRUPI](https://github.com/nirucon/nirupi) is a separate desktop by the same
+author. NIRUX never installs it and never changes it. If it is present, `nirux
+status` says so and `nirux install` mentions that both sessions are now in the
+display manager. On a machine without it nothing changes.
 
 ## License
 
