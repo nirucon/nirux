@@ -10,6 +10,10 @@ export NIRUX_LIBRARY=1
 mkdir -p "$HOME" "$NIRUX_SYSTEM_ROOT/etc/pam.d" "$NIRUX_SYSTEM_ROOT/usr/share/xsessions"
 . "$SOURCE/nirux"
 unset NIRUX_LIBRARY
+wm_version=$(awk '$1 == "niruwm" {print $2}' "$SOURCE/manifest")
+bar_version=$(awk '$1 == "nirubar" {print $2}' "$SOURCE/manifest")
+saver_version=$(awk '$1 == "niruscreensaver" {print $2}' "$SOURCE/manifest")
+lock_version=$(awk '$1 == "nirulock" {print $2}' "$SOURCE/manifest")
 FIXTURE=$TEST/releases
 fail() { printf 'FAIL: %s\n' "$*" >&2; exit 1; }
 fetch() {
@@ -37,22 +41,23 @@ fixture() {
   for asset in "$@"; do make_binary "$FIXTURE/$repo/$ver/$asset" "$asset" "$ver"; done
 }
 checksums() { (cd "$1"; sha256sum ./* | sed 's@  ./@  @' > SHA256SUMS); }
-fixture niruwm 0.16.3 niruwm niructl niruidle niruwm-session
+fixture niruwm "$wm_version" niruwm niructl niruidle niruwm-session
 # Executing the session script during status must be caught.
-say 'touch "$HOME/session-was-started"' >> "$FIXTURE/niruwm/0.16.3/niruwm-session"
-fixture nirubar 0.16.4 nirubar
-fixture niruscreensaver 0.7.0 niruscreensaver
-fixture nirulock 0.16.3 nirulock
+say 'touch "$HOME/session-was-started"' >> "$FIXTURE/niruwm/$wm_version/niruwm-session"
+fixture nirubar "$bar_version" nirubar
+fixture niruscreensaver "$saver_version" niruscreensaver
+fixture nirulock "$lock_version" nirulock
 for os in arch void; do
-  printf 'auth include system-auth\naccount include system-auth\n' > "$FIXTURE/nirulock/0.16.3/pam-$os"
+  printf 'auth include system-auth\naccount include system-auth\n' > "$FIXTURE/nirulock/$lock_version/pam-$os"
 done
-printf 'auth include common-auth\naccount include common-account\n' > "$FIXTURE/nirulock/0.16.3/pam-debian"
-for item in niruwm/0.16.3 nirubar/0.16.4 niruscreensaver/0.7.0 nirulock/0.16.3; do checksums "$FIXTURE/$item"; done
-for release in 0.5.0 0.5.1; do
+printf 'auth include common-auth\naccount include common-account\n' > "$FIXTURE/nirulock/$lock_version/pam-debian"
+for item in "niruwm/$wm_version" "nirubar/$bar_version" "niruscreensaver/$saver_version" "nirulock/$lock_version"; do checksums "$FIXTURE/$item"; done
+# 99.0.0 is a synthetic second release, never a real network dependency.
+for release in "$VERSION" 99.0.0; do
   mkdir -p "$FIXTURE/nirux/$release"
-  sed "s/^VERSION=0.5.0$/VERSION=$release/" "$SOURCE/nirux" > "$FIXTURE/nirux/$release/nirux"
+  sed "s/^VERSION=$VERSION$/VERSION=$release/" "$SOURCE/nirux" > "$FIXTURE/nirux/$release/nirux"
   chmod +x "$FIXTURE/nirux/$release/nirux"
-  sed "s/suite 0.5.0/suite $release/" "$SOURCE/manifest" > "$FIXTURE/nirux/$release/manifest"
+  sed "s/suite $VERSION/suite $release/" "$SOURCE/manifest" > "$FIXTURE/nirux/$release/manifest"
   checksums "$FIXTURE/nirux/$release"
 done
 
@@ -60,12 +65,12 @@ for TEST_OS in arch debian void; do
   # Separate installations exercise each distribution's integration and cleanup.
   PREFIX=$TEST/$TEST_OS; BIN=$PREFIX/bin; STATE=$PREFIX/share/nirux
   touch "$ROOT/etc/pam.d/system-auth" "$ROOT/etc/pam.d/common-auth" "$ROOT/etc/pam.d/common-account"
-  operation install_or_update install --no-packages --display-manager startx --release 0.5.0
+  operation install_or_update install --no-packages --display-manager startx --release "$VERSION"
   status
   [ ! -e "$HOME/session-was-started" ] || fail 'status ran the session'
-  [ "$(awk '$1 == "suite" {print $2}' "$STATE/current/manifest")" = 0.5.0 ] || fail 'wrong manifest'
+  [ "$(awk '$1 == "suite" {print $2}' "$STATE/current/manifest")" = "$VERSION" ] || fail 'wrong manifest'
   first=$(readlink "$STATE/current")
-  operation install_or_update update --release 0.5.1
+  operation install_or_update update --release 99.0.0
   second=$(readlink "$STATE/current")
   [ "$first" != "$second" ] || fail 'no generation switch'
   operation rollback
@@ -82,11 +87,11 @@ done
 
 # A corrupt late download must leave the active installation unchanged.
 TEST_OS=arch; PREFIX=$TEST/failure; BIN=$PREFIX/bin; STATE=$PREFIX/share/nirux
-operation install_or_update install --no-packages --display-manager startx --release 0.5.0
+operation install_or_update install --no-packages --display-manager startx --release "$VERSION"
 before=$(readlink "$STATE/current")
-say corrupt >> "$FIXTURE/nirulock/0.16.3/nirulock"
+say corrupt >> "$FIXTURE/nirulock/$lock_version/nirulock"
 set +e
-(set -e; install_or_update update --release 0.5.1) > "$TEST/failure.log" 2>&1
+(set -e; install_or_update update --release 99.0.0) > "$TEST/failure.log" 2>&1
 rc=$?
 set -e
 [ "$rc" != 0 ] || fail 'corrupt download succeeded'
