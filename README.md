@@ -73,6 +73,11 @@ NIRUPI remains a separate session. Existing NIRUPI configuration is preserved.
 
 ## Updates and reproducibility
 
+When upgrading from NIRUX 0.4.x or older, first update your original clone
+with `git pull --ff-only` and run `./nirux update` from that clone. The old
+installer cannot update itself. After that first migration the installed
+`nirux update` command also updates NIRUX itself.
+
 ```sh
 nirux update
 nirux update --release 0.5.0
