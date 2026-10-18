@@ -60,3 +60,19 @@ and away-minute deadlines; the loop drains X events before blocking.
 
 Further workloads (many clients/monitors, package-query stalls, network failures,
 notification floods and suspend/resume) remain explicitly scheduled in ROADMAP.md.
+
+## Other idle snapshots
+
+Same container, separate 800x600 private X server, one-second warmup followed by
+ten idle seconds. WM bar disabled to isolate the WM process; idle ladder uses its
+15-minute defaults; locker receives no input. CPU ticks are fields 14+15 of
+`/proc/PID/stat`; RSS and threads come from `/proc/PID/status`.
+
+| Program | Format | CPU ticks / 10 seconds | RSS KiB | Threads |
+|---|---|---:|---:|---:|
+| niruwm 0.16.4 | static musl | 0 | 1384 | 1 |
+| niruidle 0.16.4 | static musl | 0 | 696 | 1 |
+| nirulock 0.16.5 | dynamic glibc/PAM | 0 | 3236 | 1 |
+
+These are starting baselines for subsequent work, not before/after improvement
+claims. A clock-minute redraw or a different installed font changes the sample.
