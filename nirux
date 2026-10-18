@@ -14,7 +14,7 @@
 # binaries.
 set -eu
 
-SUITE_VERSION="0.3.0"
+SUITE_VERSION="0.4.0"
 
 # Where the binaries go. No sudo: everything is per user.
 PREFIX="${NIRUX_PREFIX:-$HOME/.local}"
@@ -72,18 +72,18 @@ install_packages() {
   say "  $pkgs"
   # shellcheck disable=SC2086
   case "$os" in
-    void) sudo xbps-install -Sy $pkgs || die "package installation failed" ;;
-    arch) sudo pacman -S --needed --noconfirm $pkgs || die "package installation failed" ;;
+    void) sudo_run xbps-install -Sy $pkgs || die "package installation failed" ;;
+    arch) sudo_run pacman -S --needed --noconfirm $pkgs || die "package installation failed" ;;
     debian) {
-      sudo apt-get update
+      sudo_run apt-get update
       # xidlehook is not in older releases; a missing optional package must not
       # stop the suite from being installed.
       # shellcheck disable=SC2086
-      sudo apt-get install -y $pkgs || {
+      sudo_run apt-get install -y $pkgs || {
         say "Retrying without xidlehook, which is optional."
         pkgs=$(echo "$pkgs" | sed 's/ xidlehook//')
         # shellcheck disable=SC2086
-        sudo apt-get install -y $pkgs || die "package installation failed"
+        sudo_run apt-get install -y $pkgs || die "package installation failed"
       }
     } ;;
   esac
@@ -190,6 +190,35 @@ install_self() {
   fi
 }
 
+# Read the login password once, without a terminal, when sudo needs one.
+#
+# `nirux install` is run over ssh as often as in a terminal, and there sudo has
+# no tty to prompt on: it fails with "a terminal is required", the session
+# entry and the PAM service are silently skipped, and the lock screen does not
+# work. Asking here costs one line and fixes the whole path. The password is
+# used with `sudo -S` and never written anywhere.
+ask_password() {
+  [ "${NIRUX_ASKED:-0}" = 1 ] && return 0
+  NIRUX_ASKED=1
+  if [ -t 0 ]; then
+    printf 'Password for sudo: ' >&2
+    stty -echo 2>/dev/null || true
+    IFS= read -r SUDO_PASS || SUDO_PASS=""
+    stty echo 2>/dev/null || true
+    printf '\n' >&2
+    export SUDO_PASS
+  fi
+}
+
+# Run a command with sudo, with the password when there is one.
+sudo_run() {
+  if [ -n "${SUDO_PASS:-}" ]; then
+    printf '%s\n' "$SUDO_PASS" | sudo -S -p '' "$@"
+  else
+    sudo "$@"
+  fi
+}
+
 # Report a missing sudo instead of dying halfway through with a bare shell error.
 need_sudo() {
   command -v sudo >/dev/null 2>&1 || {
@@ -215,7 +244,7 @@ Type=Application
 DesktopNames=NIRUWM
 EOF
   say "Adding $file (sudo):"
-  sudo install -m 0644 "$tmp" "$file"
+  sudo_run install -m 0644 "$tmp" "$file"
   rm -f "$tmp"
 }
 
@@ -236,7 +265,7 @@ account  include  common-account" ;;
     printf '%s\n' "$body"
   } > "$tmp"
   say "Adding $file (sudo):"
-  sudo install -m 0644 "$tmp" "$file"
+  sudo_run install -m 0644 "$tmp" "$file"
   rm -f "$tmp"
 }
 
@@ -251,6 +280,7 @@ cmd_install() {
       *) die "unknown option: $a" ;;
     esac
   done
+  [ "$packages" = 1 ] && ask_password
   [ "$packages" = 1 ] && install_packages
   install_binaries
   register_session
@@ -268,6 +298,8 @@ cmd_install() {
 }
 
 cmd_update() {
+  # The PAM service may need adding or fixing; same sudo path as install.
+  ask_password
   install_binaries
   install_pam_service
   say "Updated. A running session uses the new programs after the next login,"
@@ -359,6 +391,7 @@ cmd_doctor() {
 }
 
 cmd_uninstall() {
+  ask_password
   purge=0
   for a in "$@"; do
     [ "$a" = "--purge" ] && purge=1
@@ -373,12 +406,12 @@ cmd_uninstall() {
   if [ -f /usr/share/xsessions/niruwm.desktop ]; then
     grep -q niruwm-session /usr/share/xsessions/niruwm.desktop && {
       echo "Removing the session entry (sudo):"
-      sudo rm -f /usr/share/xsessions/niruwm.desktop
+      sudo_run rm -f /usr/share/xsessions/niruwm.desktop
     }
   fi
   if [ -f /etc/pam.d/nirulock ]; then
     echo "Removing the PAM service (sudo):"
-    sudo rm -f /etc/pam.d/nirulock
+    sudo_run rm -f /etc/pam.d/nirulock
   fi
   if [ "$purge" = 1 ]; then
     rm -rf "${XDG_CONFIG_HOME:-$HOME/.config}/niruwm" \

@@ -33,6 +33,17 @@ installs the PAM service for the lock screen, and copies `nirux` itself to
 `~/.local/bin` so `nirux update` works from anywhere. Log out and choose
 **NIRUWM**.
 
+Run over ssh, `nirux` asks for the sudo password once and uses it for every
+step that needs root, instead of quietly skipping the session entry and the PAM
+service because sudo had no terminal to prompt on.
+
+Without a display manager, start it with `startx` and the session script:
+
+```sh
+echo 'exec "$HOME/.local/bin/niruwm-session"' >> ~/.xinitrc
+startx
+```
+
 | Command | What it does |
 | --- | --- |
 | `./nirux install` | everything, including packages |
@@ -40,6 +51,7 @@ installs the PAM service for the lock screen, and copies `nirux` itself to
 | `./nirux update` | install the newest release of everything |
 | `./nirux status` | what is installed, what is missing, and whether NIRUPI is present |
 | `./nirux doctor` | every program's own checks: libraries, keyboard, lock screen, settings |
+| `./nirux status` | also reports a bar that has died, a missing PAM service, and a wrong mode on it |
 | `./nirux uninstall` | remove the programs, keep your settings |
 | `./nirux uninstall --purge` | remove the programs and your settings |
 
