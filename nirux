@@ -14,7 +14,7 @@
 # binaries.
 set -eu
 
-SUITE_VERSION="0.4.0"
+SUITE_VERSION="0.4.1"
 
 # Where the binaries go. No sudo: everything is per user.
 PREFIX="${NIRUX_PREFIX:-$HOME/.local}"
