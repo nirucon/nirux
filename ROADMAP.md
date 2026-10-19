@@ -24,7 +24,7 @@ source locations and verification limits are in [AUDIT.md](AUDIT.md).
 
 ## Current checkpoint
 
-The **0.6.3** manifest pins niruwm **0.16.5**, nirubar **0.16.8**,
+The **0.6.4** manifest pins niruwm **0.16.5**, nirubar **0.16.9**,
 niruscreensaver **0.8.0** and nirulock **0.16.6**. The earlier M1 fixes removed
 unauthenticated lock timers and raw keycode logging, improved idle child ownership,
 and reduced bar/screensaver work. Historical measurements: [MEASUREMENTS.md](MEASUREMENTS.md).
@@ -111,7 +111,9 @@ retain input isolation; correct password restores the WM shortcuts.
   playback. A GUI regression checks helper action logs.
 - [ ] Finish B09 with configurable middle/right/scroll actions and explicit buttons
   in interactive panels. Hide hitboxes with modules.
-- [ ] **B10/B11:** unify validation expectations, reject invalid time formats safely,
+- [x] **B10, calendar step:** Monday-first English `Mon Tue Wed Thu Fri Sat Sun`
+  labels with matching three-character day cells.
+- [ ] Finish B10/B11: unify validation expectations, reject invalid time formats safely,
   honour visibility settings, distinguish unavailable/stale data from zero values,
   and repair package-count/error/locale handling and the ALSA parser.
 
