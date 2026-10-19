@@ -24,7 +24,7 @@ source locations and verification limits are in [AUDIT.md](AUDIT.md).
 
 ## Current checkpoint
 
-The **0.10.3** manifest pins niruwm **0.16.17**, nirubar **0.18.2**,
+The **0.10.4** manifest pins niruwm **0.16.17**, nirubar **0.18.3**,
 niruscreensaver **0.8.1**, nirulock **0.16.8**, nirulauncher **0.1.1** and
 nirunotify **0.2.1**. NIRULAUNCHER provides native Super+P apps and
 Super+Shift+P apps/actions; NIRUNOTIFY is an installed native notification
@@ -558,6 +558,17 @@ Use the existing [design contract](https://github.com/nirucon/nirunotify/blob/ma
   with a real Super+P, closed it with Escape, and quit without leftover
   WM/bar/Dunst processes. A physical `startx` on the laptop remains for the user
   to confirm; no display manager is enabled.
+- NIRUX **0.10.4** fixes the vanilla Arch/Debian/Void experience: Arch gets
+  xf86-input-libinput, xwininfo, iw, iproute2, xdg-utils and the JetBrains Mono
+  Nerd Font; Debian gets libinput, iw, iproute2 and xdg-utils; Void gets xwininfo,
+  iw, iproute2, xdg-utils and the 5 MB Symbols Nerd Font. NIRUBAR 0.18.3 shows
+  workspaces, media, volume, brightness, network, battery and clock by default,
+  with icon glyphs borrowed from the symbols font when the text font lacks them.
+  The update module stays opt-in so its package query cannot delay first paint.
+  Installed on the Arch ThinkPad, where the restarted live bar now shows the
+  workspace cells, volume, brightness, wifi, battery and clock icons. The Void
+  machine was updated too, but no live WM was running at that moment; the new
+  bar activates at the next login.
 - **Next work:** R6 actions/images and physical provider acceptance; R5 remaining
   panels/responsive layout/calendar; R2 appearance document/semantic tokens and
   GTK/Qt separation; physical sleep acceptance; R3 schedule/resume/bar controls;
