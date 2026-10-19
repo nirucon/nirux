@@ -382,6 +382,12 @@ Use the existing [design contract](https://github.com/nirucon/nirunotify/blob/ma
   parsing handles real `[NN%] [on]` output, and update queries are locale-stable and
   do not convert failed diagnostics into zero updates. Remaining B07 probes still
   run synchronously; this checkpoint does not claim they are nonblocking.
+- NIRUX **0.6.6** pins nirubar **0.16.11** after green CI/release; installed on Void
+  with the live bar reporting 0.16.11. XEmbed icons are reparented into a mapped
+  manager, receive `_XEMBED_INFO` and the real embedded-notify message; a tray
+  selection handover no longer terminates the bar. Physical lock/PAM/shortcut and
+  notification-coverage checks passed again. Remaining B07 probes are still
+  synchronous.
 - **Next R1 work:** monitor/workspace agreement (W03/B02/B03), hotplug identity and
   reload ownership (W04), tray protocol (B05),
   bounded background probes and fixed-rate graph samples (B07/B08). Remaining
