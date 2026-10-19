@@ -24,9 +24,9 @@ source locations and verification limits are in [AUDIT.md](AUDIT.md).
 
 ## Current checkpoint
 
-The **0.10.6** manifest pins niruwm **0.16.18**, nirubar **0.18.4**,
+The **0.10.7** manifest pins niruwm **0.16.18**, nirubar **0.18.4**,
 niruscreensaver **0.8.1**, nirulock **0.16.8**, nirulauncher **0.1.1** and
-nirunotify **0.2.1**. NIRULAUNCHER provides native Super+P apps and
+nirunotify **0.3.0**. NIRULAUNCHER provides native Super+P apps and
 Super+Shift+P apps/actions; NIRUNOTIFY is an installed native notification
 provider (Dunst remains the default); NIRUBAR has an opt-in Open-Meteo weather
 module with background refresh and a versioned cache.
@@ -320,16 +320,17 @@ does not depend on a live provider.
 Use the existing [design contract](https://github.com/nirucon/nirunotify/blob/main/DESIGN.md).
 
 - [x] Implement the core `org.freedesktop.Notifications` methods, replacement IDs,
-  close reasons, urgency, expiry and `NotificationClosed`; advertise only `body`.
-  `notify-send`, replacement and history are covered by the D-Bus/X11 smoke test.
-  Released in nirunotify 0.1.2.
-- [ ] Add actions, `ActionInvoked`, images and richer hints only after each is
-  implemented and advertised.
+  close reasons, urgency, expiry, `NotificationClosed`, clickable actions and
+  `ActionInvoked`; advertise only `body` and `actions`. `notify-send`, replacement,
+  history and a default-action click are covered by the D-Bus/X11 smoke test.
+  Released in nirunotify 0.1.2/0.3.0.
+- [ ] Add images and richer hints only after each is implemented and advertised.
 - [x] Native themed surfaces with app/title/body hierarchy, wrapping, restrained
   urgency accents, configurable position/width, pointer/primary/named monitor
   selection, bounded stack/history and no keyboard focus steal. Monitor selection
   released in nirunotify 0.2.0.
-- [ ] Add action buttons and an optional bar unread indicator.
+- [x] Action buttons with a default-action body click, plus an optional bar unread
+  indicator/history panel. Released in nirunotify 0.3.0 and nirubar 0.18.2.
 - [x] Hardware OSD for volume, brightness and night light through
   `nirunotify --osd CHANNEL TEXT`; one surface is replaced per update. NIRUCTL,
   the WM volume keys and night light use it when the daemon is running and fall
@@ -595,7 +596,18 @@ Use the existing [design contract](https://github.com/nirucon/nirunotify/blob/ma
   ThinkPad, RTKit is active, `pactl` reports PipeWire 1.6.9 with the ALC3232 sink,
   a real `pw-play` stream exited successfully, and doctor reports an audio default
   sink.
-- **Next work:** R6 actions/images and physical provider acceptance; R5 remaining
+- NIRUX **0.10.7** pins nirunotify **0.3.0**, adding bounded action pairs,
+  clickable action rows, default-action body clicks and `ActionInvoked`.
+  `notify-send --wait -A default=Open` is exercised by the D-Bus/X11 smoke test.
+  Installed on Void and the Arch ThinkPad while Dunst remains the default provider.
+- **Media keys on the ThinkPad:** the live session was found locked by NIRULOCK,
+  which correctly captures the keyboard and releases the WM grabs. In a fresh
+  unlocked Xvfb session with the installed 0.16.18 WM, `XF86AudioMute`,
+  `XF86AudioRaiseVolume` and `XF86AudioLowerVolume` toggled/changed the real
+  PipeWire sink. No media-key regression was found; volume keys intentionally do
+  nothing while the lock owns input. Lock-screen media volume remains a possible
+  UX refinement, not a broken shortcut.
+- **Next work:** R6 images and physical provider acceptance; R5 remaining
   panels/responsive layout/calendar; R2 appearance document/semantic tokens and
   GTK/Qt separation; physical sleep acceptance; R3 schedule/resume/bar controls;
   R7 physical startx/rollback acceptance and cleanup. Launcher groups, window
