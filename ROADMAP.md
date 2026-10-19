@@ -24,10 +24,11 @@ source locations and verification limits are in [AUDIT.md](AUDIT.md).
 
 ## Current checkpoint
 
-The **0.7.1** manifest pins niruwm **0.16.7**, nirubar **0.17.1**,
-niruscreensaver **0.8.0** and nirulock **0.16.6**. The earlier M1 fixes removed
-unauthenticated lock timers and raw keycode logging, improved idle child ownership,
-and reduced bar/screensaver work. Historical measurements: [MEASUREMENTS.md](MEASUREMENTS.md).
+The **0.7.3** manifest pins niruwm **0.16.9**, nirubar **0.17.1**,
+niruscreensaver **0.8.0** and nirulock **0.16.6**. Reload and theme commands now
+wait for the window manager's observable result instead of a fixed sleep, and a
+rejected configuration keeps the previous working state. Historical measurements:
+[MEASUREMENTS.md](MEASUREMENTS.md).
 
 The public repositories **nirulauncher** and **nirunotify** already contain design
 contracts. Neither has a working binary/release and neither belongs in the pinned
@@ -93,7 +94,9 @@ retain input isolation; correct password restores the WM shortcuts.
   exclude the scratchpad. Use argv for failure notifications.
 - [x] **W07, first step:** `niructl layout centeredfloat` works (control value 6) and
   `niructl status` reports the real `_NET_WM_NAME`. Released in niruwm 0.16.8.
-- [ ] Replace fixed-sleep reload/theme acknowledgement with observable completion.
+- [x] **W07, acknowledgement:** reload and theme publish `_NIRUWM_CONFIG_ACK` with
+  the requesting serial and the applied theme; rejection uses the high bit and keeps
+  the working state. Released in niruwm 0.16.9.
 
 ### nirubar
 
@@ -402,17 +405,21 @@ Use the existing [design contract](https://github.com/nirucon/nirunotify/blob/ma
   the live session and `off` reset it; the test restored the off state.
 - NIRUX **0.7.2** pins niruwm **0.16.8** after green CI/release and is installed on
   Void. `niructl layouts` and direct `centeredfloat` selection are complete; status
-  reports the real WM name. Fixed-sleep reload acknowledgement remains.
-- **Next work:** R1 leftovers (W06 session restore, W07 niructl acknowledgements),
-  R3 schedule/resume/bar controls, R2 suite themes/actions, R4 launcher,
-  R5 weather/panels, R6 notifications, R7 cleanup/release. Update/doctor dependency
-  provisioning (X03) and standalone locker/saver ownership/PAM assets also remain.
-  bounded background probes and fixed-rate graph samples (B07/B08). Remaining
-  standalone locker/saver ownership/PAM asset work, config validation and update
-  dependency provisioning are still open. Preserve user configuration and NIRUPI.
-- Do not jump to launcher, weather or native notifications while these integration
-  paths remain broken. Laptop brightness/night-light backend feasibility was
-  verified during the audit; their NIRU controls are still R3 work, not shipped.
+  reports the real WM name.
+- NIRUX **0.7.3** pins niruwm **0.16.9** after green CI
+  [39247666501](https://github.com/nirucon/niruwm/actions/runs/39247666501) and
+  release. Installed on Void. `niructl reload`/`theme` no longer sleep: they wait
+  for `_NIRUWM_CONFIG_ACK`, verify `_NIRUWM_THEME`, and report a rejected
+  configuration while the previous state stays active. Rejection now fails with a
+  regression that previously would have reported success. On Void, the installed
+  release passed an isolated Xvfb acceptance; the live session still runs WM 0.16.8
+  until the next login, where the new `niructl` uses the documented compatibility
+  pause and warning for the old manager.
+- **Next work:** R1 leftover W06 session restore, R3 schedule/resume/bar controls,
+  R2 suite themes/actions, R4 launcher, R5 weather/panels, R6 notifications,
+  R7 cleanup/release. Update/doctor dependency provisioning (X03) and standalone
+  locker/saver ownership/PAM assets also remain. Preserve user configuration and
+  NIRUPI; W06 remains the last session-restore integration item.
 
 Keep each next checkpoint small and publish only verified assets. Preserve the
 existing lock regressions; never add password-derived logging or timed dismissal.
