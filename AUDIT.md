@@ -10,6 +10,11 @@ This records the baseline analysis checkpoint; findings below describe the liste
 reviewed revisions. Subsequent fixes and released versions are tracked in
 [ROADMAP.md](ROADMAP.md), which also contains the implementation sequence.
 
+Completed corrections include B01, L01/L02, W01/W05 and B06; W02, W04, W08,
+B09 and X01 have partial corrections. Consult the roadmap checkpoint for exact
+released versions and remaining work rather than treating this baseline as the
+current defect list.
+
 ### Reviewed revisions
 
 | Repository | Revision | Current checkpoint |

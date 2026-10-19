@@ -1,5 +1,7 @@
 # M1 resource checkpoint
 
+For the later 2026-10-19 R0/R1 regression observations, see the final section below.
+
 Measured in a disposable Debian 12 container, Xvfb, DejaVu Sans Mono, Rust
 1.99.1, x86_64. Both before/after binaries in the table are static musl builds;
 the before binaries are the published nirubar 0.16.4 and niruscreensaver 0.7.0.
@@ -76,3 +78,28 @@ ten idle seconds. WM bar disabled to isolate the WM process; idle ladder uses it
 
 These are starting baselines for subsequent work, not before/after improvement
 claims. A clock-minute redraw or a different installed font changes the sample.
+
+## R0/R1 regression observations — 2026-10-19
+
+These are targeted failure/recovery observations, not a new full benchmark suite.
+
+- **Filesystem ABI:** the old 88-byte declaration changed 24 bytes of a trailing
+  canary when glibc filled its 112-byte structure. Maintained libc bindings pass
+  the adjacent-storage regression on both x86_64 glibc and the shipping musl target.
+- **Server pixmaps:** X-Resource on a 1280×1024 Xvfb root reported a 143360-byte
+  bar buffer. Before the fix, opening/closing one calendar left 475200 bytes
+  allocated (331840 extra). The corrected regression cycles volume/media panels
+  and Noir/Nord reloads four times, returning to the 143360-byte baseline after
+  each close/reload; its audio/player action log stays empty.
+- **Probe bounds:** nirubar 0.16.6's ten-second dynamic glibc scrolling fixture
+  counted 50 playerctl calls, 10 wpctl calls, one thread and five process CPU ticks.
+  RSS was 3712 KiB. Do not directly compare RSS with M1's static musl table above.
+- **WM lifecycle:** current regressions use actual Super key presses after partial
+  configuration, verify another client can grab an explicitly unbound key, and
+  wait for eight helper children to be reaped. Fullscreen is checked against the
+  full root geometry rather than just testing a layout rectangle.
+- **Locker:** actual RandR root expansion (800×600 back to 1280×1024) verifies
+  surface geometry and an opaque corner. Later/raised overlays and a restack-storm
+  bound are exercised while authentication runs. Non-root PAM refusal/Escape/success
+  passed locally, and real Void Xorg/PAM/notification acceptance passed after
+  installing the published NIRUX 0.6.1 generation.

@@ -1,7 +1,8 @@
 # NIRU desktop roadmap
 
 Updated **2026-10-19**. Status: **implementation approved and in progress**.
-R0 component corrections are published; NIRUX 0.6.1 integration is being verified.
+R0 is published and physically verified on Void; the first R1 corrections are
+verified and pinned for NIRUX 0.6.2. R1 as a whole remains in progress.
 This plan supersedes the previous M2-first handoff. Detailed evidence,
 source locations and verification limits are in [AUDIT.md](AUDIT.md).
 
@@ -23,7 +24,7 @@ source locations and verification limits are in [AUDIT.md](AUDIT.md).
 
 ## Current checkpoint
 
-The **0.6.1** source manifest pins niruwm **0.16.4**, nirubar **0.16.6**,
+The **0.6.2** manifest pins niruwm **0.16.5**, nirubar **0.16.7**,
 niruscreensaver **0.8.0** and nirulock **0.16.6**. The earlier M1 fixes removed
 unauthenticated lock timers and raw keycode logging, improved idle child ownership,
 and reduced bar/screensaver work. Historical measurements: [MEASUREMENTS.md](MEASUREMENTS.md).
@@ -60,7 +61,7 @@ brightness need not wait for an entire notification daemon or weather module.
   handle newly connected displays and selected-monitor prompt placement.
 - [x] Keep the verified input grabs and authentication-only successful exit from
   M1. Configuration/theme/rendering failures must not dismiss an established lock.
-- [ ] Add regressions for the actual failing paths, then publish a correction
+- [x] Add regressions for the actual failing paths, then publish a correction
   release and update NIRUX pins only after assets and checksums are available.
 
 Acceptance: the filesystem call cannot overwrite adjacent storage; later windows
@@ -72,16 +73,18 @@ retain input isolation; correct password restores the WM shortcuts.
 
 ### niruwm
 
-- [ ] **W01:** one effective binding table for runtime, validation and config dump;
+- [x] **W01:** one effective binding table for runtime, validation and config dump;
   individual overrides retain unrelated defaults. Add an explicit unbind mechanism.
-- [ ] **W02:** reap every application/helper child without one waiting thread per
-  long-lived application. Bound repeated hardware-key and helper invocations.
+- [x] **W02:** reap every application/helper child without one waiting thread per
+  long-lived application.
+- [ ] Bound/coalesce repeated hardware-key and helper invocations; child reaping
+  alone does not impose an execution/time/output budget.
 - [ ] **W03:** define a coherent monitor/workspace protocol with nirubar. Use stable
   output identity, correct EWMH global desktop offsets and monitor-targeted commands.
   Honour configured workspace counts/labels, including more than nine.
 - [ ] **W04:** reconcile monitor identities during hotplug; refresh monitor config,
   wallpaper state, borders and bars on reload. Poll timeouts must also rotate wallpaper.
-- [ ] **W05:** fullscreen uses the complete monitor rectangle, not the bar-reduced
+- [x] **W05:** fullscreen uses the complete monitor rectangle, not the bar-reduced
   tiling area; other monitors keep their own bar and usable geometry.
 - [ ] **W06:** restore sessions by matching mapped windows to pending launch records,
   not by changing the active workspace before spawning asynchronous applications.
@@ -99,12 +102,14 @@ retain input isolation; correct password restores the WM shortcuts.
   Dismissal hit surfaces must not obscure the desktop or block the bar itself.
 - [ ] **B05:** complete XEmbed container mapping/layout and correct `_XEMBED` messages;
   selection loss for a tray must not terminate an otherwise healthy bar.
-- [ ] **B06:** free X pixmaps on popup close and renderer replacement; keep resource
+- [x] **B06:** free X pixmaps on popup close and renderer replacement; keep resource
   ownership explicit and avoid allocating a pixmap for direct window rendering.
 - [ ] **B07/B08:** move subprocesses and filesystem capacity checks off rendering;
   clocked samples and graph history must be independent of animation/event rate.
-- [ ] **B09:** make left-click informational, with configurable middle/right/scroll
-  actions and explicit buttons in interactive panels. Hide hitboxes with modules.
+- [x] **B09, first step:** volume/media information clicks do not mute or toggle
+  playback. A GUI regression checks helper action logs.
+- [ ] Finish B09 with configurable middle/right/scroll actions and explicit buttons
+  in interactive panels. Hide hitboxes with modules.
 - [ ] **B10/B11:** unify validation expectations, reject invalid time formats safely,
   honour visibility settings, distinguish unavailable/stale data from zero values,
   and repair package-count/error/locale handling and the ALSA parser.
@@ -324,16 +329,37 @@ Use the existing [design contract](https://github.com/nirucon/nirunotify/blob/ma
   failed on old overlay/resize behaviour and pass now, including restack-storm and
   authentication-time overlay checks. Non-root wrong password/Escape/correct password
   passed; PAM distro CI passed on Void/Arch/Debian. Physical hotplug remains untested.
-- NIRUX **0.6.1** source pins these two published corrections; integration/release
-  verification is the next gate before declaring the suite checkpoint complete.
-- R1 source work is committed in niruwm **0.16.5** (`06a3b64`), awaiting CI/release:
+- NIRUX **0.6.1** is published and installed on the physical Void laptop. Its full
+  Arch/Debian/Void CI passed in [39218765783](https://github.com/nirucon/nirux/actions/runs/39218765783).
+  On the real Xorg desktop, nirulock 0.16.6 stayed above Dunst notifications,
+  rejected wrong password/Escape and accepted the correct password. The updated
+  bar was restarted through its WM owner and live diagnostics passed.
+- R1 niruwm **0.16.5** (`b02c07f`) is published with successful three-distribution
+  session CI [39219010977](https://github.com/nirucon/niruwm/actions/runs/39219010977):
   partial bindings and real unbinding, child reaping without per-app threads,
   full-monitor fullscreen, idle wallpaper ticks, bar-independent borders, argv
   notifications, independently versioned installer assets and standalone source
   builds. Actual X11 and isolated source/prebuilt installer tests passed locally.
-- After those releases are verified, continue R1 with monitor/workspace agreement,
-  popup/tray/pixmap lifecycle and nonblocking bar probes. Do not jump to launcher
-  or weather while these integration paths remain broken.
+  One CI-only fixture issue (isolated HOME hiding rustup settings) was corrected
+  before tagging; no failed release/tag was replaced.
+- R1 nirubar **0.16.7** (`c28d24a`) has successful three-distribution CI
+  [39220093599](https://github.com/nirucon/nirubar/actions/runs/39220093599): no
+  disposable popup pixmaps, explicit main-buffer release on reload, information-only
+  volume/media clicks, canonical standalone config paths and NIRUX ownership refusal.
+  X-Resource regression checks server storage across popup/theme/reload cycles;
+  helper action logs remain empty. Details/reference moved out of the short README.
+- NIRUX **0.6.2** pins these already-published component assets. Suite acceptance
+  uses the normal CI/release workflows and live Void diagnostics. A running
+  niruwm 0.16.4 session needs a new login to activate installed WM/session 0.16.5;
+  replacing files or restarting the bar does not upgrade the running WM.
+- **Next R1 work:** monitor/workspace agreement (W03/B02/B03), hotplug identity and
+  reload ownership (W04), popup coordinates/focus/repaint (B04), tray protocol (B05),
+  bounded background probes and fixed-rate graph samples (B07/B08). Remaining
+  standalone locker/saver ownership/PAM asset work, config validation and update
+  dependency provisioning are still open. Preserve user configuration and NIRUPI.
+- Do not jump to launcher, weather or native notifications while these integration
+  paths remain broken. Laptop brightness/night-light backend feasibility was
+  verified during the audit; their NIRU controls are still R3 work, not shipped.
 
 Keep each next checkpoint small and publish only verified assets. Preserve the
 existing lock regressions; never add password-derived logging or timed dismissal.
