@@ -63,6 +63,7 @@ done
 
 # Provisioning uses the new release's package list, not the caller's. Exercise
 # the missing-only path without touching a package manager.
+# shellcheck disable=SC2034 # read by missing_packages in the sourced nirux
 OS=debian
 package_present() { [ "$1" != "kitty" ]; }
 missing=$(missing_packages)
