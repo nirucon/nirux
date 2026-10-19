@@ -24,9 +24,11 @@ source locations and verification limits are in [AUDIT.md](AUDIT.md).
 
 ## Current checkpoint
 
-The **0.9.0** manifest pins niruwm **0.16.16**, nirubar **0.17.2**,
+The **0.9.2** manifest pins niruwm **0.16.16**, nirubar **0.18.1**,
 niruscreensaver **0.8.1**, nirulock **0.16.8** and nirulauncher **0.1.1**.
 NIRULAUNCHER provides native Super+P apps and Super+Shift+P apps/actions.
+NIRUBAR has an opt-in Open-Meteo weather module with background refresh and a
+versioned cache.
 NIRULOCK publishes explicit lock readiness; `niructl suspend` waits for it,
 idle inhibition is explicit, and the session holds a sleep delay inhibitor and
 locks before releasing it. Updates provision the
@@ -271,19 +273,23 @@ extended by the appearance and desktop-action contracts above.
 
 ## R5 — nirubar weather and useful panels
 
-- [ ] Ship a `weather` module alongside optional `sun`, with an optional combined
-  compact display; share location/time calculations, not duplicate requests.
-- [ ] Use Open-Meteo with metric/Celsius defaults, configurable named location and
-  coordinates; retain the previously agreed Ljungskile default in the example.
-  A missing location is distinct from the valid coordinates `0,0`.
-- [ ] Bar summary: condition, temperature, optional precipitation hint. Panel:
-  apparent temperature, wind/gusts, precipitation probability/amount, short hourly
-  forecast, sunrise/sunset/day length, last refresh and offline/stale state.
-- [ ] Refresh approximately every 30 minutes through bounded background work;
-  verified TLS, request/body limits, backoff and a versioned atomic cache.
-  Solar data remains usable offline, including polar day/night and DST boundaries.
-- [ ] Put new weather settings in nirubar's own namespaced configuration; migrate
-  legacy top-level coordinates explicitly instead of expanding shared-parser drift.
+- [x] Ship a `weather` module alongside optional `sun`; both share the same
+  configured coordinates. Released in nirubar 0.18.1.
+- [ ] Add an optional combined compact weather/sun cell and share request/derived
+  time calculations explicitly rather than only the coordinates.
+- [x] Use Open-Meteo with metric/Celsius defaults, a configurable named location
+  and coordinates; the example uses Ljungskile. A missing location is distinct
+  from a deliberately configured `0,0` (regression in nirubar 0.18.1).
+- [x] Bar summary: condition and temperature. Panel: apparent temperature,
+  wind/gusts, precipitation, six-hour forecast, sunrise/sunset, last refresh and
+  offline/stale state.
+- [ ] Add the optional precipitation hint to the summary and day length to the panel.
+- [x] Refresh approximately every 30 minutes through bounded background work;
+  HTTPS-only curl, request/body limits, failure backoff and a versioned atomic
+  cache. A live Open-Meteo request and the cache were verified on Void. Solar data
+  remains from the existing offline `sun` module.
+- [x] Put weather settings in `~/.config/nirubar/config.toml`; legacy shared
+  top-level coordinates remain an explicit fallback.
 - [ ] Make network panels honest about link, address and connectivity; provide
   optional network-management actions without assuming NetworkManager is installed.
 - [ ] Improve battery aggregation, charging/remaining-time/health detail where the
@@ -509,12 +515,17 @@ Use the existing [design contract](https://github.com/nirucon/nirunotify/blob/ma
   installed launcher opened through real Super+P and Super+Shift+P in an isolated
   X session, and Escape returned focus/closed it. UI smoke also covers search,
   quoted argv, outside-click dismissal and singleton activation on Xvfb.
-- **Next work:** R5 weather/panels; R6 notifications; R2 appearance
-  document/semantic tokens and GTK/Qt separation; physical sleep acceptance;
-  R3 schedule/resume/bar controls; R7 cleanup/release. Launcher groups, window
-  switching, notification history and input-method support remain. Standalone
-  locker/saver ownership/PAM assets also remain. Preserve user configuration and
-  NIRUPI.
+- NIRUX **0.9.1–0.9.2** pin nirubar **0.18.0–0.18.1**. Weather is opt-in via the
+  `weather` module; settings live in `~/.config/nirubar/config.toml`. The live
+  request and atomic cache were verified on Void, and a unit regression keeps
+  configured `0,0` distinct from an unset location. Background refresh, stale
+  state, backoff and the panel are covered by unit tests and the live check.
+- **Next work:** R6 native notification service and hardware OSD; R5
+  remaining panels/responsive layout/calendar; R2 appearance document/semantic
+  tokens and GTK/Qt separation; physical sleep acceptance; R3 schedule/resume/bar
+  controls; R7 cleanup/release. Launcher groups, window switching, notification
+  history and input-method support remain. Standalone locker/saver ownership/PAM
+  assets also remain. Preserve user configuration and NIRUPI.
 
 Keep each next checkpoint small and publish only verified assets. Preserve the
 existing lock regressions; never add password-derived logging or timed dismissal.
