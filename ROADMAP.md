@@ -24,7 +24,7 @@ source locations and verification limits are in [AUDIT.md](AUDIT.md).
 
 ## Current checkpoint
 
-The **0.6.2** manifest pins niruwm **0.16.5**, nirubar **0.16.7**,
+The **0.6.3** manifest pins niruwm **0.16.5**, nirubar **0.16.8**,
 niruscreensaver **0.8.0** and nirulock **0.16.6**. The earlier M1 fixes removed
 unauthenticated lock timers and raw keycode logging, improved idle child ownership,
 and reduced bar/screensaver work. Historical measurements: [MEASUREMENTS.md](MEASUREMENTS.md).
@@ -97,9 +97,10 @@ retain input isolation; correct password restores the WM shortcuts.
 
 - [ ] **B02/B03:** permit exactly one bar per monitor, but one tray per X screen;
   publish/read monitor-specific workspaces rather than nine global cells.
-- [ ] **B04:** place popups in root coordinates within their monitor work area;
+- [x] **B04:** place popups in root coordinates within their monitor work area;
   map before focus, restore prior focus, repaint Expose, close cleanly on reload.
-  Dismissal hit surfaces must not obscure the desktop or block the bar itself.
+  The click catcher is input-only and no longer obscures the desktop or blocks the bar.
+  Released in nirubar 0.16.8 with a two-coordinate/focus/restore X11 regression.
 - [ ] **B05:** complete XEmbed container mapping/layout and correct `_XEMBED` messages;
   selection loss for a tray must not terminate an otherwise healthy bar.
 - [x] **B06:** free X pixmaps on popup close and renderer replacement; keep resource
