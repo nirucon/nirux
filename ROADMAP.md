@@ -362,8 +362,15 @@ Use the existing [design contract](https://github.com/nirucon/nirunotify/blob/ma
   owned input refused the pointer grab and displayed no password surface. Waking
   that unlocked saver allowed acceptance to pass. Preserve this refusal behaviour;
   coordinated manual-lock/idle-saver transitions remain part of I01/R2.
+- NIRUX **0.6.3** pins nirubar **0.16.8** and passed CI
+  [39227218456](https://github.com/nirucon/nirux/actions/runs/39227218456) and
+  release [39227581664](https://github.com/nirucon/nirux/actions/runs/39227581664).
+  Installed on Void; the restarted live bar reports 0.16.8. Physical lock, PAM,
+  notification-coverage and post-unlock shortcut tests passed again. Popups now
+  use monitor/root coordinates, focus after mapping, repaint retained content and
+  restore prior focus; the click catcher is input-only and the bar stays clickable.
 - **Next R1 work:** monitor/workspace agreement (W03/B02/B03), hotplug identity and
-  reload ownership (W04), popup coordinates/focus/repaint (B04), tray protocol (B05),
+  reload ownership (W04), tray protocol (B05),
   bounded background probes and fixed-rate graph samples (B07/B08). Remaining
   standalone locker/saver ownership/PAM asset work, config validation and update
   dependency provisioning are still open. Preserve user configuration and NIRUPI.
