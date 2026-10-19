@@ -2,12 +2,12 @@
 # NIRUX: install a complete X11 desktop, or maintain an existing installation.
 set -eu
 
-VERSION=0.8.2
+VERSION=0.9.0
 PREFIX=${NIRUX_PREFIX:-$HOME/.local}
 BIN=$PREFIX/bin
 STATE=$PREFIX/share/nirux
 ROOT=${NIRUX_SYSTEM_ROOT:-}
-PROGRAMS="niruwm niructl niruidle nirubar niruscreensaver nirulock niruwm-session nirux"
+PROGRAMS="niruwm niructl niruidle nirubar niruscreensaver nirulock nirulauncher niruwm-session nirux"
 WORK=
 LOCKED=0
 
@@ -251,12 +251,14 @@ stage_release() {
   bar_version=$(manifest_version nirubar)
   saver_version=$(manifest_version niruscreensaver)
   lock_version=$(manifest_version nirulock)
+  launcher_version=$(manifest_version nirulauncher)
   release_files niruwm "$wm_version" niruwm niructl niruidle niruwm-session
   release_files nirubar "$bar_version" nirubar
   release_files niruscreensaver "$saver_version" niruscreensaver
   release_files nirulock "$lock_version" nirulock pam-arch pam-debian pam-void
+  release_files nirulauncher "$launcher_version" nirulauncher
   mkdir -p "$WORK/generation/bin"
-  for package in nirux niruwm nirubar niruscreensaver nirulock; do
+  for package in nirux niruwm nirubar niruscreensaver nirulock nirulauncher; do
     case "$package" in
       niruwm) files="niruwm niructl niruidle niruwm-session" ;;
       *) files=$package ;;
@@ -270,7 +272,7 @@ stage_release() {
   reported=$("$WORK/generation/bin/nirux" --version | awk '{print $2}')
   [ "$reported" = "$RELEASE" ] || die 'installer/manifest version mismatch'
   # Running --version also catches missing loaders/shared libraries before activation.
-  for pair in "niruwm $wm_version" "nirubar $bar_version" "niruscreensaver $saver_version" "nirulock $lock_version" "niruidle $wm_version"; do
+  for pair in "niruwm $wm_version" "nirubar $bar_version" "niruscreensaver $saver_version" "nirulock $lock_version" "nirulauncher $launcher_version" "niruidle $wm_version"; do
     set -- $pair
     reported=$("$WORK/generation/bin/$1" --version | awk '{print $2}')
     [ "$reported" = "$2" ] || die "$1 does not report expected version $2"
@@ -423,7 +425,7 @@ doctor() {
   for tool in dunst picom feh maim playerctl wpctl amixer; do
     if command -v "$tool" >/dev/null 2>&1; then say "available optional $tool"; else say "missing optional $tool"; fi
   done
-  for pair in 'niruwm --check-config' 'nirubar --check-config' 'niruidle --config' 'niruscreensaver --config' 'nirulock --config'; do
+  for pair in 'niruwm --check-config' 'nirubar --check-config' 'niruidle --config' 'niruscreensaver --config' 'nirulock --config' 'nirulauncher --check-config'; do
     set -- $pair
     say "== $pair"
     if [ -x "$BIN/$1" ]; then "$BIN/$1" "$2" || result=1; else result=1; fi
