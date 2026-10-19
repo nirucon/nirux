@@ -38,7 +38,7 @@ Releases pin checksummed component assets and activate one program generation
 atomically. Log out/in to activate updated WM/session/idle binaries; bar restart
 is handled through the running WM. Default prefix: `~/.local`; XDG paths respected.
 
-The 0.7.1 checkpoint includes laptop brightness/night-light controls and global per-monitor workspaces, identity-based hotplug, bounded probes and filesystem/lock corrections, consistent key overrides,
+The 0.7.2 checkpoint includes complete niructl layout selection and laptop brightness/night-light controls and global per-monitor workspaces, identity-based hotplug, bounded probes and filesystem/lock corrections, consistent key overrides,
 helper reaping, full-monitor fullscreen and popup/reload pixmap cleanup.
 [nirulauncher](https://github.com/nirucon/nirulauncher) and
 [nirunotify](https://github.com/nirucon/nirunotify) remain design-stage components.
