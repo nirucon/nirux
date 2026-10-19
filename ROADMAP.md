@@ -375,6 +375,12 @@ Use the existing [design contract](https://github.com/nirucon/nirunotify/blob/ma
   notification-coverage and post-unlock shortcut tests passed again. Popups now
   use monitor/root coordinates, focus after mapping, repaint retained content and
   restore prior focus; the click catcher is input-only and the bar stays clickable.
+- NIRUX **0.6.5** pins nirubar **0.16.10** after successful CI and release; installed
+  on Void with the live bar reporting 0.16.10. The physical lock/PAM/shortcut and
+  notification-coverage checks passed again. Load sampling is fixed-cadence, ALSA
+  parsing handles real `[NN%] [on]` output, and update queries are locale-stable and
+  do not convert failed diagnostics into zero updates. Remaining B07 probes still
+  run synchronously; this checkpoint does not claim they are nonblocking.
 - **Next R1 work:** monitor/workspace agreement (W03/B02/B03), hotplug identity and
   reload ownership (W04), tray protocol (B05),
   bounded background probes and fixed-rate graph samples (B07/B08). Remaining
