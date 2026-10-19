@@ -24,7 +24,7 @@ source locations and verification limits are in [AUDIT.md](AUDIT.md).
 
 ## Current checkpoint
 
-The **0.10.4** manifest pins niruwm **0.16.17**, nirubar **0.18.3**,
+The **0.10.5** manifest pins niruwm **0.16.18**, nirubar **0.18.4**,
 niruscreensaver **0.8.1**, nirulock **0.16.8**, nirulauncher **0.1.1** and
 nirunotify **0.2.1**. NIRULAUNCHER provides native Super+P apps and
 Super+Shift+P apps/actions; NIRUNOTIFY is an installed native notification
@@ -156,6 +156,12 @@ retain input isolation; correct password restores the WM shortcuts.
 - [x] **X03:** make updates install/check newly introduced runtime dependencies;
   diagnose active services/providers, real bar ownership and selected-prefix tools.
   Released in NIRUX 0.7.6.
+- [x] **X03, vanilla completeness:** every fresh install provides the native
+  experience without manual suite dependencies: X input drivers, DejaVu plus an
+  icon font (JetBrains Nerd Font on Arch, Symbols Nerd Font on Void, Font Awesome
+  fallback on Debian), PipeWire ALSA, screenshot selection (maim/slop), pcmanfm,
+  network tools (iproute2/iw) and xdg-utils. Dead Flameshot default removed.
+  Released in NIRUX 0.10.5.
 - [ ] Test clean installs and upgrades from current versions on all three systems,
   with an empty home and separately with NIRUPI already installed.
 
@@ -569,6 +575,18 @@ Use the existing [design contract](https://github.com/nirucon/nirunotify/blob/ma
   workspace cells, volume, brightness, wifi, battery and clock icons. The Void
   machine was updated too, but no live WM was running at that moment; the new
   bar activates at the next login.
+- NIRUX **0.10.4–0.10.5** close the vanilla dependency gap. Arch installs
+  xf86-input-libinput, xwininfo, iw, iproute2, xdg-utils, PipeWire ALSA, slop,
+  pcmanfm and JetBrains Mono Nerd Font; Debian adds libinput, PipeWire ALSA,
+  slop, pcmanfm, network tools and Font Awesome for icon fallback; Void adds
+  xwininfo, network tools, xdg-utils, slop, pcmanfm and the 5 MB Symbols Nerd
+  Font. NIRUBAR 0.18.3/0.18.4 shows useful default modules and borrows icon
+  glyphs from the Nerd/Font Awesome font when the text font lacks them; the
+  update probe stays opt-in. NIRUWM 0.16.18 removes the dead Flameshot key.
+  Installed on the Arch ThinkPad and restarted the live bar; the workspace,
+  volume, brightness, wifi, battery and clock icons are visible. A Debian-family
+  Font Awesome fallback screenshot also showed the module icons. Void was
+  updated with no live WM running; the new bar activates at next login.
 - **Next work:** R6 actions/images and physical provider acceptance; R5 remaining
   panels/responsive layout/calendar; R2 appearance document/semantic tokens and
   GTK/Qt separation; physical sleep acceptance; R3 schedule/resume/bar controls;
