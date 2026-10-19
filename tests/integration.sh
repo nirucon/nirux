@@ -61,6 +61,17 @@ for release in "$VERSION" 99.0.0; do
   checksums "$FIXTURE/nirux/$release"
 done
 
+# Provisioning uses the new release's package list, not the caller's. Exercise
+# the missing-only path without touching a package manager.
+OS=debian
+package_present() { [ "$1" != "kitty" ]; }
+missing=$(missing_packages)
+[ "$missing" = "kitty" ] || fail "missing packages reported: $missing"
+NIRUX_PACKAGES_DRY_RUN=1 NIRUX_PROVISION_OS=debian NIRUX_PROVISION_DM=keep \
+  provision_packages missing > "$TEST/provision.log" 2>&1
+grep -q 'would install missing: kitty' "$TEST/provision.log" || fail 'provision dry run did not report the missing package'
+unset -f package_present
+
 for TEST_OS in arch debian void; do
   # Separate installations exercise each distribution's integration and cleanup.
   PREFIX=$TEST/$TEST_OS; BIN=$PREFIX/bin; STATE=$PREFIX/share/nirux
@@ -70,14 +81,15 @@ for TEST_OS in arch debian void; do
   [ ! -e "$HOME/session-was-started" ] || fail 'status ran the session'
   [ "$(awk '$1 == "suite" {print $2}' "$STATE/current/manifest")" = "$VERSION" ] || fail 'wrong manifest'
   first=$(readlink "$STATE/current")
-  operation install_or_update update --release 99.0.0
+  operation install_or_update update --no-packages --release 99.0.0
   second=$(readlink "$STATE/current")
   [ "$first" != "$second" ] || fail 'no generation switch'
   operation rollback
   [ "$(readlink "$STATE/current")" = "$first" ] || fail 'rollback did not restore the generation'
   # Uninstall preserves unowned user files, even when purging settings.
   say 'my existing desktop' > "$HOME/.xinitrc"
-  mkdir -p "$XDG_CONFIG_HOME/niruui" "$XDG_STATE_HOME/nirulock"
+  mkdir -p "$XDG_CONFIG_HOME/niruui" "$XDG_STATE_HOME/nirulock" "$HOME/.cache/nirubar"
+  say stale > "$HOME/.cache/nirubar/updates"
   operation uninstall --purge
   [ ! -e "$BIN/niruwm" ] || fail 'program still installed'
   [ ! -e "$ROOT/etc/pam.d/nirulock" ] || fail 'owned PAM service remained'
@@ -91,7 +103,7 @@ operation install_or_update install --no-packages --display-manager startx --rel
 before=$(readlink "$STATE/current")
 say corrupt >> "$FIXTURE/nirulock/$lock_version/nirulock"
 set +e
-(set -e; install_or_update update --release 99.0.0) > "$TEST/failure.log" 2>&1
+(set -e; install_or_update update --no-packages --release 99.0.0) > "$TEST/failure.log" 2>&1
 rc=$?
 set -e
 [ "$rc" != 0 ] || fail 'corrupt download succeeded'

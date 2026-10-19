@@ -87,7 +87,7 @@ installer cannot update itself. After that first migration the installed
 
 ```sh
 nirux update
-nirux update --release 0.7.5
+nirux update --release 0.7.6
 nirux rollback
 ```
 
@@ -98,7 +98,9 @@ No installed session is downloaded from a moving main branch.
 
 An update fetches the newest NIRUX release (or the requested version), including
 the installer itself. All component files are downloaded and verified before
-activation. Missing shared libraries and wrong binary versions fail before
+activation. After verification, the downloaded release's package list is checked
+and missing runtime packages are installed; use `nirux update --no-packages` to
+skip that step. Missing shared libraries and wrong binary versions fail before
 switching programs. Operations on the same prefix are locked.
 
 Program generations live in `~/.local/share/nirux/generations`. Stable links in

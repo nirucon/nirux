@@ -2,7 +2,7 @@
 # NIRUX: install a complete X11 desktop, or maintain an existing installation.
 set -eu
 
-VERSION=0.7.5
+VERSION=0.7.6
 PREFIX=${NIRUX_PREFIX:-$HOME/.local}
 BIN=$PREFIX/bin
 STATE=$PREFIX/share/nirux
@@ -16,10 +16,11 @@ die() { say "nirux: $*" >&2; exit 1; }
 usage() {
   say "NIRUX $VERSION"
   say "Usage: nirux install [--minimal|--no-packages] [--display-manager auto|startx|sddm|lightdm]"
-  say "       nirux update [--release VERSION] | rollback | status | doctor"
+  say "       nirux update [--no-packages] [--release VERSION] | rollback | status | doctor"
   say "       nirux uninstall [--purge] | --version | --help"
   say "Default: keep an existing display manager; otherwise offer startx (default), SDDM or LightDM."
   say "--minimal/--no-packages: binaries and integration only; required OS packages must already exist."
+  say "Updates check and install missing runtime packages from the downloaded release unless --no-packages is given."
 }
 cleanup() {
   [ -z "$WORK" ] || rm -rf "$WORK"
@@ -77,16 +78,20 @@ packages_for() {
   esac
 }
 install_packages() {
-  pkgs="curl ca-certificates $(packages_for "$OS")"
-  case "$OS" in
-    arch) pkgs="$pkgs mesa" ;;
-    debian) pkgs="$pkgs libgl1-mesa-dri" ;;
-    void) pkgs="$pkgs mesa-dri" ;;
-  esac
-  case "$DM" in
-    sddm) pkgs="$pkgs sddm" ;;
-    lightdm) pkgs="$pkgs lightdm lightdm-gtk-greeter" ;;
-  esac
+  if [ "$#" -gt 0 ]; then
+    pkgs=$1
+  else
+    pkgs="curl ca-certificates $(packages_for "$OS")"
+    case "$OS" in
+      arch) pkgs="$pkgs mesa" ;;
+      debian) pkgs="$pkgs libgl1-mesa-dri" ;;
+      void) pkgs="$pkgs mesa-dri" ;;
+    esac
+    case "$DM" in
+      sddm) pkgs="$pkgs sddm" ;;
+      lightdm) pkgs="$pkgs lightdm lightdm-gtk-greeter" ;;
+    esac
+  fi
   say "Installing $OS packages: $pkgs"
   # Package names are fixed above; splitting this list is intentional.
   # shellcheck disable=SC2086
@@ -94,6 +99,54 @@ install_packages() {
     arch) as_root pacman -Syu --needed --noconfirm $pkgs ;;
     debian) as_root apt-get update; as_root env DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends $pkgs ;;
     void) as_root xbps-install -Suy; as_root xbps-install -Sy $pkgs ;;
+  esac
+}
+
+# Is this distribution package installed? Queries are deliberately local: an
+# update must not install a package the repository only mentions.
+package_present() {
+  case "$OS" in
+    arch) pacman -Q "$1" >/dev/null 2>&1 ;;
+    debian) dpkg-query -W -f='${Status}' "$1" 2>/dev/null | grep -q 'install ok installed' ;;
+    void) xbps-query "$1" >/dev/null 2>&1 ;;
+    *) return 1 ;;
+  esac
+}
+
+# Print the runtime packages this release needs but the machine lacks.
+#
+# The list comes from the script doing the update, so an older installed NIRUX
+# can provision a dependency introduced by the release it is installing.
+missing_packages() {
+  for required in curl ca-certificates $(packages_for "$OS"); do
+    package_present "$required" || say "$required"
+  done
+  return 0
+}
+
+# Install or check this release's runtime dependencies. Called from the newly
+# downloaded script after verification, so updates use the new package list
+# instead of the old installed one.
+provision_packages() {
+  mode=${1:-missing}
+  OS=${NIRUX_PROVISION_OS:-$(distro)}
+  platform
+  DM=${NIRUX_PROVISION_DM:-keep}
+  case "$mode" in
+    full)
+      if [ "${NIRUX_PACKAGES_DRY_RUN:-0}" = 1 ]; then say "would install: $(packages_for "$OS")"; return; fi
+      install_packages
+      ;;
+    missing)
+      missing=$(missing_packages)
+      if [ -z "$missing" ]; then say 'OS runtime packages are present'; return; fi
+      if [ "${NIRUX_PACKAGES_DRY_RUN:-0}" = 1 ]; then say "would install missing: $missing"; return; fi
+      # One argument on purpose: install_packages splits this fixed package
+      # list, exactly as it does for the full list.
+      # shellcheck disable=SC2086
+      install_packages "$missing"
+      ;;
+    *) die "unknown provisioning mode: $mode" ;;
   esac
 }
 existing_dm() {
@@ -310,11 +363,41 @@ status() {
   if [ -x "$HOME/.local/bin/nirupi-session" ] || [ -f "$ROOT/usr/share/xsessions/nirupi-dwm.desktop" ]; then say 'NIRUPI present (separate session)'; fi
   return "$result"
 }
+# The programs the user actually selected in the shared configuration.
+configured_commands() {
+  [ -x "$BIN/niruwm" ] || return 0
+  "$BIN/niruwm" --dump-config 2>/dev/null | awk '
+    /^(terminal|browser|launcher) = / {
+      line = $0
+      sub(/^[^=]*= */, "", line)
+      gsub(/[]["]/, "", line)
+      split(line, items, ",")
+      split(items[1], words, " ")
+      if (words[1] != "") print words[1]
+    }
+  ' | sort -u
+}
+
 doctor() {
   result=0
   status || result=1
-  for tool in startx Xorg xauth dbus-run-session fc-match kitty rofi brightnessctl gammastep; do
+  say "selected prefix: $PREFIX"
+  case ":$PATH:" in
+    *":$BIN:"*) say "PATH includes selected prefix" ;;
+    *) say "PATH does not include selected prefix (the session prepends it)" ;;
+  esac
+  for tool in startx Xorg xauth dbus-run-session fc-match brightnessctl gammastep notify-send; do
     if command -v "$tool" >/dev/null 2>&1; then say "available $tool"; else say "missing $tool"; result=1; fi
+  done
+  for tool in $(configured_commands); do
+    if command -v "$tool" >/dev/null 2>&1 || [ -x "$BIN/$tool" ]; then
+      say "available configured $tool"
+    else
+      say "missing configured $tool (selected in config.toml)"; result=1
+    fi
+  done
+  for tool in dunst picom feh maim playerctl wpctl amixer; do
+    if command -v "$tool" >/dev/null 2>&1; then say "available optional $tool"; else say "missing optional $tool"; fi
   done
   for pair in 'niruwm --check-config' 'nirubar --check-config' 'niruidle --config' 'niruscreensaver --config' 'nirulock --config'; do
     set -- $pair
@@ -327,6 +410,27 @@ doctor() {
     for program in niruwm nirubar; do
       if pgrep -u "$(id -u)" -x "$program" >/dev/null; then say "running $program"; else say "not running $program"; result=1; fi
     done
+    if command -v xprop >/dev/null 2>&1; then
+      wm_id=$(xprop -root _NET_SUPPORTING_WM_CHECK 2>/dev/null | sed -n 's/.*# //p')
+      if [ -n "$wm_id" ]; then
+        wm_name=$(xprop -id "$wm_id" _NET_WM_NAME 2>/dev/null | sed -n 's/.*= //p')
+        say "X WM owner $wm_id ${wm_name:-}"
+      else
+        say "no X window manager owns _NET_SUPPORTING_WM_CHECK"; result=1
+      fi
+    fi
+    if command -v xwininfo >/dev/null 2>&1; then
+      bars=$(xwininfo -root -tree 2>/dev/null | grep -c 'NIRUBAR' || true)
+      layouts=$(xprop -root _NIRUWM_MONITORS 2>/dev/null | grep -o '\\n' | wc -l | tr -d ' ')
+      say "bar windows: $bars; monitor layouts published: $layouts"
+      if [ "$bars" != "$layouts" ]; then say 'bar ownership does not match the published monitors'; result=1; fi
+    fi
+    if command -v dbus-send >/dev/null 2>&1; then
+      owner=$(dbus-send --session --print-reply --dest=org.freedesktop.DBus /org/freedesktop/DBus org.freedesktop.DBus.GetNameOwner string:org.freedesktop.Notifications 2>/dev/null | sed -n 's/.*string "\(.*\)"/\1/p' | head -n1)
+      if [ -n "$owner" ]; then say "notifications owned by $owner"; else say 'no notification daemon owns the session bus'; fi
+    fi
+    if pgrep -u "$(id -u)" -x gammastep >/dev/null; then say 'night-light provider gammastep is running'; else say 'night-light provider gammastep is not running'; fi
+    if pgrep -u "$(id -u)" -x niruidle >/dev/null; then say 'idle provider niruidle is running'; else say 'idle provider niruidle is not running'; fi
   else say 'Live session check skipped: DISPLAY is unset (normal over SSH/TTY).'
   fi
   return "$result"
@@ -350,7 +454,8 @@ uninstall() {
   if [ -f "$HOME/.xinitrc" ] && owned "$HOME/.xinitrc"; then rm -f "$HOME/.xinitrc"; fi
   if [ "$purge" = 1 ]; then
     rm -rf "${XDG_CONFIG_HOME:-$HOME/.config}/niruwm" "${XDG_CONFIG_HOME:-$HOME/.config}/niruui" \
-      "${XDG_STATE_HOME:-$HOME/.local/state}/niruwm" "${XDG_STATE_HOME:-$HOME/.local/state}/nirulock"
+      "${XDG_STATE_HOME:-$HOME/.local/state}/niruwm" "${XDG_STATE_HOME:-$HOME/.local/state}/nirulock" \
+      "${XDG_CACHE_HOME:-$HOME/.cache}/nirubar"
   fi
   rm -rf "$STATE/generations"
   rm -f "$STATE/current" "$STATE/previous"
@@ -382,10 +487,20 @@ install_or_update() {
   done
   OS=$(distro)
   platform
-  if [ "$operation" = install ]; then choose_dm; else packages=0; DM=keep; fi
+  if [ "$operation" = install ]; then choose_dm; else DM=keep; fi
   lock
-  if [ "$packages" = 1 ]; then install_packages; fi
+  # The bootstrap install has to include curl before any release can be
+  # downloaded. Updates skip this and let the newly verified release provision
+  # its own package list below.
+  if [ "$operation" = install ] && [ "$packages" = 1 ]; then install_packages; fi
   stage_release
+  # Package names are not stable across releases. Run the downloaded release's
+  # own list, after checksum/version verification, so a dependency introduced
+  # in this release is installed even when the caller is an older NIRUX.
+  if [ "$packages" = 1 ]; then
+    NIRUX_PROVISION_OS=$OS NIRUX_PROVISION_DM=$DM \
+      sh "$WORK/download/nirux/nirux" _provision missing
+  fi
   # System integration must succeed before switching the active programs.
   prepare_pam
   register_session
@@ -399,6 +514,7 @@ install_or_update() {
 main() {
   case "${1:-}" in
     install|update) install_or_update "$@" ;;
+    _provision) shift; provision_packages "$@" ;;
     uninstall) shift; uninstall "$@" ;;
     rollback) [ "$#" = 1 ] || die 'rollback takes no arguments'; rollback ;;
     status|doctor) [ "$#" = 1 ] || die "$1 takes no arguments"; "$1" ;;
