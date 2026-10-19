@@ -2,7 +2,7 @@
 # NIRUX: install a complete X11 desktop, or maintain an existing installation.
 set -eu
 
-VERSION=0.7.7
+VERSION=0.7.8
 PREFIX=${NIRUX_PREFIX:-$HOME/.local}
 BIN=$PREFIX/bin
 STATE=$PREFIX/share/nirux
@@ -78,8 +78,12 @@ packages_for() {
   esac
 }
 install_packages() {
+  install_only=0
   if [ "$#" -gt 0 ]; then
+    # The caller named exactly what is missing. Do not perform a full system
+    # upgrade as a side effect of installing a runtime dependency.
     pkgs=$1
+    install_only=1
   else
     pkgs="curl ca-certificates $(packages_for "$OS")"
     case "$OS" in
@@ -92,13 +96,33 @@ install_packages() {
       lightdm) pkgs="$pkgs lightdm lightdm-gtk-greeter" ;;
     esac
   fi
-  say "Installing $OS packages: $pkgs"
+  if [ "$install_only" = 1 ]; then
+    say "Installing missing $OS packages: $pkgs"
+  else
+    say "Installing $OS packages: $pkgs"
+  fi
   # Package names are fixed above; splitting this list is intentional.
   # shellcheck disable=SC2086
   case "$OS" in
-    arch) as_root pacman -Syu --needed --noconfirm $pkgs ;;
-    debian) as_root apt-get update; as_root env DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends $pkgs ;;
-    void) as_root xbps-install -Suy; as_root xbps-install -Sy $pkgs ;;
+    arch)
+      if [ "$install_only" = 1 ]; then
+        as_root pacman -Sy --needed --noconfirm $pkgs
+      else
+        as_root pacman -Syu --needed --noconfirm $pkgs
+      fi
+      ;;
+    debian)
+      as_root apt-get update
+      as_root env DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends $pkgs
+      ;;
+    void)
+      if [ "$install_only" = 1 ]; then
+        as_root xbps-install -Sy $pkgs
+      else
+        as_root xbps-install -Suy
+        as_root xbps-install -Sy $pkgs
+      fi
+      ;;
   esac
 }
 
