@@ -24,11 +24,12 @@ source locations and verification limits are in [AUDIT.md](AUDIT.md).
 
 ## Current checkpoint
 
-The **0.7.3** manifest pins niruwm **0.16.9**, nirubar **0.17.1**,
-niruscreensaver **0.8.0** and nirulock **0.16.6**. Reload and theme commands now
-wait for the window manager's observable result instead of a fixed sleep, and a
-rejected configuration keeps the previous working state. Historical measurements:
-[MEASUREMENTS.md](MEASUREMENTS.md).
+The **0.7.4** manifest pins niruwm **0.16.10**, nirubar **0.17.1**,
+niruscreensaver **0.8.0** and nirulock **0.16.6**. Session restore matches mapped
+windows to their saved launch records, including floating state and focus.
+Reload and theme commands wait for the window manager's observable result instead
+of a fixed sleep, and a rejected configuration keeps the previous working state.
+Historical measurements: [MEASUREMENTS.md](MEASUREMENTS.md).
 
 The public repositories **nirulauncher** and **nirunotify** already contain design
 contracts. Neither has a working binary/release and neither belongs in the pinned
@@ -88,10 +89,11 @@ retain input isolation; correct password restores the WM shortcuts.
   ticks were fixed earlier. Released in niruwm 0.16.6.
 - [x] **W05:** fullscreen uses the complete monitor rectangle, not the bar-reduced
   tiling area; other monitors keep their own bar and usable geometry.
-- [ ] **W06:** restore sessions by matching mapped windows to pending launch records,
+- [x] **W06:** restore sessions by matching mapped windows to pending launch records,
   not by changing the active workspace before spawning asynchronous applications.
   Restore floating state, deduplicate shared process commands, preserve focus and
-  exclude the scratchpad. Use argv for failure notifications.
+  exclude the scratchpad. Use argv for failure notifications. Released in niruwm
+  0.16.10.
 - [x] **W07, first step:** `niructl layout centeredfloat` works (control value 6) and
   `niructl status` reports the real `_NET_WM_NAME`. Released in niruwm 0.16.8.
 - [x] **W07, acknowledgement:** reload and theme publish `_NIRUWM_CONFIG_ACK` with
@@ -415,11 +417,19 @@ Use the existing [design contract](https://github.com/nirucon/nirunotify/blob/ma
   release passed an isolated Xvfb acceptance; the live session still runs WM 0.16.8
   until the next login, where the new `niructl` uses the documented compatibility
   pause and warning for the old manager.
-- **Next work:** R1 leftover W06 session restore, R3 schedule/resume/bar controls,
-  R2 suite themes/actions, R4 launcher, R5 weather/panels, R6 notifications,
-  R7 cleanup/release. Update/doctor dependency provisioning (X03) and standalone
+- NIRUX **0.7.4** pins niruwm **0.16.10** after green CI
+  [39250016754](https://github.com/nirucon/niruwm/actions/runs/39250016754) and
+  release. Installed on Void. Restore now waits for mapped windows, applies the
+  saved screen/workspace and floating state, starts shared commands once, excludes
+  the scratchpad and finally shows the saved focus. The X11 regression covers two
+  saved placements and final focus. The installed release passed an isolated Xvfb
+  acceptance on Void; the live session still runs the older WM until the next
+  login.
+- **Next work:** R3 schedule/resume/bar controls, R2 suite themes/actions,
+  X02/X03 suite-native actions and dependency provisioning, R4 launcher,
+  R5 weather/panels, R6 notifications, R7 cleanup/release. Standalone
   locker/saver ownership/PAM assets also remain. Preserve user configuration and
-  NIRUPI; W06 remains the last session-restore integration item.
+  NIRUPI.
 
 Keep each next checkpoint small and publish only verified assets. Preserve the
 existing lock regressions; never add password-derived logging or timed dismissal.
