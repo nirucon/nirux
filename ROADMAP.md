@@ -24,7 +24,7 @@ source locations and verification limits are in [AUDIT.md](AUDIT.md).
 
 ## Current checkpoint
 
-The **0.6.4** manifest pins niruwm **0.16.5**, nirubar **0.16.9**,
+The **0.6.5** manifest pins niruwm **0.16.5**, nirubar **0.16.10**,
 niruscreensaver **0.8.0** and nirulock **0.16.6**. The earlier M1 fixes removed
 unauthenticated lock timers and raw keycode logging, improved idle child ownership,
 and reduced bar/screensaver work. Historical measurements: [MEASUREMENTS.md](MEASUREMENTS.md).
@@ -105,17 +105,21 @@ retain input isolation; correct password restores the WM shortcuts.
   selection loss for a tray must not terminate an otherwise healthy bar.
 - [x] **B06:** free X pixmaps on popup close and renderer replacement; keep resource
   ownership explicit and avoid allocating a pixmap for direct window rendering.
-- [ ] **B07/B08:** move subprocesses and filesystem capacity checks off rendering;
-  clocked samples and graph history must be independent of animation/event rate.
+- [ ] **B07:** move remaining subprocesses and filesystem capacity checks off
+  rendering with bounded workers, deadlines and output caps.
+- [x] **B08:** load/graph samples use a one-second cadence independent of repaint and
+  scrolling; a regression calls render fifty times and observes one sample.
+  Released in nirubar 0.16.10.
 - [x] **B09, first step:** volume/media information clicks do not mute or toggle
   playback. A GUI regression checks helper action logs.
 - [ ] Finish B09 with configurable middle/right/scroll actions and explicit buttons
   in interactive panels. Hide hitboxes with modules.
 - [x] **B10, calendar step:** Monday-first English `Mon Tue Wed Thu Fri Sat Sun`
   labels with matching three-character day cells.
+- [x] **B11, probe step:** real `amixer "[NN%] [on]"` output parses correctly;
+  update queries force the C locale and do not report failed diagnostics as zero.
 - [ ] Finish B10/B11: unify validation expectations, reject invalid time formats safely,
-  honour visibility settings, distinguish unavailable/stale data from zero values,
-  and repair package-count/error/locale handling and the ALSA parser.
+  honour visibility settings and distinguish unavailable/stale data from zero values.
 
 ### Installation and standalone operation
 

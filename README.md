@@ -38,7 +38,7 @@ Releases pin checksummed component assets and activate one program generation
 atomically. Log out/in to activate updated WM/session/idle binaries; bar restart
 is handled through the running WM. Default prefix: `~/.local`; XDG paths respected.
 
-The 0.6.4 checkpoint includes filesystem/lock corrections, consistent key overrides,
+The 0.6.5 checkpoint includes filesystem/lock corrections, consistent key overrides,
 helper reaping, full-monitor fullscreen and popup/reload pixmap cleanup.
 [nirulauncher](https://github.com/nirucon/nirulauncher) and
 [nirunotify](https://github.com/nirucon/nirunotify) remain design-stage components.
