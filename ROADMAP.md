@@ -24,7 +24,7 @@ source locations and verification limits are in [AUDIT.md](AUDIT.md).
 
 ## Current checkpoint
 
-The **0.10.7** manifest pins niruwm **0.16.18**, nirubar **0.18.4**,
+The **0.10.8** manifest pins niruwm **0.16.19**, nirubar **0.18.4**,
 niruscreensaver **0.8.1**, nirulock **0.16.8**, nirulauncher **0.1.1** and
 nirunotify **0.3.0**. NIRULAUNCHER provides native Super+P apps and
 Super+Shift+P apps/actions; NIRUNOTIFY is an installed native notification
@@ -340,15 +340,17 @@ Use the existing [design contract](https://github.com/nirucon/nirunotify/blob/ma
   a configurable timeout and DND-bypass policy (nirunotify 0.2.0).
 - [x] Add an optional nirubar `notifications` unread indicator and history panel
   backed by `nirunotify --count/--history`. Released in nirubar 0.18.2.
-- [x] Session provider selection (`NOTIFICATION_PROVIDER=native|dunst|external`,
-  default Dunst), exactly one bus owner, a tracked child, clear startup failure
-  and no eviction of an existing daemon. Released in niruwm 0.16.17.
+- [x] Session provider selection (`NOTIFICATION_PROVIDER=auto|native|dunst|external`),
+  exactly one bus owner, a tracked child, clear startup failure and no eviction
+  of an existing daemon. `auto` now prefers the verified native service when
+  installed and keeps Dunst as fallback. Released in niruwm 0.16.19.
 - [x] Hide private content while `_NIRU_LOCK_READY` names a live lock window;
   queue up to 100 notifications and replay them after verified unlock.
 - [x] Bound text, live/replacement maps, queued commands and history at 100;
   memory-only history, no images accepted, no per-event worker threads.
-- [x] Publish verified binaries and integrate install/update/status/doctor/
-  rollback/uninstall while keeping Dunst as the default provider.
+- [x] Publish verified binaries, integrate install/update/status/doctor/
+  rollback/uninstall and make the verified native service the default when
+  installed, with Dunst retained as fallback.
 
 ## R7 — cleanup and release acceptance
 
@@ -607,12 +609,20 @@ Use the existing [design contract](https://github.com/nirucon/nirunotify/blob/ma
   PipeWire sink. No media-key regression was found; volume keys intentionally do
   nothing while the lock owns input. Lock-screen media volume remains a possible
   UX refinement, not a broken shortcut.
-- **Next work:** R6 images and physical provider acceptance; R5 remaining
-  panels/responsive layout/calendar; R2 appearance document/semantic tokens and
-  GTK/Qt separation; physical sleep acceptance; R3 schedule/resume/bar controls;
-  R7 physical startx/rollback acceptance and cleanup. Launcher groups, window
-  switching and input-method support remain. Standalone locker/saver
-  ownership/PAM assets also remain. Preserve user configuration and NIRUPI.
+- NIRUX **0.10.8** pins niruwm **0.16.19**. `NOTIFICATION_PROVIDER` defaults to
+  `auto`, which starts nirunotify when installed and falls back to Dunst. An
+  isolated Void session with no provider override started nirunotify, owned the
+  notification bus, delivered `notify-send` into native history and cleaned the
+  daemon up on logout. Void is running 0.10.8; the ThinkPad was unreachable over
+  Tailscale at deployment time, so its update and next-login acceptance remain
+  pending.
+- **Next work:** R6 images/richer hints and physical native-provider acceptance;
+  R5 remaining panels/responsive layout/calendar; R2 appearance document/
+  semantic tokens and GTK/Qt separation; physical sleep acceptance; R3
+  schedule/resume/bar controls; R7 physical startx/rollback acceptance and
+  cleanup. Launcher groups, window switching and input-method support remain.
+  Standalone locker/saver ownership/PAM assets also remain. Preserve user
+  configuration and NIRUPI.
 
 Keep each next checkpoint small and publish only verified assets. Preserve the
 existing lock regressions; never add password-derived logging or timed dismissal.
