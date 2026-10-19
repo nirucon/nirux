@@ -24,9 +24,10 @@ source locations and verification limits are in [AUDIT.md](AUDIT.md).
 
 ## Current checkpoint
 
-The **0.8.0** manifest pins niruwm **0.16.13**, nirubar **0.17.2**,
+The **0.8.2** manifest pins niruwm **0.16.15**, nirubar **0.17.2**,
 niruscreensaver **0.8.1** and nirulock **0.16.8**. NIRULOCK publishes explicit
-lock readiness and `niructl suspend` waits for it. Updates provision the
+lock readiness; `niructl suspend` waits for it, idle inhibition is explicit, and
+the session holds a sleep delay inhibitor and locks before releasing it. Updates provision the
 downloaded release's runtime package list without a full system upgrade, and
 doctor reports selected programs, providers, real bar ownership and prefix
 tools. Native `niructl` desktop actions cover lock, screensaver, logout,
@@ -178,8 +179,11 @@ fullscreen covers its monitor; a compiler-free documented install is truly so.
 - [x] Introduce argv-based desktop actions for lock, screensaver, logout, suspend,
   reboot, shutdown, theme selection, DND and configuration reload. `niructl` is
   the common user-facing interface.
-- [ ] Add idle inhibition to the same interface, with explicit ownership. Keep
-  confirmation in the launcher for logout/reboot/shutdown.
+- [x] Add idle inhibition (`niructl idle on|off|toggle|status [MINUTES]`,
+  `Super+Shift+C`) with an explicit expiring state file; NIRUIDLE resets the idle
+  clock and suppresses saver/lock/DPMS while it is active. Released in niruwm
+  0.16.14.
+- [ ] Keep confirmation in the launcher for logout/reboot/shutdown.
 - [x] Define lock readiness with explicit ownership and acknowledgement. NIRULOCK
   publishes `_NIRU_LOCK_READY` naming its mapped lock window and clears it on
   unlock; no child PID is treated as proof. Released in nirulock 0.16.8.
@@ -187,8 +191,11 @@ fullscreen covers its monitor; a compiler-free documented install is truly so.
   authenticated unlock replay policy.
 - [x] Manual `niructl suspend` locks first and refuses to suspend without verified
   readiness. Released in niruwm 0.16.13.
-- [ ] Add logind/elogind delay-inhibitor integration for lid close, docking and
-  provider failure, plus resume/reapplication tests.
+- [x] Hold a logind/elogind sleep delay inhibitor in the session, lock on
+  PrepareForSleep(true), and release only after verified readiness; a failed lock
+  keeps the inhibitor held. Released in niruwm 0.16.15.
+- [ ] Physically verify lid close, resume, docking and inhibitor-provider failure;
+  the delay-inhibitor backend and manual lock path are tested on Void.
 
 Acceptance: all four existing themes work across native components; one command
 changes the suite consistently; an invalid theme preserves the working state;
@@ -475,10 +482,19 @@ Use the existing [design contract](https://github.com/nirucon/nirunotify/blob/ma
   the visible lock window; a killed locker leaves no usable window even if the
   property survives. `niructl suspend` starts or reuses a ready NIRULOCK and
   refuses a locker that cannot confirm readiness. The installed 0.8.0 binary
-  passed an isolated Xvfb readiness/stale-window check on Void. Physical suspend
-  and lid-close delay inhibition remain untested/open.
-- **Next work:** R2 appearance document/semantic tokens, idle inhibition and
-  delay-inhibitor suspend; R3 schedule/resume/bar controls; R4 launcher;
+  passed an isolated Xvfb readiness/stale-window check on Void.
+- NIRUX **0.8.1** pins niruwm **0.16.14**. `niructl idle on|off|toggle|status
+  [MINUTES]` writes an explicit expiring state file; NIRUIDLE resets the idle
+  clock and suppresses saver/lock/DPMS while it is active. The installed binary
+  passed a live state-file check on Void (`off → on 1 min → off`).
+- NIRUX **0.8.2** pins niruwm **0.16.15**. The session holds a
+  logind/elogind delay inhibitor (systemd-inhibit or elogind-inhibit) and listens
+  for `PrepareForSleep(true)` with dbus-monitor; it locks via the readiness
+  contract before releasing the inhibitor, and holds it if locking fails. On
+  Void, `elogind-inhibit` acquisition/listing and `niructl lock` readiness passed.
+  A physical lid-close/resume/docking test remains open.
+- **Next work:** R2 appearance document/semantic tokens and GTK/Qt separation;
+  physical sleep acceptance; R3 schedule/resume/bar controls; R4 launcher;
   R5 weather/panels; R6 notifications; R7 cleanup/release. Standalone
   locker/saver ownership/PAM assets also remain. Preserve user configuration and
   NIRUPI.
