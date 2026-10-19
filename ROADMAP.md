@@ -1,7 +1,8 @@
 # NIRU desktop roadmap
 
-Updated **2026-10-19**. Status: **analysis complete; implementation awaiting owner
-approval**. This plan supersedes the previous M2-first handoff. Detailed evidence,
+Updated **2026-10-19**. Status: **implementation approved and in progress**.
+R0 component corrections are published; NIRUX 0.6.1 integration is being verified.
+This plan supersedes the previous M2-first handoff. Detailed evidence,
 source locations and verification limits are in [AUDIT.md](AUDIT.md).
 
 ## Product direction
@@ -22,8 +23,8 @@ source locations and verification limits are in [AUDIT.md](AUDIT.md).
 
 ## Current checkpoint
 
-NIRUX **0.6.0** pins niruwm **0.16.4**, nirubar **0.16.5**,
-niruscreensaver **0.8.0** and nirulock **0.16.5**. The earlier M1 fixes removed
+The **0.6.1** source manifest pins niruwm **0.16.4**, nirubar **0.16.6**,
+niruscreensaver **0.8.0** and nirulock **0.16.6**. The earlier M1 fixes removed
 unauthenticated lock timers and raw keycode logging, improved idle child ownership,
 and reduced bar/screensaver work. Historical measurements: [MEASUREMENTS.md](MEASUREMENTS.md).
 
@@ -51,13 +52,13 @@ brightness need not wait for an entire notification daemon or weather module.
 
 ## R0 — memory safety and lock correctness
 
-- [ ] **B01:** replace the undersized handwritten `statvfs` ABI with maintained,
+- [x] **B01:** replace the undersized handwritten `statvfs` ABI with maintained,
   target-correct bindings. Audit the other handwritten ABI declarations too.
-- [ ] **L01:** close the lock stacking gap for newly mapped/raised windows;
+- [x] **L01:** close the lock stacking gap for newly mapped/raised windows;
   coordinate session overlays and test real WM + compositor + notifications.
-- [ ] **L02:** resize opaque coverage and backing resources on root/RandR changes;
+- [x] **L02:** resize opaque coverage and backing resources on root/RandR changes;
   handle newly connected displays and selected-monitor prompt placement.
-- [ ] Keep the verified input grabs and authentication-only successful exit from
+- [x] Keep the verified input grabs and authentication-only successful exit from
   M1. Configuration/theme/rendering failures must not dismiss an established lock.
 - [ ] Add regressions for the actual failing paths, then publish a correction
   release and update NIRUX pins only after assets and checksums are available.
@@ -313,8 +314,26 @@ Use the existing [design contract](https://github.com/nirucon/nirunotify/blob/ma
    brightness, DND, idle inhibition, notification ownership and failed actions;
    expose diagnostics already collected rather than adding a polling daemon.
 
-## Next approved checkpoint
+## Implementation handoff — 2026-10-19
 
-Implement **R0**, then **R1**. Add a regression that fails against the audited
-revision before fixing each defect. Update this file with completed acceptance
-results and immutable release versions; unchecked items are not shipping features.
+- Published nirubar **0.16.6** (`80e5d8b`): maintained libc bindings, an adjacent-storage
+  regression that failed on the old declaration, glibc/musl checks and nonblocking
+  close-on-exec signal pipes. Unit, X11, resource and three-distribution CI passed.
+- Published nirulock **0.16.6** (`177dd9c`): root/RandR coverage, output-local prompt,
+  overlay repairs, bounded event batches and one wakeup-driven PAM worker. Regressions
+  failed on old overlay/resize behaviour and pass now, including restack-storm and
+  authentication-time overlay checks. Non-root wrong password/Escape/correct password
+  passed; PAM distro CI passed on Void/Arch/Debian. Physical hotplug remains untested.
+- NIRUX **0.6.1** source pins these two published corrections; integration/release
+  verification is the next gate before declaring the suite checkpoint complete.
+- R1 source work is committed in niruwm **0.16.5** (`06a3b64`), awaiting CI/release:
+  partial bindings and real unbinding, child reaping without per-app threads,
+  full-monitor fullscreen, idle wallpaper ticks, bar-independent borders, argv
+  notifications, independently versioned installer assets and standalone source
+  builds. Actual X11 and isolated source/prebuilt installer tests passed locally.
+- After those releases are verified, continue R1 with monitor/workspace agreement,
+  popup/tray/pixmap lifecycle and nonblocking bar probes. Do not jump to launcher
+  or weather while these integration paths remain broken.
+
+Keep each next checkpoint small and publish only verified assets. Preserve the
+existing lock regressions; never add password-derived logging or timed dismissal.

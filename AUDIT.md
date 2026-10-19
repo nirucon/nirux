@@ -6,8 +6,9 @@ The suite has a useful native X11 foundation and recent, valuable correctness
 fixes. The next work should start with **nirubar memory safety and nirulock display
 coverage**, then repair WM/bar integration before adding new desktop components.
 
-This is an analysis checkpoint. Product code and release pins were not changed.
-The implementation sequence and feature designs are in [ROADMAP.md](ROADMAP.md).
+This records the baseline analysis checkpoint; findings below describe the listed
+reviewed revisions. Subsequent fixes and released versions are tracked in
+[ROADMAP.md](ROADMAP.md), which also contains the implementation sequence.
 
 ### Reviewed revisions
 
