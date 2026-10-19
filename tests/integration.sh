@@ -62,6 +62,7 @@ for release in "$VERSION" 99.0.0; do
   sed "s/^VERSION=$VERSION$/VERSION=$release/" "$SOURCE/nirux" > "$FIXTURE/nirux/$release/nirux"
   chmod +x "$FIXTURE/nirux/$release/nirux"
   sed "s/suite $VERSION/suite $release/" "$SOURCE/manifest" > "$FIXTURE/nirux/$release/manifest"
+  cp "$SOURCE/config.example.toml" "$FIXTURE/nirux/$release/config.example.toml"
   checksums "$FIXTURE/nirux/$release"
 done
 

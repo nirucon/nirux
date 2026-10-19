@@ -10,8 +10,8 @@ export XDG_CONFIG_HOME=$HOME/.config XDG_STATE_HOME=$HOME/.local/state NIRUX_LIB
 mkdir -p "$HOME" "$NIRUX_SYSTEM_ROOT/etc/pam.d" "$TEST/release"
 . "$SOURCE/nirux"
 unset NIRUX_LIBRARY
-cp "$SOURCE/nirux" "$SOURCE/manifest" "$TEST/release/"
-(cd "$TEST/release"; sha256sum nirux manifest > SHA256SUMS)
+cp "$SOURCE/nirux" "$SOURCE/manifest" "$SOURCE/config.example.toml" "$TEST/release/"
+(cd "$TEST/release"; sha256sum nirux manifest config.example.toml > SHA256SUMS)
 for include in system-auth common-auth common-account; do
   [ ! -f "/etc/pam.d/$include" ] || ln -s "/etc/pam.d/$include" "$ROOT/etc/pam.d/$include"
 done

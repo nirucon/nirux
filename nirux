@@ -2,10 +2,11 @@
 # NIRUX: install a complete X11 desktop, or maintain an existing installation.
 set -eu
 
-VERSION=0.10.9
+VERSION=0.10.10
 PREFIX=${NIRUX_PREFIX:-$HOME/.local}
 BIN=$PREFIX/bin
 STATE=$PREFIX/share/nirux
+CONFDIR=${XDG_CONFIG_HOME:-$HOME/.config}/niruwm
 ROOT=${NIRUX_SYSTEM_ROOT:-}
 PROGRAMS="niruwm niructl niruidle nirubar niruscreensaver nirulock nirulauncher nirunotify niruwm-session nirux"
 WORK=
@@ -173,6 +174,89 @@ provision_packages() {
     *) die "unknown provisioning mode: $mode" ;;
   esac
 }
+# Create the shared configuration on a fresh install, or append settings a new
+# release introduced. Existing values are never rewritten.
+add_missing_sections() {
+  file=$1
+  example=$2
+  added=""
+  for section in nightlight wallpaper monitors bar; do
+    grep -q "^\[$section\]" "$file" && continue
+    block=$(awk -v s="[$section]" '
+      $0 == s {found=1; print; next}
+      found && /^\[/ {exit}
+      found {print}
+    ' "$example")
+    [ -n "$block" ] || continue
+    {
+      printf '\n# Added by NIRUX; values are defaults.\n'
+      printf '%s\n' "$block"
+    } >> "$file"
+    added="$added $section"
+  done
+  [ -z "$added" ] || say "Added missing config sections:$added"
+}
+
+add_missing_top_key() {
+  file=$1
+  key=$2
+  value=$3
+  grep -q "^[[:space:]]*${key}[[:space:]]*=" "$file" && return 0
+  awk -v line="$key = $value" '
+    {text[NR]=$0}
+    /^\[/ && !done {print line; done=1}
+    {print}
+    END {if (!done) print line}
+  ' "$file" > "$file.tmp" && mv "$file.tmp" "$file" || rm -f "$file.tmp"
+}
+
+add_missing_key() {
+  file=$1
+  section=$2
+  key=$3
+  value=$4
+  grep -q "^[[:space:]]*${key}[[:space:]]*=" "$file" && return 0
+  awk -v s="[$section]" -v line="$key = $value" '
+    {text[NR]=$0}
+    $0 == s {inside=1; last=NR; next}
+    inside && /^\[/ {inside=0}
+    inside && NF {last=NR}
+    END {
+      if (last == 0) exit 1
+      for (i=1; i<=NR; i++) {
+        print text[i]
+        if (i == last) print line
+      }
+    }
+  ' "$file" > "$file.tmp" && mv "$file.tmp" "$file" || rm -f "$file.tmp"
+}
+
+install_config() {
+  example="$WORK/download/nirux/config.example.toml"
+  [ -f "$example" ] || { say 'config example missing; user configuration unchanged'; return 0; }
+  mkdir -p "$CONFDIR"
+  file="$CONFDIR/config.toml"
+  if [ ! -e "$file" ]; then
+    install -m 644 "$example" "$file"
+    say "Created $file"
+    return 0
+  fi
+  say "Keeping existing $file"
+  add_missing_sections "$file" "$example"
+  add_missing_top_key "$file" nirupi_compat false
+  add_missing_top_key "$file" restore_session false
+  add_missing_top_key "$file" weather_latitude 58.22
+  add_missing_top_key "$file" weather_longitude 11.93
+  add_missing_key "$file" bar title_delay_seconds 0
+  add_missing_key "$file" bar graph_width 24
+  add_missing_key "$file" bar tray true
+  add_missing_key "$file" wallpaper scale "\"fill\""
+  add_missing_key "$file" wallpaper files "[]"
+  add_missing_key "$file" wallpaper shuffle_on_start true
+  add_missing_key "$file" monitors workspaces 9
+  return 0
+}
+
 existing_dm() {
   dm_unit=$ROOT/etc/systemd/system/display-manager.service
   if [ -L "$dm_unit" ]; then basename "$(readlink "$dm_unit")" .service; return; fi
@@ -243,7 +327,7 @@ stage_release() {
     fetch https://api.github.com/repos/nirucon/nirux/releases/latest "$WORK/latest.json"
     RELEASE=$(sed -n 's/.*"tag_name": *"v\([0-9.]*\)".*/\1/p' "$WORK/latest.json" | head -n 1)
   fi
-  release_files nirux "$RELEASE" nirux manifest
+  release_files nirux "$RELEASE" nirux manifest config.example.toml
   [ "$(manifest_version schema)" = 1 ] || die "unsupported manifest schema"
   [ "$(manifest_version suite)" = "$RELEASE" ] || die "suite/manifest version mismatch"
   sh -n "$WORK/download/nirux/nirux"
@@ -541,6 +625,7 @@ install_or_update() {
   register_session
   if [ "$operation" = install ]; then setup_startx; enable_services; fi
   activate
+  install_config
   if [ -n "${DISPLAY:-}" ] && "$BIN/niructl" restart-bar; then
     say 'Running bar restarted. Log out/in to activate the new WM, idle daemon and session.'
   else say 'Log out/in to activate all updated programs. In a new NIRU session: niructl restart-bar.'
