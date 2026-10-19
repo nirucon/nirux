@@ -91,8 +91,9 @@ retain input isolation; correct password restores the WM shortcuts.
   not by changing the active workspace before spawning asynchronous applications.
   Restore floating state, deduplicate shared process commands, preserve focus and
   exclude the scratchpad. Use argv for failure notifications.
-- [ ] **W07:** complete `niructl` layout coverage and acknowledgements; do not report
-  successful reload solely after a fixed sleep. Status must identify the real WM.
+- [x] **W07, first step:** `niructl layout centeredfloat` works (control value 6) and
+  `niructl status` reports the real `_NET_WM_NAME`. Released in niruwm 0.16.8.
+- [ ] Replace fixed-sleep reload/theme acknowledgement with observable completion.
 
 ### nirubar
 
