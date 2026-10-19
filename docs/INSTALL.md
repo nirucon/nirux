@@ -87,7 +87,7 @@ installer cannot update itself. After that first migration the installed
 
 ```sh
 nirux update
-nirux update --release 0.10.0
+nirux update --release 0.10.1
 nirux rollback
 ```
 
