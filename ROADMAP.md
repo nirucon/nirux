@@ -24,9 +24,9 @@ source locations and verification limits are in [AUDIT.md](AUDIT.md).
 
 ## Current checkpoint
 
-The **0.10.1** manifest pins niruwm **0.16.17**, nirubar **0.18.1**,
+The **0.10.2** manifest pins niruwm **0.16.17**, nirubar **0.18.1**,
 niruscreensaver **0.8.1**, nirulock **0.16.8**, nirulauncher **0.1.1** and
-nirunotify **0.1.2**. NIRULAUNCHER provides native Super+P apps and
+nirunotify **0.2.0**. NIRULAUNCHER provides native Super+P apps and
 Super+Shift+P apps/actions; NIRUNOTIFY is an installed native notification
 provider (Dunst remains the default); NIRUBAR has an opt-in Open-Meteo weather
 module with background refresh and a versioned cache.
@@ -319,17 +319,18 @@ Use the existing [design contract](https://github.com/nirucon/nirunotify/blob/ma
 - [ ] Add actions, `ActionInvoked`, images and richer hints only after each is
   implemented and advertised.
 - [x] Native themed surfaces with app/title/body hierarchy, wrapping, restrained
-  urgency accents, configurable position/width, bounded stack/history and no
-  keyboard focus steal.
-- [ ] Add configurable monitor selection, action buttons and an optional bar
-  unread indicator.
+  urgency accents, configurable position/width, pointer/primary/named monitor
+  selection, bounded stack/history and no keyboard focus steal. Monitor selection
+  released in nirunotify 0.2.0.
+- [ ] Add action buttons and an optional bar unread indicator.
 - [x] Hardware OSD for volume, brightness and night light through
   `nirunotify --osd CHANNEL TEXT`; one surface is replaced per update. NIRUCTL,
   the WM volume keys and night light use it when the daemon is running and fall
   back to `notify-send`/Dunst.
 - [x] DND, history, dismiss and clear through a documented Unix-socket CLI.
-  History is memory-only and bounded at 100 entries.
-- [ ] Add an optional bar unread indicator and configurable critical policy.
+  History is memory-only and bounded at 100 entries. Critical notifications have
+  a configurable timeout and DND-bypass policy (nirunotify 0.2.0).
+- [ ] Add an optional bar unread indicator.
 - [x] Session provider selection (`NOTIFICATION_PROVIDER=native|dunst|external`,
   default Dunst), exactly one bus owner, a tracked child, clear startup failure
   and no eviction of an existing daemon. Released in niruwm 0.16.17.
@@ -538,12 +539,18 @@ Use the existing [design contract](https://github.com/nirucon/nirunotify/blob/ma
   up on logout, and the installed daemon passed DND/history/OSD/lock-privacy
   checks. Notification actions/images, monitor selection and physical provider
   acceptance remain open.
-- **Next work:** R6 actions/images/monitor/critical policy and physical provider
-  acceptance; R5 remaining panels/responsive layout/calendar; R2 appearance
-  document/semantic tokens and GTK/Qt separation; physical sleep acceptance;
-  R3 schedule/resume/bar controls; R7 cleanup/release. Launcher groups, window
-  switching and input-method support remain. Standalone locker/saver
-  ownership/PAM assets also remain. Preserve user configuration and NIRUPI.
+- NIRUX **0.10.2** pins nirunotify **0.2.0**, adding pointer/primary/named
+  monitor selection and configurable critical timeout/DND policy. Installed on
+  Void; the notifier smoke test still passes. Notification actions/images, bar
+  unread and physical provider acceptance remain.
+- **Next work:** R6 actions/images/bar unread/physical acceptance; R7 clean
+  install and real startx acceptance on the Arch ThinkPad once Tailscale makes
+  it reachable (it was offline/relay during this checkpoint); R5 remaining
+  panels/responsive layout/calendar; R2 appearance document/semantic tokens and
+  GTK/Qt separation; physical sleep acceptance; R3 schedule/resume/bar controls;
+  R7 cleanup/release. Launcher groups, window switching and input-method support
+  remain. Standalone locker/saver ownership/PAM assets also remain. Preserve
+  user configuration and NIRUPI.
 
 Keep each next checkpoint small and publish only verified assets. Preserve the
 existing lock regressions; never add password-derived logging or timed dismissal.
