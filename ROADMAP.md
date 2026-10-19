@@ -24,7 +24,7 @@ source locations and verification limits are in [AUDIT.md](AUDIT.md).
 
 ## Current checkpoint
 
-The **0.10.8** manifest pins niruwm **0.16.19**, nirubar **0.18.4**,
+The **0.10.9** manifest pins niruwm **0.16.19**, nirubar **0.18.5**,
 niruscreensaver **0.8.1**, nirulock **0.16.8**, nirulauncher **0.1.1** and
 nirunotify **0.3.0**. NIRULAUNCHER provides native Super+P apps and
 Super+Shift+P apps/actions; NIRUNOTIFY is an installed native notification
@@ -307,8 +307,8 @@ extended by the appearance and desktop-action contracts above.
 - [ ] Responsive layout: stable workspace region, configurable module priorities,
   overflow panel on narrow screens, monitor-aware popups and optional secondary-bar
   compact mode. Information remains accessible when its summary is hidden.
-- [ ] Calendar: `Mon`–`Sun`, Monday first, today indication, month navigation and
-  optional ISO week numbers. Match text and cell widths after changing labels.
+- [x] Calendar: `Mon`–`Sun`, Monday first, today indication, ISO week numbers and
+  Left/Right month navigation with fixed cell widths. Released in nirubar 0.18.5.
 
 Acceptance: frozen/hung helpers and weather failures do not stop clicks/redraw;
 sample/history intervals remain correct while media scrolls; recorded weather
@@ -616,13 +616,21 @@ Use the existing [design contract](https://github.com/nirucon/nirunotify/blob/ma
   daemon up on logout. Void is running 0.10.8; the ThinkPad was unreachable over
   Tailscale at deployment time, so its update and next-login acceptance remain
   pending.
-- **Next work:** R6 images/richer hints and physical native-provider acceptance;
-  R5 remaining panels/responsive layout/calendar; R2 appearance document/
-  semantic tokens and GTK/Qt separation; physical sleep acceptance; R3
-  schedule/resume/bar controls; R7 physical startx/rollback acceptance and
-  cleanup. Launcher groups, window switching and input-method support remain.
-  Standalone locker/saver ownership/PAM assets also remain. Preserve user
-  configuration and NIRUPI.
+- NIRUX **0.10.8** makes `auto` the notification provider default: native
+  nirunotify when installed, Dunst fallback. An isolated Void session verified
+  native bus ownership, notify-send history and logout cleanup. Void runs 0.10.8;
+  the ThinkPad was offline in Tailscale and remains to be updated.
+- NIRUX **0.10.9** pins nirubar **0.18.5** with ISO week numbers and Left/Right
+  month navigation in the calendar (unit-tested state transition and fixed row
+  width; the panel opens and survives navigation in an isolated bar). Void is
+  running 0.10.9; the ThinkPad update remains pending while offline.
+- **Next work:** R5 responsive layout/overflow, network actions, battery/media
+  detail and combined weather/sun; R6 images/richer hints and physical
+  native-provider acceptance; R2 appearance document/semantic tokens and GTK/Qt
+  separation; physical sleep acceptance; R3 schedule/resume/bar controls; R7
+  physical startx/rollback acceptance and cleanup. Launcher groups, window
+  switching and input-method support remain. Standalone locker/saver
+  ownership/PAM assets also remain. Preserve user configuration and NIRUPI.
 
 Keep each next checkpoint small and publish only verified assets. Preserve the
 existing lock regressions; never add password-derived logging or timed dismissal.
