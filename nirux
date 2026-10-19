@@ -2,7 +2,7 @@
 # NIRUX: install a complete X11 desktop, or maintain an existing installation.
 set -eu
 
-VERSION=0.7.0
+VERSION=0.7.1
 PREFIX=${NIRUX_PREFIX:-$HOME/.local}
 BIN=$PREFIX/bin
 STATE=$PREFIX/share/nirux
@@ -71,9 +71,9 @@ as_root() {
 }
 packages_for() {
   case "$1" in
-    arch) say "xorg-server xorg-xinit xorg-xauth xorg-xrandr xorg-xset xorg-xprop xorg-xdpyinfo xorg-xrdb xorg-xsetroot xorg-setxkbmap xkeyboard-config dbus pam pipewire pipewire-audio pipewire-pulse wireplumber alsa-utils fontconfig ttf-dejavu kitty rofi dunst picom feh maim playerctl libnotify procps-ng util-linux" ;;
-    debian) say "xserver-xorg xinit xauth x11-xserver-utils x11-utils x11-xkb-utils xkb-data dbus-x11 dbus-user-session libpam0g pipewire pipewire-pulse wireplumber alsa-utils fontconfig fonts-dejavu-core kitty rofi dunst picom feh maim playerctl libnotify-bin procps util-linux" ;;
-    void) say "xorg-minimal xinit xauth xrandr xset xprop xdpyinfo xrdb xsetroot setxkbmap xkeyboard-config dbus elogind pam pam-base pipewire wireplumber alsa-utils fontconfig dejavu-fonts-ttf kitty rofi dunst picom feh maim playerctl libnotify procps-ng util-linux" ;;
+    arch) say "xorg-server xorg-xinit xorg-xauth xorg-xrandr xorg-xset xorg-xprop xorg-xdpyinfo xorg-xrdb xorg-xsetroot xorg-setxkbmap xkeyboard-config dbus pam pipewire pipewire-audio pipewire-pulse wireplumber alsa-utils fontconfig ttf-dejavu kitty rofi dunst picom feh maim playerctl libnotify brightnessctl gammastep procps-ng util-linux" ;;
+    debian) say "xserver-xorg xinit xauth x11-xserver-utils x11-utils x11-xkb-utils xkb-data dbus-x11 dbus-user-session libpam0g pipewire pipewire-pulse wireplumber alsa-utils fontconfig fonts-dejavu-core kitty rofi dunst picom feh maim playerctl libnotify-bin brightnessctl gammastep procps util-linux" ;;
+    void) say "xorg-minimal xinit xauth xrandr xset xprop xdpyinfo xrdb xsetroot setxkbmap xkeyboard-config dbus elogind pam pam-base pipewire wireplumber alsa-utils fontconfig dejavu-fonts-ttf kitty rofi dunst picom feh maim playerctl libnotify brightnessctl gammastep procps-ng util-linux" ;;
   esac
 }
 install_packages() {
@@ -313,7 +313,7 @@ status() {
 doctor() {
   result=0
   status || result=1
-  for tool in startx Xorg xauth dbus-run-session fc-match kitty rofi; do
+  for tool in startx Xorg xauth dbus-run-session fc-match kitty rofi brightnessctl gammastep; do
     if command -v "$tool" >/dev/null 2>&1; then say "available $tool"; else say "missing $tool"; result=1; fi
   done
   for pair in 'niruwm --check-config' 'nirubar --check-config' 'niruidle --config' 'niruscreensaver --config' 'nirulock --config'; do

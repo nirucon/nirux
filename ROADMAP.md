@@ -24,7 +24,7 @@ source locations and verification limits are in [AUDIT.md](AUDIT.md).
 
 ## Current checkpoint
 
-The **0.7.0** manifest pins niruwm **0.16.6**, nirubar **0.17.0**,
+The **0.7.1** manifest pins niruwm **0.16.7**, nirubar **0.17.1**,
 niruscreensaver **0.8.0** and nirulock **0.16.6**. The earlier M1 fixes removed
 unauthenticated lock timers and raw keycode logging, improved idle child ownership,
 and reduced bar/screensaver work. Historical measurements: [MEASUREMENTS.md](MEASUREMENTS.md).
@@ -175,32 +175,27 @@ calendar labels hold even in a Swedish system locale.
 
 ### Brightness
 
-- [ ] Bind `XF86MonBrightnessUp` / `XF86MonBrightnessDown` by default. Their keysyms
-  already exist; the missing parts are actions and default bindings.
-- [ ] Add `niructl brightness up|down|set|status` (proposed CLI), configurable step,
-  device and minimum usable level. Coalesce repeat input and show the actual result.
-- [ ] Use `brightnessctl` for internal backlights, with correct device selection,
-  non-root udev/seat permissions and useful failure messages. Do not use gamma
-  dimming as a substitute for hardware brightness.
-- [ ] Add a bar `brightness` module: level and an interactive panel with fine steps.
-  Hide automatically when no supported device exists; explain unavailable devices
-  in the unified desktop menu/diagnostics.
+- [x] Bind `XF86MonBrightnessUp` / `XF86MonBrightnessDown` by default.
+- [x] `niructl brightness up|down|set N|status` uses brightnessctl and notifies the
+  actual level. Fixed five-percent steps for now; configurable device/step remains.
+- [x] Internal backlights use `brightnessctl` and report missing tools/devices.
+  Vendor device selection and seat-permission diagnostics remain follow-up work.
+- [x] Bar `brightness` module hides without a device and explains controls in its
+  panel. Fine interactive steps remain part of the unified controls work.
 - [ ] Later optional extension: keyboard backlight keys and DDC/CI external monitors,
   isolated behind capability checks; no mandatory DDC polling or access on desktops.
 
 ### Night light
 
-- [ ] Add `niructl nightlight on|off|toggle|status|temperature` (proposed CLI),
-  a standalone Super+N action and controls in the bar/unified palette.
-- [ ] Manage **one** gamma provider, preferring Gammastep on X11. Respect an explicitly
-  configured external Redshift/Gammastep owner; never run competing providers.
-- [ ] Support manual temperature, fixed schedule and sunrise/sunset schedule,
-  configurable transition and day/night Kelvin values. Use explicit coordinates
-  for automatic solar timing; manual mode must work offline without GeoClue.
-- [ ] Show effective mode/temperature and a temporary override until the next
-  schedule boundary. Reapply after resume, hotplug and provider restart.
-- [ ] Install `brightnessctl` and the selected night-light backend on Void/Arch/Debian;
-  update dependency checks, session cleanup, upgrade and uninstall together.
+- [x] `niructl nightlight on|off|toggle|status|temperature K` and Super+N manage
+  one manual Gammastep adjustment with explicit coordinates.
+- [x] Manual mode uses one Gammastep one-shot and `-x` reset; external providers are
+  respected. Scheduled/daemon ownership remains open.
+- [x] Manual Kelvin and explicit coordinates work offline without GeoClue.
+- [ ] Add fixed and sunrise/sunset schedules, transitions and resume reapplication.
+- [ ] Show schedule state and reapply after resume/hotplug/provider restart.
+- [x] Install `brightnessctl` and `gammastep` on Void, Arch and Debian; doctor checks
+  them. Package provisioning on `nirux update` remains open (X03).
 
 Hardware checkpoint: Void's Intel backlight accepted **100% → 95% → 100%** without
 sudo. Its real RandR display accepted **4500 K** and a reset when explicit location
