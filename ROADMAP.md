@@ -349,9 +349,18 @@ Use the existing [design contract](https://github.com/nirucon/nirunotify/blob/ma
   X-Resource regression checks server storage across popup/theme/reload cycles;
   helper action logs remain empty. Details/reference moved out of the short README.
 - NIRUX **0.6.2** pins these already-published component assets. Suite acceptance
-  uses the normal CI/release workflows and live Void diagnostics. A running
+  passed [CI 39220970675](https://github.com/nirucon/nirux/actions/runs/39220970675)
+  and [release 39221324010](https://github.com/nirucon/nirux/actions/runs/39221324010).
+  The published generation is installed on Void; the running bar is 0.16.7 and
+  live diagnostics/config checks passed. Physical checks additionally verified
+  that Super workspace shortcuts are blocked during lock and work after correct
+  authentication; the original workspace was restored after testing. A running
   niruwm 0.16.4 session needs a new login to activate installed WM/session 0.16.5;
   replacing files or restarting the bar does not upgrade the running WM.
+- Physical test precondition: a direct locker launch while the idle saver already
+  owned input refused the pointer grab and displayed no password surface. Waking
+  that unlocked saver allowed acceptance to pass. Preserve this refusal behaviour;
+  coordinated manual-lock/idle-saver transitions remain part of I01/R2.
 - **Next R1 work:** monitor/workspace agreement (W03/B02/B03), hotplug identity and
   reload ownership (W04), popup coordinates/focus/repaint (B04), tray protocol (B05),
   bounded background probes and fixed-rate graph samples (B07/B08). Remaining
