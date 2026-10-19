@@ -24,10 +24,12 @@ source locations and verification limits are in [AUDIT.md](AUDIT.md).
 
 ## Current checkpoint
 
-The **0.8.2** manifest pins niruwm **0.16.15**, nirubar **0.17.2**,
-niruscreensaver **0.8.1** and nirulock **0.16.8**. NIRULOCK publishes explicit
-lock readiness; `niructl suspend` waits for it, idle inhibition is explicit, and
-the session holds a sleep delay inhibitor and locks before releasing it. Updates provision the
+The **0.9.0** manifest pins niruwm **0.16.16**, nirubar **0.17.2**,
+niruscreensaver **0.8.1**, nirulock **0.16.8** and nirulauncher **0.1.1**.
+NIRULAUNCHER provides native Super+P apps and Super+Shift+P apps/actions.
+NIRULOCK publishes explicit lock readiness; `niructl suspend` waits for it,
+idle inhibition is explicit, and the session holds a sleep delay inhibitor and
+locks before releasing it. Updates provision the
 downloaded release's runtime package list without a full system upgrade, and
 doctor reports selected programs, providers, real bar ownership and prefix
 tools. Native `niructl` desktop actions cover lock, screensaver, logout,
@@ -237,28 +239,35 @@ was supplied. This proves backend feasibility, not completed NIRU keybindings/UI
 Use the existing [design contract](https://github.com/nirucon/nirulauncher/blob/main/DESIGN.md),
 extended by the appearance and desktop-action contracts above.
 
-- [ ] **Super+P:** `nirulauncher --apps`, focused application search and launch.
-  Clean list, keyboard navigation, readable app descriptions, optional favourites
-  and recency stored locally. No network requests or persistent indexing daemon.
-- [ ] **Super+Shift+P:** `nirulauncher --actions`, applications plus desktop actions,
-  grouped/searchable without making normal app search a power menu.
+- [x] **Super+P:** `nirulauncher --apps`, focused application search and launch.
+  Clean list, keyboard navigation, readable app descriptions. No network requests
+  or persistent indexing daemon. Released in nirulauncher 0.1.1.
+- [x] **Super+Shift+P:** `nirulauncher --actions`, applications plus desktop actions,
+  searchable without making normal app search a power menu. NIRUWM prefers the
+  suite launcher and keeps the configured launcher as fallback.
+- [ ] Add visual action groups, favourites and recency stored locally; the current
+  0.1 list is flat and searchable.
 - [ ] Default action groups: **Applications**, **Windows & Workspaces**,
   **Display & Appearance**, **Notifications & Focus**, **Session & Power**.
-- [ ] Include window/workspace switching, themes, brightness, night light, notification
-  history/DND, timed keep-awake, reload, screensaver, lock, suspend, logout, reboot
-  and shutdown as their supporting components become available.
-- [ ] Show unavailable actions with an explanation where useful; do not expose
-  entries backed only by nonexistent scripts. Custom actions are argv arrays.
-- [ ] Confirm logout/reboot/shutdown inside the palette, with Cancel selected first;
-  return the exact requested action to the shared desktop-action backend.
-- [ ] Honour XDG desktop-file precedence, visibility, TryExec, Terminal, Path and Exec
-  quoting/field codes. Never pass desktop-file Exec through a shell.
-- [ ] Center/clamp to the active monitor's usable area; single instance, robust
-  focus/dismissal, UTF-8 search, scrolling and reasonable contrast on every theme.
-- [ ] Release menu input ownership before starting a locker. Test actual Super
-  shortcuts, malformed desktop files, duplicate activation and small/two monitors.
-- [ ] Publish real binary/checksum assets, then add the component to every NIRUX
-  install/update/status/doctor/rollback/uninstall path and fixture.
+- [x] Include workspace switching, themes, brightness, night light, DND, timed
+  keep-awake, reload, screensaver, lock, suspend, logout, reboot and shutdown.
+- [ ] Add window switching and notification history when their backends expose
+  documented lists.
+- [ ] Show unavailable actions before activation with an explanation where useful;
+  failures are currently shown as an inline error. Custom actions are argv arrays.
+- [x] Confirm logout/reboot/shutdown inside the palette; Escape cancels and the
+  exact `niructl` action is returned to the shared backend.
+- [x] Honour XDG desktop-file precedence, visibility, TryExec, Terminal, Path and
+  Exec quoting/common field codes. Desktop Exec is parsed into argv, never a shell.
+  English `Name` is preferred; localized names and the full field-code set remain.
+- [x] Center/clamp to the pointer monitor, single instance, focus/dismissal,
+  UTF-8 display/search, scrolling and suite-theme contrast. Keyboard text input is
+  Latin-1; input methods and malformed small/two-monitor matrices remain.
+- [x] Release menu input ownership before starting a locker. Super+P and
+  Super+Shift+P were exercised on Void in an isolated X session.
+- [x] Publish binary/checksum assets and add the component to NIRUX
+  install/update/status/doctor/rollback/uninstall and fixtures. Released in
+  NIRUX 0.9.0.
 
 ## R5 — nirubar weather and useful panels
 
@@ -493,9 +502,17 @@ Use the existing [design contract](https://github.com/nirucon/nirunotify/blob/ma
   contract before releasing the inhibitor, and holds it if locking fails. On
   Void, `elogind-inhibit` acquisition/listing and `niructl lock` readiness passed.
   A physical lid-close/resume/docking test remains open.
-- **Next work:** R2 appearance document/semantic tokens and GTK/Qt separation;
-  physical sleep acceptance; R3 schedule/resume/bar controls; R4 launcher;
-  R5 weather/panels; R6 notifications; R7 cleanup/release. Standalone
+- NIRUX **0.9.0** pins nirulauncher **0.1.1** and niruwm **0.16.16** and installs
+  the launcher in every generation. The first update from 0.8.2 used the old
+  installer and omitted the new program; the second 0.9.0 update staged it, the
+  same one-release transition as the update-provisioning change. On Void, the
+  installed launcher opened through real Super+P and Super+Shift+P in an isolated
+  X session, and Escape returned focus/closed it. UI smoke also covers search,
+  quoted argv, outside-click dismissal and singleton activation on Xvfb.
+- **Next work:** R5 weather/panels; R6 notifications; R2 appearance
+  document/semantic tokens and GTK/Qt separation; physical sleep acceptance;
+  R3 schedule/resume/bar controls; R7 cleanup/release. Launcher groups, window
+  switching, notification history and input-method support remain. Standalone
   locker/saver ownership/PAM assets also remain. Preserve user configuration and
   NIRUPI.
 
