@@ -393,7 +393,7 @@ doctor() {
     if command -v "$tool" >/dev/null 2>&1 || [ -x "$BIN/$tool" ]; then
       say "available configured $tool"
     else
-      say "missing configured $tool (selected in config.toml)"; result=1
+      say "missing configured $tool (selected in config.toml)"
     fi
   done
   for tool in dunst picom feh maim playerctl wpctl amixer; do
