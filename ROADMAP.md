@@ -24,7 +24,7 @@ source locations and verification limits are in [AUDIT.md](AUDIT.md).
 
 ## Current checkpoint
 
-The **0.6.5** manifest pins niruwm **0.16.5**, nirubar **0.16.10**,
+The **0.6.6** manifest pins niruwm **0.16.5**, nirubar **0.16.11**,
 niruscreensaver **0.8.0** and nirulock **0.16.6**. The earlier M1 fixes removed
 unauthenticated lock timers and raw keycode logging, improved idle child ownership,
 and reduced bar/screensaver work. Historical measurements: [MEASUREMENTS.md](MEASUREMENTS.md).
@@ -101,8 +101,9 @@ retain input isolation; correct password restores the WM shortcuts.
   map before focus, restore prior focus, repaint Expose, close cleanly on reload.
   The click catcher is input-only and no longer obscures the desktop or blocks the bar.
   Released in nirubar 0.16.8 with a two-coordinate/focus/restore X11 regression.
-- [ ] **B05:** complete XEmbed container mapping/layout and correct `_XEMBED` messages;
-  selection loss for a tray must not terminate an otherwise healthy bar.
+- [x] **B05:** mapped XEmbed manager container and sent the real `_XEMBED`
+  embedded-notify message; tray handover no longer terminates the bar. Released in
+  nirubar 0.16.11 with an isolated embedding/selection-loss regression.
 - [x] **B06:** free X pixmaps on popup close and renderer replacement; keep resource
   ownership explicit and avoid allocating a pixmap for direct window rendering.
 - [ ] **B07:** move remaining subprocesses and filesystem capacity checks off
