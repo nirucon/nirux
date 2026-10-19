@@ -24,7 +24,7 @@ source locations and verification limits are in [AUDIT.md](AUDIT.md).
 
 ## Current checkpoint
 
-The **0.6.6** manifest pins niruwm **0.16.5**, nirubar **0.16.11**,
+The **0.7.0** manifest pins niruwm **0.16.6**, nirubar **0.17.0**,
 niruscreensaver **0.8.0** and nirulock **0.16.6**. The earlier M1 fixes removed
 unauthenticated lock timers and raw keycode logging, improved idle child ownership,
 and reduced bar/screensaver work. Historical measurements: [MEASUREMENTS.md](MEASUREMENTS.md).
@@ -79,11 +79,12 @@ retain input isolation; correct password restores the WM shortcuts.
   long-lived application.
 - [ ] Bound/coalesce repeated hardware-key and helper invocations; child reaping
   alone does not impose an execution/time/output budget.
-- [ ] **W03:** define a coherent monitor/workspace protocol with nirubar. Use stable
-  output identity, correct EWMH global desktop offsets and monitor-targeted commands.
-  Honour configured workspace counts/labels, including more than nine.
-- [ ] **W04:** reconcile monitor identities during hotplug; refresh monitor config,
-  wallpaper state, borders and bars on reload. Poll timeouts must also rotate wallpaper.
+- [x] **W03:** global EWMH desktop numbers and `_NIRUWM_MONITORS` give each output a
+  stable offset/count/active range; clients publish global desktops and `niructl`
+  addresses them. Released in niruwm 0.16.6.
+- [x] **W04:** clients re-home by RandR output name, master counts survive reorder,
+  and reload rebuilds monitor config, wallpaper, borders and bars. Idle wallpaper
+  ticks were fixed earlier. Released in niruwm 0.16.6.
 - [x] **W05:** fullscreen uses the complete monitor rectangle, not the bar-reduced
   tiling area; other monitors keep their own bar and usable geometry.
 - [ ] **W06:** restore sessions by matching mapped windows to pending launch records,
@@ -95,8 +96,9 @@ retain input isolation; correct password restores the WM shortcuts.
 
 ### nirubar
 
-- [ ] **B02/B03:** permit exactly one bar per monitor, but one tray per X screen;
-  publish/read monitor-specific workspaces rather than nine global cells.
+- [x] **B02/B03:** one bar per monitor on a shared X screen, one tray per screen,
+  monitor-local cells read from `_NIRUWM_MONITORS`, global desktop occupancy and
+  monitor-targeted workspace commands. Released in nirubar 0.17.0.
 - [x] **B04:** place popups in root coordinates within their monitor work area;
   map before focus, restore prior focus, repaint Expose, close cleanly on reload.
   The click catcher is input-only and no longer obscures the desktop or blocks the bar.
@@ -106,8 +108,9 @@ retain input isolation; correct password restores the WM shortcuts.
   nirubar 0.16.11 with an isolated embedding/selection-loss regression.
 - [x] **B06:** free X pixmaps on popup close and renderer replacement; keep resource
   ownership explicit and avoid allocating a pixmap for direct window rendering.
-- [ ] **B07:** move remaining subprocesses and filesystem capacity checks off
-  rendering with bounded workers, deadlines and output caps.
+- [x] **B07:** `wpctl`/`playerctl`/`ip`/`iw`/package queries use a bounded runner
+  (deadline, process-group kill, capped output); load/memory/statvfs sampling runs
+  on one background worker instead of rendering. Released in nirubar 0.17.0.
 - [x] **B08:** load/graph samples use a one-second cadence independent of repaint and
   scrolling; a regression calls render fifty times and observes one sample.
   Released in nirubar 0.16.10.
