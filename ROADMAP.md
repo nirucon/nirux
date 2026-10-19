@@ -24,9 +24,9 @@ source locations and verification limits are in [AUDIT.md](AUDIT.md).
 
 ## Current checkpoint
 
-The **0.10.9** manifest pins niruwm **0.16.19**, nirubar **0.18.5**,
+The **0.10.12** manifest pins niruwm **0.16.19**, nirubar **0.18.6**,
 niruscreensaver **0.8.1**, nirulock **0.16.8**, nirulauncher **0.1.1** and
-nirunotify **0.3.0**. NIRULAUNCHER provides native Super+P apps and
+nirunotify **0.3.2**. NIRULAUNCHER provides native Super+P apps and
 Super+Shift+P apps/actions; NIRUNOTIFY is an installed native notification
 provider (Dunst remains the default); NIRUBAR has an opt-in Open-Meteo weather
 module with background refresh and a versioned cache.
@@ -624,6 +624,18 @@ Use the existing [design contract](https://github.com/nirucon/nirunotify/blob/ma
   month navigation in the calendar (unit-tested state transition and fixed row
   width; the panel opens and survives navigation in an isolated bar). Void is
   running 0.10.9; the ThinkPad update remains pending while offline.
+- NIRUX **0.10.10–0.10.12** ship a canonical `config.example.toml` as a checksummed
+  release asset. Fresh installs receive it; existing configurations are merged
+  by appending missing sections and keys without replacing user values. Void's
+  older config kept its theme, browser, wallpaper and Stockholm coordinates and
+  gained the missing nightlight/bar/wallpaper settings; the ThinkPad received the
+  canonical file. Both validate with `niruwm/nirubar --check-config`.
+- NIRUBAR **0.18.6** uses a music-note icon for the playing track instead of the
+  drawn level bars. NIRUNOTIFY **0.3.2** re-reads the bar strut when a notification
+  appears, so notifications keep a margin below a bar that mapped after the
+  notifier started. Both were verified with isolated screenshots (note icon and
+  a 12 px gap below the bar). Installed on Void and the ThinkPad; the ThinkPad bar
+  was reloaded/restarted, while the running WM remains 0.16.17 until logout.
 - **Next work:** R5 responsive layout/overflow, network actions, battery/media
   detail and combined weather/sun; R6 images/richer hints and physical
   native-provider acceptance; R2 appearance document/semantic tokens and GTK/Qt
