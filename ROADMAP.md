@@ -1,211 +1,320 @@
 # NIRU desktop roadmap
 
-Personal X11 desktop for the author's own machines; others are welcome to try it.
-This is the authoritative implementation and handoff document. Component READMEs
-link here instead of duplicating the plan. Checked items require verification,
-not just source changes. Do not release placeholder binaries.
+Updated **2026-10-19**. Status: **analysis complete; implementation awaiting owner
+approval**. This plan supersedes the previous M2-first handoff. Detailed evidence,
+source locations and verification limits are in [AUDIT.md](AUDIT.md).
 
-## Agreed direction
+## Product direction
 
-- Small independent native Rust/X11 programs, consistent NIRU styling, no large
-  desktop framework. Settings belong in XDG-respecting TOML files.
-- `nirulauncher`: separate repository; Super+P opens applications, Super+Shift+P
-  opens applications plus desktop actions. Center on the active monitor, clamp
-  to its usable area. Keyboard-first; configurable dimensions, fonts, colours,
-  matching, terminal and actions. Never execute desktop-file Exec through a shell.
-- `nirunotify`: separate repository; native replacement for Dunst implementing
-  org.freedesktop.Notifications. Only one service owns the bus name. Do not
-  disable Dunst until the replacement passes its protocol and session tests.
-- Weather: Open-Meteo, configurable Ljungskile default, Celsius/metric, background
-  refresh approximately every 30 minutes. Cached/stale/offline states are explicit.
-- Visible bar modules have useful information panels. Reading information must
-  not silently change volume or playback. Keep actions explicit and configurable.
+- Small, independent Rust/X11 components with a coherent desktop experience.
+- Standalone installation on **Void Linux glibc, Arch Linux and Debian**; NIRUPI
+  integration is optional and explicit. Current release assets target x86_64.
+- English UI, diagnostics, comments and documentation. Dates `YYYY-MM-DD`,
+  24-hour time, Monday-first calendars with `Mon Tue Wed Thu Fri Sat Sun` labels.
+- **Niru Noir** by default; also support the existing **Niru Nord**, **Niru Satie**
+  and **Niru Carl Larsson** themes throughout the suite, plus custom themes.
+- Short READMEs: purpose, supported systems, install, essential commands,
+  configuration location and links. Detailed reference and testing belong in docs.
+- Every visible bar module opens useful information. Actions are deliberate;
+  reading volume or media details must not silently mute or pause playback.
+- Ship verified increments directly to `main`; component releases precede a
+  checksummed, pinned NIRUX release. Existing published versions remain immutable.
 
-## Rules for any implementing agent
+## Current checkpoint
 
-1. Read this document, repository instructions, status and current code first.
-   Preserve local user changes. Treat findings below as a starting point, not a
-   substitute for checking the current revision.
-2. Implement a small task and its acceptance checks before starting another.
-   No fabricated performance numbers or claims of physical hardware testing.
-3. Keep normal rendering free of networking, package checks and blocking probes.
-   Bound worker counts, subprocess durations, queues, caches and untrusted input.
-4. Never add automatic unauthenticated lock dismissal, password/keycode logging,
-   or a timeout wrapper which kills a working locker. X11 cannot defend against
-   a hostile client or an administrator killing the locker; do not claim otherwise.
-5. Configuration additions shared by WM and bar require agreement tests in both
-   repositories. New programs use their own config file; avoid schema coupling.
-6. Before release: fmt, clippy, unit/integration checks appropriate to the change;
-   exercise Arch, Debian and Void glibc. Keep x86_64/glibc limits explicit.
-7. Push reviewed commits, publish immutable version tags and checksummed assets,
-   then update nirux's pinned manifest only after every referenced asset exists.
-8. Before a context/session limit: stop starting features, finish a safe tested
-   checkpoint, publish only completed work, and update the handoff below. Never
-   force a live desktop logout merely to activate an upgrade.
+NIRUX **0.6.0** pins niruwm **0.16.4**, nirubar **0.16.5**,
+niruscreensaver **0.8.0** and nirulock **0.16.5**. The earlier M1 fixes removed
+unauthenticated lock timers and raw keycode logging, improved idle child ownership,
+and reduced bar/screensaver work. Historical measurements: [MEASUREMENTS.md](MEASUREMENTS.md).
 
-## M0 — audit and measurement
+The public repositories **nirulauncher** and **nirunotify** already contain design
+contracts. Neither has a working binary/release and neither belongs in the pinned
+installer yet. No additional repository is currently necessary for brightness,
+night light or themes: put these capabilities behind existing NIRU interfaces.
 
-- [x] Read current WM, bar, screensaver, locker and nirux integration.
-- [x] Identify the first confirmed failures (see findings below).
-- [x] Record reproducible before/after measurements in MEASUREMENTS.md.
+## Priority order
 
-Confirmed at audit start:
+| Phase | Deliverable | Depends on |
+|---|---|---|
+| R0 | Memory safety and reliable lock coverage | Approval |
+| R1 | WM/bar integration, child lifecycle, truthful installation | R0 |
+| R2 | Suite theme and control contracts; standalone desktop actions | R1 |
+| R3 | Laptop brightness and night light | R2 |
+| R4 | Native launcher and unified command palette | R1, R2 |
+| R5 | Responsive bar, weather and information panels | R1, R2 |
+| R6 | Native notification service and hardware OSD | R0, R2; reuse proven R4 rendering where useful |
+| R7 | Polish, clean documentation and release acceptance | Each completed increment |
 
-| ID | Repository / location | Finding | Priority |
-|---|---|---|---|
-| L1 | nirulock `main.rs::run` | Default 5-minute setting is multiplied by 10 seconds: lock disappears after about 50 seconds without authentication; environment override can dismiss sooner. | P0 |
-| L2 | nirulock `handle_key` / `trace` | Raw keycode and modifier logs can disclose password input. | P0 |
-| L3 | nirulock `grab_input`, `submit` | Grab replies are ignored; wrong-password flow releases/reacquires the keyboard. Needs continuous verified grabs and an input-isolation test. | P0 |
-| L4 | nirulock `pam.rs` | Shared password is assigned before the authentication mutex, allowing concurrent attempts to interfere. | P1 |
-| L5 | nirulock `Surface::new` / `Lock::new` | Password surface becomes visible before the keyboard grab is verified; failed startup looks like a ready lock. | P0 |
-| W1 | niruwm `niruidle.rs` | Child handles are dropped, external kill/timeout helpers used, and fallback blank sentinel can reach kill(0). Locker activity resets a boolean without tracking the actual child. | P0 |
-| B1 | nirubar `run`, `frame_key`, `av` | Unconditional 100ms timer plus animation loop repeatedly probes external tools; redraw-key comparison excludes playback progress. | P1 |
-| B2 | nirubar `module.rs` | Volume/media clicks perform actions before opening information; external probes can block the UI. | P1 |
-| S1 | niruscreensaver `draw` | Reopens fonts and reruns font discovery on every draw; one-second wakeups despite minute-only clock. | P1 |
-| X1 | saver/locker `Surface` | Root geometry and combined-screen centering require RandR resize/hotplug and per-monitor tests. | P1 |
+R0 is the first implementation checkpoint. Finish and verify a small checkpoint
+before starting another. R3 and R4 have no product dependency on each other;
+brightness need not wait for an entire notification daemon or weather module.
 
-Measurement method: isolated Xvfb, fixed geometry/font/config; record program and
-tool versions, elapsed time, RSS, thread count, CPU ticks and probe counts. Compare
-the same workload before/after. Include idle, media scrolling, popup open and lock
-failure. Initial objectives: bar external media/volume probes <=1 sample/second
-each; no unconditional animation timer; screensaver fonts loaded once/run;
-no child zombies after repeated idle cycles. Set further numerical budgets only
-after measurements. CPU results in containers are not physical-laptop guarantees.
+## R0 — memory safety and lock correctness
 
-## M1 — correctness and idle efficiency (first implementation checkpoint)
+- [ ] **B01:** replace the undersized handwritten `statvfs` ABI with maintained,
+  target-correct bindings. Audit the other handwritten ABI declarations too.
+- [ ] **L01:** close the lock stacking gap for newly mapped/raised windows;
+  coordinate session overlays and test real WM + compositor + notifications.
+- [ ] **L02:** resize opaque coverage and backing resources on root/RandR changes;
+  handle newly connected displays and selected-monitor prompt placement.
+- [ ] Keep the verified input grabs and authentication-only successful exit from
+  M1. Configuration/theme/rendering failures must not dismiss an established lock.
+- [ ] Add regressions for the actual failing paths, then publish a correction
+  release and update NIRUX pins only after assets and checksums are available.
 
-Dependencies: M0 findings. Repositories: all four components, then nirux.
+Acceptance: the filesystem call cannot overwrite adjacent storage; later windows
+do not reveal content above the lock in the supported session; expanding or
+rearranging the display leaves no uncovered region. Wrong password and Escape
+retain input isolation; correct password restores the WM shortcuts.
 
-- [x] L1/L2: no timer/environment bypass; retain old timeout config as deprecated,
-      ignored compatibility input. Remove keycode logging. Explain migration.
-- [x] L3/L4/L5: verify input grabs before showing the password surface, retain them on refused authentication, serialize
-      password lifetime. Test wrong password, Escape, correct password and input
-      isolation. Only authenticated success exits normally.
-- [x] W1: owned Child handles, reap saver and locker, never timeout a locker,
-      explicit blanking state (never pid 0), bounded retry after failed startup.
-- [x] B1: remove always-running timer/X connection; separate probe cadence from
-      animation cadence; include progress changes in invalidation.
-- [x] S1: persistent renderers and host cache; deadline-driven visible updates.
-- [x] Regression tests, measured comparison, component releases, pinned nirux
-      release. Do not force the user's running WM to restart.
+## R1 — fix the existing desktop before extending it
 
-Acceptance: a short legacy timeout and NIRULOCK_SAFE_SECONDS cannot unlock;
-password traces contain no input; idle child lifecycle tests pass; scrolling
-does not multiply probes; progress-only changes repaint; minute-boundary and
-input-dismissal tests pass. Existing config remains readable.
+### niruwm
 
-## M2 — nirulauncher 0.1 and WM integration
+- [ ] **W01:** one effective binding table for runtime, validation and config dump;
+  individual overrides retain unrelated defaults. Add an explicit unbind mechanism.
+- [ ] **W02:** reap every application/helper child without one waiting thread per
+  long-lived application. Bound repeated hardware-key and helper invocations.
+- [ ] **W03:** define a coherent monitor/workspace protocol with nirubar. Use stable
+  output identity, correct EWMH global desktop offsets and monitor-targeted commands.
+  Honour configured workspace counts/labels, including more than nine.
+- [ ] **W04:** reconcile monitor identities during hotplug; refresh monitor config,
+  wallpaper state, borders and bars on reload. Poll timeouts must also rotate wallpaper.
+- [ ] **W05:** fullscreen uses the complete monitor rectangle, not the bar-reduced
+  tiling area; other monitors keep their own bar and usable geometry.
+- [ ] **W06:** restore sessions by matching mapped windows to pending launch records,
+  not by changing the active workspace before spawning asynchronous applications.
+  Restore floating state, deduplicate shared process commands, preserve focus and
+  exclude the scratchpad. Use argv for failure notifications.
+- [ ] **W07:** complete `niructl` layout coverage and acknowledgements; do not report
+  successful reload solely after a fixed sleep. Status must identify the real WM.
 
-Dependencies: M1. New repo: `nirucon/nirulauncher`.
+### nirubar
 
-- [ ] Document independent config and command interfaces; native window with
-      proper WM_CLASS, focus, singleton behaviour, Escape and outside dismissal.
-- [ ] Resolve active monitor from NIRUWM/EWMH + pointer/RandR fallback; center
-      within work area; test negative coordinates, small screens and two monitors.
-- [ ] Parse XDG application directories and precedence, Hidden/NoDisplay,
-      OnlyShowIn/NotShowIn, TryExec, Terminal, quoted Exec and supported field
-      codes. Reject malformed commands; use argv-based spawning, not shell.
-- [ ] Search, arrows, Enter, scrolling, accessible contrast and readable empty
-      states. Index once on open; no daemon/poll loop while closed.
-- [ ] Action mode: lock, screensaver, reload, workspace navigation and theme
-      selection. Logout/reboot/shutdown require explicit confirmation; arbitrary
-      user actions are argv arrays in config.
-- [ ] Add configurable WM defaults for Super+P / Super+Shift+P, retaining a useful
-      fallback when launcher is unavailable. Preserve user key overrides.
-- [ ] Test actual key presses, monitor placement, desktop-entry execution and
-      cleanup. Publish native binary + SHA256SUMS, then extend nirux's manifest,
-      stage/verify/status/doctor/rollback/uninstall and offline fixtures together.
+- [ ] **B02/B03:** permit exactly one bar per monitor, but one tray per X screen;
+  publish/read monitor-specific workspaces rather than nine global cells.
+- [ ] **B04:** place popups in root coordinates within their monitor work area;
+  map before focus, restore prior focus, repaint Expose, close cleanly on reload.
+  Dismissal hit surfaces must not obscure the desktop or block the bar itself.
+- [ ] **B05:** complete XEmbed container mapping/layout and correct `_XEMBED` messages;
+  selection loss for a tray must not terminate an otherwise healthy bar.
+- [ ] **B06:** free X pixmaps on popup close and renderer replacement; keep resource
+  ownership explicit and avoid allocating a pixmap for direct window rendering.
+- [ ] **B07/B08:** move subprocesses and filesystem capacity checks off rendering;
+  clocked samples and graph history must be independent of animation/event rate.
+- [ ] **B09:** make left-click informational, with configurable middle/right/scroll
+  actions and explicit buttons in interactive panels. Hide hitboxes with modules.
+- [ ] **B10/B11:** unify validation expectations, reject invalid time formats safely,
+  honour visibility settings, distinguish unavailable/stale data from zero values,
+  and repair package-count/error/locale handling and the ALSA parser.
 
-## M3 — bar information and cached weather
+### Installation and standalone operation
 
-Dependencies: M1 background-probe infrastructure; coordinate schema with WM.
+- [ ] **X01:** repair component installers: versions, independent component builds,
+  pinned session assets, canonical config paths and ownership of installed links.
+  An individual installer must not overwrite files inside a NIRUX generation.
+- [ ] **X02:** replace dead NIRUPI-only default shortcuts with suite-native actions;
+  offer NIRUPI helpers as an explicit compatibility profile.
+- [ ] **X03:** make updates install/check newly introduced runtime dependencies;
+  diagnose active services/providers, real bar ownership and selected-prefix tools.
+- [ ] Test clean installs and upgrades from current versions on all three systems,
+  with an empty home and separately with NIRUPI already installed.
 
-- [ ] Move all slow probes to bounded workers; cap command time/output, preserve
-      cached state on failures, never spawn unbounded threads or children.
-- [ ] Audit every module click: clock/calendar, network, battery, volume, media,
-      updates, pulse, uptime, sun, weather. Left click = information by default;
-      configurable secondary actions. Hidden modules cannot steal hitboxes.
-- [ ] Weather config in bar's own independent TOML (avoid shared-parser drift):
-      location name/lat/lon, units, refresh/backoff, request deadline and cache age.
-- [ ] Open-Meteo background client: TLS verification, bounded JSON/body/cache,
-      atomic writes, no API key. Details include apparent temperature, rain,
-      wind, forecast and last successful update. Failed requests never block X.
-- [ ] Test with recorded fixtures, offline startup, corrupt cache, stale state,
-      provider errors and cancellation; ordinary CI must not depend on live weather.
-- [ ] Multi-monitor workspace occupancy/selection audit: current bar assumes nine
-      global workspaces; verify actual WM per-monitor contracts before changing it.
+Acceptance: actual key presses retain defaults after one override; repeated helper
+launches leave no zombies; two displays retain two stable bars and independent
+workspaces; repeated popup/reload cycles do not grow X-server pixmap usage;
+fullscreen covers its monitor; a compiler-free documented install is truly so.
 
-## M4 — native nirunotify
+## R2 — shared appearance and desktop action contracts
 
-Dependencies: M1; optionally reuse proven launcher drawing primitives without
-introducing an unstable shared crate. New repo: `nirucon/nirunotify`.
+- [ ] Specify a small versioned suite appearance document, discoverable through XDG.
+  Preserve existing `niruwm/themes` customizations through an explicit compatibility
+  precedence; each component remains independently runnable.
+- [ ] Use semantic tokens: background, surface, foreground, muted, border, accent,
+  success, warning, error, selected and disabled. Define typography, spacing,
+  borders, focus indication and reduced-motion behaviour with each theme.
+- [ ] Treat colours as colours: never select contrast using numeric RGB `max`.
+  Keep an optional opaque black saver/lock background with theme-coloured content.
+- [ ] `niructl theme NAME` applies to WM, bar, open palette, notifier and the next
+  saver/lock. Define reload notifications and observable success/failure.
+  A theme reload never weakens an established lock.
+- [ ] Fix root background selection and separate optional GTK/Qt integration from
+  native suite theming; application settings remain opt-in exports.
+- [ ] Introduce argv-based desktop actions for lock, screensaver, logout, suspend,
+  reboot, shutdown, theme selection, DND, idle inhibition and configuration reload.
+  `niructl` is the common user-facing interface; a small companion binary within
+  an existing repo is acceptable if implementation requires it.
+- [ ] Define lock readiness, unlock, idle and notification privacy state with
+  explicit ownership and acknowledgement. Do not infer readiness from a child PID.
+- [ ] Implement lock-before-suspend with logind/elogind delay-inhibitor integration;
+  cover lid close, manual suspend, resume, docking and provider failure.
 
-- [ ] Implement standard bus ownership, GetCapabilities, GetServerInformation,
-      Notify, CloseNotification, NotificationClosed and ActionInvoked.
-- [ ] Handle replacement IDs, expire_timeout (-1/0/positive), urgency, app names,
-      actions and hints. Do not advertise unsupported features. Cap strings,
-      images, queued notifications and resident history; treat markup as data.
-- [ ] Native styled windows on configurable active/primary/named monitor; stack
-      within work area, explicit actions, DND, urgency policy and history command.
-- [ ] Wait on D-Bus/X/deadlines rather than poll; no periodic work when empty.
-- [ ] Session integration selects exactly one provider. Preserve Dunst fallback
-      and do not replace a bus owner unexpectedly. Suppress notification content
-      while locked; ensure all overlay windows stay below the locker.
-- [ ] Protocol tests on a private D-Bus; Xvfb geometry/expiry/action/replacement
-      tests; high-volume memory and queue tests; real notify-send integration.
-- [ ] Publish binary/assets; update all nirux paths and tests as in M2. Add a
-      session notification_provider setting with a backwards-compatible default.
+Acceptance: all four existing themes work across native components; one command
+changes the suite consistently; an invalid theme preserves the working state;
+standalone actions work with NIRUPI absent. ISO dates and English Monday-first
+calendar labels hold even in a Swedish system locale.
 
-## M5 — monitor/input resilience and refinements
+## R3 — laptop brightness and night light
 
-- [ ] RandR hotplug/resize coverage, window and pixmap resizing, active-monitor
-      clock placement and screen coverage in saver/locker. Never uncover root
-      during a failed resize. Mixed DPI and non-Latin input need explicit tests.
-- [ ] Audit lock map/stack loops for self-triggered ConfigureNotify storms.
-- [ ] Suspend/resume: lock before sleep, clear stale input on resume, coordinate
-      logind/elogind inhibitors without adding duplicate idle supervisors.
-- [ ] Shared theme agreement tests and optional per-program overrides; strict,
-      bounded config validation. Avoid duplicated TOML parser drift.
-- [ ] Investigate event-driven MPRIS/PipeWire updates before further polling work.
+### Brightness
 
-## Optional ideas (not release commitments)
+- [ ] Bind `XF86MonBrightnessUp` / `XF86MonBrightnessDown` by default. Their keysyms
+  already exist; the missing parts are actions and default bindings.
+- [ ] Add `niructl brightness up|down|set|status` (proposed CLI), configurable step,
+  device and minimum usable level. Coalesce repeat input and show the actual result.
+- [ ] Use `brightnessctl` for internal backlights, with correct device selection,
+  non-root udev/seat permissions and useful failure messages. Do not use gamma
+  dimming as a substitute for hardware brightness.
+- [ ] Add a bar `brightness` module: level and an interactive panel with fine steps.
+  Hide automatically when no supported device exists; explain unavailable devices
+  in the unified desktop menu/diagnostics.
+- [ ] Later optional extension: keyboard backlight keys and DDC/CI external monitors,
+  isolated behind capability checks; no mandatory DDC polling or access on desktops.
 
-- Launcher context rows: current track, pending updates and workspace targets,
-  sourced from cached local state rather than fresh blocking probes.
-- A compact "desktop health" panel showing missing tools, last weather refresh
-  and notification DND; export existing diagnostics rather than build a daemon.
-- Screensaver quiet mode: minute clock on active monitor, dim secondary monitors,
-  optional low-frequency position shift for burn-in avoidance.
-- Notification history that is memory-only by default; optional bounded disk
-  persistence with private permissions and explicit retention settings.
+### Night light
 
-## Handoff / checkpoint
+- [ ] Add `niructl nightlight on|off|toggle|status|temperature` (proposed CLI),
+  a standalone Super+N action and controls in the bar/unified palette.
+- [ ] Manage **one** gamma provider, preferring Gammastep on X11. Respect an explicitly
+  configured external Redshift/Gammastep owner; never run competing providers.
+- [ ] Support manual temperature, fixed schedule and sunrise/sunset schedule,
+  configurable transition and day/night Kelvin values. Use explicit coordinates
+  for automatic solar timing; manual mode must work offline without GeoClue.
+- [ ] Show effective mode/temperature and a temporary override until the next
+  schedule boundary. Reapply after resume, hotplug and provider restart.
+- [ ] Install `brightnessctl` and the selected night-light backend on Void/Arch/Debian;
+  update dependency checks, session cleanup, upgrade and uninstall together.
 
-M0/M1 are complete and published as nirux 0.6.0. Real pinned-release installation,
-diagnostics, startx/Xvfb and uninstall passed on Arch, Debian and Void in CI
-[39167349029](https://github.com/nirucon/nirux/actions/runs/39167349029).
-Component checkpoints: niruwm 0.16.4 (`ea266f3`), nirubar
-0.16.5 (`db42bf6`), niruscreensaver 0.8.0 (`d932519`), nirulock 0.16.5 (`dbaf437`).
-The intermediate nirulock 0.16.4 was superseded after a new failing regression
-demonstrated that its prompt could appear before input was acquired.
+Hardware checkpoint: Void's Intel backlight accepted **100% → 95% → 100%** without
+sudo. Its real RandR display accepted **4500 K** and a reset when explicit location
+was supplied. This proves backend feasibility, not completed NIRU keybindings/UI.
 
-Local checks passed: fmt/clippy/unit tests for all four; real X tests for bar
-singleton/progress-only redraw and lock timeout/input isolation/startup refusal;
-non-root correct/wrong-password/Escape checks; actual WM shortcut isolation during
-lock and restoration after authentication. Resource measurements are in
-MEASUREMENTS.md. Physical GPU, hotplug and suspend/resume remain M5 work.
-Void was offline at the end of this checkpoint, so no physical-machine upgrade
-was performed. On returning online: `~/.local/bin/nirux update`, then log out/in
-to replace the old running idle daemon, WM and session. Do not restart a user's
-live session or launch a test locker on their real display without coordination.
+## R4 — nirulauncher: two modes, one consistent interface
 
-Repositories created: nirulauncher `6ce48e0`, nirunotify `441a91a`, each containing
-README, MIT license and DESIGN.md. These are design checkpoints, NOT executable
-releases. Nirux documents their status and deliberately does not download them.
+Use the existing [design contract](https://github.com/nirucon/nirulauncher/blob/main/DESIGN.md),
+extended by the appearance and desktop-action contracts above.
 
-Next implementation: M2 in nirulauncher. Start with Cargo/config validation and a
-fixture-tested XDG desktop-entry index/Exec argv parser; then implement the native
-centered window and its input/monitor tests. Release menu grabs before executing
-a lock action. Do not start notification/weather implementation in the same
-checkpoint. Wire launcher into WM/nirux only once its actual binary, CLI and tests
-exist. Bounded asynchronous bar probes and click semantics remain M3, not M1.
+- [ ] **Super+P:** `nirulauncher --apps`, focused application search and launch.
+  Clean list, keyboard navigation, readable app descriptions, optional favourites
+  and recency stored locally. No network requests or persistent indexing daemon.
+- [ ] **Super+Shift+P:** `nirulauncher --actions`, applications plus desktop actions,
+  grouped/searchable without making normal app search a power menu.
+- [ ] Default action groups: **Applications**, **Windows & Workspaces**,
+  **Display & Appearance**, **Notifications & Focus**, **Session & Power**.
+- [ ] Include window/workspace switching, themes, brightness, night light, notification
+  history/DND, timed keep-awake, reload, screensaver, lock, suspend, logout, reboot
+  and shutdown as their supporting components become available.
+- [ ] Show unavailable actions with an explanation where useful; do not expose
+  entries backed only by nonexistent scripts. Custom actions are argv arrays.
+- [ ] Confirm logout/reboot/shutdown inside the palette, with Cancel selected first;
+  return the exact requested action to the shared desktop-action backend.
+- [ ] Honour XDG desktop-file precedence, visibility, TryExec, Terminal, Path and Exec
+  quoting/field codes. Never pass desktop-file Exec through a shell.
+- [ ] Center/clamp to the active monitor's usable area; single instance, robust
+  focus/dismissal, UTF-8 search, scrolling and reasonable contrast on every theme.
+- [ ] Release menu input ownership before starting a locker. Test actual Super
+  shortcuts, malformed desktop files, duplicate activation and small/two monitors.
+- [ ] Publish real binary/checksum assets, then add the component to every NIRUX
+  install/update/status/doctor/rollback/uninstall path and fixture.
+
+## R5 — nirubar weather and useful panels
+
+- [ ] Ship a `weather` module alongside optional `sun`, with an optional combined
+  compact display; share location/time calculations, not duplicate requests.
+- [ ] Use Open-Meteo with metric/Celsius defaults, configurable named location and
+  coordinates; retain the previously agreed Ljungskile default in the example.
+  A missing location is distinct from the valid coordinates `0,0`.
+- [ ] Bar summary: condition, temperature, optional precipitation hint. Panel:
+  apparent temperature, wind/gusts, precipitation probability/amount, short hourly
+  forecast, sunrise/sunset/day length, last refresh and offline/stale state.
+- [ ] Refresh approximately every 30 minutes through bounded background work;
+  verified TLS, request/body limits, backoff and a versioned atomic cache.
+  Solar data remains usable offline, including polar day/night and DST boundaries.
+- [ ] Put new weather settings in nirubar's own namespaced configuration; migrate
+  legacy top-level coordinates explicitly instead of expanding shared-parser drift.
+- [ ] Make network panels honest about link, address and connectivity; provide
+  optional network-management actions without assuming NetworkManager is installed.
+- [ ] Improve battery aggregation, charging/remaining-time/health detail where the
+  kernel exposes it; do not fabricate missing estimates.
+- [ ] Add explicit media controls and player selection; audio output/mic selection
+  and mute are deliberate controls. Prefer MPRIS/event subscriptions when practical.
+- [ ] Responsive layout: stable workspace region, configurable module priorities,
+  overflow panel on narrow screens, monitor-aware popups and optional secondary-bar
+  compact mode. Information remains accessible when its summary is hidden.
+- [ ] Calendar: `Mon`–`Sun`, Monday first, today indication, month navigation and
+  optional ISO week numbers. Match text and cell widths after changing labels.
+
+Acceptance: frozen/hung helpers and weather failures do not stop clicks/redraw;
+sample/history intervals remain correct while media scrolls; recorded weather
+fixtures cover success, invalid response, offline, stale cache and retry. Normal CI
+does not depend on a live provider.
+
+## R6 — nirunotify: notifications and quiet hardware feedback
+
+Use the existing [design contract](https://github.com/nirucon/nirunotify/blob/main/DESIGN.md).
+
+- [ ] Implement the actual `org.freedesktop.Notifications` methods/signals, replacement
+  IDs, close reasons, urgency, expiry, actions and supported hints; advertise only
+  implemented capabilities. Test interoperability with `notify-send` and real apps.
+- [ ] Native themed surfaces with readable app/title/body hierarchy, wrapping,
+  restrained urgency accents, actions, configurable monitor/position/width and
+  bounded stack/history. Ordinary notifications must not steal keyboard focus.
+- [ ] Hardware OSD for volume, brightness and night light: replace/coalesce updates
+  using one semantic channel per control, rather than one notification per key.
+  Keep a working `notify-send`/Dunst path while the native daemon is developed.
+- [ ] DND, history, dismiss and pause through a documented control interface;
+  optional bar unread indicator. Critical-notification policy is configurable.
+- [ ] Session provider selection: native, Dunst or external; exactly one bus owner,
+  tracked child, clear startup failures and no automatic eviction of another daemon.
+- [ ] Hide private content while locked and apply an explicit unlock replay policy;
+  coordinate with R0/R2 instead of relying solely on stacking.
+- [ ] Bound notification text/images, queued messages, history and work per event.
+  Memory-only history by default; optional persistence has explicit retention.
+- [ ] Publish verified binaries before changing NIRUX defaults or removing Dunst.
+
+## R7 — cleanup and release acceptance
+
+- [ ] Move detailed setup/control/config/testing reference out of long READMEs;
+  retain useful configuration examples and link one authoritative roadmap/audit.
+- [ ] Remove obsolete alpha/version text, stale helper references, duplicated
+  comments and inaccurate claims after the corresponding behaviour is repaired.
+- [ ] Keep compatibility readers only with documented precedence/migration tests;
+  do not delete user settings, wallpapers, NIRUPI or unrelated installed files.
+- [ ] Reconcile saver/locker rendering differences. Extract a small shared crate
+  only if repeated proven primitives justify it; pin its version and preserve
+  standalone builds. A shared theme contract is required; a framework is not.
+- [ ] Include newly released programs in manifest/staging/checksums/version checks,
+  diagnostics, session startup/cleanup, offline fixtures, generation adoption,
+  rollback and uninstall. Purge/cache ownership must cover every installed component.
+- [ ] Run fmt/clippy and meaningful regressions per changed component; clean
+  install/update/rollback/uninstall on Void, Arch and Debian. Run GUI protocol
+  tests with isolated X/D-Bus and real release assets.
+- [ ] On physical Void: laptop keys, backlight, night-light transitions, audio,
+  themes, notification privacy, lock/PAM, lid/suspend/resume and external-monitor
+  hotplug. Record which tests are physical and which use Xvfb.
+- [ ] Review status/diff/history; commit intended files directly on `main`, let CI
+  pass, publish versioned component assets and SHA256SUMS, then release NIRUX with
+  the completed pins. Record versions, acceptance results and the next handoff.
+
+## Innovative refinements after the foundation
+
+1. **Desktop lens:** the unified palette answers contextual queries such as
+   `display`, `night`, `battery`, `weather` and `workspace` with cached local
+   information and relevant actions, not just executable names.
+2. **One-shot focus sessions:** a timed keep-awake/DND state with a visible remaining
+   duration and automatic restoration. Keep manual lock and suspend policy explicit.
+3. **Daylight strip:** a restrained weather-panel timeline connecting sunrise,
+   sunset, night-light transitions and upcoming rain. Works in all four themes.
+4. **Docking profiles:** remember preferred monitor arrangement, bar density and
+   output devices by connector identity; preview changes and provide a revert timer.
+5. **Quiet saver:** low-frequency position changes for burn-in avoidance, content
+   on the active monitor and dim/blank secondary monitors, with explicit policy.
+6. **Explain this state:** consistent details for stale weather, unavailable
+   brightness, DND, idle inhibition, notification ownership and failed actions;
+   expose diagnostics already collected rather than adding a polling daemon.
+
+## Next approved checkpoint
+
+Implement **R0**, then **R1**. Add a regression that fails against the audited
+revision before fixing each defect. Update this file with completed acceptance
+results and immutable release versions; unchecked items are not shipping features.

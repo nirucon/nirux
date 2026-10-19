@@ -15,6 +15,7 @@ A personal hobby project. Early software, used at your own risk.
 
 This is a personal desktop for the author's own use; others are welcome to try it.
 The implementation roadmap and continuation checkpoints are in [ROADMAP.md](ROADMAP.md).
+The current code review and verified findings are in [AUDIT.md](AUDIT.md).
 Native [nirulauncher](https://github.com/nirucon/nirulauncher) and
 [nirunotify](https://github.com/nirucon/nirunotify) are design-stage projects;
 they are not installed until working releases pass the roadmap's integration gates.
