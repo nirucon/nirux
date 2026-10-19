@@ -24,11 +24,12 @@ source locations and verification limits are in [AUDIT.md](AUDIT.md).
 
 ## Current checkpoint
 
-The **0.9.2** manifest pins niruwm **0.16.16**, nirubar **0.18.1**,
-niruscreensaver **0.8.1**, nirulock **0.16.8** and nirulauncher **0.1.1**.
-NIRULAUNCHER provides native Super+P apps and Super+Shift+P apps/actions.
-NIRUBAR has an opt-in Open-Meteo weather module with background refresh and a
-versioned cache.
+The **0.10.1** manifest pins niruwm **0.16.17**, nirubar **0.18.1**,
+niruscreensaver **0.8.1**, nirulock **0.16.8**, nirulauncher **0.1.1** and
+nirunotify **0.1.2**. NIRULAUNCHER provides native Super+P apps and
+Super+Shift+P apps/actions; NIRUNOTIFY is an installed native notification
+provider (Dunst remains the default); NIRUBAR has an opt-in Open-Meteo weather
+module with background refresh and a versioned cache.
 NIRULOCK publishes explicit lock readiness; `niructl suspend` waits for it,
 idle inhibition is explicit, and the session holds a sleep delay inhibitor and
 locks before releasing it. Updates provision the
@@ -311,24 +312,33 @@ does not depend on a live provider.
 
 Use the existing [design contract](https://github.com/nirucon/nirunotify/blob/main/DESIGN.md).
 
-- [ ] Implement the actual `org.freedesktop.Notifications` methods/signals, replacement
-  IDs, close reasons, urgency, expiry, actions and supported hints; advertise only
-  implemented capabilities. Test interoperability with `notify-send` and real apps.
-- [ ] Native themed surfaces with readable app/title/body hierarchy, wrapping,
-  restrained urgency accents, actions, configurable monitor/position/width and
-  bounded stack/history. Ordinary notifications must not steal keyboard focus.
-- [ ] Hardware OSD for volume, brightness and night light: replace/coalesce updates
-  using one semantic channel per control, rather than one notification per key.
-  Keep a working `notify-send`/Dunst path while the native daemon is developed.
-- [ ] DND, history, dismiss and pause through a documented control interface;
-  optional bar unread indicator. Critical-notification policy is configurable.
-- [ ] Session provider selection: native, Dunst or external; exactly one bus owner,
-  tracked child, clear startup failures and no automatic eviction of another daemon.
-- [ ] Hide private content while locked and apply an explicit unlock replay policy;
-  coordinate with R0/R2 instead of relying solely on stacking.
-- [ ] Bound notification text/images, queued messages, history and work per event.
-  Memory-only history by default; optional persistence has explicit retention.
-- [ ] Publish verified binaries before changing NIRUX defaults or removing Dunst.
+- [x] Implement the core `org.freedesktop.Notifications` methods, replacement IDs,
+  close reasons, urgency, expiry and `NotificationClosed`; advertise only `body`.
+  `notify-send`, replacement and history are covered by the D-Bus/X11 smoke test.
+  Released in nirunotify 0.1.2.
+- [ ] Add actions, `ActionInvoked`, images and richer hints only after each is
+  implemented and advertised.
+- [x] Native themed surfaces with app/title/body hierarchy, wrapping, restrained
+  urgency accents, configurable position/width, bounded stack/history and no
+  keyboard focus steal.
+- [ ] Add configurable monitor selection, action buttons and an optional bar
+  unread indicator.
+- [x] Hardware OSD for volume, brightness and night light through
+  `nirunotify --osd CHANNEL TEXT`; one surface is replaced per update. NIRUCTL,
+  the WM volume keys and night light use it when the daemon is running and fall
+  back to `notify-send`/Dunst.
+- [x] DND, history, dismiss and clear through a documented Unix-socket CLI.
+  History is memory-only and bounded at 100 entries.
+- [ ] Add an optional bar unread indicator and configurable critical policy.
+- [x] Session provider selection (`NOTIFICATION_PROVIDER=native|dunst|external`,
+  default Dunst), exactly one bus owner, a tracked child, clear startup failure
+  and no eviction of an existing daemon. Released in niruwm 0.16.17.
+- [x] Hide private content while `_NIRU_LOCK_READY` names a live lock window;
+  queue up to 100 notifications and replay them after verified unlock.
+- [x] Bound text, live/replacement maps, queued commands and history at 100;
+  memory-only history, no images accepted, no per-event worker threads.
+- [x] Publish verified binaries and integrate install/update/status/doctor/
+  rollback/uninstall while keeping Dunst as the default provider.
 
 ## R7 — cleanup and release acceptance
 
@@ -520,12 +530,20 @@ Use the existing [design contract](https://github.com/nirucon/nirunotify/blob/ma
   request and atomic cache were verified on Void, and a unit regression keeps
   configured `0,0` distinct from an unset location. Background refresh, stale
   state, backoff and the panel are covered by unit tests and the live check.
-- **Next work:** R6 native notification service and hardware OSD; R5
-  remaining panels/responsive layout/calendar; R2 appearance document/semantic
-  tokens and GTK/Qt separation; physical sleep acceptance; R3 schedule/resume/bar
-  controls; R7 cleanup/release. Launcher groups, window switching, notification
-  history and input-method support remain. Standalone locker/saver ownership/PAM
-  assets also remain. Preserve user configuration and NIRUPI.
+- NIRUX **0.10.0–0.10.1** install nirunotify **0.1.2** while leaving Dunst as
+  the provider default. The first update from 0.9.2 used the old installer and
+  omitted the new program; the second 0.10.0 update staged it. On Void, a native
+  provider session in an isolated D-Bus/X session delivered `notify-send` into
+  history, owned the bus as the only configured provider, cleaned the notifier
+  up on logout, and the installed daemon passed DND/history/OSD/lock-privacy
+  checks. Notification actions/images, monitor selection and physical provider
+  acceptance remain open.
+- **Next work:** R6 actions/images/monitor/critical policy and physical provider
+  acceptance; R5 remaining panels/responsive layout/calendar; R2 appearance
+  document/semantic tokens and GTK/Qt separation; physical sleep acceptance;
+  R3 schedule/resume/bar controls; R7 cleanup/release. Launcher groups, window
+  switching and input-method support remain. Standalone locker/saver
+  ownership/PAM assets also remain. Preserve user configuration and NIRUPI.
 
 Keep each next checkpoint small and publish only verified assets. Preserve the
 existing lock regressions; never add password-derived logging or timed dismissal.
