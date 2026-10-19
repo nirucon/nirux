@@ -24,8 +24,9 @@ source locations and verification limits are in [AUDIT.md](AUDIT.md).
 
 ## Current checkpoint
 
-The **0.7.9** manifest pins niruwm **0.16.12**, nirubar **0.17.2**,
-niruscreensaver **0.8.1** and nirulock **0.16.7**. Updates provision the
+The **0.8.0** manifest pins niruwm **0.16.13**, nirubar **0.17.2**,
+niruscreensaver **0.8.1** and nirulock **0.16.8**. NIRULOCK publishes explicit
+lock readiness and `niructl suspend` waits for it. Updates provision the
 downloaded release's runtime package list without a full system upgrade, and
 doctor reports selected programs, providers, real bar ownership and prefix
 tools. Native `niructl` desktop actions cover lock, screensaver, logout,
@@ -179,10 +180,15 @@ fullscreen covers its monitor; a compiler-free documented install is truly so.
   the common user-facing interface.
 - [ ] Add idle inhibition to the same interface, with explicit ownership. Keep
   confirmation in the launcher for logout/reboot/shutdown.
-- [ ] Define lock readiness, unlock, idle and notification privacy state with
-  explicit ownership and acknowledgement. Do not infer readiness from a child PID.
-- [ ] Implement lock-before-suspend with logind/elogind delay-inhibitor integration;
-  cover lid close, manual suspend, resume, docking and provider failure.
+- [x] Define lock readiness with explicit ownership and acknowledgement. NIRULOCK
+  publishes `_NIRU_LOCK_READY` naming its mapped lock window and clears it on
+  unlock; no child PID is treated as proof. Released in nirulock 0.16.8.
+- [ ] Extend the state contract to idle and notification privacy, and define the
+  authenticated unlock replay policy.
+- [x] Manual `niructl suspend` locks first and refuses to suspend without verified
+  readiness. Released in niruwm 0.16.13.
+- [ ] Add logind/elogind delay-inhibitor integration for lid close, docking and
+  provider failure, plus resume/reapplication tests.
 
 Acceptance: all four existing themes work across native components; one command
 changes the suite consistently; an invalid theme preserves the working state;
@@ -463,11 +469,19 @@ Use the existing [design contract](https://github.com/nirucon/nirunotify/blob/ma
   file, and keep an opaque black background. Their tests cover built-in and user
   theme precedence. Installed on Void; both installed binaries accept a Nordic
   suite configuration. Live saver/lock rendering still needs the next lock test.
-- **Next work:** R2 appearance document/semantic tokens, idle inhibition,
-  lock readiness and lock-before-suspend; R3 schedule/resume/bar controls;
-  R4 launcher; R5 weather/panels; R6 notifications; R7 cleanup/release.
-  Standalone locker/saver ownership/PAM assets also remain. Preserve user
-  configuration and NIRUPI.
+- NIRUX **0.8.0** pins nirulock **0.16.8** and niruwm **0.16.13**. NIRULOCK
+  publishes `_NIRU_LOCK_READY` only after verified grabs and a mapped surface,
+  and clears it on accepted unlock. The X11 regression asserts the marker names
+  the visible lock window; a killed locker leaves no usable window even if the
+  property survives. `niructl suspend` starts or reuses a ready NIRULOCK and
+  refuses a locker that cannot confirm readiness. The installed 0.8.0 binary
+  passed an isolated Xvfb readiness/stale-window check on Void. Physical suspend
+  and lid-close delay inhibition remain untested/open.
+- **Next work:** R2 appearance document/semantic tokens, idle inhibition and
+  delay-inhibitor suspend; R3 schedule/resume/bar controls; R4 launcher;
+  R5 weather/panels; R6 notifications; R7 cleanup/release. Standalone
+  locker/saver ownership/PAM assets also remain. Preserve user configuration and
+  NIRUPI.
 
 Keep each next checkpoint small and publish only verified assets. Preserve the
 existing lock regressions; never add password-derived logging or timed dismissal.
