@@ -24,8 +24,10 @@ source locations and verification limits are in [AUDIT.md](AUDIT.md).
 
 ## Current checkpoint
 
-The **0.7.5** manifest pins niruwm **0.16.11**, nirubar **0.17.2**,
-niruscreensaver **0.8.0** and nirulock **0.16.6**. Default shortcuts are
+The **0.7.6** manifest pins niruwm **0.16.11**, nirubar **0.17.2**,
+niruscreensaver **0.8.0** and nirulock **0.16.6**. Updates provision the
+downloaded release's runtime package list and doctor reports selected programs,
+providers, real bar ownership and prefix tools. Default shortcuts are
 suite-native; NIRUPI's helper shortcuts and session helpers are an explicit
 `nirupi_compat` profile. Session restore matches mapped windows to their saved
 launch records, including floating state and focus. Reload and theme commands
@@ -141,8 +143,9 @@ retain input isolation; correct password restores the WM shortcuts.
 - [x] **X02:** replace dead NIRUPI-only default shortcuts with suite-native actions;
   offer NIRUPI helpers as an explicit compatibility profile. Released in niruwm
   0.16.11 and nirubar 0.17.2 (the bar accepts the shared setting).
-- [ ] **X03:** make updates install/check newly introduced runtime dependencies;
+- [x] **X03:** make updates install/check newly introduced runtime dependencies;
   diagnose active services/providers, real bar ownership and selected-prefix tools.
+  Released in NIRUX 0.7.6.
 - [ ] Test clean installs and upgrades from current versions on all three systems,
   with an empty home and separately with NIRUPI already installed.
 
@@ -204,7 +207,7 @@ calendar labels hold even in a Swedish system locale.
 - [ ] Add fixed and sunrise/sunset schedules, transitions and resume reapplication.
 - [ ] Show schedule state and reapply after resume/hotplug/provider restart.
 - [x] Install `brightnessctl` and `gammastep` on Void, Arch and Debian; doctor checks
-  them. Package provisioning on `nirux update` remains open (X03).
+  them. `nirux update` now provisions this release's package list (X03).
 
 Hardware checkpoint: Void's Intel backlight accepted **100% → 95% → 100%** without
 sudo. Its real RandR display accepted **4500 K** and a reset when explicit location
@@ -436,11 +439,20 @@ Use the existing [design contract](https://github.com/nirucon/nirunotify/blob/ma
   accept the shared setting in both standalone and compatibility configurations,
   and `niruwm --dump-config` confirms the defaults are suite-native. Live
   session acceptance still needs the next login.
-- **Next work:** X03 dependency provisioning and diagnostics, R3
-  schedule/resume/bar controls, R2 suite themes/actions, R4 launcher,
-  R5 weather/panels, R6 notifications, R7 cleanup/release. Standalone
-  locker/saver ownership/PAM assets also remain. Preserve user configuration and
-  NIRUPI.
+- NIRUX **0.7.6** added update provisioning from the downloaded release's
+  package list and expanded doctor checks. Installed on Void. The update from
+  0.7.5 still used the old installer's disabled-package path, so the first
+  0.7.6 update did not provision; the installed 0.7.6 `_provision` dry run now
+  reads the new list (it reports `xorg-minimal` as a missing meta-package on
+  this machine, where the `xorg` meta is installed instead). Doctor correctly
+  reports the live WM 0.16.8, one bar for one published monitor, the selected
+  prefix, configured programs and missing providers on the physical session.
+  Integration covers missing-package detection, dry-run provisioning and bar
+  cache purge.
+- **Next work:** R3 schedule/resume/bar controls, R2 suite themes/actions,
+  R4 launcher, R5 weather/panels, R6 notifications, R7 cleanup/release.
+  Standalone locker/saver ownership/PAM assets also remain. Preserve user
+  configuration and NIRUPI.
 
 Keep each next checkpoint small and publish only verified assets. Preserve the
 existing lock regressions; never add password-derived logging or timed dismissal.
