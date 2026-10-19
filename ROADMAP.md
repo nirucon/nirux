@@ -395,9 +395,14 @@ Use the existing [design contract](https://github.com/nirucon/nirunotify/blob/ma
   refused, a right-monitor cell click sends global desktop 4, XEmbed icons embed,
   tray handover does not kill the bar, bounded probes time out and cap output, and
   load sampling stays on its worker.
-- **Next R1 work:** remaining R1 items: session restore (W06), niructl
-  acknowledgements/status (W07), config/validation and update dependency
-  provisioning (B10/X02/X03), standalone locker/saver ownership/PAM assets.
+- NIRUX **0.7.1** pins niruwm **0.16.7** and nirubar **0.17.1** after green CI and
+  release; installed on Void. Backlight keys and `niructl brightness` changed the
+  physical laptop 100%→95%→100%. `niructl nightlight toggle` applied Gammastep in
+  the live session and `off` reset it; the test restored the off state.
+- **Next work:** R1 leftovers (W06 session restore, W07 niructl acknowledgements),
+  R3 schedule/resume/bar controls, R2 suite themes/actions, R4 launcher,
+  R5 weather/panels, R6 notifications, R7 cleanup/release. Update/doctor dependency
+  provisioning (X03) and standalone locker/saver ownership/PAM assets also remain.
   bounded background probes and fixed-rate graph samples (B07/B08). Remaining
   standalone locker/saver ownership/PAM asset work, config validation and update
   dependency provisioning are still open. Preserve user configuration and NIRUPI.
