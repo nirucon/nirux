@@ -24,12 +24,14 @@ source locations and verification limits are in [AUDIT.md](AUDIT.md).
 
 ## Current checkpoint
 
-The **0.7.4** manifest pins niruwm **0.16.10**, nirubar **0.17.1**,
-niruscreensaver **0.8.0** and nirulock **0.16.6**. Session restore matches mapped
-windows to their saved launch records, including floating state and focus.
-Reload and theme commands wait for the window manager's observable result instead
-of a fixed sleep, and a rejected configuration keeps the previous working state.
-Historical measurements: [MEASUREMENTS.md](MEASUREMENTS.md).
+The **0.7.5** manifest pins niruwm **0.16.11**, nirubar **0.17.2**,
+niruscreensaver **0.8.0** and nirulock **0.16.6**. Default shortcuts are
+suite-native; NIRUPI's helper shortcuts and session helpers are an explicit
+`nirupi_compat` profile. Session restore matches mapped windows to their saved
+launch records, including floating state and focus. Reload and theme commands
+wait for the window manager's observable result instead of a fixed sleep, and a
+rejected configuration keeps the previous working state. Historical
+measurements: [MEASUREMENTS.md](MEASUREMENTS.md).
 
 The public repositories **nirulauncher** and **nirunotify** already contain design
 contracts. Neither has a working binary/release and neither belongs in the pinned
@@ -136,8 +138,9 @@ retain input isolation; correct password restores the WM shortcuts.
 - [ ] **X01:** repair component installers: versions, independent component builds,
   pinned session assets, canonical config paths and ownership of installed links.
   An individual installer must not overwrite files inside a NIRUX generation.
-- [ ] **X02:** replace dead NIRUPI-only default shortcuts with suite-native actions;
-  offer NIRUPI helpers as an explicit compatibility profile.
+- [x] **X02:** replace dead NIRUPI-only default shortcuts with suite-native actions;
+  offer NIRUPI helpers as an explicit compatibility profile. Released in niruwm
+  0.16.11 and nirubar 0.17.2 (the bar accepts the shared setting).
 - [ ] **X03:** make updates install/check newly introduced runtime dependencies;
   diagnose active services/providers, real bar ownership and selected-prefix tools.
 - [ ] Test clean installs and upgrades from current versions on all three systems,
@@ -425,8 +428,16 @@ Use the existing [design contract](https://github.com/nirucon/nirunotify/blob/ma
   saved placements and final focus. The installed release passed an isolated Xvfb
   acceptance on Void; the live session still runs the older WM until the next
   login.
-- **Next work:** R3 schedule/resume/bar controls, R2 suite themes/actions,
-  X02/X03 suite-native actions and dependency provisioning, R4 launcher,
+- NIRUX **0.7.5** pins niruwm **0.16.11** and nirubar **0.17.2** after green CI
+  [39252819310](https://github.com/nirucon/niruwm/actions/runs/39252819310) and
+  releases. Installed on Void. Defaults no longer bind NIRUPI-only helpers;
+  `nirupi_compat = true` adds the old shortcuts, and the session starts NIRUPI
+  battery/autostart/lock helpers only in that profile. The installed binaries
+  accept the shared setting in both standalone and compatibility configurations,
+  and `niruwm --dump-config` confirms the defaults are suite-native. Live
+  session acceptance still needs the next login.
+- **Next work:** X03 dependency provisioning and diagnostics, R3
+  schedule/resume/bar controls, R2 suite themes/actions, R4 launcher,
   R5 weather/panels, R6 notifications, R7 cleanup/release. Standalone
   locker/saver ownership/PAM assets also remain. Preserve user configuration and
   NIRUPI.
