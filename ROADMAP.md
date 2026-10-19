@@ -24,9 +24,9 @@ source locations and verification limits are in [AUDIT.md](AUDIT.md).
 
 ## Current checkpoint
 
-The **0.10.2** manifest pins niruwm **0.16.17**, nirubar **0.18.1**,
+The **0.10.3** manifest pins niruwm **0.16.17**, nirubar **0.18.2**,
 niruscreensaver **0.8.1**, nirulock **0.16.8**, nirulauncher **0.1.1** and
-nirunotify **0.2.0**. NIRULAUNCHER provides native Super+P apps and
+nirunotify **0.2.1**. NIRULAUNCHER provides native Super+P apps and
 Super+Shift+P apps/actions; NIRUNOTIFY is an installed native notification
 provider (Dunst remains the default); NIRUBAR has an opt-in Open-Meteo weather
 module with background refresh and a versioned cache.
@@ -330,7 +330,8 @@ Use the existing [design contract](https://github.com/nirucon/nirunotify/blob/ma
 - [x] DND, history, dismiss and clear through a documented Unix-socket CLI.
   History is memory-only and bounded at 100 entries. Critical notifications have
   a configurable timeout and DND-bypass policy (nirunotify 0.2.0).
-- [ ] Add an optional bar unread indicator.
+- [x] Add an optional nirubar `notifications` unread indicator and history panel
+  backed by `nirunotify --count/--history`. Released in nirubar 0.18.2.
 - [x] Session provider selection (`NOTIFICATION_PROVIDER=native|dunst|external`,
   default Dunst), exactly one bus owner, a tracked child, clear startup failure
   and no eviction of an existing daemon. Released in niruwm 0.16.17.
@@ -543,14 +544,26 @@ Use the existing [design contract](https://github.com/nirucon/nirunotify/blob/ma
   monitor selection and configurable critical timeout/DND policy. Installed on
   Void; the notifier smoke test still passes. Notification actions/images, bar
   unread and physical provider acceptance remain.
-- **Next work:** R6 actions/images/bar unread/physical acceptance; R7 clean
-  install and real startx acceptance on the Arch ThinkPad once Tailscale makes
-  it reachable (it was offline/relay during this checkpoint); R5 remaining
+- NIRUX **0.10.3** pins nirubar **0.18.2** and nirunotify **0.2.1**. The optional
+  bar unread indicator/history panel was installed and a live count was exercised
+  on Void. Installed on Void.
+- **Arch ThinkPad clean acceptance:** Tailscale became reachable. The machine had
+  an orphaned NIRUX 0.4.1 flat install, no NIRUPI, no config, no session entry and
+  no `.xinitrc`. Cloning current main and running `./nirux install
+  --display-manager startx` installed 78 Arch packages, adopted the legacy
+  generation, activated NIRUX 0.10.3, created `.xinitrc`/session entry and kept
+  the legacy generation for rollback. `nirux status` and `doctor` pass; all seven
+  components report the pinned versions. An isolated Xvfb session launched through
+  `niruwm-session` (the startx path), started the WM and bar, opened nirulauncher
+  with a real Super+P, closed it with Escape, and quit without leftover
+  WM/bar/Dunst processes. A physical `startx` on the laptop remains for the user
+  to confirm; no display manager is enabled.
+- **Next work:** R6 actions/images and physical provider acceptance; R5 remaining
   panels/responsive layout/calendar; R2 appearance document/semantic tokens and
   GTK/Qt separation; physical sleep acceptance; R3 schedule/resume/bar controls;
-  R7 cleanup/release. Launcher groups, window switching and input-method support
-  remain. Standalone locker/saver ownership/PAM assets also remain. Preserve
-  user configuration and NIRUPI.
+  R7 physical startx/rollback acceptance and cleanup. Launcher groups, window
+  switching and input-method support remain. Standalone locker/saver
+  ownership/PAM assets also remain. Preserve user configuration and NIRUPI.
 
 Keep each next checkpoint small and publish only verified assets. Preserve the
 existing lock regressions; never add password-derived logging or timed dismissal.
