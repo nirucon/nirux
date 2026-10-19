@@ -24,10 +24,13 @@ source locations and verification limits are in [AUDIT.md](AUDIT.md).
 
 ## Current checkpoint
 
-The **0.7.6** manifest pins niruwm **0.16.11**, nirubar **0.17.2**,
-niruscreensaver **0.8.0** and nirulock **0.16.6**. Updates provision the
-downloaded release's runtime package list and doctor reports selected programs,
-providers, real bar ownership and prefix tools. Default shortcuts are
+The **0.7.9** manifest pins niruwm **0.16.12**, nirubar **0.17.2**,
+niruscreensaver **0.8.1** and nirulock **0.16.7**. Updates provision the
+downloaded release's runtime package list without a full system upgrade, and
+doctor reports selected programs, providers, real bar ownership and prefix
+tools. Native `niructl` desktop actions cover lock, screensaver, logout,
+suspend, reboot, shutdown, DND, theme and reload; the saver and lock screen
+follow the suite theme for content colours. Default shortcuts are
 suite-native; NIRUPI's helper shortcuts and session helpers are an explicit
 `nirupi_compat` profile. Session restore matches mapped windows to their saved
 launch records, including floating state and focus. Reload and theme commands
@@ -164,15 +167,18 @@ fullscreen covers its monitor; a compiler-free documented install is truly so.
   borders, focus indication and reduced-motion behaviour with each theme.
 - [ ] Treat colours as colours: never select contrast using numeric RGB `max`.
   Keep an optional opaque black saver/lock background with theme-coloured content.
-- [ ] `niructl theme NAME` applies to WM, bar, open palette, notifier and the next
-  saver/lock. Define reload notifications and observable success/failure.
-  A theme reload never weakens an established lock.
+- [x] `niructl theme NAME` applies to WM and bar, reports observable
+  success/failure, and the next saver/lock uses the selected theme's content
+  colours with an opaque black background. A theme reload does not dismiss a lock.
+- [ ] Extend theme propagation to the open palette and native notifier once those
+  components exist; define their reload notifications.
 - [ ] Fix root background selection and separate optional GTK/Qt integration from
   native suite theming; application settings remain opt-in exports.
-- [ ] Introduce argv-based desktop actions for lock, screensaver, logout, suspend,
-  reboot, shutdown, theme selection, DND, idle inhibition and configuration reload.
-  `niructl` is the common user-facing interface; a small companion binary within
-  an existing repo is acceptable if implementation requires it.
+- [x] Introduce argv-based desktop actions for lock, screensaver, logout, suspend,
+  reboot, shutdown, theme selection, DND and configuration reload. `niructl` is
+  the common user-facing interface.
+- [ ] Add idle inhibition to the same interface, with explicit ownership. Keep
+  confirmation in the launcher for logout/reboot/shutdown.
 - [ ] Define lock readiness, unlock, idle and notification privacy state with
   explicit ownership and acknowledgement. Do not infer readiness from a child PID.
 - [ ] Implement lock-before-suspend with logind/elogind delay-inhibitor integration;
@@ -443,14 +449,23 @@ Use the existing [design contract](https://github.com/nirucon/nirunotify/blob/ma
   package list and expanded doctor checks. Installed on Void. The update from
   0.7.5 still used the old installer's disabled-package path, so the first
   0.7.6 update did not provision; the installed 0.7.6 `_provision` dry run now
-  reads the new list (it reports `xorg-minimal` as a missing meta-package on
-  this machine, where the `xorg` meta is installed instead). Doctor correctly
-  reports the live WM 0.16.8, one bar for one published monitor, the selected
-  prefix, configured programs and missing providers on the physical session.
-  Integration covers missing-package detection, dry-run provisioning and bar
-  cache purge.
-- **Next work:** R3 schedule/resume/bar controls, R2 suite themes/actions,
-  R4 launcher, R5 weather/panels, R6 notifications, R7 cleanup/release.
+  reads the new list. Doctor correctly reports the live WM, one bar for one
+  published monitor, the selected prefix, configured programs and missing
+  providers on the physical session. Integration covers missing-package
+  detection, dry-run provisioning and bar cache purge.
+- NIRUX **0.7.7** pins niruwm **0.16.12** with argv-based `niructl` actions for
+  lock, screensaver, logout, suspend, reboot, shutdown and provider-aware DND,
+  plus `Super+Shift+D`. Unit tests use fake backends and assert the exact argv.
+  NIRUX **0.7.8** stops update provisioning from performing a full system
+  upgrade: an explicit missing-package list installs only those packages.
+- NIRUX **0.7.9** pins niruscreensaver **0.8.1** and nirulock **0.16.7**. Both
+  read the theme selected in `~/.config/niruwm/config.toml`, prefer a user theme
+  file, and keep an opaque black background. Their tests cover built-in and user
+  theme precedence. Installed on Void; both installed binaries accept a Nordic
+  suite configuration. Live saver/lock rendering still needs the next lock test.
+- **Next work:** R2 appearance document/semantic tokens, idle inhibition,
+  lock readiness and lock-before-suspend; R3 schedule/resume/bar controls;
+  R4 launcher; R5 weather/panels; R6 notifications; R7 cleanup/release.
   Standalone locker/saver ownership/PAM assets also remain. Preserve user
   configuration and NIRUPI.
 
