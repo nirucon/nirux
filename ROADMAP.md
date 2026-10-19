@@ -391,8 +391,18 @@ Use the existing [design contract](https://github.com/nirucon/nirunotify/blob/ma
   selection handover no longer terminates the bar. Physical lock/PAM/shortcut and
   notification-coverage checks passed again. Remaining B07 probes are still
   synchronous.
-- **Next R1 work:** monitor/workspace agreement (W03/B02/B03), hotplug identity and
-  reload ownership (W04), tray protocol (B05),
+- NIRUX **0.7.0** pins niruwm **0.16.6** and nirubar **0.17.0** after green CI and
+  release. Installed on Void; the live bar reports 0.17.0 and physical lock/PAM/
+  notification/shortcut checks passed. The running WM was still 0.16.4 during that
+  check, so monitor-offset integration takes effect at the next login. Bar 0.17.0
+  falls back to nine global workspaces when `_NIRUWM_MONITORS` is absent.
+- Verified regressions: two bars share one X screen, same-monitor duplicates are
+  refused, a right-monitor cell click sends global desktop 4, XEmbed icons embed,
+  tray handover does not kill the bar, bounded probes time out and cap output, and
+  load sampling stays on its worker.
+- **Next R1 work:** remaining R1 items: session restore (W06), niructl
+  acknowledgements/status (W07), config/validation and update dependency
+  provisioning (B10/X02/X03), standalone locker/saver ownership/PAM assets.
   bounded background probes and fixed-rate graph samples (B07/B08). Remaining
   standalone locker/saver ownership/PAM asset work, config validation and update
   dependency provisioning are still open. Preserve user configuration and NIRUPI.
