@@ -24,7 +24,7 @@ source locations and verification limits are in [AUDIT.md](AUDIT.md).
 
 ## Current checkpoint
 
-The **0.10.5** manifest pins niruwm **0.16.18**, nirubar **0.18.4**,
+The **0.10.6** manifest pins niruwm **0.16.18**, nirubar **0.18.4**,
 niruscreensaver **0.8.1**, nirulock **0.16.8**, nirulauncher **0.1.1** and
 nirunotify **0.2.1**. NIRULAUNCHER provides native Super+P apps and
 Super+Shift+P apps/actions; NIRUNOTIFY is an installed native notification
@@ -160,8 +160,9 @@ retain input isolation; correct password restores the WM shortcuts.
   experience without manual suite dependencies: X input drivers, DejaVu plus an
   icon font (JetBrains Nerd Font on Arch, Symbols Nerd Font on Void, Font Awesome
   fallback on Debian), PipeWire ALSA, screenshot selection (maim/slop), pcmanfm,
-  network tools (iproute2/iw) and xdg-utils. Dead Flameshot default removed.
-  Released in NIRUX 0.10.5.
+  network tools (iproute2/iw) and xdg-utils. Audio includes PipeWire,
+  WirePlumber, the Pulse/ALSA bridges, ALSA UCM profiles and RTKit; doctor checks
+  for a default sink. Dead Flameshot default removed. Released in NIRUX 0.10.5/0.10.6.
 - [ ] Test clean installs and upgrades from current versions on all three systems,
   with an empty home and separately with NIRUPI already installed.
 
@@ -587,6 +588,13 @@ Use the existing [design contract](https://github.com/nirucon/nirunotify/blob/ma
   volume, brightness, wifi, battery and clock icons are visible. A Debian-family
   Font Awesome fallback screenshot also showed the module icons. Void was
   updated with no live WM running; the new bar activates at next login.
+- NIRUX **0.10.6** completes the audio provisioning: PipeWire, WirePlumber,
+  `pipewire-pulse`, `pipewire-alsa`, ALSA UCM profiles and RTKit on Arch/Debian;
+  Void gets PipeWire, WirePlumber, ALSA UCM and RTKit (Void has no separate
+  pipewire-alsa package). Doctor now reports a missing default sink. On the Arch
+  ThinkPad, RTKit is active, `pactl` reports PipeWire 1.6.9 with the ALC3232 sink,
+  a real `pw-play` stream exited successfully, and doctor reports an audio default
+  sink.
 - **Next work:** R6 actions/images and physical provider acceptance; R5 remaining
   panels/responsive layout/calendar; R2 appearance document/semantic tokens and
   GTK/Qt separation; physical sleep acceptance; R3 schedule/resume/bar controls;
