@@ -400,6 +400,9 @@ Use the existing [design contract](https://github.com/nirucon/nirunotify/blob/ma
   release; installed on Void. Backlight keys and `niructl brightness` changed the
   physical laptop 100%→95%→100%. `niructl nightlight toggle` applied Gammastep in
   the live session and `off` reset it; the test restored the off state.
+- NIRUX **0.7.2** pins niruwm **0.16.8** after green CI/release and is installed on
+  Void. `niructl layouts` and direct `centeredfloat` selection are complete; status
+  reports the real WM name. Fixed-sleep reload acknowledgement remains.
 - **Next work:** R1 leftovers (W06 session restore, W07 niructl acknowledgements),
   R3 schedule/resume/bar controls, R2 suite themes/actions, R4 launcher,
   R5 weather/panels, R6 notifications, R7 cleanup/release. Update/doctor dependency
