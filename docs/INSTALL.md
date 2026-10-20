@@ -1,6 +1,6 @@
 # Installation and maintenance
 
-**Verified-state note, 2026-10-20:** 0.10.38 implements managed Helium,
+**Verified-state note, 2026-10-20:** 0.10.39 implements managed Helium,
 theme-follow wallpapers, target-owned apply and the kitty/fish terminal
 integration. The full distro CI covers real-release install,
 doctor, config contract, startx and a normal-user sandboxed Helium launch.
@@ -51,7 +51,9 @@ responsibility.
 ### Theme wallpapers
 
 NIRUX installs the four theme wallpaper sets (Niru Noir, Nord, Satie and Carl
-Larsson, 4K and 8K) into `~/Pictures/Wallpapers/NIRU`. Existing files are kept
+Larsson, 4K and 8K) plus three extra NIRUX wallpapers (Håvamål 19, Rooted in
+Less and Space to Think Silhouette, 4K/8K) into
+`~/Pictures/Wallpapers/NIRU`. Existing files are kept
 unless they are untouched copies from an older NIRUX release; a wallpaper the
 user edited is never overwritten. The wallpaper directory can be changed with
 `XDG_PICTURES_DIR`, or by setting `[wallpaper] theme_dir`.
@@ -73,6 +75,11 @@ theme_dir = "~/Pictures/Wallpapers/NIRU"
 `theme_dir/nirux-wallpaper-foo-4k.png` (or `-8k.png`). If no matching asset
 exists, the current wallpaper is left alone. A normal uninstall keeps the
 pictures; `--purge` removes only unmodified NIRUX-owned copies.
+
+The same choices are available graphically: press **Super+Shift+P**, type
+`wallpaper`, and pick an image or cycle mode, rotation, scale and follow-theme.
+Selecting an image writes `mode = "single"` and applies it immediately through
+`niructl`. The config file remains authoritative for advanced settings.
 
 ### Terminal: kitty, fish and theme colours
 
@@ -167,7 +174,7 @@ installer cannot update itself. After that first migration the installed
 
 ```sh
 nirux update
-nirux update --release 0.10.38
+nirux update --release 0.10.39
 nirux rollback
 ```
 

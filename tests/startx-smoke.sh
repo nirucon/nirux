@@ -57,6 +57,35 @@ if command -v maim >/dev/null 2>&1; then
   maim "$HOME/startx-screenshot.png"
   [ -s "$HOME/startx-screenshot.png" ] || { printf 'maim produced no screenshot\n' >&2; exit 1; }
 fi
+# Wallpaper choices and settings: the extra NIRUX images must be listed and
+# selectable, and the status must reflect each change.
+if [ -x "$BIN/niructl" ]; then
+  wallpaper_list=$("$BIN/niructl" wallpaper list)
+  printf '%s\n' "$wallpaper_list" | grep -q 'Håvamål 19' || {
+    printf 'extra NIRUX wallpaper was not listed\n' >&2
+    exit 1
+  }
+  extra=$(printf '%s\n' "$wallpaper_list" | awk -F '\t' '$1 == "Håvamål 19" {print $2; exit}')
+  [ -f "$extra" ] || { printf 'listed extra wallpaper is missing\n' >&2; exit 1; }
+  before_pixmap=$(xprop -root _XROOTPMAP_ID 2>/dev/null || :)
+  "$BIN/niructl" wallpaper set "$extra"
+  sleep 0.3
+  after_pixmap=$(xprop -root _XROOTPMAP_ID 2>/dev/null || :)
+  [ -n "$before_pixmap" ] && [ -n "$after_pixmap" ] && [ "$before_pixmap" != "$after_pixmap" ] || {
+    printf 'wallpaper selection did not replace the root pixmap\n' >&2
+    exit 1
+  }
+  "$BIN/niructl" wallpaper mode fixed
+  "$BIN/niructl" wallpaper rotation 30
+  "$BIN/niructl" wallpaper scale fit
+  "$BIN/niructl" wallpaper follow-theme off
+  wallpaper_status=$("$BIN/niructl" wallpaper status)
+  printf '%s\n' "$wallpaper_status" | grep -qx 'mode=fixed' || { printf 'wallpaper mode was not saved\n' >&2; exit 1; }
+  printf '%s\n' "$wallpaper_status" | grep -qx 'rotation_minutes=30' || { printf 'wallpaper rotation was not saved\n' >&2; exit 1; }
+  printf '%s\n' "$wallpaper_status" | grep -qx 'scale=fit' || { printf 'wallpaper scale was not saved\n' >&2; exit 1; }
+  printf '%s\n' "$wallpaper_status" | grep -qx 'follow_theme=false' || { printf 'wallpaper follow-theme was not saved\n' >&2; exit 1; }
+  printf '%s\n' "$wallpaper_status" | grep -qx "file=$extra" || { printf 'wallpaper file was not saved\n' >&2; exit 1; }
+fi
 "$BIN/niructl" quit
 wait "$START"
 START=
