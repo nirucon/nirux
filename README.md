@@ -15,6 +15,25 @@ wallpaper while custom files, rotation and `mode = "single"` remain preserved.
 See the [current roadmap](ROADMAP.md) for remaining S03/S04/H01 acceptance work
 and exact verification limits.
 
+## Prerequisites
+
+- **x86_64 with glibc.** Supported: Arch Linux, Debian and Void glibc. Void musl
+  and ARM are not supported by the released binaries.
+- **A normal user with sudo already installed and configured.** NIRUX needs it
+  for OS packages and system integration; it cannot bootstrap sudo itself.
+- **Working network access** (and `git` if you clone the repository). NIRUX
+  installs `curl`/CA certificates and downloads checksummed release assets.
+- **Working graphics, Wi-Fi and other hardware drivers/firmware.** These remain
+  the OS/hardware installation's responsibility; NIRUX does not install
+  proprietary NVIDIA drivers or missing firmware.
+- **A display path.** An existing display manager is preserved; otherwise the
+  install offers startx (default), SDDM or LightDM.
+
+`--no-packages` is only for machines where all runtime dependencies already
+exist. Audio/PipeWire, PAM, fonts, cursors, screenshots and the session bus are
+provisioned by a normal install. See [installation details](docs/INSTALL.md) for
+the exact scope and hardware limits.
+
 ## Install
 
 Run as your normal login user with sudo available:
