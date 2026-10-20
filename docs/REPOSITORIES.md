@@ -8,7 +8,7 @@ initial review scope; they are not a current certification of optional apps.
 
 | Repository | GitHub main observed 2026-10-20 | Release |
 |---|---|---|
-| nirux | `de45d5b` | v0.10.32 (checkpoint; tag after documentation) |
+| nirux | `81e0889` | v0.10.32; wallpaper assets on main |
 | niruwm | `ceb78000eadf` | v0.16.30 |
 | nirubar | `e870f89d369b` | v0.18.15 |
 | niruscreensaver | `52173f62718b` | v0.8.3 |

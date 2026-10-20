@@ -28,13 +28,31 @@ still preserve existing browser settings.
 
 ## Evidence
 
+- CI [39421428853](https://github.com/nirucon/nirux/actions/runs/39421428853)
+  passed Arch, Debian and Void after one transient GitHub asset-download 500 on
+  Debian; the failed job was rerun without code changes. The rerun retained all
+  four green jobs.
+- Local disposable Arch, Debian and Void containers passed
+  `tests/release-smoke.sh` with the 0.10.32 code, including the brave→Helium
+  config migration, update, rollback, startx and owned uninstall.
 - `sh tests/integration.sh` covers the exact `brave` default migration and a
   custom `firefox` selection that must not change.
-- The real pinned-release smoke, startx smoke and normal-user Helium sandbox are
-  expected to remain green; the release workflow publishes only after the
-  offline suite passes.
-- Remote deployment to `niru@void` and `niru@thinkpad` is recorded in the
-  session checkpoint after verification.
+
+## Deployment
+
+Both owner hosts were updated from 0.10.30 with the published 0.10.32 release.
+The old 0.10.30 caller does not know `--browser`, so the deployment used two
+update invocations: first update the installer, then run the new installer with
+`--browser helium`. This is the S03 one-update gap, not a hidden manual fix.
+
+| Host | Result |
+|---|---|
+| `niru@void` (Void, existing X11 session) | 0.10.32 active; existing external Helium 0.19.3.1 and profile preserved; config migrated brave→helium; `status`/`doctor` exit 0; sandboxed headless launch passed |
+| `niru@thinkpad` (Arch, existing startx session) | 0.10.32 active; managed Helium 0.19.4.1 installed; config migrated brave→helium; `status`/`doctor` exit 0; sandboxed headless launch passed |
+
+No active session was logged out. PAM, NIRUPI and the existing browser profile
+were not modified. The only config change on each host was the obsolete default
+browser line.
 
 ## Limits
 
