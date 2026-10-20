@@ -52,6 +52,9 @@ for theme in niru-noir niru-nord niru-satie niru-carl-larsson; do
   sed "s/^theme = .*/theme = \"$theme\"/" "$CFG/niruwm/config.toml" > "$TEST/config.tmp"
   mv "$TEST/config.tmp" "$CFG/niruwm/config.toml"
   check_all "$theme" || exit 1
+  HOME=$TEST/home XDG_CONFIG_HOME=$CFG "$NOTIFY" --check-config | grep -qx "theme: $theme" || {
+    echo "FAIL $theme: notifier theme label"; exit 1;
+  }
 done
 cat > "$CFG/niruwm/themes/custom.toml" <<'THEME'
 name = "custom"
@@ -64,6 +67,9 @@ THEME
 sed 's/^theme = .*/theme = "custom"/' "$CFG/niruwm/config.toml" > "$TEST/config.tmp"
 mv "$TEST/config.tmp" "$CFG/niruwm/config.toml"
 check_all custom || exit 1
+HOME=$TEST/home XDG_CONFIG_HOME=$CFG "$NOTIFY" --check-config | grep -qx 'theme: custom' || {
+  echo "FAIL custom: notifier theme label"; exit 1;
+}
 
 # An invalid contract must be ignored, not replace the working theme.
 printf '%s\n' 'schema = 9' > "$CFG/niruwm/appearance.toml"

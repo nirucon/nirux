@@ -1,4 +1,4 @@
-# 0.10.42 — notification colours follow the current theme
+# 0.10.42/0.10.43 — notification colours follow the current theme
 
 Date: 2026-10-20. Owner request: native notification popups and OSD should use
 the colours of the active NIRU theme and look right after a live theme change.
@@ -38,6 +38,16 @@ file colours were merged.
   width. All existing action, DND, expiry, lock-privacy and OSD checks still
   pass.
 - NIRUNOTIFY v0.3.4 published from commit `2448776`.
+
+## Follow-up 0.10.43
+
+The first run exposed a reporting bug: colours were correct, but
+`nirunotify --check-config` printed `theme: niru-noir` because it read a
+non-existent `theme` key from the notifier config instead of the effective
+NIRUWM theme. NIRUNOTIFY 0.3.5 reads the validated theme name from
+`niruwm/config.toml`; the palette was already doing this. A NIRUX
+appearance-contract assertion now requires the printed theme to match the
+selected built-in or custom theme.
 
 ## Integration
 
