@@ -1,7 +1,8 @@
 # Installation and maintenance
 
-**Verified-state note, 2026-10-20:** 0.10.35 implements managed Helium,
-theme-follow wallpapers and target-owned apply. The full distro CI covers real-release install,
+**Verified-state note, 2026-10-20:** 0.10.36 implements managed Helium,
+theme-follow wallpapers, target-owned apply and the kitty/fish terminal
+integration. The full distro CI covers real-release install,
 doctor, config contract, startx and a normal-user sandboxed Helium launch.
 Containers are supporting evidence, not a fresh physical OS certification.
 S03, S04 and H01 remain open; follow [the roadmap](../ROADMAP.md) and the
@@ -73,6 +74,30 @@ theme_dir = "~/Pictures/Wallpapers/NIRU"
 exists, the current wallpaper is left alone. A normal uninstall keeps the
 pictures; `--purge` removes only unmodified NIRUX-owned copies.
 
+### Terminal: kitty, fish and theme colours
+
+A normal install adds **fish** and a NIRU kitty configuration. Kitty always uses
+fish inside the terminal; the login shell is not changed. Fish keeps its
+persistent history, built-in autosuggestions and completion, and NIRUX adds
+completions for `nirux` and `niructl`, a two-line NIRU prompt and a
+`nirux-update` helper.
+
+Existing kitty/fish configuration is preserved:
+
+- An existing `kitty.conf` gets one managed block that selects fish and includes
+  the generated theme. Other settings stay untouched.
+- An existing fish `config.fish` gets one managed block at the end. The NIRUX
+  prompt and colours therefore win over an older NIRUPI/starship prompt, while
+  aliases and user functions remain.
+- A backup `*.nirux-backup` is written before the first modification. Uninstall
+  removes only the managed blocks and NIRUX-owned files.
+
+Generated files live in `~/.config/nirux/theme/` and are never hand-edited.
+`niructl theme`, a theme change through NIRUWM, and login all regenerate them.
+Kitty reloads on `SIGUSR1`; existing fish prompts re-source the colours on the
+next prompt. Custom themes use the custom background/foreground plus a light or
+dark readable ANSI base.
+
 ### Browser
 
 A fresh install offers **Helium**, the managed default, and remembers the answer
@@ -142,7 +167,7 @@ installer cannot update itself. After that first migration the installed
 
 ```sh
 nirux update
-nirux update --release 0.10.35
+nirux update --release 0.10.36
 nirux rollback
 ```
 
@@ -287,7 +312,7 @@ sh tests/integration.sh
 Offline regression tests use isolated homes and mock release downloads. They
 exercise all three distribution mappings, generation switches, rollback,
 checksum failures, status purity, PAM includes, managed-browser policy,
-theme-wallpaper ownership and uninstall/purge. CI also installs the real vanilla
+theme-wallpaper ownership, terminal config preservation and uninstall/purge. CI also installs the real vanilla
 dependency package lists on all three distributions, runs the real pinned
 releases through startx, verifies a theme change replaces the root wallpaper,
 and starts Helium as a normal user with the Chromium sandbox enabled. The

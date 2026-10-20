@@ -55,6 +55,9 @@ wallpaper_archive() {
   : > "$build/wallpaper/nirux-wallpaper-nord-4k.png"
   tar -cJf "$1" -C "$build" wallpaper
 }
+terminal_archive() {
+  ( cd "$SOURCE" && tar -cJf "$1" terminal )
+}
 # The target installer runs in a separate process. Give it the same offline
 # release fixture through a curl shim; the parent test shell keeps its fetch().
 mkdir -p "$TEST/bin"
@@ -103,6 +106,7 @@ for release in "$VERSION" 99.0.0; do
   cp "$SOURCE/config.example.toml" "$FIXTURE/nirux/$release/config.example.toml"
   cp "$SOURCE/appearance.example.toml" "$FIXTURE/nirux/$release/appearance.example.toml"
   wallpaper_archive "$FIXTURE/nirux/$release/nirux-wallpapers.tar.xz"
+  terminal_archive "$FIXTURE/nirux/$release/nirux-terminal.tar.xz"
   checksums "$FIXTURE/nirux/$release"
 done
 # 99.2.0 adds a synthetic component. The running installer does not know its
@@ -117,6 +121,7 @@ say 'nirufoo 1.0.0' >> "$FIXTURE/nirux/99.2.0/manifest"
 cp "$SOURCE/config.example.toml" "$FIXTURE/nirux/99.2.0/config.example.toml"
 cp "$SOURCE/appearance.example.toml" "$FIXTURE/nirux/99.2.0/appearance.example.toml"
 wallpaper_archive "$FIXTURE/nirux/99.2.0/nirux-wallpapers.tar.xz"
+terminal_archive "$FIXTURE/nirux/99.2.0/nirux-terminal.tar.xz"
 make_binary "$FIXTURE/nirufoo/1.0.0/nirufoo" nirufoo 1.0.0
 checksums "$FIXTURE/nirufoo/1.0.0"
 checksums "$FIXTURE/nirux/99.2.0"
@@ -133,6 +138,7 @@ say 'nirulib 1.0.0' >> "$FIXTURE/nirux/99.3.0/manifest"
 cp "$SOURCE/config.example.toml" "$FIXTURE/nirux/99.3.0/config.example.toml"
 cp "$SOURCE/appearance.example.toml" "$FIXTURE/nirux/99.3.0/appearance.example.toml"
 wallpaper_archive "$FIXTURE/nirux/99.3.0/nirux-wallpapers.tar.xz"
+terminal_archive "$FIXTURE/nirux/99.3.0/nirux-terminal.tar.xz"
 cat > "$FIXTURE/nirulib/1.0.0/nirulib" <<'EOF'
 #!/bin/sh
 [ "$1" = --version ] || exit 0
@@ -170,6 +176,7 @@ make_apply_target() {
   : > "$build/wallpaper/nirux-wallpaper-noir-4k.png"
   : > "$build/wallpaper/nirux-wallpaper-test-4k.png"
   tar -cJf "$dir/nirux-wallpapers.tar.xz" -C "$build" wallpaper
+  terminal_archive "$dir/nirux-terminal.tar.xz"
   checksums "$dir"
 }
 make_apply_target 99.4.0 0
@@ -379,12 +386,18 @@ for TEST_OS in arch debian void; do
   grep -qx 'browser = \[\]' "$XDG_CONFIG_HOME/niruwm/config.toml" || fail 'fresh opt-out did not disable the managed browser default'
   [ ! -e "$BIN/helium" ] || fail 'browser was installed despite opt-out'
   [ -f "$HOME/Pictures/Wallpapers/NIRU/nirux-wallpaper-noir-4k.png" ] || fail 'theme wallpapers were not installed'
+  [ -f "$XDG_CONFIG_HOME/kitty/kitty.conf" ] || fail 'kitty integration was not installed'
+  [ -f "$XDG_CONFIG_HOME/nirux/theme/kitty.conf" ] || fail 'kitty theme was not generated'
+  [ -f "$XDG_CONFIG_HOME/nirux/theme/fish.fish" ] || fail 'fish theme was not generated'
+  grep -q 'NIRUX terminal integration' "$XDG_CONFIG_HOME/fish/config.fish" || fail 'fish integration block was not installed'
+  [ -x "$BIN/nirux-theme-hook" ] || fail 'theme hook was not installed'
   first=$(readlink "$STATE/current")
   operation install_or_update update --no-packages --release 99.0.0
   second=$(readlink "$STATE/current")
   [ "$first" != "$second" ] || fail 'no generation switch'
   [ "$(browser_policy)" = none ] || fail 'update did not preserve the browser opt-out'
   [ -f "$HOME/Pictures/Wallpapers/NIRU/nirux-wallpaper-noir-4k.png" ] || fail 'update removed theme wallpapers'
+  [ "$(grep -c '^# NIRUX terminal integration (managed)$' "$XDG_CONFIG_HOME/fish/config.fish")" = 1 ] || fail 'fish integration block was duplicated'
   operation rollback
   [ "$(readlink "$STATE/current")" = "$first" ] || fail 'rollback did not restore the generation'
   # Normal uninstall keeps settings; purge removes only the documented
@@ -404,6 +417,8 @@ for TEST_OS in arch debian void; do
   [ -d "$XDG_STATE_HOME/nirulock" ] || fail 'normal uninstall removed lock state'
   [ -d "$XDG_STATE_HOME/niruscreensaver" ] || fail 'normal uninstall removed saver state'
   [ -f "$HOME/Pictures/Wallpapers/NIRU/nirux-wallpaper-noir-4k.png" ] || fail 'normal uninstall removed theme wallpapers'
+  [ ! -e "$XDG_CONFIG_HOME/nirux" ] || fail 'normal uninstall left terminal config'
+  [ ! -e "$BIN/nirux-theme-hook" ] || fail 'normal uninstall left the theme hook'
   operation uninstall --purge
   [ ! -e "$HOME/Pictures/Wallpapers/NIRU/nirux-wallpaper-noir-4k.png" ] || fail 'purge kept an unmodified theme wallpaper'
   for dir in niruwm niruui nirubar nirulauncher nirunotify; do
@@ -706,5 +721,37 @@ install_wallpapers >/dev/null
 remove_owned_wallpapers
 [ "$(cat "$wallpaper_dir/nirux-wallpaper-noir-4k.png")" = mine ] || fail 'purge removed a user-modified wallpaper'
 [ ! -e "$wallpaper_dir/nirux-wallpaper-nord-4k.png" ] || fail 'purge kept an unmodified owned wallpaper'
+
+# Terminal integration preserves existing kitty/fish config: one managed block,
+# idempotent updates, and block-only removal on uninstall.
+terminal_test=$TEST/terminal-home
+HOME=$terminal_test
+XDG_CONFIG_HOME=$terminal_test/.config
+PREFIX=$terminal_test/.local
+BIN=$PREFIX/bin
+STATE=$PREFIX/share/nirux
+CONFDIR=$XDG_CONFIG_HOME/niruwm
+WORK=$terminal_test/work
+mkdir -p "$HOME/.config/kitty" "$HOME/.config/fish" "$CONFDIR" "$BIN" "$STATE" "$WORK/download/nirux"
+printf 'font_size 13\n' > "$XDG_CONFIG_HOME/kitty/kitty.conf"
+printf 'set -g fish_greeting "hi"\n' > "$XDG_CONFIG_HOME/fish/config.fish"
+printf 'theme = "niru-nord"\n' > "$CONFDIR/config.toml"
+( cd "$SOURCE" && tar -cJf "$WORK/download/nirux/nirux-terminal.tar.xz" terminal )
+install_terminal >/dev/null
+grep -qx 'font_size 13' "$XDG_CONFIG_HOME/kitty/kitty.conf" || fail 'existing kitty setting was removed'
+grep -q '^# NIRUX terminal integration (managed)$' "$XDG_CONFIG_HOME/kitty/kitty.conf" || fail 'kitty integration block was not added'
+grep -q '^# NIRUX terminal integration (managed)$' "$XDG_CONFIG_HOME/fish/config.fish" || fail 'fish integration block was not added'
+grep -q 'fish_greeting "hi"' "$XDG_CONFIG_HOME/fish/config.fish" || fail 'existing fish setting was removed'
+[ -f "$XDG_CONFIG_HOME/kitty/kitty.conf.nirux-backup" ] || fail 'kitty config was not backed up'
+[ -f "$XDG_CONFIG_HOME/fish/config.fish.nirux-backup" ] || fail 'fish config was not backed up'
+install_terminal >/dev/null
+[ "$(grep -c '^# NIRUX terminal integration (managed)$' "$XDG_CONFIG_HOME/kitty/kitty.conf")" = 1 ] || fail 'kitty integration block was duplicated'
+[ "$(grep -c '^# NIRUX terminal integration (managed)$' "$XDG_CONFIG_HOME/fish/config.fish")" = 1 ] || fail 'fish integration block was duplicated'
+remove_terminal
+grep -qx 'font_size 13' "$XDG_CONFIG_HOME/kitty/kitty.conf" || fail 'uninstall removed a user kitty setting'
+grep -q 'fish_greeting "hi"' "$XDG_CONFIG_HOME/fish/config.fish" || fail 'uninstall removed a user fish setting'
+! grep -q '^# NIRUX terminal integration (managed)$' "$XDG_CONFIG_HOME/kitty/kitty.conf" || fail 'uninstall left the kitty block'
+! grep -q '^# NIRUX terminal integration (managed)$' "$XDG_CONFIG_HOME/fish/config.fish" || fail 'uninstall left the fish block'
+[ ! -e "$XDG_CONFIG_HOME/nirux" ] || fail 'uninstall left NIRUX terminal config'
 
 say 'PASS: install/update/rollback/purge on all three distro mappings, status purity, checksum failure, PAM includes, managed Helium policy, obsolete browser migration, target-owned apply'

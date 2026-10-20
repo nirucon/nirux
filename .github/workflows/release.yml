@@ -28,9 +28,11 @@ jobs:
               nirulock) for distro in arch debian void; do grep -qx "pam-$distro" /tmp/assets; done ;;
             esac
           done
-      - name: Package theme wallpapers
-        run: tar -cJf nirux-wallpapers.tar.xz wallpaper/*.png
-      - run: sha256sum nirux manifest config.example.toml appearance.example.toml nirux-wallpapers.tar.xz > SHA256SUMS
+      - name: Package theme wallpapers and terminal integration
+        run: |
+          tar -cJf nirux-wallpapers.tar.xz wallpaper/*.png
+          tar -cJf nirux-terminal.tar.xz terminal
+      - run: sha256sum nirux manifest config.example.toml appearance.example.toml nirux-wallpapers.tar.xz nirux-terminal.tar.xz > SHA256SUMS
       - uses: softprops/action-gh-release@v2
         with:
           files: |
@@ -39,6 +41,7 @@ jobs:
             config.example.toml
             appearance.example.toml
             nirux-wallpapers.tar.xz
+            nirux-terminal.tar.xz
             SHA256SUMS
           make_latest: true
           generate_release_notes: true

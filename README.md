@@ -4,11 +4,12 @@ Install and maintain the small NIRU X11 desktop on **Void Linux glibc, Debian
 and Arch Linux**. Release binaries target **x86_64/glibc**.
 
 Includes niruwm, niructl, niruidle, nirubar, niruscreensaver, nirulock,
-nirulauncher and nirunotify, plus Xorg and runtime dependencies. Niru Noir is the
+nirulauncher and nirunotify, plus Xorg, kitty/fish, theme wallpapers and the
+NIRU terminal colours. Niru Noir is the
 default theme; Nord, Satie and Carl Larsson are also available.
 
-**0.10.35 status:** managed Helium, theme wallpapers, target-owned updates and
-the revised system-module icon are implemented. A new installer now owns config/integration/activation, so a
+**0.10.36 status:** managed Helium, theme wallpapers, target-owned updates and
+the NIRU kitty/fish terminal integration are implemented. A new installer now owns config/integration/activation, so a
 future update applies new config keys, assets and components in one pass. Fresh installs get the four NIRU theme wallpaper sets under
 `~/Pictures/Wallpapers/NIRU`; changing the theme can switch to that theme's
 wallpaper while custom files, rotation and `mode = "single"` remain preserved.
@@ -47,9 +48,11 @@ cd nirux
 An existing display manager is preserved. Otherwise choose startx (default), SDDM
 or LightDM. A fresh install offers the managed Helium browser (default installed)
 and remembers the choice. It also installs the four theme wallpaper sets under
-`~/Pictures/Wallpapers/NIRU`. Existing settings, wallpapers and browsers are
-preserved; NIRUPI is a separate installation. Use `--no-packages` only when
-runtime dependencies are already installed.
+`~/Pictures/Wallpapers/NIRU`, kitty with fish, a fast fish prompt/completions,
+and terminal colours that follow the active theme. Existing settings,
+wallpapers, kitty/fish configs and browsers are preserved; NIRUPI is a separate
+installation. Use `--no-packages` only when runtime dependencies are already
+installed.
 
 ```sh
 ./nirux install --browser helium

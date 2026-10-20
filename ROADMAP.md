@@ -1,12 +1,12 @@
 # NIRU desktop — current roadmap and restart handoff
 
-Updated **2026-10-20**, checked against **NIRUX 0.10.35**.
+Updated **2026-10-20**, checked against **NIRUX 0.10.36**.
 
 - **Start here after restarting OpenCode:** [NEXT-SESSION.md](docs/NEXT-SESSION.md)
 - **Evidence and open defects:** [restart review](docs/REVIEW-2026-10-20-RESTART.md)
 - **Repositories:** [inventory](docs/REPOSITORIES.md)
 - **Previous work:** [delivery history through 0.10.30](docs/history/ROADMAP-0.10.30.md)
-- **Current checkpoint evidence:** [0.10.35 system icon](docs/history/CHECKPOINT-0.10.35.md)
+- **Current checkpoint evidence:** [0.10.36 terminal integration](docs/history/CHECKPOINT-0.10.36.md)
 - **S04 runtime audit:** [package and normal-user results](docs/history/AUDIT-S04-0.10.35.md)
 - **R01 performance baseline:** [idle and startup measurements](docs/history/AUDIT-R01-BASELINE.md)
 - **H01 partial fresh-VM evidence:** [Debian/Arch VMs and gaps](docs/history/AUDIT-H01-PARTIAL.md)
@@ -34,8 +34,8 @@ drivers/firmware must be documented separately from suite provisioning.
 
 | Repository | Pinned release | Responsibility |
 |---|---|---|
-| nirux | 0.10.35 | Packages, generations, target-owned apply, managed Helium, theme wallpapers |
-| niruwm | 0.16.33 | WM, session, niructl, niruidle, theme wallpapers |
+| nirux | 0.10.36 | Packages, generations, target-owned apply, managed Helium, wallpapers, kitty/fish |
+| niruwm | 0.16.35 | WM, session, niructl, niruidle, theme wallpapers, terminal hook |
 | nirubar | 0.18.17 | Per-output bar, tray, panels, weather |
 | niruscreensaver | 0.8.3 | Unlocked idle surface |
 | nirulock | 0.16.10 | PAM lock, input grabs and readiness |
@@ -44,7 +44,7 @@ drivers/firmware must be documented separately from suite provisioning.
 
 All listed releases/assets were found on GitHub. Previous sessions reported
 installation of 0.10.30 on `niru@void` and `niru@thinkpad` (Arch); those hosts
-still need the 0.10.35 deployment check.
+still need the 0.10.36 deployment check.
 
 **S01, S02 and S03 are implemented; 0.10.33 added theme wallpapers.**
 [Run 39420180581](https://github.com/nirucon/nirux/actions/runs/39420180581)
@@ -58,7 +58,7 @@ config-contract and startx were never reached in that run.
 Helium is pinned to upstream 0.19.4.1 with a recorded SHA-256. The canonical
 browser is now `helium`, a fresh install selects it by default, and
 `--browser none` is a persistent opt-out. Containers are supporting evidence,
-not a fresh physical OS certification; H01 remains open; S04, W01 and S03 are delivered.
+not a fresh physical OS certification; H01 remains open; S04, S03 and W01/W02 are delivered.
 
 The earlier I06–I09, U01–U06 and A01–A03 work is **shipped**, with useful
 regressions. It is not blanket proof that every original acceptance criterion
@@ -73,6 +73,7 @@ environment, release/deployment status, remaining limits and next task.
 |---|---|---|
 | S01 / DONE | Reproduced the 0.10.30 failure: all three distros stopped at doctor with `missing configured brave`; config-contract/startx were not reached. Fixed by the S02 browser policy. Evidence: CI run 39420180581. | New full CI run passes Arch, Debian Bookworm and Void glibc; complete logs retained. |
 | S02 / DONE | Managed Helium 0.19.4.1 with recorded SHA-256, runtime dependencies, owned desktop entry, persistent `--browser helium|none|keep` policy, actionable status/doctor and owned removal. Evidence: run 39420180581 and [checkpoint](docs/history/CHECKPOINT-0.10.32.md). | Helium selected: empty-home browser install launches as a normal user with sandbox enabled. Opt-out survives updates. Corrupt download, update, rollback and owned uninstall covered by regressions. No `--no-sandbox` path. |
+| W02 / DONE (owner request) | Install a NIRU kitty/fish setup with a fast fish prompt, history, autosuggestions, completions and theme-following terminal colours. | Kitty always uses fish; existing configs are updated with one reversible managed block; theme changes update kitty/fish through a small NIRUWM hook; all built-in palettes meet the contrast test. Evidence: 0.10.36 checkpoint. |
 | W01 / DONE (owner request) | Install the four theme wallpaper sets into `~/Pictures/Wallpapers/NIRU`; add `follow_theme`/`theme_dir`; make a theme change apply its default wallpaper without breaking custom files, rotation or `mode = "single"`. | New and existing installs receive the assets; modified user files are preserved; theme change replaces the root wallpaper only when enabled/following; owned purge removes only unmodified assets. Evidence: 0.10.33 checkpoint. |
 | S03 / DONE | Target-owned apply protocol 2. The target runs browser install, config migration, wallpapers, PAM/system integration, startx/DM setup, activation and the restart message. `_handoff-version` stays 1 for old callers; `_apply-version` advertises 2. Evidence: [checkpoint](docs/history/CHECKPOINT-0.10.34.md). | One update to synthetic 99.4.0 links a new component, adds a new config key and installs a new wallpaper asset. An injected 99.4.1 failure restores the exact config and leaves the generation unchanged. |
 | S04 / DONE | Rechecked the complete vanilla package/runtime matrix on Arch, Debian Bookworm and Void glibc. Release install as a normal user, status/doctor, startx, WM/bar, theme wallpaper, maim screenshot, font/cursor fallback, audio process start and Helium were exercised. Evidence: [S04 audit](docs/history/AUDIT-S04-0.10.35.md). | No manual suite package fixes; package versions and normal-user runtime recorded. Physical audio, PAM unlock and lock/suspend remain H01. |

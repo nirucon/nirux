@@ -2,7 +2,7 @@
 # NIRUX: install a complete X11 desktop, or maintain an existing installation.
 set -eu
 
-VERSION=0.10.35
+VERSION=0.10.36
 PREFIX=${NIRUX_PREFIX:-$HOME/.local}
 BIN=$PREFIX/bin
 STATE=$PREFIX/share/nirux
@@ -93,9 +93,9 @@ as_root() {
 }
 packages_for() {
   case "$1" in
-    arch) say "xorg-server xorg-xinit xorg-xauth xorg-xrandr xorg-xset xorg-xprop xorg-xdpyinfo xorg-xwininfo xorg-xrdb xorg-xsetroot xorg-setxkbmap xf86-input-libinput xkeyboard-config dbus pam pipewire pipewire-audio pipewire-pulse pipewire-alsa wireplumber alsa-utils alsa-ucm-conf rtkit fontconfig ttf-dejavu ttf-jetbrains-mono-nerd kitty rofi dunst picom feh maim slop pcmanfm playerctl libnotify brightnessctl gammastep iproute2 iw xdg-utils procps-ng util-linux" ;;
-    debian) say "xserver-xorg xserver-xorg-input-libinput xinit xauth x11-xserver-utils x11-utils x11-xkb-utils xkb-data dbus-x11 dbus-user-session libpam0g pipewire pipewire-pulse pipewire-alsa wireplumber alsa-utils alsa-ucm-conf rtkit fontconfig fonts-dejavu-core fonts-font-awesome kitty rofi dunst picom feh maim slop pcmanfm playerctl libnotify-bin brightnessctl gammastep iproute2 iw xdg-utils procps util-linux" ;;
-    void) say "xorg-minimal xinit xauth xrandr xset xprop xdpyinfo xwininfo xrdb xsetroot setxkbmap xkeyboard-config dbus elogind pam pam-base pipewire wireplumber alsa-utils alsa-ucm-conf rtkit fontconfig dejavu-fonts-ttf nerd-fonts-symbols-ttf kitty rofi dunst picom feh maim slop pcmanfm playerctl libnotify brightnessctl gammastep iproute2 iw xdg-utils procps-ng util-linux" ;;
+    arch) say "xorg-server xorg-xinit xorg-xauth xorg-xrandr xorg-xset xorg-xprop xorg-xdpyinfo xorg-xwininfo xorg-xrdb xorg-xsetroot xorg-setxkbmap xf86-input-libinput xkeyboard-config dbus pam pipewire pipewire-audio pipewire-pulse pipewire-alsa wireplumber alsa-utils alsa-ucm-conf rtkit fontconfig ttf-dejavu ttf-jetbrains-mono-nerd kitty fish rofi dunst picom feh maim slop pcmanfm playerctl libnotify brightnessctl gammastep iproute2 iw xdg-utils procps-ng util-linux" ;;
+    debian) say "xserver-xorg xserver-xorg-input-libinput xinit xauth x11-xserver-utils x11-utils x11-xkb-utils xkb-data dbus-x11 dbus-user-session libpam0g pipewire pipewire-pulse pipewire-alsa wireplumber alsa-utils alsa-ucm-conf rtkit fontconfig fonts-dejavu-core fonts-font-awesome fonts-jetbrains-mono kitty fish rofi dunst picom feh maim slop pcmanfm playerctl libnotify-bin brightnessctl gammastep iproute2 iw xdg-utils procps util-linux" ;;
+    void) say "xorg-minimal xinit xauth xrandr xset xprop xdpyinfo xwininfo xrdb xsetroot setxkbmap xkeyboard-config dbus elogind pam pam-base pipewire wireplumber alsa-utils alsa-ucm-conf rtkit fontconfig dejavu-fonts-ttf nerd-fonts-symbols-ttf kitty fish-shell rofi dunst picom feh maim slop pcmanfm playerctl libnotify brightnessctl gammastep iproute2 iw xdg-utils procps-ng util-linux" ;;
   esac
 }
 # Runtime libraries and extraction tools for the pinned Helium archive. These
@@ -702,6 +702,142 @@ remove_owned_wallpapers() {
   rmdir "$destination" 2>/dev/null || :
   rm -f "$manifest"
 }
+terminal_config_home() {
+  say "${XDG_CONFIG_HOME:-$HOME/.config}/nirux"
+}
+append_managed_block() {
+  block_target=$1
+  block_source=$2
+  block_start='# NIRUX terminal integration (managed)'
+  block_end='# End NIRUX terminal integration'
+  block_dir=$(dirname "$block_target")
+  mkdir -p "$block_dir" || die "could not create $block_dir"
+  block_tmp=$(mktemp "$block_dir/.nirux-block.XXXXXX") || die "could not stage $block_target"
+  if [ -e "$block_target" ]; then
+    [ -f "$block_target" ] || die "$block_target is not a regular file"
+    block_mode=$(stat -c %a "$block_target") || die "could not read permissions for $block_target"
+    if grep -qF "$block_start" "$block_target"; then
+      awk -v s="$block_start" -v e="$block_end" '
+        $0 == s {skip = 1; next}
+        $0 == e {skip = 0; next}
+        !skip {print}
+      ' "$block_target" > "$block_tmp" || die "could not stage $block_target"
+    else
+      [ -f "$block_target.nirux-backup" ] || cp -p "$block_target" "$block_target.nirux-backup" || \
+        die "could not back up $block_target"
+      cp -p "$block_target" "$block_tmp" || die "could not stage $block_target"
+    fi
+  else
+    block_mode=644
+    printf '# NIRUX owner: %s\n' "$PREFIX" > "$block_tmp"
+  fi
+  [ ! -s "$block_tmp" ] || printf '\n' >> "$block_tmp"
+  cat "$block_source" >> "$block_tmp" || die "could not append the terminal block to $block_target"
+  chmod "$block_mode" "$block_tmp" || die "could not set permissions on $block_target"
+  mv -f "$block_tmp" "$block_target" || die "could not update $block_target"
+}
+remove_managed_block() {
+  block_target=$1
+  [ -f "$block_target" ] || return 0
+  block_start='# NIRUX terminal integration (managed)'
+  block_end='# End NIRUX terminal integration'
+  grep -qF "$block_start" "$block_target" || return 0
+  block_dir=$(dirname "$block_target")
+  block_tmp=$(mktemp "$block_dir/.nirux-block.XXXXXX") || die "could not stage $block_target"
+  block_mode=$(stat -c %a "$block_target") || die "could not read permissions for $block_target"
+  awk -v s="$block_start" -v e="$block_end" '
+    $0 == s {skip = 1; next}
+    $0 == e {skip = 0; next}
+    !skip {print}
+  ' "$block_target" > "$block_tmp" || die "could not stage $block_target"
+  chmod "$block_mode" "$block_tmp" || die "could not set permissions on $block_target"
+  mv -f "$block_tmp" "$block_target" || die "could not update $block_target"
+}
+install_terminal() {
+  terminal_archive=$WORK/download/nirux/nirux-terminal.tar.xz
+  [ -f "$terminal_archive" ] || return 0
+  [ -n "${HOME:-}" ] || return 0
+  terminal_unpack=$WORK/terminal-unpack
+  rm -rf "$terminal_unpack"
+  mkdir -p "$terminal_unpack" || die 'could not create the terminal extraction directory'
+  tar -xJf "$terminal_archive" -C "$terminal_unpack" || die 'could not extract the terminal archive'
+  [ -f "$terminal_unpack/terminal/kitty.conf" ] || die 'terminal archive is incomplete'
+  mkdir -p "$STATE"
+  rm -rf "$STATE/terminal"
+  cp -R "$terminal_unpack/terminal" "$STATE/terminal" || die 'could not install terminal templates'
+  chmod 755 "$STATE/terminal/nirux-theme-hook"
+  mkdir -p "$BIN"
+  ln -s "$STATE/terminal/nirux-theme-hook" "$BIN/.nirux-theme-hook.$$" || die 'could not link the theme hook'
+  mv -Tf "$BIN/.nirux-theme-hook.$$" "$BIN/nirux-theme-hook" || die 'could not activate the theme hook'
+
+  terminal_config=$(terminal_config_home)
+  mkdir -p "$terminal_config/fish" "$terminal_config/theme" || die 'could not create NIRUX config directories'
+  install -m 644 "$STATE/terminal/fish/nirux.fish" "$terminal_config/fish/nirux.fish" || \
+    die 'could not install the fish integration'
+  fish_config=${XDG_CONFIG_HOME:-$HOME/.config}/fish
+  mkdir -p "$fish_config/completions" || die 'could not create the fish completions directory'
+  for completion in nirux niructl; do
+    {
+      printf '# NIRUX owner: %s\n' "$PREFIX"
+      cat "$STATE/terminal/fish/completions/$completion.fish"
+    } > "$WORK/$completion.fish"
+    write_prefix_file "$fish_config/completions/$completion.fish" "$WORK/$completion.fish"
+  done
+
+  kitty_config=${XDG_CONFIG_HOME:-$HOME/.config}/kitty
+  mkdir -p "$kitty_config" || die 'could not create the kitty config directory'
+  kitty_file=$kitty_config/kitty.conf
+  if { [ ! -e "$kitty_file" ] && [ ! -L "$kitty_file" ]; } || \
+     { [ -f "$kitty_file" ] && owned "$kitty_file"; }; then
+    sed "s|@NIRUX_CONFIG_HOME@|${XDG_CONFIG_HOME:-$HOME/.config}|g" \
+      "$STATE/terminal/kitty.conf" > "$WORK/kitty.conf"
+    {
+      printf '# NIRUX owner: %s\n' "$PREFIX"
+      cat "$WORK/kitty.conf"
+    } > "$WORK/kitty-owned.conf"
+    install -m 644 "$WORK/kitty-owned.conf" "$kitty_file" || die 'could not install kitty.conf'
+  else
+    {
+      printf '# NIRUX terminal integration (managed)\n'
+      printf 'shell fish\n'
+      printf 'include %s/nirux/theme/kitty.conf\n' "${XDG_CONFIG_HOME:-$HOME/.config}"
+      printf '# End NIRUX terminal integration\n'
+    } > "$WORK/kitty-block"
+    append_managed_block "$kitty_file" "$WORK/kitty-block"
+  fi
+
+  {
+    printf '# NIRUX terminal integration (managed)\n'
+    printf 'if test -r $__fish_config_dir/../nirux/fish/nirux.fish\n'
+    printf '    source $__fish_config_dir/../nirux/fish/nirux.fish\n'
+    printf 'end\n'
+    printf '# End NIRUX terminal integration\n'
+  } > "$WORK/fish-block"
+  append_managed_block "$fish_config/config.fish" "$WORK/fish-block"
+
+  "$BIN/nirux-theme-hook" || die 'could not generate the terminal theme'
+  rm -rf "$terminal_unpack"
+  say "Installed NIRUX kitty/fish integration (theme: $(sed -n 's/^[[:space:]]*theme[[:space:]]*=[[:space:]]*"\([^"]*\)".*/\1/p' "$CONFDIR/config.toml" | head -n 1))"
+}
+remove_terminal() {
+  [ -n "${HOME:-}" ] || return 0
+  terminal_config=$(terminal_config_home)
+  kitty_file=${XDG_CONFIG_HOME:-$HOME/.config}/kitty/kitty.conf
+  remove_managed_block "$kitty_file"
+  if [ -f "$kitty_file" ] && owned "$kitty_file"; then rm -f "$kitty_file"; fi
+  fish_file=${XDG_CONFIG_HOME:-$HOME/.config}/fish/config.fish
+  remove_managed_block "$fish_file"
+  if [ -f "$fish_file" ] && owned "$fish_file"; then rm -f "$fish_file"; fi
+  remove_prefix_file "${XDG_CONFIG_HOME:-$HOME/.config}/fish/completions/nirux.fish"
+  remove_prefix_file "${XDG_CONFIG_HOME:-$HOME/.config}/fish/completions/niructl.fish"
+  rm -rf "$terminal_config"
+  if [ -L "$BIN/nirux-theme-hook" ]; then
+    case "$(readlink "$BIN/nirux-theme-hook")" in
+      "$STATE/terminal/nirux-theme-hook") rm -f "$BIN/nirux-theme-hook" ;;
+    esac
+  fi
+  rm -rf "$STATE/terminal"
+}
 fresh_config_source() {
   if [ "${BROWSER_EFFECTIVE:-keep}" = none ]; then
     awk '$0 == "browser = [\"helium\"]" {print "browser = []"; next} {print}' "$1"
@@ -1207,6 +1343,7 @@ apply_target_release() {
   browser_install
   install_config
   install_wallpapers
+  install_terminal
   prepare_pam
   register_session
   if [ "$operation" = install ]; then setup_startx; enable_services; fi
@@ -1226,6 +1363,7 @@ stage_release() {
   fi
   release_files nirux "$RELEASE" nirux manifest config.example.toml appearance.example.toml
   release_optional_file nirux "$RELEASE" nirux-wallpapers.tar.xz
+  release_optional_file nirux "$RELEASE" nirux-terminal.tar.xz
   [ "$(manifest_version schema)" = 1 ] || die "unsupported manifest schema"
   [ "$(manifest_version suite)" = "$RELEASE" ] || die "suite/manifest version mismatch"
   sh -n "$WORK/download/nirux/nirux"
@@ -1444,7 +1582,7 @@ doctor() {
     *":$BIN:"*) say "PATH includes selected prefix" ;;
     *) say "PATH does not include selected prefix (the session prepends it)" ;;
   esac
-  for tool in startx Xorg xauth dbus-run-session fc-match brightnessctl gammastep notify-send; do
+  for tool in startx Xorg xauth dbus-run-session fc-match fish brightnessctl gammastep notify-send; do
     if command -v "$tool" >/dev/null 2>&1; then say "available $tool"; else say "missing $tool"; result=1; fi
   done
   if [ -d /sys/class/backlight ] && [ -n "$(ls -A /sys/class/backlight 2>/dev/null)" ]; then
@@ -1529,6 +1667,7 @@ uninstall() {
   if [ -f "$HOME/.xinitrc" ] && owned "$HOME/.xinitrc"; then rm -f "$HOME/.xinitrc"; fi
   browser_remove_managed
   browser_remove_policy
+  remove_terminal
   if [ "$purge" = 1 ]; then
     remove_owned_wallpapers
     rm -rf "${XDG_CONFIG_HOME:-$HOME/.config}/niruwm" "${XDG_CONFIG_HOME:-$HOME/.config}/niruui" \
@@ -1603,6 +1742,7 @@ install_or_update() {
   # active programs. A rejected configuration leaves the old generation intact.
   install_config
   install_wallpapers
+  install_terminal
   prepare_pam
   register_session
   if [ "$operation" = install ]; then setup_startx; enable_services; fi

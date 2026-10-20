@@ -25,6 +25,8 @@ if [ "$i" = 100 ]; then cat "$HOME/startx-test.log"; exit 1; fi
 # real wallpaper setter is present. The WM must change the root pixmap.
 if [ -f "$HOME/Pictures/Wallpapers/NIRU/nirux-wallpaper-nord-4k.png" ] && command -v feh >/dev/null 2>&1; then
   before=$(xprop -root _XROOTPMAP_ID 2>/dev/null || :)
+  kitty_before=$(sha256sum "$XDG_CONFIG_HOME/nirux/theme/kitty.conf" 2>/dev/null | cut -d' ' -f1 || :)
+  fish_before=$(sha256sum "$XDG_CONFIG_HOME/nirux/theme/fish.fish" 2>/dev/null | cut -d' ' -f1 || :)
   "$BIN/niructl" theme niru-nord
   after=$(xprop -root _XROOTPMAP_ID 2>/dev/null || :)
   [ -n "$before" ] && [ -n "$after" ] && [ "$before" != "$after" ] || {
@@ -36,6 +38,20 @@ if [ -f "$HOME/Pictures/Wallpapers/NIRU/nirux-wallpaper-nord-4k.png" ] && comman
     printf 'bar disappeared after the theme change\n' >&2
     exit 1
   }
+  kitty_after=$(sha256sum "$XDG_CONFIG_HOME/nirux/theme/kitty.conf" 2>/dev/null | cut -d' ' -f1 || :)
+  fish_after=$(sha256sum "$XDG_CONFIG_HOME/nirux/theme/fish.fish" 2>/dev/null | cut -d' ' -f1 || :)
+  if [ -n "$kitty_before" ] && [ -n "$kitty_after" ]; then
+    [ "$kitty_before" != "$kitty_after" ] || {
+      printf 'terminal theme did not follow the theme change\n' >&2
+      exit 1
+    }
+  fi
+  if [ -n "$fish_before" ] && [ -n "$fish_after" ]; then
+    [ "$fish_before" != "$fish_after" ] || {
+      printf 'fish theme did not follow the theme change\n' >&2
+      exit 1
+    }
+  fi
 fi
 if command -v maim >/dev/null 2>&1; then
   maim "$HOME/startx-screenshot.png"

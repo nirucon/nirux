@@ -1,0 +1,136 @@
+#!/bin/sh
+# Regenerate kitty and fish colours from the active NIRU theme.
+# Called by NIRUWM on theme change, by the session at login and by NIRUX after
+# install/update. It never edits user config and has no daemon.
+set -eu
+
+SELF=$(readlink -f "$0" 2>/dev/null || printf '%s' "$0")
+TERMINAL_DIR=$(CDPATH='' cd -- "$(dirname -- "$SELF")" && pwd)
+CONFIG_HOME=${XDG_CONFIG_HOME:-$HOME/.config}
+NIRU_CONFIG=$CONFIG_HOME/niruwm/config.toml
+THEME=${1:-}
+
+if [ -z "$THEME" ] && [ -f "$NIRU_CONFIG" ]; then
+  THEME=$(sed -n 's/^[[:space:]]*theme[[:space:]]*=[[:space:]]*"\([^"]*\)".*/\1/p' "$NIRU_CONFIG" | head -n 1)
+fi
+[ -n "$THEME" ] || THEME=niru-noir
+case "$THEME" in
+  *[!A-Za-z0-9_-]*) THEME=niru-noir ;;
+esac
+
+theme_color() {
+  tc_key=$1
+  tc_file=$2
+  sed -n "s/^[[:space:]]*${tc_key}[[:space:]]*=[[:space:]]*\"\\([0-9a-fA-F]\\{6\\}\\)\".*/\\1/p" "$tc_file" 2>/dev/null | head -n 1
+}
+
+PALETTE=$TERMINAL_DIR/palettes/$THEME.env
+CUSTOM_THEME=
+if [ ! -f "$PALETTE" ]; then
+  user_theme=$CONFIG_HOME/niruwm/themes/$THEME.toml
+  if [ -f "$user_theme" ]; then
+    CUSTOM_THEME=$user_theme
+    c_bg=$(theme_color background "$user_theme")
+    c_fg=$(theme_color foreground "$user_theme")
+    c_muted=$(theme_color muted "$user_theme")
+    c_border=$(theme_color border "$user_theme")
+    c_focus=$(theme_color focus "$user_theme")
+    [ -n "$c_bg" ] || c_bg=0f0f10
+    [ -n "$c_fg" ] || c_fg=e5e5e5
+    # Pick a light or dark ANSI base from the background's rough luminance.
+    r=$(printf '%s' "$c_bg" | cut -c1-2)
+    g=$(printf '%s' "$c_bg" | cut -c3-4)
+    b=$(printf '%s' "$c_bg" | cut -c5-6)
+    ri=$(printf '%d' "0x$r" 2>/dev/null || echo 15)
+    gi=$(printf '%d' "0x$g" 2>/dev/null || echo 15)
+    bi=$(printf '%d' "0x$b" 2>/dev/null || echo 16)
+    if [ "$(( (ri * 299 + gi * 587 + bi * 114) / 1000 ))" -ge 128 ]; then
+      PALETTE=$TERMINAL_DIR/palettes/niru-carl-larsson.env
+    else
+      PALETTE=$TERMINAL_DIR/palettes/niru-noir.env
+    fi
+  else
+    PALETTE=$TERMINAL_DIR/palettes/niru-noir.env
+  fi
+fi
+
+# shellcheck source=/dev/null
+. "$PALETTE"
+if [ -n "$CUSTOM_THEME" ]; then
+  NIRU_TERM_BG=${c_bg:-$NIRU_TERM_BG}
+  NIRU_TERM_FG=${c_fg:-$NIRU_TERM_FG}
+  NIRU_TERM_MUTED=${c_muted:-$NIRU_TERM_MUTED}
+  NIRU_TERM_SELECTION=${c_border:-$NIRU_TERM_SELECTION}
+  NIRU_TERM_BORDER=${c_border:-$NIRU_TERM_BORDER}
+  NIRU_TERM_FOCUS=${c_focus:-$NIRU_TERM_FOCUS}
+fi
+
+THEME_DIR=$CONFIG_HOME/nirux/theme
+mkdir -p "$THEME_DIR"
+
+kitty_tmp=$THEME_DIR/.kitty.conf.$$
+fish_tmp=$THEME_DIR/.fish.fish.$$
+trap 'rm -f "$kitty_tmp" "$fish_tmp"' EXIT INT TERM HUP
+
+{
+  printf '# NIRUX terminal theme: %s. Generated; do not edit.\n' "$THEME"
+  printf 'background #%s\nforeground #%s\n' "$NIRU_TERM_BG" "$NIRU_TERM_FG"
+  printf 'cursor #%s\ncursor_text_color #%s\n' "$NIRU_TERM_FG" "$NIRU_TERM_BG"
+  printf 'selection_foreground #%s\nselection_background #%s\n' "$NIRU_TERM_FG" "$NIRU_TERM_SELECTION"
+  printf 'active_border_color #%s\ninactive_border_color #%s\nbell_border_color #%s\n' \
+    "$NIRU_TERM_FOCUS" "$NIRU_TERM_BORDER" "$NIRU_TERM_FOCUS"
+  printf 'url_color #%s\n' "$NIRU_TERM_ANSI_4"
+  printf 'active_tab_foreground #%s\nactive_tab_background #%s\n' "$NIRU_TERM_BG" "$NIRU_TERM_SELECTION"
+  printf 'inactive_tab_foreground #%s\ninactive_tab_background #%s\n' "$NIRU_TERM_MUTED" "$NIRU_TERM_BG"
+  printf 'mark1_foreground #%s\nmark1_background #%s\n' "$NIRU_TERM_BG" "$NIRU_TERM_ANSI_4"
+  printf 'background_opacity %s\n' "$NIRU_TERM_OPACITY"
+  i=0
+  while [ "$i" -le 15 ]; do
+    # shellcheck disable=SC2154 # assigned by the eval immediately above
+    eval "v=\${NIRU_TERM_ANSI_$i}"
+    # shellcheck disable=SC2154 # assigned by the eval immediately above
+    printf 'color%d #%s\n' "$i" "$v"
+    i=$((i + 1))
+  done
+} > "$kitty_tmp"
+
+{
+  printf '# NIRUX fish theme: %s. Generated; do not edit.\n' "$THEME"
+  printf "set -g fish_color_normal '%s'\n" "$NIRU_TERM_FG"
+  printf "set -g fish_color_command '%s'\n" "$NIRU_TERM_ANSI_4"
+  printf "set -g fish_color_keyword '%s'\n" "$NIRU_TERM_ANSI_5"
+  printf "set -g fish_color_quote '%s'\n" "$NIRU_TERM_ANSI_2"
+  printf "set -g fish_color_redirection '%s'\n" "$NIRU_TERM_ANSI_3"
+  printf "set -g fish_color_end '%s'\n" "$NIRU_TERM_ANSI_6"
+  printf "set -g fish_color_error '%s'\n" "$NIRU_TERM_ANSI_1"
+  printf "set -g fish_color_param '%s'\n" "$NIRU_TERM_FG"
+  printf "set -g fish_color_comment '%s'\n" "$NIRU_TERM_MUTED"
+  printf "set -g fish_color_operator '%s'\n" "$NIRU_TERM_ANSI_6"
+  printf "set -g fish_color_escape '%s'\n" "$NIRU_TERM_ANSI_5"
+  printf "set -g fish_color_autosuggestion '%s'\n" "$NIRU_TERM_MUTED"
+  printf "set -g fish_color_selection --background='%s'\n" "$NIRU_TERM_SELECTION"
+  printf "set -g fish_color_search_match --background='%s'\n" "$NIRU_TERM_SELECTION"
+  printf 'set -g fish_color_history_current --bold\n'
+  printf "set -g fish_pager_color_prefix '%s'\n" "$NIRU_TERM_ANSI_4"
+  printf "set -g fish_pager_color_completion '%s'\n" "$NIRU_TERM_FG"
+  printf "set -g fish_pager_color_description '%s'\n" "$NIRU_TERM_MUTED"
+  printf "set -g fish_pager_color_selected_background --background='%s'\n" "$NIRU_TERM_SELECTION"
+  printf "set -g NIRU_PROMPT_PRIMARY '%s'\n" "$NIRU_TERM_ANSI_4"
+  printf "set -g NIRU_PROMPT_ACCENT '%s'\n" "$NIRU_TERM_ANSI_3"
+  printf "set -g NIRU_PROMPT_SUCCESS '%s'\n" "$NIRU_TERM_ANSI_2"
+  printf "set -g NIRU_PROMPT_ERROR '%s'\n" "$NIRU_TERM_ANSI_1"
+  printf "set -g NIRU_PROMPT_MUTED '%s'\n" "$NIRU_TERM_MUTED"
+  printf "set -g NIRU_PROMPT_FG '%s'\n" "$NIRU_TERM_FG"
+  printf "set -g NIRU_PROMPT_BG '%s'\n" "$NIRU_TERM_BG"
+} > "$fish_tmp"
+
+chmod 644 "$kitty_tmp" "$fish_tmp"
+mv -f "$kitty_tmp" "$THEME_DIR/kitty.conf"
+mv -f "$fish_tmp" "$THEME_DIR/fish.fish"
+trap - EXIT INT TERM HUP
+
+# Kitty reloads its config without being restarted. Existing fish prompts
+# re-source the generated file on the next prompt.
+if command -v pkill >/dev/null 2>&1; then
+  pkill -USR1 -x kitty 2>/dev/null || :
+fi
