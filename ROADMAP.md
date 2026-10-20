@@ -150,6 +150,7 @@ Use nplay/MPRIS for media/radio rather than requiring QuickShell. See the
 | P04 | nirupresence | Explicit opt-in session lifetime, one instance, clean logout, no NIRUPI edits. |
 | P05 | QuickShell radio/presence adapters | Optional external-desktop adapters only; never default core dependencies. |
 | P06 | nplay/cmus/REAPER themes | Declarative validation, preserve edits, optional appearance export after C01. |
+| P07 | DAW and REAPER compatibility | Test REAPER on all three distros with ALSA and PipeWire JACK, correct window classes/floating rules for plugin/dialog windows, realtime permissions and documented plugin limitations. Optional app only; no mandatory DAW package or Wine/yabridge layer. |
 
 **Conditional new repo idea: `nirudisplay`**, an optional native display-profile
 editor, only if docking-profile work proves independently reusable. Start with
