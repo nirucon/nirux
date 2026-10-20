@@ -23,11 +23,11 @@ This file is the authoritative **current plan**. The
 
 ## 2. Actual checkpoint
 
-Published NIRUX **0.10.19** pins:
+Published NIRUX **0.10.20** pins:
 
 | Component | Version | Responsibility |
 |---|---|---|
-| niruwm | 0.16.21 | WM, session, niructl, niruidle |
+| niruwm | 0.16.22 | WM, session, niructl, niruidle |
 | nirubar | 0.18.7 | Per-output bars, panels, tray |
 | niruscreensaver | 0.8.1 | Unlocked idle surface |
 | nirulock | 0.16.8 | PAM lock and explicit readiness |
@@ -42,11 +42,11 @@ The 2026-10-20 corrections are **published** in NIRUX 0.10.15, niruwm 0.16.20,
 nirubar 0.18.7 and updated installer/docs on the component main branches. NIRUX
 **0.10.16** added the I06 configuration migration; **0.10.17** added the I07
 target-installer staging handoff; **0.10.18** completed owned purge coverage and
-made missing configured programs fail `doctor`; **0.10.19** pins niruwm 0.16.21
-with the I09 standalone-installer metadata fix. All are installed on the owner's
-machines, and each update exercised the installed parent/update path. Publication
-is not physical acceptance: complete H01–H03 before treating the release as
-fully verified.
+made missing configured programs fail `doctor`; **0.10.19** pinned niruwm 0.16.21
+with the I09 standalone-installer metadata fix; **0.10.20** pins niruwm 0.16.22
+and sets the normal arrow root cursor. All are installed on the owner's machines,
+and each update exercised the installed parent/update path. H03 physical checks
+were confirmed by the owner. H01 remains.
 
 ## 3. Status vocabulary and execution rules
 
@@ -77,14 +77,11 @@ Commit/push/tag/release only when explicitly requested by the user.
 | I11 / RELEASED | `nirux/nirux`: remove an accidental `cmp` dependency from owned-file comparison; use the existing SHA-256 checks. `nirulock/install.sh` does the same for PAM. | Arch base container runs the full integration without diffutils; suite/PAM files with equal content stay untouched. |
 | I09 / RELEASED | `niruwm/install.sh`: selected old-release bar version comes from that release's metadata, not checkout `nirubar-version`; align standalone version/ownership checks. | Test old and current releases from a newer checkout; no generation contents overwritten. |
 
-**Next implementation task: H03.** I06 is released in NIRUX 0.10.16, I07 in
-0.10.17, I08 in 0.10.18 and I09 in niruwm 0.16.21/NIRUX 0.10.19. M0 and H02 are
-complete. H02 was verified with the released nirulock 0.16.8 and
-niruscreensaver 0.8.1 assets: source and prebuilt installers, pinned PAM,
-modified-file preservation, corrupt/missing assets and non-root wrong/correct
-PAM checks on Arch, Debian and Void. No test wrote production
-`/etc/pam.d`. H03 is next; its lid/suspend, docking and physical output checks
-need the owner's machines available.
+**Next implementation task: U01.** I06–I09, H02 and the verifiable parts of H03
+are complete; the owner confirmed lid and external-output behaviour. U01 is the
+next feature checkpoint: WM/bar config validation parity, hidden modules,
+unavailable/stale versus zero data, and bounded/coalesced WM hardware helpers.
+H01 remains as separate fresh-OS acceptance.
 
 ### M1 — release acceptance on vanilla installations
 
@@ -92,7 +89,7 @@ need the owner's machines available.
 |---|---|---|
 | H01 / TODO | Fresh OS + empty normal-user home on Void/Arch/Debian; startx, then existing/selected display-manager paths. | Real release install → status/doctor → login → terminal/launcher/browser configuration, screenshots, icons, audio, lock/unlock → update → rollback → uninstall. Record OS release, manifest and exact results. |
 | H02 / RELEASED | Standalone saver/locker prebuilt and source installers, pinned PAM, modified-file preservation and failed-install boundaries. | All three distro mappings plus non-root wrong/correct-password PAM checks. No test writes to production `/etc/pam.d`. |
-| H03 / IN_PROGRESS | Physical Void + ThinkPad: lid close, suspend/resume, external output attach/remove, lock during topology changes, native notification privacy. | Never suspend before ready lock; no uncovered pixels; workspace/output identities survive; notifier cleans up on logout. Record physical separately from Xvfb. |
+| H03 / RELEASED | Physical Void + ThinkPad: lid close, suspend/resume, external output attach/remove, lock during topology changes, native notification privacy. | Never suspend before ready lock; no uncovered pixels; workspace/output identities survive; notifier cleans up on logout. Record physical separately from Xvfb. |
 | H04 / RELEASED | Compile/publish changed components, verify assets/checksums, then update NIRUX pins and run full distro CI. Components and NIRUX 0.10.15 published 2026-10-20; finish asset/CI verification and one install/update check. | One install/update reaches the intended complete generation. Immutable tags/assets; never relabel published releases. |
 
 Available hosts: `niru@void` and `niru@thinkpad`. Existing installs are **not clean
@@ -106,14 +103,17 @@ H03 partial verification (2026-10-20):
   coverage after resume. A locked mode change to 1600x900 resized the lock and
   restored cleanly, then returned to 1920x1080. The running session was still
   niruwm 0.16.19, so the monitor metadata during a mode change must be rechecked
-  after logout/login on the installed 0.16.21.
+  after logout/login on the current 0.16.22.
 - **ThinkPad, current 0.16.21 on isolated Xvfb:** lock covered the full
   1280x800 root. Native `nirunotify` kept a notification out of the lock (history
   only). Root resize to 800x600 resized the lock and restored. An unlocked
   session suspended via RTC/systemctl became locked before sleep and was still
   ready with full coverage after resume. Logout killed the notifier, WM and bar.
-- **Remaining physical steps:** lid close/open and external output attach/remove.
-  These need the owner at the machines; they are not claimed as verified.
+- **Owner-confirmed physical steps (2026-10-20):** lid close/open and external
+  output attach/remove work on both machines.
+- **Cursor correction:** the owner reported a cross root cursor on Arch/ThinkPad.
+  niruwm 0.16.22 / NIRUX 0.10.20 sets `left_ptr` after the root background;
+  a new login is required to replace the running session.
 
 ### M2 — reliable and useful controls
 
