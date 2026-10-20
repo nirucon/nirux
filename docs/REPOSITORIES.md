@@ -8,9 +8,9 @@ initial review scope; they are not a current certification of optional apps.
 
 | Repository | GitHub main observed 2026-10-20 | Release |
 |---|---|---|
-| nirux | `cd269e7` | v0.10.41 |
-| niruwm | `70f3e32` | v0.16.40 |
-| nirubar | `4bd5bfb` | v0.18.18 |
+| nirux | `60c8b3b` | v0.10.41 |
+| niruwm | `902b959` | v0.16.40 |
+| nirubar | `964e527` | v0.18.18 |
 | niruscreensaver | `52173f62718b` | v0.8.3 |
 | nirulock | `9929208c898d` | v0.16.10 |
 | nirulauncher | `897f468` | v0.2.3 |
