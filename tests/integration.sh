@@ -324,14 +324,18 @@ for TEST_OS in arch debian void; do
   # Separate installations exercise each distribution's integration and cleanup.
   PREFIX=$TEST/$TEST_OS; BIN=$PREFIX/bin; STATE=$PREFIX/share/nirux
   touch "$ROOT/etc/pam.d/system-auth" "$ROOT/etc/pam.d/common-auth" "$ROOT/etc/pam.d/common-account"
-  operation install_or_update install --no-packages --display-manager startx --release "$VERSION"
+  operation install_or_update install --no-packages --browser none --display-manager startx --release "$VERSION"
   status
   [ ! -e "$HOME/session-was-started" ] || fail 'status ran the session'
   [ "$(awk '$1 == "suite" {print $2}' "$STATE/current/manifest")" = "$VERSION" ] || fail 'wrong manifest'
+  [ "$(browser_policy)" = none ] || fail 'browser opt-out was not persisted'
+  grep -qx 'browser = \[\]' "$XDG_CONFIG_HOME/niruwm/config.toml" || fail 'fresh opt-out did not disable the managed browser default'
+  [ ! -e "$BIN/helium" ] || fail 'browser was installed despite opt-out'
   first=$(readlink "$STATE/current")
   operation install_or_update update --no-packages --release 99.0.0
   second=$(readlink "$STATE/current")
   [ "$first" != "$second" ] || fail 'no generation switch'
+  [ "$(browser_policy)" = none ] || fail 'update did not preserve the browser opt-out'
   operation rollback
   [ "$(readlink "$STATE/current")" = "$first" ] || fail 'rollback did not restore the generation'
   # Normal uninstall keeps settings; purge removes only the documented
@@ -364,7 +368,7 @@ done
 # I07: a component that only exists in the target release is staged by the
 # target installer and linked on the first update.
 TEST_OS=arch; PREFIX=$TEST/newcomponent; BIN=$PREFIX/bin; STATE=$PREFIX/share/nirux
-operation install_or_update install --no-packages --display-manager startx --release "$VERSION"
+operation install_or_update install --no-packages --browser none --display-manager startx --release "$VERSION"
 operation install_or_update update --no-packages --release 99.2.0 > "$TEST/newcomponent.log" 2>&1 || \
   fail 'first update with a new component failed'
 grep -q 'Staged components through the target installer handoff' "$TEST/newcomponent.log" || fail 'target installer handoff was not used'
@@ -381,7 +385,7 @@ rm -rf "$PREFIX"
 # I07: a new shared-library dependency is provisioned before staged components
 # are executed. The synthetic component fails its version check without it.
 TEST_OS=debian; PREFIX=$TEST/libdep; BIN=$PREFIX/bin; STATE=$PREFIX/share/nirux
-operation install_or_update install --no-packages --display-manager startx --release "$VERSION"
+operation install_or_update install --no-packages --browser none --display-manager startx --release "$VERSION"
 mkdir -p "$TEST/pkgbin"
 cat > "$TEST/pkgbin/sudo" <<'EOF'
 #!/bin/sh
@@ -423,7 +427,7 @@ rm -rf "$PREFIX"
 
 # A rejected config migration must not switch the active generation.
 TEST_OS=arch; PREFIX=$TEST/config-reject; BIN=$PREFIX/bin; STATE=$PREFIX/share/nirux
-operation install_or_update install --no-packages --display-manager startx --release "$VERSION"
+operation install_or_update install --no-packages --browser none --display-manager startx --release "$VERSION"
 before=$(readlink "$STATE/current")
 mkdir -p "$XDG_CONFIG_HOME/niruwm"
 cat > "$XDG_CONFIG_HOME/niruwm/config.toml" <<'EOF'
@@ -447,7 +451,7 @@ operation uninstall --purge >/dev/null 2>&1 || :
 
 # A corrupt late download must leave the active installation unchanged.
 TEST_OS=arch; PREFIX=$TEST/failure; BIN=$PREFIX/bin; STATE=$PREFIX/share/nirux
-operation install_or_update install --no-packages --display-manager startx --release "$VERSION"
+operation install_or_update install --no-packages --browser none --display-manager startx --release "$VERSION"
 before=$(readlink "$STATE/current")
 say corrupt >> "$FIXTURE/nirulock/$lock_version/nirulock"
 set +e
@@ -500,4 +504,82 @@ rc=$?
 set -e
 [ "$rc" != 0 ] || fail 'doctor succeeded with a missing configured program'
 grep -q 'missing configured missing-browser-for-test' "$doctor_dir/doctor.log" || fail 'missing configured program was not reported'
-say 'PASS: install/update/rollback/purge on all three distro mappings, status purity, checksum failure, PAM includes'
+
+# S02: managed Helium policy, download verification, version replacement,
+# corrupt-download preservation and owned opt-out removal. The archive is a
+# synthetic fixture with a matching temporary checksum; no browser is launched.
+browser_test=$TEST/browser
+PREFIX=$browser_test/prefix; BIN=$PREFIX/bin; STATE=$PREFIX/share/nirux
+WORK=$browser_test/work; XDG_CONFIG_HOME=$browser_test/config
+mkdir -p "$BIN" "$STATE" "$WORK" "$XDG_CONFIG_HOME"
+BROWSER_EFFECTIVE=helium
+browser_unmanaged() { return 1; }
+make_helium_archive() {
+  version=$1; archive=$2
+  build=$TEST/helium-build-$version
+  rm -rf "$build"
+  mkdir -p "$build/helium-$version-x86_64_linux"
+  cat > "$build/helium-$version-x86_64_linux/helium" <<EOF
+#!/bin/sh
+if [ "\$1" = --version ]; then printf 'Helium $version (test)\\n'; fi
+exit 0
+EOF
+  chmod +x "$build/helium-$version-x86_64_linux/helium"
+  : > "$build/helium-$version-x86_64_linux/product_logo_256.png"
+  printf '%s\n' '[Desktop Entry]' 'Name=Helium' 'Type=Application' 'Exec=helium %U' 'Icon=helium' \
+    > "$build/helium-$version-x86_64_linux/helium.desktop"
+  tar -cJf "$archive" -C "$build" "helium-$version-x86_64_linux"
+}
+FAKE_ARCHIVE=
+FETCHES=0
+fetch() { cp "$FAKE_ARCHIVE" "$2"; FETCHES=$((FETCHES + 1)); }
+HELIUM_VERSION=99.9.9
+make_helium_archive "$HELIUM_VERSION" "$TEST/helium-99.9.9.tar.xz"
+FAKE_ARCHIVE=$TEST/helium-99.9.9.tar.xz
+# shellcheck disable=SC2034 # read by browser_install_archive in the sourced installer
+HELIUM_SHA256=$(sha256sum "$FAKE_ARCHIVE" | cut -d' ' -f1)
+browser_policy_set helium
+browser_install > "$browser_test/install-first.log" 2>&1 || { cat "$browser_test/install-first.log" >&2; fail 'managed Helium install failed'; }
+[ -x "$BIN/helium" ] || fail 'Helium front link was not created'
+[ "$("$BIN/helium" --version)" = 'Helium 99.9.9 (test)' ] || fail 'installed Helium version is wrong'
+[ "$(readlink "$BIN/helium")" = "$STATE/browser-current/helium" ] || fail 'Helium link is not owned by the browser state'
+desktop=$PREFIX/share/applications/helium.desktop
+grep -qF "Exec=\"$BIN/helium\"" "$desktop" || fail 'Helium desktop entry does not use the managed command'
+browser_install > "$browser_test/install-second.log" 2>&1 || fail 'reusing the installed Helium failed'
+[ "$FETCHES" = 1 ] || fail 'an unchanged Helium version was downloaded again'
+HELIUM_VERSION=99.9.10
+make_helium_archive "$HELIUM_VERSION" "$TEST/helium-99.9.10.tar.xz"
+FAKE_ARCHIVE=$TEST/helium-99.9.10.tar.xz
+# shellcheck disable=SC2034 # read by browser_install_archive in the sourced installer
+HELIUM_SHA256=$(sha256sum "$FAKE_ARCHIVE" | cut -d' ' -f1)
+browser_install > "$browser_test/install-update.log" 2>&1 || fail 'Helium update failed'
+[ "$("$BIN/helium" --version)" = 'Helium 99.9.10 (test)' ] || fail 'Helium update did not activate the new version'
+[ ! -e "$STATE/browsers/helium-99.9.9" ] || fail 'old Helium version was not removed'
+HELIUM_VERSION=99.9.11
+cp "$TEST/helium-99.9.10.tar.xz" "$TEST/helium-corrupt.tar.xz"
+printf 'corrupt\n' >> "$TEST/helium-corrupt.tar.xz"
+FAKE_ARCHIVE=$TEST/helium-corrupt.tar.xz
+# shellcheck disable=SC2034 # read by browser_install_archive in the sourced installer
+HELIUM_SHA256=$(sha256sum "$TEST/helium-99.9.10.tar.xz" | cut -d' ' -f1)
+set +e
+( browser_install ) > "$browser_test/install-corrupt.log" 2>&1
+rc=$?
+set -e
+[ "$rc" != 0 ] || fail 'corrupt Helium download succeeded'
+grep -q 'checksum mismatch' "$browser_test/install-corrupt.log" || fail 'corrupt Helium download was not diagnosed'
+[ "$("$BIN/helium" --version)" = 'Helium 99.9.10 (test)' ] || fail 'corrupt download replaced the active browser'
+mkdir -p "$XDG_CONFIG_HOME/net.imput.helium"
+say 'keep my profile' > "$XDG_CONFIG_HOME/net.imput.helium/Preferences"
+# shellcheck disable=SC2034 # read by browser_remove_managed in the sourced installer
+BROWSER_EFFECTIVE=none
+browser_remove_managed
+[ ! -e "$BIN/helium" ] || fail 'owned browser link survived opt-out removal'
+[ ! -e "$desktop" ] || fail 'owned browser desktop entry survived opt-out removal'
+[ "$(cat "$XDG_CONFIG_HOME/net.imput.helium/Preferences")" = 'keep my profile' ] || fail 'browser profile was removed'
+# shellcheck disable=SC2034 # read by fresh_config_source in the sourced installer
+BROWSER_EFFECTIVE=none
+fresh_config_source "$SOURCE/config.example.toml" | grep -qx 'browser = \[\]' || fail 'fresh opt-out config kept the Helium default'
+# shellcheck disable=SC2034 # read by fresh_config_source in the sourced installer
+BROWSER_EFFECTIVE=helium
+fresh_config_source "$SOURCE/config.example.toml" | grep -qx 'browser = \["helium"\]' || fail 'fresh default config does not select Helium'
+say 'PASS: install/update/rollback/purge on all three distro mappings, status purity, checksum failure, PAM includes, managed Helium policy'

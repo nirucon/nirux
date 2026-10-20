@@ -21,12 +21,29 @@ fetch() {
     *) curl -fsSL --connect-timeout 20 --max-time 300 --retry 3 -o "$2" "$1" ;;
   esac
 }
-(install_or_update install --no-packages --display-manager startx --release "$VERSION")
+(install_or_update install --no-packages --browser helium --display-manager startx --release "$VERSION")
 status
 doctor
+[ -x "$BIN/helium" ]
+"$BIN/helium" --version | grep -q "Helium $HELIUM_VERSION"
+[ -f "$PREFIX/share/applications/helium.desktop" ]
+grep -qF "Exec=\"$BIN/helium\"" "$PREFIX/share/applications/helium.desktop"
+first_generation=$(readlink "$STATE/current")
+(install_or_update update --no-packages --browser helium --release "$VERSION")
+[ "$(readlink "$STATE/current")" != "$first_generation" ]
+"$BIN/helium" --version | grep -q "Helium $HELIUM_VERSION"
+[ "$(browser_policy)" = helium ]
+(rollback)
+[ "$(readlink "$STATE/current")" = "$first_generation" ]
+"$BIN/helium" --version | grep -q "Helium $HELIUM_VERSION"
+mkdir -p "$XDG_CONFIG_HOME/net.imput.helium"
+printf 'keep my profile\n' > "$XDG_CONFIG_HOME/net.imput.helium/Preferences"
 sh "$SOURCE/tests/config-contract.sh" "$BIN/niruwm" "$BIN/nirubar"
 sh "$SOURCE/tests/startx-smoke.sh" "$BIN" "$HOME"
 (uninstall --purge)
 [ ! -e "$BIN/niruwm" ]
 [ ! -e "$ROOT/etc/pam.d/nirulock" ]
-printf 'PASS: real pinned releases install, diagnose, launch through startx and uninstall\n'
+[ ! -e "$BIN/helium" ]
+[ ! -f "$PREFIX/share/applications/helium.desktop" ]
+[ "$(cat "$XDG_CONFIG_HOME/net.imput.helium/Preferences")" = 'keep my profile' ]
+printf 'PASS: real pinned releases install, Helium is managed, diagnose, startx and owned uninstall\n'

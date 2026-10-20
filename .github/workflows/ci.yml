@@ -6,7 +6,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: sh -n nirux && for script in tests/*.sh; do sh -n "$script"; done
-      - run: docker run --rm -v "$PWD":/src:ro koalaman/shellcheck:stable -S warning -s sh /src/nirux /src/tests/integration.sh /src/tests/config-smoke.sh /src/tests/startx-smoke.sh /src/tests/release-smoke.sh
+      - run: docker run --rm -v "$PWD":/src:ro koalaman/shellcheck:stable -S warning -s sh /src/nirux /src/tests/integration.sh /src/tests/config-smoke.sh /src/tests/startx-smoke.sh /src/tests/release-smoke.sh /src/tests/browser-smoke.sh
       - run: sh tests/integration.sh
   distros:
     runs-on: ubuntu-latest
@@ -14,7 +14,9 @@ jobs:
       fail-fast: false
       matrix:
         image: [debian:bookworm-slim, archlinux:base, voidlinux/voidlinux:latest]
-    container: ${{ matrix.image }}
+    container:
+      image: ${{ matrix.image }}
+      options: --privileged
     steps:
       - name: Bootstrap
         shell: sh
@@ -40,7 +42,8 @@ jobs:
           export HOME=/tmp/niru-home NIRUX_LIBRARY=1
           mkdir -p "$HOME"
           . ./nirux
-          OS=$(distro); DM=startx
+          OS=$(distro); DM=startx; BROWSER_EFFECTIVE=helium
+          export BROWSER_EFFECTIVE
           install_packages
           for command in startx Xorg xauth dbus-run-session kitty rofi; do command -v "$command"; done
       - name: Optional display managers exist
@@ -60,3 +63,21 @@ jobs:
             void*) xbps-install -Sy xorg-server-xvfb xwininfo ;;
           esac
           sh tests/release-smoke.sh
+      - name: Normal-user Helium sandbox
+        shell: sh
+        run: |
+          if [ "$(id -u)" = 0 ]; then
+            case '${{ matrix.image }}' in
+              debian*) apt-get install -y --no-install-recommends passwd ;;
+              arch*) pacman -S --needed --noconfirm shadow ;;
+              void*) xbps-install -Sy shadow ;;
+            esac
+            id nirutest >/dev/null 2>&1 || useradd -m -s /bin/sh nirutest
+            if [ -w /proc/sys/kernel/apparmor_restrict_unprivileged_userns ]; then
+              sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
+            fi
+            chmod -R a+rX .
+            su -s /bin/sh nirutest -c "cd '$PWD' && sh tests/browser-smoke.sh"
+          else
+            sh tests/browser-smoke.sh
+          fi

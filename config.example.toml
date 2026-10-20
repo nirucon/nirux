@@ -46,8 +46,10 @@ nirupi_compat = false
 terminal = ["kitty"]
 # Bound to Super+Shift+Enter. Empty means the terminal above.
 terminal_alt = []
-# Super+B starts this. Install/select a browser; NIRUPI override requires nirupi_compat.
-browser = ["brave"]
+# Super+B starts this. A fresh NIRUX install offers the managed Helium browser;
+# choose another installed browser here or opt out with: nirux update --browser none.
+# NIRUPI override requires nirupi_compat.
+browser = ["helium"]
 # Super+P.
 launcher = ["rofi", "-show", "drun"]
 

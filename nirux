@@ -2,7 +2,7 @@
 # NIRUX: install a complete X11 desktop, or maintain an existing installation.
 set -eu
 
-VERSION=0.10.30
+VERSION=0.10.31
 PREFIX=${NIRUX_PREFIX:-$HOME/.local}
 BIN=$PREFIX/bin
 STATE=$PREFIX/share/nirux
@@ -13,15 +13,26 @@ WORK=
 LOCKED=0
 CONFIG_TMP=
 CONFIG_CANDIDATE=
+# Pinned upstream release. The archive is verified before extraction, and the
+# extracted browser is still checked for shared libraries and its reported
+# version before the stable link is switched.
+HELIUM_VERSION=0.19.4.1
+HELIUM_SHA256=6ca6e4a00fef5916821fb1af8a9607cc6b386f678a7eb422e55f19116ba30469
+BROWSER_CHOICE=
+BROWSER_EFFECTIVE=keep
+BROWSER_EXPLICIT=0
 
 say() { printf '%s\n' "$*"; }
 die() { say "nirux: $*" >&2; exit 1; }
 usage() {
   say "NIRUX $VERSION"
   say "Usage: nirux install [--minimal|--no-packages] [--display-manager auto|startx|sddm|lightdm]"
-  say "       nirux update [--no-packages] [--release VERSION] | rollback | status | doctor"
-  say "       nirux uninstall [--purge] | --version | --help"
+  say "                    [--browser helium|none|keep]"
+  say "       nirux update [--no-packages] [--release VERSION] [--browser helium|none|keep]"
+  say "       nirux rollback | status | doctor | uninstall [--purge] | --version | --help"
   say "Default: keep an existing display manager; otherwise offer startx (default), SDDM or LightDM."
+  say "Browser: a fresh install offers Helium (default Helium) and remembers the choice."
+  say "         --browser none is a persistent opt-out; --browser keep preserves the current policy."
   say "--minimal/--no-packages: binaries and integration only; required OS packages must already exist."
   say "Updates check and install missing runtime packages from the downloaded release unless --no-packages is given."
 }
@@ -82,6 +93,20 @@ packages_for() {
     void) say "xorg-minimal xinit xauth xrandr xset xprop xdpyinfo xwininfo xrdb xsetroot setxkbmap xkeyboard-config dbus elogind pam pam-base pipewire wireplumber alsa-utils alsa-ucm-conf rtkit fontconfig dejavu-fonts-ttf nerd-fonts-symbols-ttf kitty rofi dunst picom feh maim slop pcmanfm playerctl libnotify brightnessctl gammastep iproute2 iw xdg-utils procps-ng util-linux" ;;
   esac
 }
+# Runtime libraries and extraction tools for the pinned Helium archive. These
+# are only provisioned when the persistent browser policy is `helium`.
+browser_packages_for() {
+  case "$1" in
+    arch) say "nss nspr cups gtk3 libxcomposite libxdamage libxfixes libxrandr libxkbcommon mesa alsa-lib xz" ;;
+    debian) say "libnss3 libnspr4 libcups2 libgtk-3-0 libxcomposite1 libxdamage1 libxfixes3 libxrandr2 libxkbcommon0 libgbm1 libasound2 xz-utils" ;;
+    void) say "nss nspr cups gtk+3 libXcomposite libXdamage libXfixes libXrandr libxkbcommon mesa alsa-lib xz" ;;
+  esac
+}
+browser_packages() {
+  case "${BROWSER_EFFECTIVE:-${NIRUX_PROVISION_BROWSER:-keep}}" in
+    helium) browser_packages_for "$1" ;;
+  esac
+}
 install_packages() {
   install_only=0
   if [ "$#" -gt 0 ]; then
@@ -90,7 +115,7 @@ install_packages() {
     pkgs=$1
     install_only=1
   else
-    pkgs="curl ca-certificates $(packages_for "$OS")"
+    pkgs="curl ca-certificates $(packages_for "$OS") $(browser_packages "$OS")"
     case "$OS" in
       arch) pkgs="$pkgs mesa" ;;
       debian) pkgs="$pkgs libgl1-mesa-dri" ;;
@@ -150,7 +175,7 @@ package_present() {
 # The list comes from the script doing the update, so an older installed NIRUX
 # can provision a dependency introduced by the release it is installing.
 missing_packages() {
-  for required in curl ca-certificates $(packages_for "$OS"); do
+  for required in curl ca-certificates $(packages_for "$OS") $(browser_packages "$OS"); do
     package_present "$required" || say "$required"
   done
   return 0
@@ -164,6 +189,7 @@ provision_packages() {
   OS=${NIRUX_PROVISION_OS:-$(distro)}
   platform
   DM=${NIRUX_PROVISION_DM:-keep}
+  BROWSER_EFFECTIVE=${NIRUX_PROVISION_BROWSER:-keep}
   case "$mode" in
     full)
       if [ "${NIRUX_PACKAGES_DRY_RUN:-0}" = 1 ]; then say "would install: $(packages_for "$OS")"; return; fi
@@ -573,6 +599,13 @@ install_appearance() {
   return 0
 }
 
+fresh_config_source() {
+  if [ "${BROWSER_EFFECTIVE:-keep}" = none ]; then
+    awk '$0 == "browser = [\"helium\"]" {print "browser = []"; next} {print}' "$1"
+  else
+    cat "$1"
+  fi
+}
 install_config() {
   cfg_example="$WORK/download/nirux/config.example.toml"
   [ -f "$cfg_example" ] || { say 'config example missing; user configuration unchanged'; return 0; }
@@ -580,7 +613,9 @@ install_config() {
   install_appearance || :
   cfg_file="$CONFDIR/config.toml"
   if [ ! -e "$cfg_file" ] && [ ! -L "$cfg_file" ]; then
-    install -m 644 "$cfg_example" "$cfg_file"
+    cfg_stage="$WORK/config.fresh"
+    fresh_config_source "$cfg_example" > "$cfg_stage"
+    install -m 644 "$cfg_stage" "$cfg_file"
     say "Created $cfg_file"
     install_appearance || :
     return 0
@@ -709,6 +744,206 @@ release_files() {
     verify "$download_dir" "$download_file"
   done
 }
+
+# ── Managed Helium browser ──────────────────────────────────────────────────
+# The browser is not part of a program generation: it is a large external
+# application with its own release cadence. Its verified files live under the
+# NIRUX state directory, one stable link is exposed in BIN, and the persistent
+# policy file records whether the user selected it or opted out.
+browser_policy() {
+  [ -f "$STATE/browser-policy" ] || { say keep; return 0; }
+  policy=$(awk '$1 == "browser" && ($2 == "helium" || $2 == "none") {print $2; exit}' "$STATE/browser-policy")
+  [ -n "$policy" ] || policy=keep
+  say "$policy"
+}
+browser_policy_set() {
+  mkdir -p "$STATE"
+  printf '# NIRUX owner: %s\nbrowser %s\n' "$PREFIX" "$1" > "$STATE/.browser-policy.$$" || \
+    die 'could not stage the browser policy'
+  mv -f "$STATE/.browser-policy.$$" "$STATE/browser-policy" || \
+    die 'could not persist the browser policy'
+}
+browser_managed() {
+  [ -L "$BIN/helium" ] || return 1
+  [ "$(readlink "$BIN/helium")" = "$STATE/browser-current/helium" ]
+}
+browser_unmanaged() {
+  if [ -e "$BIN/helium" ] && ! browser_managed; then say "$BIN/helium"; return 0; fi
+  path=$(command -v helium 2>/dev/null || :)
+  if [ -n "$path" ] && [ "$path" != "$BIN/helium" ] && [ -x "$path" ]; then say "$path"; return 0; fi
+  return 1
+}
+browser_path() {
+  if browser_managed; then say "$BIN/helium"; return 0; fi
+  browser_unmanaged
+}
+browser_installed_version() {
+  [ -x "$BIN/helium" ] || return 1
+  "$BIN/helium" --version 2>/dev/null | sed -n 's/^Helium \([0-9][0-9.]*\).*/\1/p' | head -n 1
+}
+write_prefix_file() {
+  target=$1; source=$2
+  if [ -f "$target" ]; then
+    installed_sum=$(sha256sum "$target" | cut -d ' ' -f1)
+    source_sum=$(sha256sum "$source" | cut -d ' ' -f1)
+    [ "$installed_sum" != "$source_sum" ] || return 0
+  fi
+  if [ -f "$target" ] && ! owned "$target"; then
+    [ -f "$target.nirux-backup" ] || cp -p "$target" "$target.nirux-backup" || \
+      die "could not back up $target"
+  fi
+  mkdir -p "$(dirname "$target")" || die "could not create $(dirname "$target")"
+  install -m 644 "$source" "$target" || die "could not install $target"
+}
+remove_prefix_file() {
+  if [ -f "$1" ] && owned "$1"; then
+    if [ -f "$1.nirux-backup" ]; then mv -f "$1.nirux-backup" "$1"
+    else rm -f "$1"
+    fi
+  fi
+}
+browser_desktop_file() {
+  say "$PREFIX/share/applications/helium.desktop"
+}
+browser_write_desktop() {
+  desktop_source=$STATE/browser-current/helium.desktop
+  desktop_target=$(browser_desktop_file)
+  mkdir -p "$WORK"
+  if [ -f "$desktop_source" ]; then
+    {
+      say "# NIRUX owner: $PREFIX"
+      sed -e "s|^Exec=helium|Exec=\"$BIN/helium\"|" \
+          -e "s|^Icon=helium\$|Icon=$STATE/browser-current/product_logo_256.png|" \
+          "$desktop_source"
+    } > "$WORK/helium.desktop"
+  else
+    {
+      say "# NIRUX owner: $PREFIX"
+      say '[Desktop Entry]'
+      say 'Name=Helium'
+      say 'Comment=Access the Internet'
+      say 'Type=Application'
+      say "Exec=\"$BIN/helium\" %U"
+      say "Icon=$STATE/browser-current/product_logo_256.png"
+      say 'Terminal=false'
+      say 'Categories=Network;WebBrowser;'
+      say 'MimeType=application/pdf;application/rdf+xml;application/rss+xml;application/xhtml+xml;text/html;text/xml;x-scheme-handler/http;x-scheme-handler/https;'
+    } > "$WORK/helium.desktop"
+  fi
+  write_prefix_file "$desktop_target" "$WORK/helium.desktop"
+}
+browser_remove_managed() {
+  remove_prefix_file "$(browser_desktop_file)"
+  if [ -L "$BIN/helium" ]; then
+    case "$(readlink "$BIN/helium")" in
+      "$STATE/browser-current/helium"|"$STATE/browsers"/*) rm -f "$BIN/helium" ;;
+    esac
+  fi
+  rm -rf "$STATE/browser-current" "$STATE/browsers"
+}
+browser_remove_policy() {
+  rm -f "$STATE/browser-policy"
+}
+browser_verify_archive() {
+  [ -f "$1" ] || die "Helium archive is missing: $1"
+  case "$HELIUM_SHA256" in
+    *[!0-9a-fA-F]*|'') die 'Helium checksum is invalid' ;;
+  esac
+  [ "${#HELIUM_SHA256}" = 64 ] || die 'Helium checksum is invalid'
+  actual=$(sha256sum "$1" | cut -d ' ' -f1)
+  [ "$actual" = "$HELIUM_SHA256" ] || \
+    die "Helium checksum mismatch; current browser kept"
+}
+browser_install_archive() {
+  archive=$1
+  [ -n "${WORK:-}" ] || die 'browser installation requires a working directory'
+  browser_verify_archive "$archive"
+  unpack=$WORK/helium-unpack
+  rm -rf "$unpack"
+  mkdir -p "$unpack" || die 'could not create the Helium extraction directory'
+  tar -xJf "$archive" -C "$unpack" || die 'could not extract the Helium archive'
+  top=$unpack/helium-$HELIUM_VERSION-x86_64_linux
+  [ -x "$top/helium" ] || die 'Helium archive is missing the executable'
+  load_output=$(LD_TRACE_LOADED_OBJECTS=1 "$top/helium" 2>&1 || :)
+  missing_libs=$(printf '%s\n' "$load_output" | awk '/not found/ {print $1}' | sort -u)
+  if [ -n "$missing_libs" ]; then
+    die "Helium needs missing shared libraries: $(printf '%s' "$missing_libs" | tr '\n' ' ')"
+  fi
+  reported=$("$top/helium" --version 2>&1) || die 'the extracted Helium executable cannot start'
+  case "$reported" in
+    *"$HELIUM_VERSION"*) ;;
+    *) die "Helium reports an unexpected version: $reported" ;;
+  esac
+  mkdir -p "$STATE/browsers" || die 'could not create the managed browser directory'
+  destination=$STATE/browsers/helium-$HELIUM_VERSION
+  staging=$STATE/browsers/.helium-$HELIUM_VERSION.$$
+  rm -rf "$staging"
+  mv "$top" "$staging" || die 'could not stage the Helium files'
+  rm -rf "$destination"
+  mv "$staging" "$destination" || die 'could not install the Helium files'
+  mkdir -p "$BIN" || die 'could not create the command directory'
+  ln -s "$destination" "$STATE/.browser-current.$$" || die 'could not link Helium'
+  mv -Tf "$STATE/.browser-current.$$" "$STATE/browser-current" || die 'could not activate Helium'
+  ln -s "$STATE/browser-current/helium" "$BIN/.helium.$$" || die 'could not link the Helium command'
+  mv -Tf "$BIN/.helium.$$" "$BIN/helium" || die 'could not activate the Helium command'
+  for old in "$STATE/browsers"/helium-*; do
+    [ ! -d "$old" ] || [ "$old" = "$destination" ] || rm -rf "$old"
+  done
+  rm -rf "$unpack"
+  browser_write_desktop
+  say "Installed managed Helium $HELIUM_VERSION"
+}
+browser_install() {
+  [ "${BROWSER_EFFECTIVE:-keep}" = helium ] || return 0
+  if external=$(browser_unmanaged); then
+    say "Using the existing Helium at $external; NIRUX will not overwrite it."
+    return 0
+  fi
+  if browser_managed; then
+    installed=$(browser_installed_version || :)
+    if [ "$installed" = "$HELIUM_VERSION" ]; then
+      browser_write_desktop
+      say "Managed Helium $HELIUM_VERSION is already installed"
+      return 0
+    fi
+  fi
+  [ -n "${WORK:-}" ] || die 'browser installation requires a working directory'
+  archive=$WORK/download/helium/helium-$HELIUM_VERSION-x86_64_linux.tar.xz
+  mkdir -p "$WORK/download/helium" || die 'could not create the Helium download directory'
+  say "Downloading Helium $HELIUM_VERSION"
+  fetch "https://github.com/imputnet/helium-linux/releases/download/$HELIUM_VERSION/helium-$HELIUM_VERSION-x86_64_linux.tar.xz" "$archive"
+  browser_install_archive "$archive"
+}
+choose_browser() {
+  operation=$1
+  persisted=$(browser_policy)
+  if [ "$BROWSER_EXPLICIT" = 1 ]; then
+    effective=$BROWSER_CHOICE
+  elif [ "$operation" = install ]; then
+    if [ "$persisted" != keep ]; then
+      effective=$persisted
+    elif [ -t 0 ]; then
+      say 'Install the managed Helium browser? Its runtime dependencies are installed by NIRUX.'
+      printf 'Install Helium [Y/n]: '
+      IFS= read -r answer || answer=yes
+      case "$answer" in [nN]*) effective=none ;; *) effective=helium ;; esac
+    else
+      effective=helium
+    fi
+  else
+    effective=$persisted
+  fi
+  case "$effective" in
+    helium|none) ;;
+    keep)
+      # A fresh noninteractive install still needs a usable default. An update
+      # with no recorded policy keeps the machine's existing browser untouched.
+      [ "$operation" = install ] && effective=helium
+      ;;
+    *) die 'browser must be helium, none or keep' ;;
+  esac
+  BROWSER_EFFECTIVE=$effective
+}
 manifest_version() {
   value=$(awk -v n="$1" '$1 == n {print $2}' "$WORK/download/nirux/manifest")
   valid_version "$value" || die "invalid manifest entry: $1"
@@ -803,7 +1038,7 @@ stage_release() {
   # any staged binary is executed. This lets a new shared-library dependency be
   # present when the new component is first started and version-checked.
   if [ "$packages" = 1 ]; then
-    NIRUX_PROVISION_OS=$OS NIRUX_PROVISION_DM=$DM \
+    NIRUX_PROVISION_OS=$OS NIRUX_PROVISION_DM=$DM NIRUX_PROVISION_BROWSER=$BROWSER_EFFECTIVE \
       sh "$WORK/download/nirux/nirux" _provision missing
   fi
   # A new target installer stages the release through a versioned handoff, so a
@@ -931,6 +1166,38 @@ check_pam() {
     [ -f "$ROOT/etc/pam.d/$include" ] || { say "missing PAM include: $include"; return 1; }
   done
 }
+browser_status() {
+  policy=$(browser_policy)
+  case "$policy" in
+    none)
+      say 'managed browser: Helium disabled by persistent opt-out'
+      return 0
+      ;;
+    helium)
+      browser=$(browser_path || :)
+      if [ -z "$browser" ] || [ ! -x "$browser" ]; then
+        say 'missing managed browser helium'
+        return 1
+      fi
+      browser_version=$("$browser" --version 2>&1) || {
+        say "broken managed browser helium: $browser_version"
+        return 1
+      }
+      say "installed managed browser $browser_version"
+      if browser_managed; then
+        desktop=$(browser_desktop_file)
+        if [ -f "$desktop" ] && grep -qF "Exec=\"$BIN/helium\"" "$desktop"; then
+          say 'installed Helium desktop entry'
+        else
+          say 'missing or different Helium desktop entry'
+          return 1
+        fi
+      fi
+      return 0
+      ;;
+  esac
+  return 0
+}
 status() {
   result=0
   say "NIRUX $VERSION ($PREFIX)"
@@ -949,6 +1216,7 @@ status() {
   else say 'missing or different display-manager session'; result=1
   fi
   if check_pam; then say 'PAM includes and permissions OK (password authentication not exercised)'; else result=1; fi
+  browser_status || result=1
   if [ -L "$STATE/current" ]; then say "generation: $(readlink "$STATE/current")"; fi
   if [ -x "$HOME/.local/bin/nirupi-session" ] || [ -f "$ROOT/usr/share/xsessions/nirupi-dwm.desktop" ]; then say 'NIRUPI present (separate session)'; fi
   return "$result"
@@ -1059,6 +1327,8 @@ uninstall() {
     if [ -L "$BIN/$program" ] && [ "$(readlink "$BIN/$program")" = "$STATE/current/bin/$program" ]; then rm -f "$BIN/$program"; fi
   done
   if [ -f "$HOME/.xinitrc" ] && owned "$HOME/.xinitrc"; then rm -f "$HOME/.xinitrc"; fi
+  browser_remove_managed
+  browser_remove_policy
   if [ "$purge" = 1 ]; then
     rm -rf "${XDG_CONFIG_HOME:-$HOME/.config}/niruwm" "${XDG_CONFIG_HOME:-$HOME/.config}/niruui" \
       "${XDG_CONFIG_HOME:-$HOME/.config}/nirubar" "${XDG_CONFIG_HOME:-$HOME/.config}/nirulauncher" \
@@ -1091,6 +1361,7 @@ install_or_update() {
       --minimal|--no-packages) packages=0 ;;
       --full) packages=1 ;;
       --display-manager) shift; [ "$#" -gt 0 ] || die 'missing display-manager value'; DM=$1 ;;
+      --browser) shift; [ "$#" -gt 0 ] || die 'missing browser value'; BROWSER_CHOICE=$1; BROWSER_EXPLICIT=1 ;;
       --release) shift; [ "$#" -gt 0 ] || die 'missing release version'; RELEASE=${1#v} ;;
       *) die "unknown option: $1" ;;
     esac
@@ -1099,12 +1370,24 @@ install_or_update() {
   OS=$(distro)
   platform
   if [ "$operation" = install ]; then choose_dm; else DM=keep; fi
+  choose_browser "$operation"
   lock
+  case "$BROWSER_EFFECTIVE" in
+    helium|none)
+      if [ "$operation" = install ] || [ "$BROWSER_EXPLICIT" = 1 ]; then
+        browser_policy_set "$BROWSER_EFFECTIVE"
+      fi
+      ;;
+  esac
+  if [ "$BROWSER_EXPLICIT" = 1 ] && [ "$BROWSER_EFFECTIVE" = none ]; then
+    browser_remove_managed
+  fi
   # The bootstrap install has to include curl before any release can be
   # downloaded. Updates skip this and let the newly verified release provision
   # its own package list below.
   if [ "$operation" = install ] && [ "$packages" = 1 ]; then install_packages; fi
   stage_release
+  browser_install
   # Configuration and system integration must succeed before switching the
   # active programs. A rejected configuration leaves the old generation intact.
   install_config
