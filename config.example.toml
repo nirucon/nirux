@@ -31,7 +31,8 @@
 
 # ── Appearance ──────────────────────────────────────────────────────────────
 # Theme name. Built in: niru-noir, niru-nord, niru-satie, niru-carl-larsson.
-# List them with: niructl themes
+# List them with: niructl themes. The bar, launcher, lock and notifications
+# follow this palette; niructl theme updates them live.
 theme = "niru-noir"
 # ── Layouts ─────────────────────────────────────────────────────────────────
 # One of: tile, left, monocle, centered, centeredfloat, fibonacci, floating.

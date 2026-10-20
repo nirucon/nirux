@@ -27,7 +27,9 @@ This is a personal desktop for the author's own use; others are welcome to try i
 The implementation roadmap and continuation checkpoints are in [ROADMAP.md](../ROADMAP.md).
 The code review and verified findings are in [AUDIT.md](../AUDIT.md).
 Native launcher and notifier releases are included. The notification provider
-defaults to `auto`: native when installed, with Dunst fallback.
+defaults to `auto`: native when installed, with Dunst fallback. Notification and
+OSD colours follow the active NIRUWM theme and update live with `niructl theme`
+or `niructl reload`.
 
 ## Install
 
