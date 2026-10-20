@@ -1,5 +1,10 @@
 # Restart review — published 0.10.30
 
+> **Status update:** this review documents 0.10.30. S01/S02 are implemented in
+> 0.10.31; see the [0.10.31 checkpoint](history/CHECKPOINT-0.10.31.md) and the
+> current [roadmap](../ROADMAP.md). The findings below remain the historical
+> reproduction and the S03/S04/C01–C07 worklist.
+
 Reviewed **2026-10-20** for the owner's OpenCode restart. This is a targeted
 installation/integration review and a correction of acceptance claims, not a
 line-by-line audit of every optional repository.

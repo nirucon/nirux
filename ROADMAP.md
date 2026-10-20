@@ -1,11 +1,12 @@
 # NIRU desktop — current roadmap and restart handoff
 
-Updated **2026-10-20**, checked against published **NIRUX 0.10.30**.
+Updated **2026-10-20**, checked against **NIRUX 0.10.31**.
 
 - **Start here after restarting OpenCode:** [NEXT-SESSION.md](docs/NEXT-SESSION.md)
 - **Evidence and open defects:** [restart review](docs/REVIEW-2026-10-20-RESTART.md)
 - **Repositories:** [inventory](docs/REPOSITORIES.md)
 - **Previous work:** [delivery history through 0.10.30](docs/history/ROADMAP-0.10.30.md)
+- **Current checkpoint evidence:** [0.10.31 Helium and full CI](docs/history/CHECKPOINT-0.10.31.md)
 
 ## 1. Product contract
 
@@ -30,7 +31,7 @@ drivers/firmware must be documented separately from suite provisioning.
 
 | Repository | Pinned release | Responsibility |
 |---|---|---|
-| nirux | 0.10.30 | Packages, generations, installation, integration |
+| nirux | 0.10.31 | Packages, generations, installation, integration, managed Helium |
 | niruwm | 0.16.30 | WM, session, niructl, niruidle |
 | nirubar | 0.18.15 | Per-output bar, tray, panels, weather |
 | niruscreensaver | 0.8.3 | Unlocked idle surface |
@@ -38,17 +39,23 @@ drivers/firmware must be documented separately from suite provisioning.
 | nirulauncher | 0.2.1 | Apps, actions, windows, local recency/favourites |
 | nirunotify | 0.3.3 | Native notifications, actions, DND, history/OSD |
 
-All listed releases/assets were found on GitHub in this review. Previous sessions
-reported installation of 0.10.30 on `niru@void` and `niru@thinkpad` (Arch); this
-review did not reconnect to certify their current running sessions.
+All listed releases/assets were found on GitHub. Previous sessions reported
+installation of 0.10.30 on `niru@void` and `niru@thinkpad` (Arch); those hosts
+still need the 0.10.31 deployment check.
 
-**Clean-install acceptance is OPEN. Helium integration is NOT implemented.**
-There is no Helium flag or download path in 0.10.30. The canonical browser is
-`brave`, which NIRUX does not install. The latest full distro CI examined failed
-in real-release/startx integration on **all three** distributions:
-[run 39406911647](https://github.com/nirucon/nirux/actions/runs/39406911647).
-Its shell checks, mocked regression tests and earlier dependency-install steps
-passed. A successful release workflow does not run this entire matrix.
+**S01 and S02 are implemented in 0.10.31. The full CI matrix is green.**
+[Run 39420180581](https://github.com/nirucon/nirux/actions/runs/39420180581)
+passes Arch, Debian Bookworm and Void glibc, including real pinned releases,
+doctor, config contract, startx and a normal-user Helium launch with the
+Chromium sandbox enabled. The original failure
+([run 39406911647](https://github.com/nirucon/nirux/actions/runs/39406911647))
+stopped at `doctor` because the canonical `brave` browser was not installed;
+config-contract and startx were never reached in that run.
+
+Helium is pinned to upstream 0.19.4.1 with a recorded SHA-256. The canonical
+browser is now `helium`, a fresh install selects it by default, and
+`--browser none` is a persistent opt-out. Containers are supporting evidence,
+not a fresh physical OS certification; S03, S04 and H01 remain open.
 
 The earlier I06–I09, U01–U06 and A01–A03 work is **shipped**, with useful
 regressions. It is not blanket proof that every original acceptance criterion
@@ -61,24 +68,24 @@ environment, release/deployment status, remaining limits and next task.
 
 | ID / status | Exact next work | Acceptance |
 |---|---|---|
-| S01 / TODO — **START HERE** | Reproduce the full distro-CI failure using 0.10.30. Diagnose real-release install/doctor/config-contract/startx separately. Fix defects rather than ignoring failed diagnostics. | A new full CI run passes Arch, Debian Bookworm and Void glibc; retain complete logs. If browser absence is the blocker, track it explicitly through S02. |
-| S02 / TODO | Add an explicit, persistent Helium install/opt-out policy and align default shortcuts/desktop entry/doctor. Prefer official pinned upstream assets with recorded integrity; verify extraction tools, shared libraries and sandbox on all three distros. | With Helium selected: empty-home install launches it as a normal user with sandbox enabled. With opt-out: updates preserve the choice and existing browser settings. Missing chosen browser is actionable. Test failed/corrupt download, update, rollback and owned uninstall. Never use `--no-sandbox` to pass a test. |
-| S03 / TODO | Complete target-installer handoff beyond binary staging. Current `install_config` and activation still execute in the old caller. New appearance/config changes previously required a second update. | A genuinely older installer updates once to a synthetic target with a new asset/config key/program; the target owns config/integration/activation semantics under a versioned protocol. Failures preserve original config and active generation. |
+| S01 / DONE | Reproduced the 0.10.30 failure: all three distros stopped at doctor with `missing configured brave`; config-contract/startx were not reached. Fixed by the S02 browser policy. Evidence: CI run 39420180581. | New full CI run passes Arch, Debian Bookworm and Void glibc; complete logs retained. |
+| S02 / DONE | Managed Helium 0.19.4.1 with recorded SHA-256, runtime dependencies, owned desktop entry, persistent `--browser helium|none|keep` policy, actionable status/doctor and owned removal. Evidence: run 39420180581 and [checkpoint](docs/history/CHECKPOINT-0.10.31.md). | Helium selected: empty-home browser install launches as a normal user with sandbox enabled. Opt-out survives updates. Corrupt download, update, rollback and owned uninstall covered by regressions. No `--no-sandbox` path. |
+| S03 / TODO — **START HERE** | Complete target-installer handoff beyond binary staging. Current `install_config` and activation still execute in the old caller. New appearance/config changes previously required a second update. | A genuinely older installer updates once to a synthetic target with a new asset/config key/program; the target owns config/integration/activation semantics under a versioned protocol. Failures preserve original config and active generation. |
 | S04 / TODO | Recheck the complete vanilla dependency/runtime matrix: X11/input/fonts/cursors, audio, PAM, session bus, optional DM, screenshots and configured commands. Include Helium runtime and sandbox dependencies. | No manual suite-related package fixes on any supported distro. Record package versions and actual normal-user runtime, not only successful package lookup. |
 | H01 / TODO | Fresh OS/VM + empty normal-user home on all three distros, then upgrade from the published baseline. | Real released install → status/doctor → startx/login → apps/browser/audio/screenshot/lock → update once → rollback → uninstall/purge. Test existing DM separately. Containers/Xvfb are supporting evidence, not fresh physical OS evidence. |
 
-**Next session starts with S01, not A04.** Finish the clean-install/Helium path
-before optional notification images or new repositories.
+**Next session starts with S03, not A04.** Finish the one-update and vanilla
+acceptance path before optional notification images or new repositories.
 
 ### Three-distro acceptance sheet
 
 | Path | Arch | Debian | Void glibc |
 |---|---|---|---|
-| Package provisioning | CI step passed in examined run | CI step passed | CI step passed |
-| Mock install/update/rollback | Passed in examined CI | Passed in examined CI; rerun in container this review | Passed in examined CI |
-| Latest full real-release/startx CI | **Failed** | **Failed** | **Failed** |
-| Fresh normal-user OS desktop acceptance | Open | Open | Open |
-| Managed Helium option + sandboxed launch | Missing | Missing | Missing |
+| Package provisioning | Passed in 39420180581 | Passed in 39420180581 | Passed in 39420180581 |
+| Mock install/update/rollback | Passed in 39420180581 | Passed in 39420180581 | Passed in 39420180581 |
+| Full real-release/startx CI | **Passed** | **Passed** | **Passed** |
+| Managed Helium option + normal-user sandbox | **Passed in container** | **Passed in container** | **Passed in container** |
+| Fresh physical normal-user OS desktop acceptance | Open (H01) | Open (H01) | Open (H01) |
 | Physical sleep/output checks | Owner previously confirmed | No physical host supplied | Owner previously confirmed |
 
 ## 4. Correctness and integration follow-ups

@@ -1,11 +1,11 @@
 # Installation and maintenance
 
-**Verified-state note, 2026-10-20:** the published baseline is 0.10.30. Full
-vanilla real-release/startx CI currently fails on all three supported distros;
-the managed Helium browser option is not implemented. The commands below describe
-the existing installer, not a completed clean-OS certification. Follow
-[S01–S04/H01 in the roadmap](../ROADMAP.md) and the
-[restart review](REVIEW-2026-10-20-RESTART.md) for the actual acceptance gaps.
+**Verified-state note, 2026-10-20:** 0.10.31 implements the managed Helium
+option and the full distro CI now covers real-release install, doctor,
+config contract, startx and a normal-user sandboxed Helium launch. Containers
+are supporting evidence, not a fresh physical OS certification. S03, S04 and
+H01 remain open; follow [the roadmap](../ROADMAP.md) and the
+[restart review](REVIEW-2026-10-20-RESTART.md).
 
 Install and maintain the NIRU X11 desktop on **Void Linux (glibc), Arch Linux
 and Debian**, including a minimal OS installation without a graphical desktop.
@@ -42,9 +42,30 @@ cd nirux
 ```
 
 On a minimal installation this installs Xorg, xinit/startx, Xauth, D-Bus,
-fonts, kitty, rofi, audio tools, notifications and the other default session
-dependencies. It does not depend on NIRUPI. Distribution graphics drivers and
-firmware remain the OS/hardware installation's responsibility.
+fonts, kitty, rofi, audio tools, notifications, the selected Helium browser and
+the other default session dependencies. It does not depend on NIRUPI.
+Distribution graphics drivers and firmware remain the OS/hardware installation's
+responsibility.
+
+### Browser
+
+A fresh install offers **Helium**, the managed default, and remembers the answer
+in the NIRUX state directory. The installer downloads the official pinned x86_64
+archive, verifies its recorded SHA-256, checks its shared libraries and reported
+version, then exposes it as `~/.local/bin/helium` with an owned desktop entry.
+The browser's own profile and settings are never rewritten.
+
+```sh
+./nirux install --browser helium   # managed Helium
+./nirux install --browser none     # persistent opt-out; no browser is installed
+./nirux update --browser helium    # enable it later
+./nirux update --browser none      # opt out and remove NIRUX-owned Helium files
+```
+
+An update keeps the recorded policy when no browser flag is given. A browser
+already installed outside NIRUX is left untouched. Missing configured or managed
+browsers are reported by `status` and `doctor`; they are not silently ignored.
+Uninstall removes only NIRUX-owned browser files, never a user profile.
 
 ### How the graphical session starts
 
@@ -95,7 +116,7 @@ installer cannot update itself. After that first migration the installed
 
 ```sh
 nirux update
-nirux update --release 0.10.30
+nirux update --release 0.10.31
 nirux rollback
 ```
 
@@ -138,8 +159,9 @@ Fresh configuration uses suite-native shortcuts. Existing user overrides are
 preserved: if an old config explicitly calls `nirupi-power.sh`, `clip-menu.sh`
 or Flameshot, replace that binding with an installed action or remove the
 override to restore the built-in default. Use `action = "unbind"` to disable a
-default. Set `browser` to your installed browser; browsers are not provisioned
-by NIRUX. Screenshots create `~/Pictures` when needed.
+default. The canonical `browser` default is the managed `helium` command. Set it to
+another installed browser if preferred. Screenshots create `~/Pictures` when
+needed.
 
 ### Night light and brightness
 
@@ -197,10 +219,11 @@ It never launches the session script to discover its version.
 
 `doctor` also checks the required launch tools and component settings. A
 configured terminal, browser or launcher command that is not installed is
-reported and fails the diagnostic. With `DISPLAY` set it checks the live control
-channel and WM/bar processes; from SSH or a TTY it reports that the live-session
-check was skipped. Reading PAM configuration does not prove that a user's
-password can authenticate.
+reported and fails the diagnostic. `status` separately reports whether the
+persistent browser policy is Helium, opted out, or missing its managed files.
+With `DISPLAY` set it checks the live control channel and WM/bar processes; from
+SSH or a TTY it reports that the live-session check was skipped. Reading PAM
+configuration does not prove that a user's password can authenticate.
 
 ## Uninstall
 
@@ -209,9 +232,10 @@ nirux uninstall
 nirux uninstall --purge
 ```
 
-Only NIRUX-owned links, generated xinitrc and owned system integration are
-removed. Existing backed-up system files are restored. Settings are kept by a
-normal uninstall. `--purge` additionally removes only these documented
+Only NIRUX-owned links, the managed browser files, the generated xinitrc,
+generated desktop entry and owned system integration are removed. Existing
+backed-up system files are restored. A browser profile and settings are kept by
+a normal uninstall. `--purge` additionally removes only these documented
 suite-owned directories:
 
 - `~/.config/niruwm`, `~/.config/niruui`
@@ -235,9 +259,11 @@ sh tests/integration.sh
 
 Offline regression tests use isolated homes and mock release downloads. They
 exercise all three distribution mappings, generation switches, rollback,
-checksum failures, status purity, PAM includes and uninstall/purge. CI also
-installs the real vanilla dependency package lists on all three distributions
-and checks that both optional display managers exist in their repositories.
+checksum failures, status purity, PAM includes, managed-browser policy and
+uninstall/purge. CI also installs the real vanilla dependency package lists on
+all three distributions, runs the real pinned releases through startx, and
+starts Helium as a normal user with the Chromium sandbox enabled. The browser
+archive is never started with `--no-sandbox`.
 `sh tests/release-smoke.sh` tests the actual pinned component releases, diagnostics,
 startx/xinit with the generated xinitrc, bar restart and uninstall in an isolated
 home (requires the dependencies and Xvfb). Component repositories additionally
