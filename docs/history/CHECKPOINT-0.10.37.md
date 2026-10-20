@@ -39,4 +39,17 @@ target apply can fetch it, and the test asserts it appears after one update.
 - `tests/release-smoke.sh` passed on local Arch, Debian and Void containers with
   the real 0.16.35/0.18.17 components, including fish syntax, prompt output,
   kitty config parsing and theme-change regeneration.
-- Full CI, release and owner-host deployment are recorded after publication.
+- Full CI [39456577174](https://github.com/nirucon/nirux/actions/runs/39456577174)
+  passed check, Arch, Debian and Void.
+- Release v0.10.37 published with `nirux-terminal.tar.xz` and
+  `nirux-wallpapers.tar.xz`.
+- `niru@void` and `niru@thinkpad` are on NIRUX 0.10.37 / NIRUWM 0.16.35:
+  fish 4.9.3, kitty/fish managed blocks, generated Nord colours, theme-hook
+  executable and syntax-valid fish files. Existing NIRUPI/starship config on
+  Void remains, with the NIRUX block after it. A manual hook run changed and
+  restored the generated Nord palette correctly.
+- Both active sessions still ran the previous WM (0.16.32/0.16.33) at the time
+  of deployment, so the live theme-hook path needs the next logout/login. The
+  terminal integration itself is already installed and works in new shells.
+- No session was logged out. A screenshot attempt hit the active lock screen,
+  so visual verification is left to the owner after login.
