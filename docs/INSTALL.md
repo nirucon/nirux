@@ -88,7 +88,7 @@ installer cannot update itself. After that first migration the installed
 
 ```sh
 nirux update
-nirux update --release 0.10.28
+nirux update --release 0.10.29
 nirux rollback
 ```
 
@@ -133,6 +133,20 @@ or Flameshot, replace that binding with an installed action or remove the
 override to restore the built-in default. Use `action = "unbind"` to disable a
 default. Set `browser` to your installed browser; browsers are not provisioned
 by NIRUX. Screenshots create `~/Pictures` when needed.
+
+### Night light and brightness
+
+`[nightlight]` accepts `mode = "manual"`, `"fixed"` or `"solar"`. Manual keeps
+the existing Super+N toggle. Fixed uses local `on = "20:00"` / `off = "07:00"`
+times; solar computes sunrise and sunset from the configured coordinates with
+gammastep, without GeoClue. Fixed and solar start one watcher in the NIRUWM
+session; it reapplies after resume and display changes and is the only
+gammastep owner. `niructl nightlight apply|watch|status` are the controls.
+
+`[brightness]` selects the brightnessctl `device` (empty means default) and the
+percentage `step` used by `niructl brightness up|down` and the hardware keys.
+`nirux doctor` reports a present backlight that brightnessctl cannot read, so
+missing udev/group permissions are visible rather than silent.
 
 ### Appearance contract
 

@@ -2,7 +2,7 @@
 # NIRUX: install a complete X11 desktop, or maintain an existing installation.
 set -eu
 
-VERSION=0.10.28
+VERSION=0.10.29
 PREFIX=${NIRUX_PREFIX:-$HOME/.local}
 BIN=$PREFIX/bin
 STATE=$PREFIX/share/nirux
@@ -472,7 +472,7 @@ add_missing_sections() {
   mig_file=$1
   mig_example=$2
   mig_added=""
-  for mig_section in nightlight wallpaper monitors bar; do
+  for mig_section in nightlight brightness wallpaper monitors bar; do
     if config_has_section "$mig_file" "$mig_section"; then continue; fi
     mig_block=$(awk -v s="[$mig_section]" '
       $0 == s {found=1; print; next}
@@ -613,6 +613,12 @@ install_config() {
   add_missing_top_key "$cfg_candidate" restore_session false
   add_missing_top_key "$cfg_candidate" weather_latitude 58.22
   add_missing_top_key "$cfg_candidate" weather_longitude 11.93
+  add_missing_key "$cfg_candidate" nightlight mode '"manual"'
+  add_missing_key "$cfg_candidate" nightlight on '"20:00"'
+  add_missing_key "$cfg_candidate" nightlight off '"07:00"'
+  add_missing_key "$cfg_candidate" nightlight day_temperature 6500
+  add_missing_key "$cfg_candidate" brightness device '""'
+  add_missing_key "$cfg_candidate" brightness step 5
   add_missing_key "$cfg_candidate" bar title_delay_seconds 0
   add_missing_key "$cfg_candidate" bar graph_width 24
   add_missing_key "$cfg_candidate" bar tray true
@@ -973,6 +979,15 @@ doctor() {
   for tool in startx Xorg xauth dbus-run-session fc-match brightnessctl gammastep notify-send; do
     if command -v "$tool" >/dev/null 2>&1; then say "available $tool"; else say "missing $tool"; result=1; fi
   done
+  if [ -d /sys/class/backlight ] && [ -n "$(ls -A /sys/class/backlight 2>/dev/null)" ]; then
+    if command -v brightnessctl >/dev/null 2>&1 && brightnessctl -m >/dev/null 2>&1; then
+      say 'backlight readable through brightnessctl'
+    else
+      say 'backlight present but brightnessctl cannot read it (check udev/group permissions)'
+      result=1
+    fi
+  else say 'no backlight device (desktop or external display)'
+  fi
   for tool in $(configured_commands); do
     if command -v "$tool" >/dev/null 2>&1 || [ -x "$BIN/$tool" ]; then
       say "available configured $tool"
