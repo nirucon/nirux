@@ -23,7 +23,7 @@ This file is the authoritative **current plan**. The
 
 ## 2. Actual checkpoint
 
-Published NIRUX **0.10.15** pins:
+Published NIRUX **0.10.16** pins:
 
 | Component | Version | Responsibility |
 |---|---|---|
@@ -39,9 +39,10 @@ light and sleep delay inhibition **already exist**. Native notifications are the
 `auto` preference; Dunst is fallback. Do not rebuild these as new projects.
 
 The 2026-10-20 corrections are **published** in NIRUX 0.10.15, niruwm 0.16.20,
-nirubar 0.18.7 and updated installer/docs on the component main branches. They are
-**not yet deployed** to the owner's running machines. Publication is not physical
-acceptance: complete H01–H03 before treating the release as fully verified.
+nirubar 0.18.7 and updated installer/docs on the component main branches. NIRUX
+**0.10.16** adds the I06 configuration migration and is installed on both owner
+machines. Publication is not physical acceptance: complete H01–H03 before
+treating the release as fully verified.
 
 ## 3. Status vocabulary and execution rules
 
@@ -66,13 +67,17 @@ Commit/push/tag/release only when explicitly requested by the user.
 | I03 / RELEASED | Canonical examples in nirux/niruwm/nirubar: remove dead NIRUPI/Flameshot overrides; create Pictures before screenshots; update opt-in. | Both real component validators accept the canonical file; fresh standalone shortcuts call installed tools. Physical shortcut check remains H01. |
 | I04 / RELEASED | Locker/saver installers: current default versions, reject NIRUX binary links, hash-check removals; locker removes only recorded PAM files and downloads release-pinned PAM. | Offline ownership/removal regressions on Void/Arch/Debian. Real standalone prebuilt install + PAM matrix remains H02. |
 | I05 / RELEASED | `nirubar/src/config.rs,module.rs`: reject bad strftime formats before rendering; disabled battery/network/clock have no module/hitbox. | Rust regressions and fmt/clippy. WM/bar validator parity remains U01. |
-| I06 / TODO | `nirux/nirux`: define supported migration syntax; test quoted keys, multiline strings/arrays, duplicate tables and interrupted writes. Stop rather than damage unsupported input; use a validated staged candidate before activation. | Original file and active generation survive every rejection; candidate parses in both components. No mandatory Python/TOML runtime just for migration. |
+| I06 / RELEASED | `nirux/nirux`: define supported migration syntax; test quoted keys, multiline strings/arrays, duplicate tables and interrupted writes. Stop rather than damage unsupported input; use a validated staged candidate before activation. | Original file and active generation survive every rejection; candidate parses in both components. No mandatory Python/TOML runtime just for migration. |
 | I07 / TODO | `nirux/nirux`: forward staging to the verified target installer through a versioned internal handoff so new components install on the **first** update. Provision new shared-library dependencies before running staged components. | Old-installer → synthetic new-component and missing-library fixtures; corrupt assets or provisioning failure retain the old generation. |
 | I08 / TODO | `nirux/nirux`: finish owned purge coverage for nirubar config, nirulauncher, nirunotify and saver state; make missing configured programs actionable in doctor. | Normal uninstall keeps config; documented purge covers only owned suite data. Missing configured browser is visible and fails the relevant diagnostic. |
 | I11 / RELEASED | `nirux/nirux`: remove an accidental `cmp` dependency from owned-file comparison; use the existing SHA-256 checks. `nirulock/install.sh` does the same for PAM. | Arch base container runs the full integration without diffutils; suite/PAM files with equal content stay untouched. |
 | I09 / TODO | `niruwm/install.sh`: selected old-release bar version comes from that release's metadata, not checkout `nirubar-version`; align standalone version/ownership checks. | Test old and current releases from a newer checkout; no generation contents overwritten. |
 
-**Next implementation task: I06**, then I07. Complete M0/H02 before feature work.
+**Next implementation task: I07.** I06 is released in NIRUX 0.10.16: the
+shell/awk migration accepts the documented TOML subset, validates a staged
+candidate with both components, preserves mode and symlinks, and is covered by
+`nirux/tests/integration.sh` on the host, Arch, Debian and the three distro
+mappings. Complete M0/H02 before feature work.
 
 ### M1 — release acceptance on vanilla installations
 
