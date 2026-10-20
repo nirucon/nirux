@@ -22,12 +22,12 @@ This file is the authoritative **current plan**. The
 
 ## 2. Actual checkpoint
 
-Published NIRUX **0.10.12** pins:
+Published NIRUX **0.10.13** pins:
 
 | Component | Version | Responsibility |
 |---|---|---|
-| niruwm | 0.16.19 | WM, session, niructl, niruidle |
-| nirubar | 0.18.6 | Per-output bars, panels, tray |
+| niruwm | 0.16.20 | WM, session, niructl, niruidle |
+| nirubar | 0.18.7 | Per-output bars, panels, tray |
 | niruscreensaver | 0.8.1 | Unlocked idle surface |
 | nirulock | 0.16.8 | PAM lock and explicit readiness |
 | nirulauncher | 0.1.1 | Applications and desktop actions |
@@ -37,8 +37,10 @@ Launcher, notifier, weather, native desktop actions, manual brightness/night
 light and sleep delay inhibition **already exist**. Native notifications are the
 `auto` preference; Dunst is fallback. Do not rebuild these as new projects.
 
-Working-tree corrections from this review are **not published or deployed**.
-Keep manifest pins at published versions until replacement release assets pass.
+The 2026-10-20 corrections are **published** in NIRUX 0.10.13, niruwm 0.16.20,
+nirubar 0.18.7 and updated installer/docs on the component main branches. They are
+**not yet deployed** to the owner's running machines. Publication is not physical
+acceptance: complete H01–H03 before treating the release as fully verified.
 
 ## 3. Status vocabulary and execution rules
 
@@ -58,11 +60,11 @@ Commit/push/tag/release only when explicitly requested by the user.
 
 | ID / status | Repositories and exact work | Acceptance |
 |---|---|---|
-| I01 / LOCAL_VERIFIED | `nirux/nirux`: missing-only Arch installs use `pacman -S`, never `-Sy`. | Mock command regression on all three OS shells; expired mirror package errors retain the current generation. |
-| I02 / LOCAL_VERIFIED | `nirux/nirux`: scope config keys to their TOML tables, handle indented/commented headers, preserve mode and user values. | Migration fixture: colliding keys, monitor profiles, 0600 mode, second-run idempotence. Full TOML edge cases remain I06. |
-| I03 / LOCAL_VERIFIED | Canonical examples in nirux/niruwm/nirubar: remove dead NIRUPI/Flameshot overrides; create Pictures before screenshots; update opt-in. | Both real component validators accept the canonical file; fresh standalone shortcuts call installed tools. Physical shortcut check remains H01. |
-| I04 / LOCAL_VERIFIED | Locker/saver installers: current default versions, reject NIRUX binary links, hash-check removals; locker removes only recorded PAM files and downloads release-pinned PAM. | Offline ownership/removal regressions on Void/Arch/Debian. Real standalone prebuilt install + PAM matrix remains H02. |
-| I05 / LOCAL_VERIFIED | `nirubar/src/config.rs,module.rs`: reject bad strftime formats before rendering; disabled battery/network/clock have no module/hitbox. | Rust regressions and fmt/clippy. WM/bar validator parity remains U01. |
+| I01 / RELEASED | `nirux/nirux`: missing-only Arch installs use `pacman -S`, never `-Sy`. | Mock command regression on all three OS shells; expired mirror package errors retain the current generation. |
+| I02 / RELEASED | `nirux/nirux`: scope config keys to their TOML tables, handle indented/commented headers, preserve mode and user values. | Migration fixture: colliding keys, monitor profiles, 0600 mode, second-run idempotence. Full TOML edge cases remain I06. |
+| I03 / RELEASED | Canonical examples in nirux/niruwm/nirubar: remove dead NIRUPI/Flameshot overrides; create Pictures before screenshots; update opt-in. | Both real component validators accept the canonical file; fresh standalone shortcuts call installed tools. Physical shortcut check remains H01. |
+| I04 / RELEASED | Locker/saver installers: current default versions, reject NIRUX binary links, hash-check removals; locker removes only recorded PAM files and downloads release-pinned PAM. | Offline ownership/removal regressions on Void/Arch/Debian. Real standalone prebuilt install + PAM matrix remains H02. |
+| I05 / RELEASED | `nirubar/src/config.rs,module.rs`: reject bad strftime formats before rendering; disabled battery/network/clock have no module/hitbox. | Rust regressions and fmt/clippy. WM/bar validator parity remains U01. |
 | I06 / TODO | `nirux/nirux`: define supported migration syntax; test quoted keys, multiline strings/arrays, duplicate tables and interrupted writes. Stop rather than damage unsupported input; use a validated staged candidate before activation. | Original file and active generation survive every rejection; candidate parses in both components. No mandatory Python/TOML runtime just for migration. |
 | I07 / TODO | `nirux/nirux`: forward staging to the verified target installer through a versioned internal handoff so new components install on the **first** update. Provision new shared-library dependencies before running staged components. | Old-installer → synthetic new-component and missing-library fixtures; corrupt assets or provisioning failure retain the old generation. |
 | I08 / TODO | `nirux/nirux`: finish owned purge coverage for nirubar config, nirulauncher, nirunotify and saver state; make missing configured programs actionable in doctor. | Normal uninstall keeps config; documented purge covers only owned suite data. Missing configured browser is visible and fails the relevant diagnostic. |
@@ -77,7 +79,7 @@ Commit/push/tag/release only when explicitly requested by the user.
 | H01 / TODO | Fresh OS + empty normal-user home on Void/Arch/Debian; startx, then existing/selected display-manager paths. | Real release install → status/doctor → login → terminal/launcher/browser configuration, screenshots, icons, audio, lock/unlock → update → rollback → uninstall. Record OS release, manifest and exact results. |
 | H02 / TODO | Standalone saver/locker prebuilt and source installers, pinned PAM, modified-file preservation and failed-install boundaries. | All three distro mappings plus non-root wrong/correct-password PAM checks. No test writes to production `/etc/pam.d`. |
 | H03 / TODO | Physical Void + ThinkPad: lid close, suspend/resume, external output attach/remove, lock during topology changes, native notification privacy. | Never suspend before ready lock; no uncovered pixels; workspace/output identities survive; notifier cleans up on logout. Record physical separately from Xvfb. |
-| H04 / TODO | Compile/publish changed components, verify assets/checksums, then update NIRUX pins and run full distro CI. | One install/update reaches the intended complete generation. Immutable tags/assets; never relabel published 0.10.12. Requires explicit publication request. |
+| H04 / IN_PROGRESS | Compile/publish changed components, verify assets/checksums, then update NIRUX pins and run full distro CI. Components and NIRUX 0.10.13 published 2026-10-20; finish asset/CI verification and one install/update check. | One install/update reaches the intended complete generation. Immutable tags/assets; never relabel published releases. |
 
 Available hosts: `niru@void` and `niru@thinkpad`. Existing installs are **not clean
 OS evidence**. Debian currently has container evidence, no physical host supplied.

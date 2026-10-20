@@ -2,7 +2,7 @@
 # NIRUX: install a complete X11 desktop, or maintain an existing installation.
 set -eu
 
-VERSION=0.10.12
+VERSION=0.10.13
 PREFIX=${NIRUX_PREFIX:-$HOME/.local}
 BIN=$PREFIX/bin
 STATE=$PREFIX/share/nirux
@@ -107,7 +107,10 @@ install_packages() {
   case "$OS" in
     arch)
       if [ "$install_only" = 1 ]; then
-        as_root pacman -Sy --needed --noconfirm $pkgs
+        # Never refresh the sync database without upgrading Arch. Use the
+        # current database; if its packages expired, pacman fails and the user
+        # can explicitly run pacman -Syu before retrying the update.
+        as_root pacman -S --needed --noconfirm $pkgs
       else
         as_root pacman -Syu --needed --noconfirm $pkgs
       fi
@@ -181,10 +184,10 @@ add_missing_sections() {
   example=$2
   added=""
   for section in nightlight wallpaper monitors bar; do
-    grep -q "^\[$section\]" "$file" && continue
+    grep -q "^[[:space:]]*\[$section\][[:space:]]*\(#.*\)\?$" "$file" && continue
     block=$(awk -v s="[$section]" '
       $0 == s {found=1; print; next}
-      found && /^\[/ {exit}
+      found && /^[[:space:]]*\[/ {exit}
       found {print}
     ' "$example")
     [ -n "$block" ] || continue
@@ -201,13 +204,20 @@ add_missing_top_key() {
   file=$1
   key=$2
   value=$3
-  grep -q "^[[:space:]]*${key}[[:space:]]*=" "$file" && return 0
+  if awk -v key="$key" '
+    /^[[:space:]]*\[/ {exit}
+    $0 ~ "^[[:space:]]*" key "[[:space:]]*=" {found=1}
+    END {exit !found}
+  ' "$file"; then return 0; fi
+  config_tmp=$(mktemp "$file.nirux.XXXXXX")
+  cp -p "$file" "$config_tmp"
   awk -v line="$key = $value" '
-    {text[NR]=$0}
-    /^\[/ && !done {print line; done=1}
+    /^[[:space:]]*\[/ && !done {print line; done=1}
     {print}
     END {if (!done) print line}
-  ' "$file" > "$file.tmp" && mv "$file.tmp" "$file" || rm -f "$file.tmp"
+  ' "$file" > "$config_tmp" && mv "$config_tmp" "$file" || {
+    rm -f "$config_tmp"; die "could not migrate $file"
+  }
 }
 
 add_missing_key() {
@@ -215,20 +225,33 @@ add_missing_key() {
   section=$2
   key=$3
   value=$4
-  grep -q "^[[:space:]]*${key}[[:space:]]*=" "$file" && return 0
-  awk -v s="[$section]" -v line="$key = $value" '
+  config_tmp=$(mktemp "$file.nirux.XXXXXX")
+  cp -p "$file" "$config_tmp"
+  awk -v s="[$section]" -v key="$key" -v line="$key = $value" '
     {text[NR]=$0}
-    $0 == s {inside=1; last=NR; next}
-    inside && /^\[/ {inside=0}
+    /^[[:space:]]*\[/ {
+      header=$0
+      sub(/^[[:space:]]*/, "", header)
+      sub(/[[:space:]]*(#.*)?$/, "", header)
+      inside=(header == s)
+      if (inside) last=NR
+      next
+    }
+    inside && $0 ~ "^[[:space:]]*" key "[[:space:]]*=" {found=1}
     inside && NF {last=NR}
     END {
-      if (last == 0) exit 1
+      if (last == 0 || found) {
+        for (i=1; i<=NR; i++) print text[i]
+        exit
+      }
       for (i=1; i<=NR; i++) {
         print text[i]
         if (i == last) print line
       }
     }
-  ' "$file" > "$file.tmp" && mv "$file.tmp" "$file" || rm -f "$file.tmp"
+  ' "$file" > "$config_tmp" && mv "$config_tmp" "$file" || {
+    rm -f "$config_tmp"; die "could not migrate $file"
+  }
 }
 
 install_config() {

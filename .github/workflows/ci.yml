@@ -6,7 +6,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: sh -n nirux && for script in tests/*.sh; do sh -n "$script"; done
-      - run: docker run --rm -v "$PWD":/src:ro koalaman/shellcheck:stable -S warning -s sh /src/nirux /src/tests/integration.sh /src/tests/startx-smoke.sh /src/tests/release-smoke.sh
+      - run: docker run --rm -v "$PWD":/src:ro koalaman/shellcheck:stable -S warning -s sh /src/nirux /src/tests/integration.sh /src/tests/config-smoke.sh /src/tests/startx-smoke.sh /src/tests/release-smoke.sh
       - run: sh tests/integration.sh
   distros:
     runs-on: ubuntu-latest

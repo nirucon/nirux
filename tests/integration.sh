@@ -78,6 +78,54 @@ NIRUX_PACKAGES_DRY_RUN=1 NIRUX_PROVISION_OS=debian NIRUX_PROVISION_DM=keep \
 grep -q 'would install missing: kitty' "$TEST/provision.log" || fail 'provision dry run did not report the missing package'
 unset -f package_present
 
+# Arch missing-only provisioning must not create a partial upgrade by syncing
+# databases without upgrading the installed system.
+(
+  OS=arch
+  pacman() { printf '%s\n' "$*"; }
+  install_packages kitty
+) > "$TEST/arch-packages.log"
+grep -qx -- '-S --needed --noconfirm kitty' "$TEST/arch-packages.log" || fail 'unsafe Arch missing-package command'
+
+# TOML keys are scoped to tables. A same-named key in a different table must
+# neither suppress a new setting nor be overwritten. Accept indented headers
+# with comments and preserve private config permissions and idempotence.
+config=$TEST/migration.toml
+cat > "$config" <<'EOF'
+theme = "niru-nord"
+  [wallpaper] # user settings
+files = ["my wallpaper.png"]
+scale = "fit"
+  [bar] # keep this comment
+enabled = false
+[[monitors.profiles]]
+name = "eDP-1"
+workspaces = ["web", "code"]
+EOF
+chmod 600 "$config"
+add_missing_top_key "$config" enabled true
+add_missing_key "$config" bar scale '"bar-only"'
+add_missing_key "$config" wallpaper scale '"fill"'
+add_missing_sections "$config" "$SOURCE/config.example.toml"
+add_missing_key "$config" monitors workspaces 9
+cp "$config" "$TEST/once.toml"
+add_missing_top_key "$config" enabled true
+add_missing_key "$config" bar scale '"bar-only"'
+add_missing_sections "$config" "$SOURCE/config.example.toml"
+add_missing_key "$config" monitors workspaces 9
+cmp -s "$config" "$TEST/once.toml" || fail 'config migration is not idempotent'
+[ "$(stat -c %a "$config")" = 600 ] || fail 'config migration changed permissions'
+grep -qx 'enabled = true' "$config" || fail 'nested key suppressed root default'
+grep -qx 'scale = "bar-only"' "$config" || fail 'other table suppressed missing key'
+grep -qx 'scale = "fit"' "$config" || fail 'existing setting overwritten'
+[ "$(grep -c '^[[:space:]]*\[bar\]' "$config")" = 1 ] || fail 'duplicate commented table'
+grep -qx 'workspaces = 9' "$config" || fail 'profile suppressed monitor default'
+
+# Fresh-install key overrides must not bypass the explicit compatibility profile.
+if grep -Eq '^action = ".*(nirupi|clip-menu|flameshot)' "$SOURCE/config.example.toml"; then
+  fail 'canonical config overrides native defaults with absent helper scripts'
+fi
+
 for TEST_OS in arch debian void; do
   # Separate installations exercise each distribution's integration and cleanup.
   PREFIX=$TEST/$TEST_OS; BIN=$PREFIX/bin; STATE=$PREFIX/share/nirux
