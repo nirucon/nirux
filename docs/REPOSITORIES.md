@@ -8,12 +8,12 @@ initial review scope; they are not a current certification of optional apps.
 
 | Repository | GitHub main observed 2026-10-20 | Release |
 |---|---|---|
-| nirux | `72a8b00` | v0.10.40 |
-| niruwm | `32c42ea` | v0.16.37 |
+| nirux | `cd269e7` | v0.10.40 |
+| niruwm | `70f3e32` | v0.16.37 |
 | nirubar | `4bd5bfb` | v0.18.17 |
 | niruscreensaver | `52173f62718b` | v0.8.3 |
 | nirulock | `9929208c898d` | v0.16.10 |
-| nirulauncher | `8aa2a9004021` | v0.2.1 |
+| nirulauncher | `897f468` | v0.2.3 |
 | nirunotify | `00d9ec47226f` | v0.3.3 |
 
 [Current roadmap](../ROADMAP.md), [restart review](REVIEW-2026-10-20-RESTART.md)
