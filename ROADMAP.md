@@ -23,12 +23,12 @@ This file is the authoritative **current plan**. The
 
 ## 2. Actual checkpoint
 
-Published NIRUX **0.10.24** pins:
+Published NIRUX **0.10.25** pins:
 
 | Component | Version | Responsibility |
 |---|---|---|
-| niruwm | 0.16.26 | WM, session, niructl, niruidle |
-| nirubar | 0.18.11 | Per-output bars, panels, tray |
+| niruwm | 0.16.27 | WM, session, niructl, niruidle |
+| nirubar | 0.18.12 | Per-output bars, panels, tray |
 | niruscreensaver | 0.8.1 | Unlocked idle surface |
 | nirulock | 0.16.8 | PAM lock and explicit readiness |
 | nirulauncher | 0.1.1 | Applications and desktop actions |
@@ -47,9 +47,10 @@ with the I09 standalone-installer metadata fix; **0.10.20** pinned niruwm 0.16.2
 and set the normal arrow root cursor; **0.10.21** added the U01 config contract and
 bounded hardware helpers; **0.10.22** added the U02 responsive bar with priority
 overflow; **0.10.23** fixed the U02 sparse-module clock regression; **0.10.24**
-adds explicit U03 media/audio controls. All are installed on the owner's machines,
-and each update exercised the installed parent/update path. H03 physical checks
-were confirmed by the owner. H01 remains.
+added explicit U03 media/audio controls; **0.10.25** adds the U04 network and
+battery state. All are installed on the owner's machines, and each update
+exercised the installed parent/update path. H03 physical checks were confirmed by
+the owner. H01 remains.
 
 ## 3. Status vocabulary and execution rules
 
@@ -80,11 +81,12 @@ Commit/push/tag/release only when explicitly requested by the user.
 | I11 / RELEASED | `nirux/nirux`: remove an accidental `cmp` dependency from owned-file comparison; use the existing SHA-256 checks. `nirulock/install.sh` does the same for PAM. | Arch base container runs the full integration without diffutils; suite/PAM files with equal content stay untouched. |
 | I09 / RELEASED | `niruwm/install.sh`: selected old-release bar version comes from that release's metadata, not checkout `nirubar-version`; align standalone version/ownership checks. | Test old and current releases from a newer checkout; no generation contents overwritten. |
 
-**Next implementation task: U04.** I06–I09, H02, H03, U01, U02 and U03 are
-complete. U03 added left-click information that never changes state, right-click
-play/pause or mute, scroll previous/next or volume, middle-click player/mic
-selection, and bounded control helpers. H01 remains as separate fresh-OS
-acceptance. U04 is next: honest network state and aggregate battery details.
+**Next implementation task: U05.** I06–I09, H02, H03, U01–U04 are complete.
+U04 aggregates multiple battery packs (weighted by energy when available), keeps
+absent remaining-time estimates unavailable, distinguishes link/route/address
+without NetworkManager, and marks a link without a default route with `!`. H01
+remains as separate fresh-OS acceptance. U05 is next: launcher grouping, window
+switching, recency/favourites, text input and lock layout/Caps/AltGr review.
 
 ### M1 — release acceptance on vanilla installations
 
@@ -125,7 +127,7 @@ H03 partial verification (2026-10-20):
 | U01 / RELEASED | WM/bar config validation contract; invalid values, hidden modules, unavailable/stale vs zero data; bound/coalesce WM hardware helpers. | Shared valid/invalid fixtures behave consistently; key storms cannot create unlimited children or freeze X. |
 | U02 / RELEASED | Nirubar responsive layout with priorities and an overflow panel; retain stable workspace cells. | 800px, 1366px, 1920px and two-output tests; hidden summaries remain accessible, hitboxes match visible geometry. |
 | U03 / RELEASED | Nirubar explicit media buttons/player selection and audio output/mic controls; deliberate click/scroll mappings. | Reading a panel never changes playback/mute; disabled actions explain missing providers; helpers remain bounded. |
-| U04 | Nirubar honest network state and aggregate battery details. | Distinguish link/IP/connectivity; no mandatory NetworkManager. Multi-battery fixtures; absent estimates stay unavailable. |
+| U04 / RELEASED | Nirubar honest network state and aggregate battery details. | Distinguish link/IP/connectivity; no mandatory NetworkManager. Multi-battery fixtures; absent estimates stay unavailable. |
 | U05 | Launcher grouped actions, window switching, local recency/favourites and proper text input; lock layout/Caps indication and compose/AltGr review. | XDG desktop precedence and argv parsing preserved; Swedish/US/AltGr tests; no shell interpolation of desktop Exec. |
 | U06 | Saver checked input grabs and output/resize coverage; retire duplicated rendering only where proven useful. | Failed grabs cannot claim success; root resize/hotplug and documented mouse dismissal covered. Retain all locker regressions. |
 
@@ -159,6 +161,16 @@ pool that coalesces an already-running control and caps concurrent children.
 Fake-provider Xvfb tests confirmed no action on left click, the exact commands for
 right/scroll, and player-aware `-p` commands. Released in nirubar 0.18.11 /
 niruwm 0.16.26 / NIRUX 0.10.24 and installed on both machines.
+
+U04 verification (2026-10-21): NIRUBAR aggregates all battery packs, using total
+energy (or charge) for a weighted percentage and reporting mixed charging states
+honestly. Remaining time comes from the kernel power/current rate and is
+`unavailable` when that rate is absent; it is never shown as zero. Network state
+uses sysfs plus `/proc/net/route` and `/proc/net/ipv6_route` only: link up with no
+default route is shown with `!`, and the panel separates type, link, route,
+interface and address. Multi-battery, no-estimate, mixed-state, default-route and
+link-without-route fixtures pass. Released in nirubar 0.18.12 / niruwm 0.16.27 /
+NIRUX 0.10.25 and installed on both machines.
 
 ### M3 — coherent appearance and laptop behaviour
 
