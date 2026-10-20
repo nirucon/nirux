@@ -9,12 +9,12 @@ Läs först den aktuella planen och kontexten:
 - https://github.com/nirucon/nirux/blob/main/docs/REVIEW-2026-10-20.md
 - https://github.com/nirucon/nirux/blob/main/docs/REPOSITORIES.md
 
-Utgå från publicerad NIRUX 0.10.21 (niruwm 0.16.23, nirubar 0.18.8). Maskinerna
+Utgå från publicerad NIRUX 0.10.22 (niruwm 0.16.24, nirubar 0.18.9). Maskinerna
 niru@void och niru@thinkpad är uppdaterade. Fråga efter SSH-/sudo-uppgifter om de
 behövs; spara dem aldrig i filer, commits eller dokumentation.
 
-Fortsätt med roadmapens nästa uppgift, U02 (responsiv bar, prioriteter,
-overflow-panel och stabila workspace-celler). Arbeta i små checkpoints och visa
+Fortsätt med roadmapens nästa uppgift, U03 (media buttons, spelarval, audio
+output/mic och tydliga click/scroll-mappningar). Arbeta i små checkpoints och visa
 evidens.
 
 Krav:
@@ -23,7 +23,7 @@ Krav:
   orelaterade systemfiler.
 - Ingen bloat: inga nya obligatoriska daemons, GUI-ramverk, tjänster eller repon
   om befintliga komponenter kan lösa uppgiften.
-- Läs roadmapens acceptanskriterier för U02 innan du ändrar kod.
+- Läs roadmapens acceptanskriterier för U03 innan du ändrar kod.
 - Kör relevanta tester: nirux tests/integration.sh, shellcheck, berörda Rust-tester,
   fmt/clippy samt Arch/Debian/Void där det är relevant.
 - Committa, pusha, tagga och publicera varje avslutad checkpoint. Installera på
@@ -32,12 +32,12 @@ Krav:
 
 Börja med att kontrollera git-status i berörda repon och sammanfatta:
 1. vad du verifierat,
-2. din plan för U02,
+2. din plan för U03,
 3. vilka filer som behöver ändras.
 ```
 
 ## Task reminder
 
-**U02:** NIRUBAR responsive layout with priorities and an overflow panel; retain
-stable workspace cells. Done when 800px, 1366px and 1920px plus two-output tests
-pass, hidden summaries remain accessible and hitboxes match visible geometry.
+**U03:** NIRUBAR explicit media buttons and player selection, audio output/mic
+controls, and deliberate click/scroll mappings. Reading a panel must never change
+playback or mute; disabled actions explain missing providers; helpers stay bounded.
