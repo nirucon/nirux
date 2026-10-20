@@ -57,4 +57,11 @@ The agent path is optional for standalone NIRUWM; no WM dependency is added.
 - Bar colour change was reproduced and verified in a real Xvfb session using
   `xwd` before/after and the bar's own reload log.
 - NIRUWM `cargo test`, clippy, fmt and session shell syntax passed.
-- Full CI, release and owner-host deployment are recorded after publication.
+- Full CI [39461327455](https://github.com/nirucon/nirux/actions/runs/39461327455)
+  passed check, Arch, Debian and Void.
+- Release v0.10.38 published.
+- `niru@void` updated and its active bar restarted: bar background changed from
+  the stale Noir value to Nord `#2e3440` after the appearance migration. A
+  Polkit authentication agent was started in the active session as well.
+- `niru@thinkpad` was offline in Tailscale during deployment. Its update is
+  pending when it comes back online; no claim is made that it is already fixed.

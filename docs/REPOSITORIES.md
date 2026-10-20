@@ -8,8 +8,8 @@ initial review scope; they are not a current certification of optional apps.
 
 | Repository | GitHub main observed 2026-10-20 | Release |
 |---|---|---|
-| nirux | pending 0.10.38 commit | v0.10.38 |
-| niruwm | `ec0ab09` | v0.16.36 |
+| nirux | `72a8b00` | v0.10.38 |
+| niruwm | `32c42ea` | v0.16.36 |
 | nirubar | `4bd5bfb` | v0.18.17 |
 | niruscreensaver | `52173f62718b` | v0.8.3 |
 | nirulock | `9929208c898d` | v0.16.10 |
