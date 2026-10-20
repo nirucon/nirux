@@ -4,12 +4,13 @@ Install and maintain the small NIRU X11 desktop on **Void Linux glibc, Debian
 and Arch Linux**. Release binaries target **x86_64/glibc**.
 
 Includes niruwm, niructl, niruidle, nirubar, niruscreensaver, nirulock,
-nirulauncher and nirunotify, plus Xorg, kitty/fish, theme wallpapers and the
-NIRU terminal colours. Niru Noir is the
+nirulauncher and nirunotify, plus Xorg, kitty/fish, theme wallpapers, the NIRU
+terminal colours and a graphical Polkit agent for power actions. Niru Noir is the
 default theme; Nord, Satie and Carl Larsson are also available.
 
-**0.10.37 status:** managed Helium, theme wallpapers, target-owned updates and
-the NIRU kitty/fish terminal integration are implemented. A new installer now owns config/integration/activation, so a
+**0.10.38 status:** managed Helium, theme wallpapers, target-owned updates, the
+NIRU kitty/fish terminal integration, correct bar theme colours and graphical
+Polkit prompts for reboot/shutdown are implemented. A new installer now owns config/integration/activation, so a
 future update applies new config keys, assets and components in one pass. Fresh installs get the four NIRU theme wallpaper sets under
 `~/Pictures/Wallpapers/NIRU`; changing the theme can switch to that theme's
 wallpaper while custom files, rotation and `mode = "single"` remain preserved.

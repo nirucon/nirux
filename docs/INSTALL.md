@@ -1,6 +1,6 @@
 # Installation and maintenance
 
-**Verified-state note, 2026-10-20:** 0.10.37 implements managed Helium,
+**Verified-state note, 2026-10-20:** 0.10.38 implements managed Helium,
 theme-follow wallpapers, target-owned apply and the kitty/fish terminal
 integration. The full distro CI covers real-release install,
 doctor, config contract, startx and a normal-user sandboxed Helium launch.
@@ -167,7 +167,7 @@ installer cannot update itself. After that first migration the installed
 
 ```sh
 nirux update
-nirux update --release 0.10.37
+nirux update --release 0.10.38
 nirux rollback
 ```
 
@@ -237,9 +237,19 @@ semantic colours, font size/path, spacing, focus width and reduced motion.
 A user theme file in `~/.config/niruwm/themes/NAME.toml` takes precedence.
 Unreadable, unsupported or invalid appearance files are ignored with a diagnostic;
 this is fallback loading, not proof of preserving the last applied live theme.
-Appearance/theme identity and reload/pixel acceptance remain C01. Lock/saver are
-intended to retain an opaque black background. NIRUX creates the example as
-`appearance.toml` on a fresh install and leaves an existing file untouched.
+Colour overrides in the example are optional and commented out, so the selected
+NIRU theme owns the palette. NIRUX creates the example on a fresh install and
+migrates only the exact old Noir-only default; custom colours are preserved.
+Live last-good reload and pixel acceptance remain C01. Lock/saver are intended
+to retain an opaque black background.
+
+### Graphical privilege prompts
+
+NIRUX installs a Polkit authentication agent (`polkit-gnome` on Arch/Void,
+`policykit-1-gnome` on Debian) and the session starts one if no other agent owns
+the role. Reboot/shutdown/logout therefore go through `loginctl`/`systemctl`
+with a graphical authentication prompt. If a power action fails, `niructl`
+shows a critical notification instead of failing silently.
 
 ### Configuration migration
 

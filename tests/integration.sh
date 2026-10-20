@@ -781,4 +781,48 @@ grep -q 'fish_greeting "hi"' "$XDG_CONFIG_HOME/fish/config.fish" || fail 'uninst
 ! grep -q '^# NIRUX terminal integration (managed)$' "$XDG_CONFIG_HOME/fish/config.fish" || fail 'uninstall left the fish block'
 [ ! -e "$XDG_CONFIG_HOME/nirux" ] || fail 'uninstall left NIRUX terminal config'
 
+# The old appearance example hardcoded Noir colours and made every built-in
+# theme look Noir in the bar. It is migrated only when all old defaults match.
+appearance_test=$TEST/appearance
+mkdir -p "$appearance_test"
+cat > "$appearance_test/old.toml" <<'EOF'
+schema = 1
+[colors]
+background = "0f0f10"
+surface = "161618"
+foreground = "e5e5e5"
+muted = "a8a8a8"
+border = "2a2a2d"
+focus = "5a5a60"
+accent = "5a5a60"
+selected = "26262a"
+success = "8fbf7f"
+warning = "d7b36a"
+error = "d77a7a"
+disabled = "5a5a5e"
+[font]
+size = 15.0
+EOF
+migrate_appearance_defaults "$appearance_test/old.toml" >/dev/null
+! grep -q '^\[colors\]' "$appearance_test/old.toml" || fail 'old Noir appearance defaults were not migrated'
+grep -qx 'size = 15.0' "$appearance_test/old.toml" || fail 'appearance migration removed typography'
+cat > "$appearance_test/custom.toml" <<'EOF'
+schema = 1
+[colors]
+background = "101010"
+surface = "161618"
+foreground = "e5e5e5"
+muted = "a8a8a8"
+border = "2a2a2d"
+focus = "5a5a60"
+accent = "5a5a60"
+selected = "26262a"
+success = "8fbf7f"
+warning = "d7b36a"
+error = "d77a7a"
+disabled = "5a5a5e"
+EOF
+migrate_appearance_defaults "$appearance_test/custom.toml" >/dev/null
+grep -qx 'background = "101010"' "$appearance_test/custom.toml" || fail 'custom appearance colour was removed'
+
 say 'PASS: install/update/rollback/purge on all three distro mappings, status purity, checksum failure, PAM includes, managed Helium policy, obsolete browser migration, target-owned apply'

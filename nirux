@@ -2,7 +2,7 @@
 # NIRUX: install a complete X11 desktop, or maintain an existing installation.
 set -eu
 
-VERSION=0.10.37
+VERSION=0.10.38
 PREFIX=${NIRUX_PREFIX:-$HOME/.local}
 BIN=$PREFIX/bin
 STATE=$PREFIX/share/nirux
@@ -93,9 +93,9 @@ as_root() {
 }
 packages_for() {
   case "$1" in
-    arch) say "xorg-server xorg-xinit xorg-xauth xorg-xrandr xorg-xset xorg-xprop xorg-xdpyinfo xorg-xwininfo xorg-xrdb xorg-xsetroot xorg-setxkbmap xf86-input-libinput xkeyboard-config dbus pam pipewire pipewire-audio pipewire-pulse pipewire-alsa wireplumber alsa-utils alsa-ucm-conf rtkit fontconfig ttf-dejavu ttf-jetbrains-mono-nerd kitty fish rofi dunst picom feh maim slop pcmanfm playerctl libnotify brightnessctl gammastep iproute2 iw xdg-utils procps-ng util-linux" ;;
-    debian) say "xserver-xorg xserver-xorg-input-libinput xinit xauth x11-xserver-utils x11-utils x11-xkb-utils xkb-data dbus-x11 dbus-user-session libpam0g pipewire pipewire-pulse pipewire-alsa wireplumber alsa-utils alsa-ucm-conf rtkit fontconfig fonts-dejavu-core fonts-font-awesome fonts-jetbrains-mono kitty fish rofi dunst picom feh maim slop pcmanfm playerctl libnotify-bin brightnessctl gammastep iproute2 iw xdg-utils procps util-linux" ;;
-    void) say "xorg-minimal xinit xauth xrandr xset xprop xdpyinfo xwininfo xrdb xsetroot setxkbmap xkeyboard-config dbus elogind pam pam-base pipewire wireplumber alsa-utils alsa-ucm-conf rtkit fontconfig dejavu-fonts-ttf nerd-fonts-symbols-ttf kitty fish-shell rofi dunst picom feh maim slop pcmanfm playerctl libnotify brightnessctl gammastep iproute2 iw xdg-utils procps-ng util-linux" ;;
+    arch) say "xorg-server xorg-xinit xorg-xauth xorg-xrandr xorg-xset xorg-xprop xorg-xdpyinfo xorg-xwininfo xorg-xrdb xorg-xsetroot xorg-setxkbmap xf86-input-libinput xkeyboard-config dbus pam pipewire pipewire-audio pipewire-pulse pipewire-alsa wireplumber alsa-utils alsa-ucm-conf rtkit fontconfig ttf-dejavu ttf-jetbrains-mono-nerd kitty fish polkit-gnome rofi dunst picom feh maim slop pcmanfm playerctl libnotify brightnessctl gammastep iproute2 iw xdg-utils procps-ng util-linux" ;;
+    debian) say "xserver-xorg xserver-xorg-input-libinput xinit xauth x11-xserver-utils x11-utils x11-xkb-utils xkb-data dbus-x11 dbus-user-session libpam0g pipewire pipewire-pulse pipewire-alsa wireplumber alsa-utils alsa-ucm-conf rtkit fontconfig fonts-dejavu-core fonts-font-awesome fonts-jetbrains-mono kitty fish policykit-1-gnome rofi dunst picom feh maim slop pcmanfm playerctl libnotify-bin brightnessctl gammastep iproute2 iw xdg-utils procps util-linux" ;;
+    void) say "xorg-minimal xinit xauth xrandr xset xprop xdpyinfo xwininfo xrdb xsetroot setxkbmap xkeyboard-config dbus elogind pam pam-base pipewire wireplumber alsa-utils alsa-ucm-conf rtkit fontconfig dejavu-fonts-ttf nerd-fonts-symbols-ttf kitty fish-shell polkit-gnome rofi dunst picom feh maim slop pcmanfm playerctl libnotify brightnessctl gammastep iproute2 iw xdg-utils procps-ng util-linux" ;;
   esac
 }
 # Runtime libraries and extraction tools for the pinned Helium archive. These
@@ -592,6 +592,57 @@ validate_config_candidate() {
   return 0
 }
 
+appearance_has_old_noir_defaults() {
+  awk '
+    /^[[:space:]]*\[colors\][[:space:]]*$/ { in_colors = 1; next }
+    /^[[:space:]]*\[/ { in_colors = 0 }
+    in_colors && /^[[:space:]]*[a-z_]+[[:space:]]*=/ {
+      line = $0
+      sub(/#.*/, "", line)
+      split(line, parts, "=")
+      key = parts[1]
+      value = parts[2]
+      gsub(/[[:space:]"]/, "", key)
+      gsub(/[[:space:]"]/, "", value)
+      found[key] = tolower(value)
+      count++
+    }
+    END {
+      expected["background"]="0f0f10"; expected["surface"]="161618";
+      expected["foreground"]="e5e5e5"; expected["muted"]="a8a8a8";
+      expected["border"]="2a2a2d"; expected["focus"]="5a5a60";
+      expected["accent"]="5a5a60"; expected["selected"]="26262a";
+      expected["success"]="8fbf7f"; expected["warning"]="d7b36a";
+      expected["error"]="d77a7a"; expected["disabled"]="5a5a5e";
+      if (count != 12) exit 1
+      for (key in expected) if (found[key] != expected[key]) exit 1
+      exit 0
+    }
+  ' "$1"
+}
+migrate_appearance_defaults() {
+  appearance_file=$1
+  [ -f "$appearance_file" ] || return 0
+  appearance_has_old_noir_defaults "$appearance_file" || return 0
+  appearance_mode=$(stat -c %a "$appearance_file") || die "could not read permissions for $appearance_file"
+  appearance_tmp=$(mktemp "$appearance_file.nirux.XXXXXX") || die "could not stage $appearance_file"
+  cp -p "$appearance_file" "$appearance_tmp" || { rm -f "$appearance_tmp"; die "could not stage $appearance_file"; }
+  if ! awk '
+    /^[[:space:]]*\[colors\][[:space:]]*$/ {
+      print "# Colours are intentionally not overridden; the selected NIRU theme wins."
+      skip = 1
+      next
+    }
+    /^[[:space:]]*\[/ { skip = 0 }
+    !skip { print }
+  ' "$appearance_file" > "$appearance_tmp" ||
+     ! chmod "$appearance_mode" "$appearance_tmp" ||
+     ! mv -f "$appearance_tmp" "$appearance_file"; then
+    rm -f "$appearance_tmp"
+    die "could not migrate $appearance_file; original kept"
+  fi
+  say "Updated the old Noir appearance override so built-in themes keep their colours."
+}
 install_appearance() {
   appearance_example="$WORK/download/nirux/appearance.example.toml"
   [ -f "$appearance_example" ] || return 0
@@ -600,6 +651,8 @@ install_appearance() {
   if [ ! -e "$appearance_file" ] && [ ! -L "$appearance_file" ]; then
     install -m 644 "$appearance_example" "$appearance_file"
     say "Created $appearance_file"
+  elif [ -f "$appearance_file" ]; then
+    migrate_appearance_defaults "$appearance_file"
   fi
   return 0
 }
