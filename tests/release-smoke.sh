@@ -24,6 +24,7 @@ fetch() {
 (install_or_update install --no-packages --display-manager startx --release "$VERSION")
 status
 doctor
+sh "$SOURCE/tests/config-contract.sh" "$BIN/niruwm" "$BIN/nirubar"
 sh "$SOURCE/tests/startx-smoke.sh" "$BIN" "$HOME"
 (uninstall --purge)
 [ ! -e "$BIN/niruwm" ]
