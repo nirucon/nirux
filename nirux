@@ -2,7 +2,7 @@
 # NIRUX: install a complete X11 desktop, or maintain an existing installation.
 set -eu
 
-VERSION=0.10.16
+VERSION=0.10.17
 PREFIX=${NIRUX_PREFIX:-$HOME/.local}
 BIN=$PREFIX/bin
 STATE=$PREFIX/share/nirux
@@ -694,6 +694,80 @@ manifest_version() {
   valid_version "$value" || die "invalid manifest entry: $1"
   say "$value"
 }
+component_files() {
+  case "$1" in
+    niruwm) say "niruwm niructl niruidle niruwm-session" ;;
+    *) say "$1" ;;
+  esac
+}
+stage_component_assets() {
+  component=$1
+  component_version=$2
+  case "$component" in
+    niruwm) release_files niruwm "$component_version" niruwm niructl niruidle niruwm-session ;;
+    nirulock) release_files nirulock "$component_version" nirulock pam-arch pam-debian pam-void ;;
+    nirux) : ;;
+    *) release_files "$component" "$component_version" "$component" ;;
+  esac
+}
+manifest_components() {
+  awk '$1 != "schema" && $1 != "suite" {print $1}' "$WORK/download/nirux/manifest"
+}
+verify_staged_version() {
+  staged_program=$1
+  staged_version=$2
+  [ -x "$WORK/generation/bin/$staged_program" ] || die "staged $staged_program is missing or not executable"
+  staged_reported=$("$WORK/generation/bin/$staged_program" --version | awk '{print $2}')
+  [ "$staged_reported" = "$staged_version" ] || die "$staged_program does not report expected version $staged_version"
+}
+stage_components() {
+  stage_suite=$(manifest_version suite)
+  # These components are part of the desktop contract even if a future manifest
+  # adds more entries.
+  for required in niruwm nirubar niruscreensaver nirulock nirulauncher nirunotify; do
+    manifest_version "$required" >/dev/null
+  done
+  mkdir -p "$WORK/generation/bin"
+  install -m 755 "$WORK/download/nirux/nirux" "$WORK/generation/bin/nirux"
+  # The manifest, not a hardcoded list in the running installer, decides which
+  # components this release contains. Unknown components use the convention of
+  # one release asset with the component name.
+  for component in $(manifest_components); do
+    [ "$component" = nirux ] && continue
+    component_version=$(manifest_version "$component")
+    stage_component_assets "$component" "$component_version"
+    for staged_program in $(component_files "$component"); do
+      staged_source=$WORK/download/$component/$staged_program
+      [ -f "$staged_source" ] || die "release $component $component_version is missing $staged_program"
+      install -m 755 "$staged_source" "$WORK/generation/bin/$staged_program"
+    done
+  done
+  cp "$WORK/download/nirux/manifest" "$WORK/generation/manifest"
+  [ -f "$WORK/download/nirulock/pam-$OS" ] || die "release nirulock is missing pam-$OS"
+  cp "$WORK/download/nirulock/pam-$OS" "$WORK/generation/pam"
+  verify_staged_version nirux "$stage_suite"
+  # Running --version also catches missing loaders/shared libraries before activation.
+  for component in $(manifest_components); do
+    [ "$component" = nirux ] && continue
+    component_version=$(manifest_version "$component")
+    case "$component" in
+      niruwm)
+        verify_staged_version niruwm "$component_version"
+        verify_staged_version niruidle "$component_version"
+        ;;
+      *) verify_staged_version "$component" "$component_version" ;;
+    esac
+  done
+}
+stage_target_release() {
+  [ "$1" = 1 ] || die "unsupported staging protocol: $1"
+  [ -n "${NIRUX_STAGE_WORK:-}" ] || die 'staging work directory is missing'
+  WORK=$NIRUX_STAGE_WORK
+  OS=${NIRUX_PROVISION_OS:-$(distro)}
+  [ "$(manifest_version schema)" = 1 ] || die "unsupported manifest schema"
+  [ "$(manifest_version suite)" = "$VERSION" ] || die "target installer/manifest version mismatch"
+  stage_components
+}
 stage_release() {
   if [ -z "$RELEASE" ]; then
     fetch https://api.github.com/repos/nirucon/nirux/releases/latest "$WORK/latest.json"
@@ -703,42 +777,45 @@ stage_release() {
   [ "$(manifest_version schema)" = 1 ] || die "unsupported manifest schema"
   [ "$(manifest_version suite)" = "$RELEASE" ] || die "suite/manifest version mismatch"
   sh -n "$WORK/download/nirux/nirux"
-  wm_version=$(manifest_version niruwm)
-  bar_version=$(manifest_version nirubar)
-  saver_version=$(manifest_version niruscreensaver)
-  lock_version=$(manifest_version nirulock)
-  launcher_version=$(manifest_version nirulauncher)
-  notifier_version=$(manifest_version nirunotify)
-  release_files niruwm "$wm_version" niruwm niructl niruidle niruwm-session
-  release_files nirubar "$bar_version" nirubar
-  release_files niruscreensaver "$saver_version" niruscreensaver
-  release_files nirulock "$lock_version" nirulock pam-arch pam-debian pam-void
-  release_files nirulauncher "$launcher_version" nirulauncher
-  release_files nirunotify "$notifier_version" nirunotify
-  mkdir -p "$WORK/generation/bin"
-  for package in nirux niruwm nirubar niruscreensaver nirulock nirulauncher nirunotify; do
-    case "$package" in
-      niruwm) files="niruwm niructl niruidle niruwm-session" ;;
-      *) files=$package ;;
-    esac
-    for program in $files; do
-      install -m 755 "$WORK/download/$package/$program" "$WORK/generation/bin/$program"
-    done
-  done
-  cp "$WORK/download/nirux/manifest" "$WORK/generation/manifest"
-  cp "$WORK/download/nirulock/pam-$OS" "$WORK/generation/pam"
-  reported=$("$WORK/generation/bin/nirux" --version | awk '{print $2}')
+  reported=$(sh "$WORK/download/nirux/nirux" --version | awk '{print $2}')
   [ "$reported" = "$RELEASE" ] || die 'installer/manifest version mismatch'
-  # Running --version also catches missing loaders/shared libraries before activation.
-  for pair in "niruwm $wm_version" "nirubar $bar_version" "niruscreensaver $saver_version" "nirulock $lock_version" "nirulauncher $launcher_version" "nirunotify $notifier_version" "niruidle $wm_version"; do
-    set -- $pair
-    reported=$("$WORK/generation/bin/$1" --version | awk '{print $2}')
-    [ "$reported" = "$2" ] || die "$1 does not report expected version $2"
-  done
+  # Packages come from the verified target installer and are provisioned before
+  # any staged binary is executed. This lets a new shared-library dependency be
+  # present when the new component is first started and version-checked.
+  if [ "$packages" = 1 ]; then
+    NIRUX_PROVISION_OS=$OS NIRUX_PROVISION_DM=$DM \
+      sh "$WORK/download/nirux/nirux" _provision missing
+  fi
+  # A new target installer stages the release through a versioned handoff, so a
+  # newly added component is included on the first update rather than one later.
+  handoff=$(sh "$WORK/download/nirux/nirux" _handoff-version 2>/dev/null || :)
+  if [ "$handoff" = 1 ]; then
+    if ! NIRUX_STAGE_WORK=$WORK NIRUX_PROVISION_OS=$OS \
+      sh "$WORK/download/nirux/nirux" _stage 1; then
+      die 'target installer staging failed; current installation kept'
+    fi
+    say 'Staged components through the target installer handoff.'
+  else
+    stage_components
+  fi
+  [ -f "$WORK/generation/manifest" ] || die 'target installer produced no staged generation'
+  [ "$(awk '$1 == "suite" {print $2}' "$WORK/generation/manifest")" = "$RELEASE" ] || \
+    die 'staged generation does not match the requested release'
 }
 switch_link() {
   ln -s "$2" "$STATE/.$1.$$"
   mv -Tf "$STATE/.$1.$$" "$STATE/$1"
+}
+sync_front_links() {
+  for front in "$BIN"/*; do
+    [ -L "$front" ] || continue
+    case "$(readlink "$front")" in
+      "$STATE/current/bin/"*)
+        program=${front##*/}
+        [ -e "$STATE/current/bin/$program" ] || rm -f "$front"
+        ;;
+    esac
+  done
 }
 activate() {
   mkdir -p "$STATE/generations" "$BIN"
@@ -755,12 +832,17 @@ activate() {
   generation=$STATE/generations/$RELEASE-${WORK##*.}
   mv "$WORK/generation" "$generation"
   # These front links stay constant; current is the single activation point.
-  for program in $PROGRAMS; do
+  # Use the staged generation rather than this installer's old PROGRAMS list so
+  # a component added by the target release is linked on the first update.
+  for staged in "$generation/bin"/*; do
+    [ -f "$staged" ] || continue
+    program=${staged##*/}
     ln -s "$STATE/current/bin/$program" "$BIN/.$program.$$"
     mv -Tf "$BIN/.$program.$$" "$BIN/$program"
   done
   switch_link previous "$old"
   switch_link current "$generation"
+  sync_front_links
   say "Activated NIRUX $RELEASE. Previous generation retained for nirux rollback."
 }
 owned() { grep -qxF "# NIRUX owner: $PREFIX" "$1"; }
@@ -964,6 +1046,7 @@ rollback() {
   current=$(readlink "$STATE/current")
   switch_link current "$previous"
   switch_link previous "$current"
+  sync_front_links
   say 'Previous program generation restored. System packages and PAM configuration are not rolled back.'
   say 'Log out and back in to use the restored WM and session.'
 }
@@ -989,13 +1072,6 @@ install_or_update() {
   # its own package list below.
   if [ "$operation" = install ] && [ "$packages" = 1 ]; then install_packages; fi
   stage_release
-  # Package names are not stable across releases. Run the downloaded release's
-  # own list, after checksum/version verification, so a dependency introduced
-  # in this release is installed even when the caller is an older NIRUX.
-  if [ "$packages" = 1 ]; then
-    NIRUX_PROVISION_OS=$OS NIRUX_PROVISION_DM=$DM \
-      sh "$WORK/download/nirux/nirux" _provision missing
-  fi
   # Configuration and system integration must succeed before switching the
   # active programs. A rejected configuration leaves the old generation intact.
   install_config
@@ -1012,6 +1088,8 @@ main() {
   case "${1:-}" in
     install|update) install_or_update "$@" ;;
     _provision) shift; provision_packages "$@" ;;
+    _handoff-version) say 1 ;;
+    _stage) shift; [ "$#" = 1 ] || die 'staging takes one protocol version'; stage_target_release "$1" ;;
     uninstall) shift; uninstall "$@" ;;
     rollback) [ "$#" = 1 ] || die 'rollback takes no arguments'; rollback ;;
     status|doctor) [ "$#" = 1 ] || die "$1 takes no arguments"; "$1" ;;

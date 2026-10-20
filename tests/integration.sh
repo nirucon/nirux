@@ -48,6 +48,32 @@ fixture() {
   for asset in "$@"; do make_binary "$FIXTURE/$repo/$ver/$asset" "$asset" "$ver"; done
 }
 checksums() { (cd "$1"; sha256sum ./* | sed 's@  ./@  @' > SHA256SUMS); }
+# The target installer runs in a separate process. Give it the same offline
+# release fixture through a curl shim; the parent test shell keeps its fetch().
+mkdir -p "$TEST/bin"
+cat > "$TEST/bin/curl" <<'EOF'
+#!/bin/sh
+out=; url=
+while [ "$#" -gt 0 ]; do
+  case "$1" in
+    -o) out=$2; shift 2 ;;
+    -*) shift ;;
+    *) url=$1; shift ;;
+  esac
+done
+[ -n "$out" ] && [ -n "$url" ] || exit 22
+case "$url" in
+  https://github.com/nirucon/*/releases/download/v*)
+    relative=${url#https://github.com/nirucon/}
+    repo=${relative%%/*}
+    relative=${relative#*/releases/download/v}
+    cp "$FIXTURE/$repo/$relative" "$out" ;;
+  *) exit 22 ;;
+esac
+EOF
+chmod +x "$TEST/bin/curl"
+export FIXTURE
+export PATH="$TEST/bin:$PATH"
 fixture niruwm "$wm_version" niruwm niructl niruidle niruwm-session
 # Executing the session script during status must be caught.
 say 'touch "$HOME/session-was-started"' >> "$FIXTURE/niruwm/$wm_version/niruwm-session"
@@ -70,6 +96,39 @@ for release in "$VERSION" 99.0.0; do
   cp "$SOURCE/config.example.toml" "$FIXTURE/nirux/$release/config.example.toml"
   checksums "$FIXTURE/nirux/$release"
 done
+# 99.2.0 adds a synthetic component. The running installer does not know its
+# name; the target installer handoff and manifest-driven staging must install it.
+mkdir -p "$FIXTURE/nirux/99.2.0" "$FIXTURE/nirufoo/1.0.0"
+sed -e "s/^VERSION=$VERSION$/VERSION=99.2.0/" \
+  -e 's/^PROGRAMS="\(.*\)"$/PROGRAMS="\1 nirufoo"/' \
+  "$SOURCE/nirux" > "$FIXTURE/nirux/99.2.0/nirux"
+chmod +x "$FIXTURE/nirux/99.2.0/nirux"
+sed "s/suite $VERSION/suite 99.2.0/" "$SOURCE/manifest" > "$FIXTURE/nirux/99.2.0/manifest"
+say 'nirufoo 1.0.0' >> "$FIXTURE/nirux/99.2.0/manifest"
+cp "$SOURCE/config.example.toml" "$FIXTURE/nirux/99.2.0/config.example.toml"
+make_binary "$FIXTURE/nirufoo/1.0.0/nirufoo" nirufoo 1.0.0
+checksums "$FIXTURE/nirufoo/1.0.0"
+checksums "$FIXTURE/nirux/99.2.0"
+# 99.3.0 adds a component that only starts after its new package dependency has
+# been provisioned. This fails if binaries are executed before provisioning.
+mkdir -p "$FIXTURE/nirux/99.3.0" "$FIXTURE/nirulib/1.0.0"
+sed -e "s/^VERSION=$VERSION$/VERSION=99.3.0/" \
+  -e 's/^PROGRAMS="\(.*\)"$/PROGRAMS="\1 nirulib"/' \
+  -e 's/procps util-linux"/procps util-linux fake-lib"/' \
+  "$SOURCE/nirux" > "$FIXTURE/nirux/99.3.0/nirux"
+chmod +x "$FIXTURE/nirux/99.3.0/nirux"
+sed "s/suite $VERSION/suite 99.3.0/" "$SOURCE/manifest" > "$FIXTURE/nirux/99.3.0/manifest"
+say 'nirulib 1.0.0' >> "$FIXTURE/nirux/99.3.0/manifest"
+cp "$SOURCE/config.example.toml" "$FIXTURE/nirux/99.3.0/config.example.toml"
+cat > "$FIXTURE/nirulib/1.0.0/nirulib" <<'EOF'
+#!/bin/sh
+[ "$1" = --version ] || exit 0
+[ -f "$LIB_MARKER" ] || { echo 'fake-lib is missing' >&2; exit 1; }
+echo 'NIRULIB 1.0.0'
+EOF
+chmod +x "$FIXTURE/nirulib/1.0.0/nirulib"
+checksums "$FIXTURE/nirulib/1.0.0"
+checksums "$FIXTURE/nirux/99.3.0"
 
 # Provisioning uses the new release's package list, not the caller's. Exercise
 # the missing-only path without touching a package manager.
@@ -282,6 +341,66 @@ for TEST_OS in arch debian void; do
   [ ! -d "$XDG_STATE_HOME/nirulock" ] || fail 'purge missed lock state'
   [ "$(cat "$HOME/.xinitrc")" = 'my existing desktop' ] || fail 'existing xinitrc was changed'
 done
+
+# I07: a component that only exists in the target release is staged by the
+# target installer and linked on the first update.
+TEST_OS=arch; PREFIX=$TEST/newcomponent; BIN=$PREFIX/bin; STATE=$PREFIX/share/nirux
+operation install_or_update install --no-packages --display-manager startx --release "$VERSION"
+operation install_or_update update --no-packages --release 99.2.0 > "$TEST/newcomponent.log" 2>&1 || \
+  fail 'first update with a new component failed'
+grep -q 'Staged components through the target installer handoff' "$TEST/newcomponent.log" || fail 'target installer handoff was not used'
+[ -x "$BIN/nirufoo" ] || fail 'new component was not linked on the first update'
+[ -x "$STATE/current/bin/nirufoo" ] || fail 'new component was not staged'
+[ "$(readlink "$BIN/nirufoo")" = "$STATE/current/bin/nirufoo" ] || fail 'new component link is not generation-owned'
+[ "$(awk '$1 == "suite" {print $2}' "$STATE/current/manifest")" = 99.2.0 ] || fail 'new component release was not activated'
+grep -q 'nirufoo' "$STATE/current/bin/nirux" || fail 'installed installer does not know the new component'
+operation rollback >/dev/null 2>&1 || fail 'rollback after a new component failed'
+[ ! -e "$BIN/nirufoo" ] && [ ! -L "$BIN/nirufoo" ] || fail 'rollback left a front link for a component absent from the restored generation'
+operation uninstall --purge >/dev/null 2>&1 || :
+rm -rf "$PREFIX"
+
+# I07: a new shared-library dependency is provisioned before staged components
+# are executed. The synthetic component fails its version check without it.
+TEST_OS=debian; PREFIX=$TEST/libdep; BIN=$PREFIX/bin; STATE=$PREFIX/share/nirux
+operation install_or_update install --no-packages --display-manager startx --release "$VERSION"
+mkdir -p "$TEST/pkgbin"
+cat > "$TEST/pkgbin/sudo" <<'EOF'
+#!/bin/sh
+[ "$1" = "-n" ] && shift
+[ "$1" = "true" ] && exit 0
+exec "$@"
+EOF
+cat > "$TEST/pkgbin/dpkg-query" <<'EOF'
+#!/bin/sh
+name=
+for arg in "$@"; do name=$arg; done
+[ "$name" = fake-lib ] && exit 1
+printf 'install ok installed\n'
+EOF
+cat > "$TEST/pkgbin/apt-get" <<'EOF'
+#!/bin/sh
+[ -n "$LIB_MARKER" ] || exit 1
+touch "$LIB_MARKER"
+EOF
+chmod +x "$TEST/pkgbin/sudo" "$TEST/pkgbin/dpkg-query" "$TEST/pkgbin/apt-get"
+LIB_MARKER=$TEST/lib-marker
+rm -f "$LIB_MARKER"
+export LIB_MARKER
+saved_path=$PATH
+PATH="$TEST/pkgbin:$PATH"
+set +e
+(set -e; install_or_update update --release 99.3.0) > "$TEST/libdep.log" 2>&1
+rc=$?
+set -e
+PATH=$saved_path
+unset LIB_MARKER
+[ "$rc" = 0 ] || { cat "$TEST/libdep.log" >&2; fail 'missing-library update failed'; }
+[ -f "$TEST/lib-marker" ] || fail 'new package dependency was not provisioned'
+[ -x "$BIN/nirulib" ] || fail 'shared-library-dependent component was not linked'
+grep -q 'Staged components through the target installer handoff' "$TEST/libdep.log" || fail 'target installer handoff was not used for the dependency case'
+grep -q 'Installing missing debian packages: fake-lib' "$TEST/libdep.log" || fail 'missing dependency was not provisioned before staging'
+operation uninstall --purge >/dev/null 2>&1 || :
+rm -rf "$PREFIX"
 
 # A rejected config migration must not switch the active generation.
 TEST_OS=arch; PREFIX=$TEST/config-reject; BIN=$PREFIX/bin; STATE=$PREFIX/share/nirux

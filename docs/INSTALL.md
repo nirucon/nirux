@@ -88,7 +88,7 @@ installer cannot update itself. After that first migration the installed
 
 ```sh
 nirux update
-nirux update --release 0.10.16
+nirux update --release 0.10.17
 nirux rollback
 ```
 
@@ -98,11 +98,15 @@ the same release as the WM; PAM templates are assets of the lock release.
 No installed session is downloaded from a moving main branch.
 
 An update fetches the newest NIRUX release (or the requested version), including
-the installer itself. All component files are downloaded and verified before
-activation. After verification, the downloaded release's package list is checked
-and missing runtime packages are installed; use `nirux update --no-packages` to
-skip that step. Missing shared libraries and wrong binary versions fail before
-switching programs. Operations on the same prefix are locked.
+the installer itself. The verified target installer stages its own component
+list through a versioned internal handoff, so a component added by the release
+is installed and linked on the first update. Package names are not stable across
+releases: the target release's own package list is checked and missing runtime
+packages are installed before any staged binary is executed. Use
+`nirux update --no-packages` to skip provisioning. Missing shared libraries and
+wrong binary versions fail before switching programs; checksum, provisioning or
+version failures retain the old generation. Operations on the same prefix are
+locked.
 
 Missing-only Arch provisioning uses the current pacman database (`pacman -S`),
 without refreshing it into a partial upgrade. If package files have expired on
