@@ -1,12 +1,12 @@
 # NIRU desktop — current roadmap and restart handoff
 
-Updated **2026-10-20**, checked against **NIRUX 0.10.40**.
+Updated **2026-10-20**, checked against **NIRUX 0.10.41**.
 
 - **Start here after restarting OpenCode:** [NEXT-SESSION.md](docs/NEXT-SESSION.md)
 - **Evidence and open defects:** [restart review](docs/REVIEW-2026-10-20-RESTART.md)
 - **Repositories:** [inventory](docs/REPOSITORIES.md)
 - **Previous work:** [delivery history through 0.10.30](docs/history/ROADMAP-0.10.30.md)
-- **Current checkpoint evidence:** [0.10.40 wallpaper launcher](docs/history/CHECKPOINT-0.10.40.md)
+- **Current checkpoint evidence:** [0.10.41 mouse and autostart](docs/history/CHECKPOINT-0.10.41.md)
 - **S04 runtime audit:** [package and normal-user results](docs/history/AUDIT-S04-0.10.35.md)
 - **R01 performance baseline:** [idle and startup measurements](docs/history/AUDIT-R01-BASELINE.md)
 - **H01 partial fresh-VM evidence:** [Debian/Arch VMs and gaps](docs/history/AUDIT-H01-PARTIAL.md)
@@ -34,9 +34,9 @@ drivers/firmware must be documented separately from suite provisioning.
 
 | Repository | Pinned release | Responsibility |
 |---|---|---|
-| nirux | 0.10.40 | Packages, generations, target-owned apply, managed Helium, wallpapers, kitty/fish |
-| niruwm | 0.16.37 | WM, session, niructl, niruidle, theme wallpapers, terminal hook |
-| nirubar | 0.18.17 | Per-output bar, tray, panels, weather |
+| nirux | 0.10.41 | Packages, generations, target-owned apply, managed Helium, wallpapers, kitty/fish |
+| niruwm | 0.16.40 | WM, session, niructl, niruidle, theme wallpapers, terminal hook |
+| nirubar | 0.18.18 | Per-output bar, tray, panels, weather |
 | niruscreensaver | 0.8.3 | Unlocked idle surface |
 | nirulock | 0.16.10 | PAM lock, input grabs and readiness |
 | nirulauncher | 0.2.3 | Apps, actions, windows, local recency/favourites |
@@ -44,7 +44,7 @@ drivers/firmware must be documented separately from suite provisioning.
 
 All listed releases/assets were found on GitHub. Previous sessions reported
 installation of 0.10.30 on `niru@void` and `niru@thinkpad` (Arch); those hosts
-still need the 0.10.40 deployment check.
+still need the 0.10.41 deployment check.
 
 **S01, S02 and S03 are implemented; 0.10.33 added theme wallpapers.**
 [Run 39420180581](https://github.com/nirucon/nirux/actions/runs/39420180581)
@@ -73,9 +73,10 @@ environment, release/deployment status, remaining limits and next task.
 |---|---|---|
 | S01 / DONE | Reproduced the 0.10.30 failure: all three distros stopped at doctor with `missing configured brave`; config-contract/startx were not reached. Fixed by the S02 browser policy. Evidence: CI run 39420180581. | New full CI run passes Arch, Debian Bookworm and Void glibc; complete logs retained. |
 | S02 / DONE | Managed Helium 0.19.4.1 with recorded SHA-256, runtime dependencies, owned desktop entry, persistent `--browser helium|none|keep` policy, actionable status/doctor and owned removal. Evidence: run 39420180581 and [checkpoint](docs/history/CHECKPOINT-0.10.32.md). | Helium selected: empty-home browser install launches as a normal user with sandbox enabled. Opt-out survives updates. Corrupt download, update, rollback and owned uninstall covered by regressions. No `--no-sandbox` path. |
-| W04 / DONE (owner request) | Add wallpaper choices and settings to the unified launcher, including the three extra NIRUX wallpapers. | Super+Shift+P lists theme and extra wallpapers; selecting one applies it with `mode=single`; mode, rotation, scale and follow-theme are visible and cyclable. Evidence: 0.10.40 checkpoint. |
-| W03 / DONE (owner request) | Fix bar theme identity and make Reboot/Shutdown work from the launcher. | Appearance example no longer overrides built-in themes; old Noir-only file is migrated without touching custom colours. Polkit agent is provisioned/started and failed power actions are visible. Evidence: 0.10.40 checkpoint. |
-| W02 / DONE (owner request) | Install a NIRU kitty/fish setup with a fast fish prompt, history, autosuggestions, completions and theme-following terminal colours. | Kitty always uses fish; existing configs are updated with one reversible managed block; theme changes update kitty/fish through a small NIRUWM hook; all built-in palettes meet the contrast test. Evidence: 0.10.40 checkpoint. |
+| W05 / DONE (owner request) | Add dwm-style Super+mouse move/resize and workspace-ordered autostart from the shared config. | All four resize corners, floating/tiling toggle, ordered workspace launch, settle, safe return to workspace 1, no duplicate with restore/NIRUPI, clear English config documentation. Evidence: 0.10.41 checkpoint. |
+| W04 / DONE (owner request) | Add wallpaper choices and settings to the unified launcher, including the three extra NIRUX wallpapers. | Super+Shift+P lists theme and extra wallpapers; selecting one applies it with `mode=single`; mode, rotation, scale and follow-theme are visible and cyclable. Evidence: 0.10.41 checkpoint. |
+| W03 / DONE (owner request) | Fix bar theme identity and make Reboot/Shutdown work from the launcher. | Appearance example no longer overrides built-in themes; old Noir-only file is migrated without touching custom colours. Polkit agent is provisioned/started and failed power actions are visible. Evidence: 0.10.41 checkpoint. |
+| W02 / DONE (owner request) | Install a NIRU kitty/fish setup with a fast fish prompt, history, autosuggestions, completions and theme-following terminal colours. | Kitty always uses fish; existing configs are updated with one reversible managed block; theme changes update kitty/fish through a small NIRUWM hook; all built-in palettes meet the contrast test. Evidence: 0.10.41 checkpoint. |
 | W01 / DONE (owner request) | Install the four theme wallpaper sets into `~/Pictures/Wallpapers/NIRU`; add `follow_theme`/`theme_dir`; make a theme change apply its default wallpaper without breaking custom files, rotation or `mode = "single"`. | New and existing installs receive the assets; modified user files are preserved; theme change replaces the root wallpaper only when enabled/following; owned purge removes only unmodified assets. Evidence: 0.10.33 checkpoint. |
 | S03 / DONE | Target-owned apply protocol 2. The target runs browser install, config migration, wallpapers, PAM/system integration, startx/DM setup, activation and the restart message. `_handoff-version` stays 1 for old callers; `_apply-version` advertises 2. Evidence: [checkpoint](docs/history/CHECKPOINT-0.10.34.md). | One update to synthetic 99.4.0 links a new component, adds a new config key and installs a new wallpaper asset. An injected 99.4.1 failure restores the exact config and leaves the generation unchanged. |
 | S04 / DONE | Rechecked the complete vanilla package/runtime matrix on Arch, Debian Bookworm and Void glibc. Release install as a normal user, status/doctor, startx, WM/bar, theme wallpaper, maim screenshot, font/cursor fallback, audio process start and Helium were exercised. Evidence: [S04 audit](docs/history/AUDIT-S04-0.10.35.md). | No manual suite package fixes; package versions and normal-user runtime recorded. Physical audio, PAM unlock and lock/suspend remain H01. |
@@ -101,7 +102,7 @@ acceptance path before optional notification images or new repositories.
 
 | ID / priority | Repositories and work | Done when |
 |---|---|---|
-| C01 / P1 | Appearance: common validation, theme precedence, neutral defaults, explicit per-component overrides, font/spacing/focus/reduced-motion semantics. The shipped Noir-only example was fixed in 0.10.40; remaining work is live last-good state and rendered-value assertions. | Four themes and custom theme retain their identity; actual rendered colours/geometry and black lock opacity are asserted. Live invalid reload preserves the previous applied state. Checks must assert values, not just six exit codes. |
+| C01 / P1 | Appearance: common validation, theme precedence, neutral defaults, explicit per-component overrides, font/spacing/focus/reduced-motion semantics. The shipped Noir-only example was fixed in 0.10.41; remaining work is live last-good state and rendered-value assertions. | Four themes and custom theme retain their identity; actual rendered colours/geometry and black lock opacity are asserted. Live invalid reload preserves the previous applied state. Checks must assert values, not just six exit codes. |
 | C02 / P1 | Night light: manual/off/status must not need coordinates; fixed scheduling must work offline without a location. Reapply unchanged Kelvin after resume/RandR. One watcher per X session with manual override ownership and bounded helper timeouts. | No-coordinate manual/off/fixed tests; two invocations cannot compete; resume/output changes trigger an actual gamma call even when the saved temperature is unchanged. Include polar/0,0/timezone and permission evidence. |
 | C03 / P1 | Launcher/lock keyboard input: real Swedish/US/AltGr/Caps mapping, MappingNotify, Unicode and compose review. Favourites/groups/window-focus semantics and local-state writes. | Real X key sequences produce intended search/password characters. Dead-key/IME limitations remain explicit until implemented. Preserve desktop-file precedence, Hidden masks and argv-only Exec launch. |
 | C04 / P1 | Battery/network honesty: complete-pack rate accounting, coherent units, Full vs Not charging, IPv6 reject/default route filtering, selected-interface/address association. | Mixed energy/charge and partial-rate fixtures cannot produce a false estimate; no IP/default route is never described as proven Internet connectivity. No mandatory NetworkManager or online ping service. |

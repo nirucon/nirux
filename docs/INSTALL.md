@@ -1,6 +1,6 @@
 # Installation and maintenance
 
-**Verified-state note, 2026-10-20:** 0.10.40 implements managed Helium,
+**Verified-state note, 2026-10-20:** 0.10.41 implements managed Helium,
 theme-follow wallpapers, target-owned apply and the kitty/fish terminal
 integration. The full distro CI covers real-release install,
 doctor, config contract, startx and a normal-user sandboxed Helium launch.
@@ -80,6 +80,35 @@ The same choices are available graphically: press **Super+Shift+P**, type
 `wallpaper`, and pick an image or cycle mode, rotation, scale and follow-theme.
 Selecting an image writes `mode = "single"` and applies it immediately through
 `niructl`. The config file remains authoritative for advanced settings.
+
+### Mouse and autostart
+
+**Super+left-drag** moves a window; a tiled window becomes floating. **Super+
+right-drag** resizes from the nearest corner, and all four corners work.
+**Super+Shift+Space** toggles floating and tiling again. Fullscreen windows and
+ordinary clicks without Super are untouched.
+
+`[[autostart.apps]]` opens programs in workspace order at login:
+
+```toml
+[autostart]
+enabled = true
+settle_seconds = 2
+return_workspace = 1
+
+[[autostart.apps]]
+workspace = 1
+command = ["kitty"]
+
+[[autostart.apps]]
+workspace = 3
+command = ["helium"]
+```
+
+The sequence waits between programs and after each workspace, then returns to
+workspace 1 unless you switched away yourself. Empty `apps` does nothing.
+Saved-session restore and `nirupi_compat` suppress it to avoid duplicate
+launches. Commands are argv arrays, never shell strings.
 
 ### Terminal: kitty, fish and theme colours
 
@@ -174,7 +203,7 @@ installer cannot update itself. After that first migration the installed
 
 ```sh
 nirux update
-nirux update --release 0.10.40
+nirux update --release 0.10.41
 nirux rollback
 ```
 

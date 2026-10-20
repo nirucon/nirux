@@ -11,6 +11,26 @@ cleanup() {
   [ -z "${START:-}" ] || kill "$START" 2>/dev/null || :
 }
 trap cleanup EXIT INT TERM
+# Configure two autostart entries on different workspaces before starting X.
+# The sequence must launch them in workspace order and return to workspace 1.
+autostart_cfg=$XDG_CONFIG_HOME/niruwm/config.toml
+autostart_tmp=$(mktemp)
+awk '
+  /^\[autostart\]$/ { inside = 1 }
+  inside && /^enabled[[:space:]]*=/ { print "enabled = true"; next }
+  inside && /^settle_seconds[[:space:]]*=/ { print "settle_seconds = 1"; inside = 0; next }
+  { print }
+' "$autostart_cfg" > "$autostart_tmp"
+mv "$autostart_tmp" "$autostart_cfg"
+cat >> "$autostart_cfg" <<EOF
+[[autostart.apps]]
+workspace = 2
+command = ["sh", "-c", "niructl status >> '$HOME/autostart-2'"]
+[[autostart.apps]]
+workspace = 1
+command = ["sh", "-c", "niructl status >> '$HOME/autostart-1'"]
+EOF
+
 startx -- "$(command -v Xvfb)" :97 -screen 0 1280x800x24 -nolisten tcp > "$HOME/startx-test.log" 2>&1 &
 START=$!
 i=0
@@ -19,6 +39,24 @@ while [ "$i" -lt 100 ]; do
   i=$((i + 1)); sleep 0.1
 done
 if [ "$i" = 100 ]; then cat "$HOME/startx-test.log"; exit 1; fi
+i=0
+while [ "$i" -lt 100 ]; do
+  if [ -f "$HOME/autostart-1" ] && [ -f "$HOME/autostart-2" ]; then break; fi
+  i=$((i + 1)); sleep 0.1
+done
+[ -f "$HOME/autostart-1" ] && [ -f "$HOME/autostart-2" ] || {
+  printf 'autostart entries did not run\n' >&2
+  [ ! -f "$HOME/.local/state/niruwm/session.log" ] || tail -40 "$HOME/.local/state/niruwm/session.log" >&2
+  exit 1
+}
+sleep 2.5
+autostart_status=$("$BIN/niructl" status)
+printf '%s\n' "$autostart_status" | grep -q 'tag=1' || {
+  printf 'autostart did not return to workspace 1\n' >&2
+  exit 1
+}
+grep -q 'tag=2' "$HOME/autostart-2" || { printf 'autostart ran on the wrong workspace\n' >&2; exit 1; }
+grep -q 'tag=1' "$HOME/autostart-1" || { printf 'autostart ran on the wrong workspace\n' >&2; exit 1; }
 "$BIN/niructl" status
 "$BIN/niructl" restart-bar
 # Theme-follow wallpaper: only assert when NIRUX installed the assets and a

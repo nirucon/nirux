@@ -304,6 +304,7 @@ grep -qx 'scale = "fit"' "$i06/config/niruwm/config.toml" || fail 'existing wall
 grep -qx 'workspaces = 9' "$i06/config/niruwm/config.toml" || fail 'missing monitor default was not added'
 grep -qx 'title_delay_seconds = 0' "$i06/config/niruwm/config.toml" || fail 'bar key was not added to the real table'
 grep -qx 'follow_theme = true' "$i06/config/niruwm/config.toml" || fail 'wallpaper follow_theme default was not added'
+grep -q '^\[autostart\]' "$i06/config/niruwm/config.toml" || fail 'autostart section was not added'
 grep -qx 'theme_dir = "~/Pictures/Wallpapers/NIRU"' "$i06/config/niruwm/config.toml" || fail 'wallpaper theme_dir default was not added'
 grep -q 'scale = "not-a-real-setting"' "$i06/config/niruwm/config.toml" || fail 'multiline string was changed'
 [ "$(wc -l < "$i06/validators.log")" = 2 ] || fail 'candidate was not validated by both components'
