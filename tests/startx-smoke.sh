@@ -31,6 +31,11 @@ if [ -f "$HOME/Pictures/Wallpapers/NIRU/nirux-wallpaper-nord-4k.png" ] && comman
     printf 'theme change did not replace the root wallpaper\n' >&2
     exit 1
   }
+  sleep 0.5
+  xwininfo -root -tree 2>/dev/null | grep -q NIRUBAR || {
+    printf 'bar disappeared after the theme change\n' >&2
+    exit 1
+  }
 fi
 if command -v maim >/dev/null 2>&1; then
   maim "$HOME/startx-screenshot.png"

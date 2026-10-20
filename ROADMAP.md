@@ -9,6 +9,7 @@ Updated **2026-10-20**, checked against **NIRUX 0.10.35**.
 - **Current checkpoint evidence:** [0.10.35 system icon](docs/history/CHECKPOINT-0.10.35.md)
 - **S04 runtime audit:** [package and normal-user results](docs/history/AUDIT-S04-0.10.35.md)
 - **R01 performance baseline:** [idle and startup measurements](docs/history/AUDIT-R01-BASELINE.md)
+- **H01 partial fresh-VM evidence:** [Debian/Arch VMs and gaps](docs/history/AUDIT-H01-PARTIAL.md)
 
 ## 1. Product contract
 
@@ -75,7 +76,7 @@ environment, release/deployment status, remaining limits and next task.
 | W01 / DONE (owner request) | Install the four theme wallpaper sets into `~/Pictures/Wallpapers/NIRU`; add `follow_theme`/`theme_dir`; make a theme change apply its default wallpaper without breaking custom files, rotation or `mode = "single"`. | New and existing installs receive the assets; modified user files are preserved; theme change replaces the root wallpaper only when enabled/following; owned purge removes only unmodified assets. Evidence: 0.10.33 checkpoint. |
 | S03 / DONE | Target-owned apply protocol 2. The target runs browser install, config migration, wallpapers, PAM/system integration, startx/DM setup, activation and the restart message. `_handoff-version` stays 1 for old callers; `_apply-version` advertises 2. Evidence: [checkpoint](docs/history/CHECKPOINT-0.10.34.md). | One update to synthetic 99.4.0 links a new component, adds a new config key and installs a new wallpaper asset. An injected 99.4.1 failure restores the exact config and leaves the generation unchanged. |
 | S04 / DONE | Rechecked the complete vanilla package/runtime matrix on Arch, Debian Bookworm and Void glibc. Release install as a normal user, status/doctor, startx, WM/bar, theme wallpaper, maim screenshot, font/cursor fallback, audio process start and Helium were exercised. Evidence: [S04 audit](docs/history/AUDIT-S04-0.10.35.md). | No manual suite package fixes; package versions and normal-user runtime recorded. Physical audio, PAM unlock and lock/suspend remain H01. |
-| H01 / TODO — **START HERE** | Fresh OS/VM + empty normal-user home on all three distros, then upgrade from the published baseline. | Real released install → status/doctor → startx/login → apps/browser/audio/screenshot/lock → update once → rollback → uninstall/purge. Test existing DM separately. Containers/Xvfb are supporting evidence, not fresh physical OS evidence. |
+| H01 / PARTIAL — **START HERE** | Debian and Arch passed on fresh LXD VMs: empty-home 0.10.35 install, status/doctor, startx/WM/bar, wallpaper theme change, maim screenshot, Helium sandbox, PAM auth, update, rollback and purge. Evidence: [H01 partial audit](docs/history/AUDIT-H01-PARTIAL.md). Remaining: fresh Void VM/physical clean OS, physical audio, lock/unlock and suspend/output. | Debian/Arch VM acceptance done. H01 completes only when Void and physical hardware paths are recorded. Containers/Xvfb remain supporting evidence. |
 
 **Next session starts with H01, not A04.** Finish the one-update and vanilla
 acceptance path before optional notification images or new repositories.
@@ -90,7 +91,7 @@ acceptance path before optional notification images or new repositories.
 | One-update target apply | **Passed in synthetic regression** | **Passed in synthetic regression** | **Passed in synthetic regression** |
 | S04 normal-user runtime | **Passed in container** | **Passed in container** | **Passed in container** |
 | Managed Helium option + normal-user sandbox | **Passed in container** | **Passed in container** | **Passed in container** |
-| Fresh physical normal-user OS desktop acceptance | Open (H01) | Open (H01) | Open (H01) |
+| Fresh normal-user OS desktop acceptance | **VM passed**; physical audio/lock open | **VM passed**; physical open | **Open** (fresh VM/physical clean OS needed) |
 | Physical sleep/output checks | Owner previously confirmed | No physical host supplied | Owner previously confirmed |
 
 ## 4. Correctness and integration follow-ups
