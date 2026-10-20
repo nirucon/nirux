@@ -1,12 +1,12 @@
 # NIRU desktop — current roadmap and restart handoff
 
-Updated **2026-10-20**, checked against **NIRUX 0.10.34**.
+Updated **2026-10-20**, checked against **NIRUX 0.10.35**.
 
 - **Start here after restarting OpenCode:** [NEXT-SESSION.md](docs/NEXT-SESSION.md)
 - **Evidence and open defects:** [restart review](docs/REVIEW-2026-10-20-RESTART.md)
 - **Repositories:** [inventory](docs/REPOSITORIES.md)
 - **Previous work:** [delivery history through 0.10.30](docs/history/ROADMAP-0.10.30.md)
-- **Current checkpoint evidence:** [0.10.34 target-owned apply](docs/history/CHECKPOINT-0.10.34.md)
+- **Current checkpoint evidence:** [0.10.35 system icon](docs/history/CHECKPOINT-0.10.35.md)
 
 ## 1. Product contract
 
@@ -31,9 +31,9 @@ drivers/firmware must be documented separately from suite provisioning.
 
 | Repository | Pinned release | Responsibility |
 |---|---|---|
-| nirux | 0.10.34 | Packages, generations, target-owned apply, managed Helium, theme wallpapers |
-| niruwm | 0.16.32 | WM, session, niructl, niruidle, theme wallpapers |
-| nirubar | 0.18.16 | Per-output bar, tray, panels, weather |
+| nirux | 0.10.35 | Packages, generations, target-owned apply, managed Helium, theme wallpapers |
+| niruwm | 0.16.33 | WM, session, niructl, niruidle, theme wallpapers |
+| nirubar | 0.18.17 | Per-output bar, tray, panels, weather |
 | niruscreensaver | 0.8.3 | Unlocked idle surface |
 | nirulock | 0.16.10 | PAM lock, input grabs and readiness |
 | nirulauncher | 0.2.1 | Apps, actions, windows, local recency/favourites |
@@ -41,7 +41,7 @@ drivers/firmware must be documented separately from suite provisioning.
 
 All listed releases/assets were found on GitHub. Previous sessions reported
 installation of 0.10.30 on `niru@void` and `niru@thinkpad` (Arch); those hosts
-still need the 0.10.34 deployment check.
+still need the 0.10.35 deployment check.
 
 **S01, S02 and S03 are implemented; 0.10.33 added theme wallpapers.**
 [Run 39420180581](https://github.com/nirucon/nirux/actions/runs/39420180581)

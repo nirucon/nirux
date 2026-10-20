@@ -7,8 +7,8 @@ Includes niruwm, niructl, niruidle, nirubar, niruscreensaver, nirulock,
 nirulauncher and nirunotify, plus Xorg and runtime dependencies. Niru Noir is the
 default theme; Nord, Satie and Carl Larsson are also available.
 
-**0.10.34 status:** managed Helium, theme wallpapers and target-owned updates
-are implemented. A new installer now owns config/integration/activation, so a
+**0.10.35 status:** managed Helium, theme wallpapers, target-owned updates and
+the revised system-module icon are implemented. A new installer now owns config/integration/activation, so a
 future update applies new config keys, assets and components in one pass. Fresh installs get the four NIRU theme wallpaper sets under
 `~/Pictures/Wallpapers/NIRU`; changing the theme can switch to that theme's
 wallpaper while custom files, rotation and `mode = "single"` remain preserved.

@@ -1,6 +1,6 @@
 # Installation and maintenance
 
-**Verified-state note, 2026-10-20:** 0.10.34 implements managed Helium,
+**Verified-state note, 2026-10-20:** 0.10.35 implements managed Helium,
 theme-follow wallpapers and target-owned apply. The full distro CI covers real-release install,
 doctor, config contract, startx and a normal-user sandboxed Helium launch.
 Containers are supporting evidence, not a fresh physical OS certification.
@@ -142,7 +142,7 @@ installer cannot update itself. After that first migration the installed
 
 ```sh
 nirux update
-nirux update --release 0.10.34
+nirux update --release 0.10.35
 nirux rollback
 ```
 

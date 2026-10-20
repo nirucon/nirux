@@ -5,18 +5,18 @@ https://raw.githubusercontent.com/nirucon/nirux/main/docs/NEXT-SESSION.md
 
 This brief is independent of local session memory. **Start with S04.**
 S01/S02, target-owned apply (S03) and the theme-wallpaper request are implemented
-in 0.10.34; physical H01 acceptance and the S04 runtime audit are still open.
+in 0.10.35; physical H01 acceptance and the S04 runtime audit are still open.
 
 ## Copy-ready prompt
 
 ```text
 Fortsätt utvecklingen av NIRU-sviten. Läs först aktuella GitHub-filer:
 - https://raw.githubusercontent.com/nirucon/nirux/main/ROADMAP.md
-- https://raw.githubusercontent.com/nirucon/nirux/main/docs/history/CHECKPOINT-0.10.34.md
+- https://raw.githubusercontent.com/nirucon/nirux/main/docs/history/CHECKPOINT-0.10.35.md
 - https://raw.githubusercontent.com/nirucon/nirux/main/docs/REPOSITORIES.md
 
-Utgå från NIRUX 0.10.34:
-niruwm 0.16.32, nirubar 0.18.16, niruscreensaver 0.8.3,
+Utgå från NIRUX 0.10.35:
+niruwm 0.16.33, nirubar 0.18.17, niruscreensaver 0.8.3,
 nirulock 0.16.10, nirulauncher 0.2.1, nirunotify 0.3.3.
 Kontrollera manifest, git-status, GitHub main och senaste fulla CI på nytt.
 Versionslistan är en startpunkt, inte ett skäl att skriva över nyare arbete.
@@ -73,5 +73,5 @@ vilka filer du behöver ändra. Fortsätt sedan arbetet.
 | S04 vanilla runtime audit | TODO — start here | roadmap acceptance |
 | H01 fresh OS/VM acceptance | TODO | physical evidence still required |
 
-0.10.33 added theme wallpapers; 0.10.34 adds target-owned apply. A green
+0.10.34 added target-owned apply; 0.10.35 updates the system module icon. A green
 release workflow alone is not proof of the distro matrix; check both.
