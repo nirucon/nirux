@@ -7,6 +7,7 @@ Updated **2026-10-20**, checked against **NIRUX 0.10.35**.
 - **Repositories:** [inventory](docs/REPOSITORIES.md)
 - **Previous work:** [delivery history through 0.10.30](docs/history/ROADMAP-0.10.30.md)
 - **Current checkpoint evidence:** [0.10.35 system icon](docs/history/CHECKPOINT-0.10.35.md)
+- **S04 runtime audit:** [package and normal-user results](docs/history/AUDIT-S04-0.10.35.md)
 
 ## 1. Product contract
 
@@ -55,7 +56,7 @@ config-contract and startx were never reached in that run.
 Helium is pinned to upstream 0.19.4.1 with a recorded SHA-256. The canonical
 browser is now `helium`, a fresh install selects it by default, and
 `--browser none` is a persistent opt-out. Containers are supporting evidence,
-not a fresh physical OS certification; S04 and H01 remain open; W01 and S03 are delivered.
+not a fresh physical OS certification; H01 remains open; S04, W01 and S03 are delivered.
 
 The earlier I06–I09, U01–U06 and A01–A03 work is **shipped**, with useful
 regressions. It is not blanket proof that every original acceptance criterion
@@ -72,10 +73,10 @@ environment, release/deployment status, remaining limits and next task.
 | S02 / DONE | Managed Helium 0.19.4.1 with recorded SHA-256, runtime dependencies, owned desktop entry, persistent `--browser helium|none|keep` policy, actionable status/doctor and owned removal. Evidence: run 39420180581 and [checkpoint](docs/history/CHECKPOINT-0.10.32.md). | Helium selected: empty-home browser install launches as a normal user with sandbox enabled. Opt-out survives updates. Corrupt download, update, rollback and owned uninstall covered by regressions. No `--no-sandbox` path. |
 | W01 / DONE (owner request) | Install the four theme wallpaper sets into `~/Pictures/Wallpapers/NIRU`; add `follow_theme`/`theme_dir`; make a theme change apply its default wallpaper without breaking custom files, rotation or `mode = "single"`. | New and existing installs receive the assets; modified user files are preserved; theme change replaces the root wallpaper only when enabled/following; owned purge removes only unmodified assets. Evidence: 0.10.33 checkpoint. |
 | S03 / DONE | Target-owned apply protocol 2. The target runs browser install, config migration, wallpapers, PAM/system integration, startx/DM setup, activation and the restart message. `_handoff-version` stays 1 for old callers; `_apply-version` advertises 2. Evidence: [checkpoint](docs/history/CHECKPOINT-0.10.34.md). | One update to synthetic 99.4.0 links a new component, adds a new config key and installs a new wallpaper asset. An injected 99.4.1 failure restores the exact config and leaves the generation unchanged. |
-| S04 / TODO — **START HERE** | Recheck the complete vanilla dependency/runtime matrix: X11/input/fonts/cursors, audio, PAM, session bus, optional DM, screenshots and configured commands. Include Helium runtime and sandbox dependencies. | No manual suite-related package fixes on any supported distro. Record package versions and actual normal-user runtime, not only successful package lookup. |
-| H01 / TODO | Fresh OS/VM + empty normal-user home on all three distros, then upgrade from the published baseline. | Real released install → status/doctor → startx/login → apps/browser/audio/screenshot/lock → update once → rollback → uninstall/purge. Test existing DM separately. Containers/Xvfb are supporting evidence, not fresh physical OS evidence. |
+| S04 / DONE | Rechecked the complete vanilla package/runtime matrix on Arch, Debian Bookworm and Void glibc. Release install as a normal user, status/doctor, startx, WM/bar, theme wallpaper, maim screenshot, font/cursor fallback, audio process start and Helium were exercised. Evidence: [S04 audit](docs/history/AUDIT-S04-0.10.35.md). | No manual suite package fixes; package versions and normal-user runtime recorded. Physical audio, PAM unlock and lock/suspend remain H01. |
+| H01 / TODO — **START HERE** | Fresh OS/VM + empty normal-user home on all three distros, then upgrade from the published baseline. | Real released install → status/doctor → startx/login → apps/browser/audio/screenshot/lock → update once → rollback → uninstall/purge. Test existing DM separately. Containers/Xvfb are supporting evidence, not fresh physical OS evidence. |
 
-**Next session starts with S04, not A04.** Finish the one-update and vanilla
+**Next session starts with H01, not A04.** Finish the one-update and vanilla
 acceptance path before optional notification images or new repositories.
 
 ### Three-distro acceptance sheet
@@ -86,6 +87,7 @@ acceptance path before optional notification images or new repositories.
 | Mock install/update/rollback | Passed in 39420180581 | Passed in 39420180581 | Passed in 39420180581 |
 | Full real-release/startx CI | **Passed** | **Passed** | **Passed** |
 | One-update target apply | **Passed in synthetic regression** | **Passed in synthetic regression** | **Passed in synthetic regression** |
+| S04 normal-user runtime | **Passed in container** | **Passed in container** | **Passed in container** |
 | Managed Helium option + normal-user sandbox | **Passed in container** | **Passed in container** | **Passed in container** |
 | Fresh physical normal-user OS desktop acceptance | Open (H01) | Open (H01) | Open (H01) |
 | Physical sleep/output checks | Owner previously confirmed | No physical host supplied | Owner previously confirmed |
@@ -101,6 +103,7 @@ acceptance path before optional notification images or new repositories.
 | C05 / P1 | Weather: missing probability/temperature stays unavailable; timezone-aware forecast indexing, explicit wind units, current-day/polar daylight, age-based stale label. | Unknown is not 0%; stale-day sunrise is not today's event; forecast location time is handled correctly. No synchronous HTTP, no second fetch daemon. |
 | C06 / P2 | Responsive bar and controls: sparse indices, large fonts/titles/tray, small widths, input buttons, overflow access and configuration. Output selection and genuine panel controls still need a design beyond mouse shortcuts. | 800/1366/1920 and mixed-width outputs have pixel/hitbox/popup tests. Reading is side-effect free. Provider absence is visible; helper processes and their descendants have deadlines and bounded concurrency. |
 | C07 / P1 | Suite lifecycle/ownership: precise logout cleanup, live reload, stale singleton/lock state, unmanaged-file protection, failed activation and rollback of added/removed components. | Isolated X11/D-Bus tests and failure injection retain user data and leave no competing notifier, idle ladder, night-light watcher or leaked grabs/processes. No testing in production PAM. |
+| R01 / P2 — owner request | Performance and resource budget: idle CPU/RSS/process counts per component, login/startx latency, bar redraw and helper lifetimes, no unnecessary resident browser/notification processes. | Recorded baseline and explicit budgets on all three distros. No idle busy loop, duplicate helper or avoidable resident process. Optimize measured hot paths, not speculative micro-optimization. H01 runtime first. |
 | A04 / TODO — later | Optional bounded notification images/hints in nirunotify. | Cap dimensions/decoded bytes/queue/history; advertise only implemented capabilities. Retain D-Bus actions, lock privacy, DND and cleanup regressions. |
 
 H02 installer/PAM and H03 sleep/output checks have previous automated and

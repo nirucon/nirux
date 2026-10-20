@@ -32,6 +32,10 @@ if [ -f "$HOME/Pictures/Wallpapers/NIRU/nirux-wallpaper-nord-4k.png" ] && comman
     exit 1
   }
 fi
+if command -v maim >/dev/null 2>&1; then
+  maim "$HOME/startx-screenshot.png"
+  [ -s "$HOME/startx-screenshot.png" ] || { printf 'maim produced no screenshot\n' >&2; exit 1; }
+fi
 "$BIN/niructl" quit
 wait "$START"
 START=

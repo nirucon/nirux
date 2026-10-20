@@ -3,9 +3,9 @@
 Canonical raw URL:
 https://raw.githubusercontent.com/nirucon/nirux/main/docs/NEXT-SESSION.md
 
-This brief is independent of local session memory. **Start with S04.**
-S01/S02, target-owned apply (S03) and the theme-wallpaper request are implemented
-in 0.10.35; physical H01 acceptance and the S04 runtime audit are still open.
+This brief is independent of local session memory. **Start with H01.**
+S01/S02, S03, S04 and the theme-wallpaper request are done in 0.10.35.
+H01 physical/VM acceptance and the new R01 performance budget are next.
 
 ## Copy-ready prompt
 
@@ -28,9 +28,10 @@ program. Ett injicerat fel återställer originalconfig och aktiv generation.
 Helium är pinnat till 0.19.4.1 med SHA-256. CI-containrar är stödjande evidens,
 inte fysisk clean-OS-certifiering.
 
-Börja med S04: verifiera hela vanilla dependency/runtime-matrisen inklusive
-Helium, wallpapers och faktisk normal-user-runtime. Följ H01 för fysisk/ren
-OS-acceptans på alla tre distros.
+Börja med H01: fysisk/VM-installation på alla tre distros, inklusive riktig
+audio, PAM-upplåsning, suspend/output och hela release-flödet. Därefter R01:
+mät och sätt budget för idle CPU/RSS/processer och login-latens. S04 är redan
+verifierad i containrar; se AUDIT-S04-0.10.35.md.
 Läs acceptanskriterierna innan kodändringar. Implementera inte A04/bloat först.
 
 Krav:
@@ -70,8 +71,9 @@ vilka filer du behöver ändra. Fortsätt sedan arbetet.
 | S02 managed Helium + opt-out + sandbox | DONE | 39420180581, [checkpoint](history/CHECKPOINT-0.10.32.md) |
 | W01 theme wallpapers and follow-theme | DONE | [0.10.33 checkpoint](history/CHECKPOINT-0.10.33.md) |
 | S03 target-owned apply | DONE | [0.10.34 checkpoint](history/CHECKPOINT-0.10.34.md) |
-| S04 vanilla runtime audit | TODO — start here | roadmap acceptance |
-| H01 fresh OS/VM acceptance | TODO | physical evidence still required |
+| S04 vanilla runtime audit | DONE | [S04 audit](history/AUDIT-S04-0.10.35.md) |
+| H01 fresh OS/VM acceptance | TODO — start here | physical evidence still required |
+| R01 performance/resource budget | TODO | owner request, after H01 |
 
-0.10.34 added target-owned apply; 0.10.35 updates the system module icon. A green
+0.10.35 updates the system module icon; S04 normal-user runtime audit is complete. A green
 release workflow alone is not proof of the distro matrix; check both.
