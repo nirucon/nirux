@@ -8,7 +8,7 @@ nirulauncher and nirunotify, plus Xorg, kitty/fish, theme wallpapers, the NIRU
 terminal colours and a graphical Polkit agent for power actions. Niru Noir is the
 default theme; Nord, Satie and Carl Larsson are also available.
 
-**0.10.39 status:** managed Helium, theme and extra wallpapers, target-owned
+**0.10.40 status:** managed Helium, theme and extra wallpapers, target-owned
 updates, the NIRU kitty/fish terminal integration, correct bar theme colours,
 graphical Polkit prompts and wallpaper controls in Super+Shift+P are implemented. A new installer now owns config/integration/activation, so a
 future update applies new config keys, assets and components in one pass. Fresh installs get the four NIRU theme wallpaper sets under

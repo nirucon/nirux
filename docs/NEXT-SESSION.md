@@ -4,7 +4,7 @@ Canonical raw URL:
 https://raw.githubusercontent.com/nirucon/nirux/main/docs/NEXT-SESSION.md
 
 This brief is independent of local session memory. **Start with H01.**
-S01/S02, S03, S04, theme/extra wallpapers, the kitty/fish terminal integration and the wallpaper launcher are done in 0.10.39.
+S01/S02, S03, S04, theme/extra wallpapers, the kitty/fish terminal integration and the wallpaper launcher are done in 0.10.40.
 H01 is partially complete: Debian and Arch passed fresh VMs. A fresh Void VM and physical audio/lock/suspend checks remain.
 
 ## Copy-ready prompt
@@ -12,12 +12,12 @@ H01 is partially complete: Debian and Arch passed fresh VMs. A fresh Void VM and
 ```text
 Fortsätt utvecklingen av NIRU-sviten. Läs först aktuella GitHub-filer:
 - https://raw.githubusercontent.com/nirucon/nirux/main/ROADMAP.md
-- https://raw.githubusercontent.com/nirucon/nirux/main/docs/history/CHECKPOINT-0.10.39.md
+- https://raw.githubusercontent.com/nirucon/nirux/main/docs/history/CHECKPOINT-0.10.40.md
 - https://raw.githubusercontent.com/nirucon/nirux/main/docs/REPOSITORIES.md
 
-Utgå från NIRUX 0.10.39:
+Utgå från NIRUX 0.10.40:
 niruwm 0.16.37, nirubar 0.18.17, niruscreensaver 0.8.3,
-nirulock 0.16.10, nirulauncher 0.2.2, nirunotify 0.3.3.
+nirulock 0.16.10, nirulauncher 0.2.3, nirunotify 0.3.3.
 Kontrollera manifest, git-status, GitHub main och senaste fulla CI på nytt.
 Versionslistan är en startpunkt, inte ett skäl att skriva över nyare arbete.
 
@@ -70,9 +70,9 @@ vilka filer du behöver ändra. Fortsätt sedan arbetet.
 | S01 reproduce/fix full CI | DONE | original failure in 39406911647, green 39420180581 |
 | S02 managed Helium + opt-out + sandbox | DONE | 39420180581, [checkpoint](history/CHECKPOINT-0.10.32.md) |
 | W01 theme wallpapers and follow-theme | DONE | [0.10.33 checkpoint](history/CHECKPOINT-0.10.33.md) |
-| W02 kitty/fish terminal integration | DONE | [0.10.39 checkpoint](history/CHECKPOINT-0.10.39.md) |
-| W03 bar theme + working power actions | DONE | [0.10.39 checkpoint](history/CHECKPOINT-0.10.39.md) |
-| W04 wallpaper choices in Super+Shift+P | DONE | [0.10.39 checkpoint](history/CHECKPOINT-0.10.39.md) |
+| W02 kitty/fish terminal integration | DONE | [0.10.40 checkpoint](history/CHECKPOINT-0.10.40.md) |
+| W03 bar theme + working power actions | DONE | [0.10.40 checkpoint](history/CHECKPOINT-0.10.40.md) |
+| W04 wallpaper choices in Super+Shift+P | DONE | [0.10.40 checkpoint](history/CHECKPOINT-0.10.40.md) |
 | S03 target-owned apply | DONE | [0.10.34 checkpoint](history/CHECKPOINT-0.10.34.md) |
 | S04 vanilla runtime audit | DONE | [S04 audit](history/AUDIT-S04-0.10.35.md) |
 | H01 fresh OS/VM acceptance | PARTIAL — start here | Debian/Arch VMs pass; fresh Void VM + physical audio/lock/suspend open |
