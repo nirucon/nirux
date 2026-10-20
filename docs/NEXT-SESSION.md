@@ -22,7 +22,7 @@ Krav:
   orelaterade systemfiler.
 - Ingen bloat: inga nya obligatoriska daemons, GUI-ramverk, tjänster eller repon
   om befintliga komponenter kan lösa uppgiften.
-- Läs roadmapens acceptanskriterier för I09 innan du ändrar kod.
+- Läs roadmapens acceptanskriterier för H02 innan du ändrar kod.
 - Kör relevanta tester: nirux tests/integration.sh, shellcheck, berörda Rust-tester,
   fmt/clippy samt Arch/Debian/Void där det är relevant.
 - Committa, pusha, tagga och publicera varje avslutad checkpoint. Installera på
@@ -31,13 +31,13 @@ Krav:
 
 Börja med att kontrollera git-status i berörda repon och sammanfatta:
 1. vad du verifierat,
-2. din plan för I09,
+2. din plan för H02,
 3. vilka filer som behöver ändras.
 ```
 
 ## Task reminder
 
-**I09:** `niruwm/install.sh` selected old-release bar version must come from that
-release's metadata, not the checkout's `nirubar-version`; align standalone
-version/ownership checks. Test old and current releases from a newer checkout and
-do not overwrite generation contents. Finish its acceptance before H02.
+**H02:** standalone saver/locker prebuilt and source installers, pinned PAM,
+modified-file preservation and failed-install boundaries. All three distro
+mappings plus non-root wrong/correct-password PAM checks. No test may write to
+production `/etc/pam.d`. Finish its acceptance before feature work.

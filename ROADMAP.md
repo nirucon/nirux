@@ -23,11 +23,11 @@ This file is the authoritative **current plan**. The
 
 ## 2. Actual checkpoint
 
-Published NIRUX **0.10.18** pins:
+Published NIRUX **0.10.19** pins:
 
 | Component | Version | Responsibility |
 |---|---|---|
-| niruwm | 0.16.20 | WM, session, niructl, niruidle |
+| niruwm | 0.16.21 | WM, session, niructl, niruidle |
 | nirubar | 0.18.7 | Per-output bars, panels, tray |
 | niruscreensaver | 0.8.1 | Unlocked idle surface |
 | nirulock | 0.16.8 | PAM lock and explicit readiness |
@@ -41,11 +41,12 @@ light and sleep delay inhibition **already exist**. Native notifications are the
 The 2026-10-20 corrections are **published** in NIRUX 0.10.15, niruwm 0.16.20,
 nirubar 0.18.7 and updated installer/docs on the component main branches. NIRUX
 **0.10.16** added the I06 configuration migration; **0.10.17** added the I07
-target-installer staging handoff; **0.10.18** completes owned purge coverage and
-makes missing configured programs fail `doctor`. All three are installed on the
-owner's machines, and the 0.10.18 update exercised the handoff from the installed
-0.10.17 parent. Publication is not physical acceptance: complete H01–H03 before
-treating the release as fully verified.
+target-installer staging handoff; **0.10.18** completed owned purge coverage and
+made missing configured programs fail `doctor`; **0.10.19** pins niruwm 0.16.21
+with the I09 standalone-installer metadata fix. All are installed on the owner's
+machines, and each update exercised the installed parent/update path. Publication
+is not physical acceptance: complete H01–H03 before treating the release as
+fully verified.
 
 ## 3. Status vocabulary and execution rules
 
@@ -74,14 +75,16 @@ Commit/push/tag/release only when explicitly requested by the user.
 | I07 / RELEASED | `nirux/nirux`: forward staging to the verified target installer through a versioned internal handoff so new components install on the **first** update. Provision new shared-library dependencies before running staged components. | Old-installer → synthetic new-component and missing-library fixtures; corrupt assets or provisioning failure retain the old generation. |
 | I08 / RELEASED | `nirux/nirux`: finish owned purge coverage for nirubar config, nirulauncher, nirunotify and saver state; make missing configured programs actionable in doctor. | Normal uninstall keeps config; documented purge covers only owned suite data. Missing configured browser is visible and fails the relevant diagnostic. |
 | I11 / RELEASED | `nirux/nirux`: remove an accidental `cmp` dependency from owned-file comparison; use the existing SHA-256 checks. `nirulock/install.sh` does the same for PAM. | Arch base container runs the full integration without diffutils; suite/PAM files with equal content stay untouched. |
-| I09 / TODO | `niruwm/install.sh`: selected old-release bar version comes from that release's metadata, not checkout `nirubar-version`; align standalone version/ownership checks. | Test old and current releases from a newer checkout; no generation contents overwritten. |
+| I09 / RELEASED | `niruwm/install.sh`: selected old-release bar version comes from that release's metadata, not checkout `nirubar-version`; align standalone version/ownership checks. | Test old and current releases from a newer checkout; no generation contents overwritten. |
 
-**Next implementation task: I09.** I06 is released in NIRUX 0.10.16, I07 in
-0.10.17 and I08 in 0.10.18. The integration suite covers quoted/multiline config
-migration, rejected candidates, symlinks, a synthetic new component on the first
-update, missing shared-library provisioning order, rollback cleanup, normal
-uninstall versus purge, and actionable `doctor` failures on the host, Arch,
-Debian and the three distro mappings. Complete M0/H02 before feature work.
+**Next implementation task: H02.** I06 is released in NIRUX 0.10.16, I07 in
+0.10.17, I08 in 0.10.18 and I09 in niruwm 0.16.21/NIRUX 0.10.19. M0 is complete.
+The integration suite covers quoted/multiline config migration, rejected
+candidates, symlinks, a synthetic new component on the first update, missing
+shared-library provisioning order, rollback cleanup, normal uninstall versus
+purge, actionable `doctor` failures and old-release standalone installation on
+the host, Arch, Debian and the three distro mappings. Complete H02 before feature
+work.
 
 ### M1 — release acceptance on vanilla installations
 
