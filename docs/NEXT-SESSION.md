@@ -9,7 +9,7 @@ Läs först den aktuella planen och kontexten:
 - https://github.com/nirucon/nirux/blob/main/docs/REVIEW-2026-10-20.md
 - https://github.com/nirucon/nirux/blob/main/docs/REPOSITORIES.md
 
-Utgå från publicerad NIRUX 0.10.23 (niruwm 0.16.25, nirubar 0.18.10). Maskinerna
+Utgå från publicerad NIRUX 0.10.24 (niruwm 0.16.26, nirubar 0.18.11). Maskinerna
 niru@void och niru@thinkpad är uppdaterade. Fråga efter SSH-/sudo-uppgifter om de
 behövs; spara dem aldrig i filer, commits eller dokumentation.
 
@@ -23,7 +23,7 @@ Krav:
   orelaterade systemfiler.
 - Ingen bloat: inga nya obligatoriska daemons, GUI-ramverk, tjänster eller repon
   om befintliga komponenter kan lösa uppgiften.
-- Läs roadmapens acceptanskriterier för U03 innan du ändrar kod.
+- Läs roadmapens acceptanskriterier för U04 innan du ändrar kod.
 - Kör relevanta tester: nirux tests/integration.sh, shellcheck, berörda Rust-tester,
   fmt/clippy samt Arch/Debian/Void där det är relevant.
 - Committa, pusha, tagga och publicera varje avslutad checkpoint. Installera på
@@ -32,12 +32,12 @@ Krav:
 
 Börja med att kontrollera git-status i berörda repon och sammanfatta:
 1. vad du verifierat,
-2. din plan för U03,
+2. din plan för U04,
 3. vilka filer som behöver ändras.
 ```
 
 ## Task reminder
 
-**U03:** NIRUBAR explicit media buttons and player selection, audio output/mic
-controls, and deliberate click/scroll mappings. Reading a panel must never change
-playback or mute; disabled actions explain missing providers; helpers stay bounded.
+**U04:** NIRUBAR honest network state and aggregate battery details. Distinguish
+link/IP/connectivity without requiring NetworkManager. Multi-battery fixtures;
+absent estimates stay unavailable rather than showing zero.

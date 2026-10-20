@@ -23,12 +23,12 @@ This file is the authoritative **current plan**. The
 
 ## 2. Actual checkpoint
 
-Published NIRUX **0.10.23** pins:
+Published NIRUX **0.10.24** pins:
 
 | Component | Version | Responsibility |
 |---|---|---|
-| niruwm | 0.16.25 | WM, session, niructl, niruidle |
-| nirubar | 0.18.10 | Per-output bars, panels, tray |
+| niruwm | 0.16.26 | WM, session, niructl, niruidle |
+| nirubar | 0.18.11 | Per-output bars, panels, tray |
 | niruscreensaver | 0.8.1 | Unlocked idle surface |
 | nirulock | 0.16.8 | PAM lock and explicit readiness |
 | nirulauncher | 0.1.1 | Applications and desktop actions |
@@ -46,9 +46,10 @@ made missing configured programs fail `doctor`; **0.10.19** pinned niruwm 0.16.2
 with the I09 standalone-installer metadata fix; **0.10.20** pinned niruwm 0.16.22
 and set the normal arrow root cursor; **0.10.21** added the U01 config contract and
 bounded hardware helpers; **0.10.22** added the U02 responsive bar with priority
-overflow; **0.10.23** fixes the U02 sparse-module clock regression. All are
-installed on the owner's machines, and each update exercised the installed
-parent/update path. H03 physical checks were confirmed by the owner. H01 remains.
+overflow; **0.10.23** fixed the U02 sparse-module clock regression; **0.10.24**
+adds explicit U03 media/audio controls. All are installed on the owner's machines,
+and each update exercised the installed parent/update path. H03 physical checks
+were confirmed by the owner. H01 remains.
 
 ## 3. Status vocabulary and execution rules
 
@@ -79,11 +80,11 @@ Commit/push/tag/release only when explicitly requested by the user.
 | I11 / RELEASED | `nirux/nirux`: remove an accidental `cmp` dependency from owned-file comparison; use the existing SHA-256 checks. `nirulock/install.sh` does the same for PAM. | Arch base container runs the full integration without diffutils; suite/PAM files with equal content stay untouched. |
 | I09 / RELEASED | `niruwm/install.sh`: selected old-release bar version comes from that release's metadata, not checkout `nirubar-version`; align standalone version/ownership checks. | Test old and current releases from a newer checkout; no generation contents overwritten. |
 
-**Next implementation task: U03.** I06–I09, H02, H03, U01 and U02 are complete.
-U02 added priority-aware right-side placement, a clickable `+N` overflow panel and
-stable workspace cells, with 800/1366/1920 and two-output layout tests. H01 remains
-as separate fresh-OS acceptance. U03 is next: explicit media buttons and player
-selection, audio output/mic controls, and deliberate click/scroll mappings.
+**Next implementation task: U04.** I06–I09, H02, H03, U01, U02 and U03 are
+complete. U03 added left-click information that never changes state, right-click
+play/pause or mute, scroll previous/next or volume, middle-click player/mic
+selection, and bounded control helpers. H01 remains as separate fresh-OS
+acceptance. U04 is next: honest network state and aggregate battery details.
 
 ### M1 — release acceptance on vanilla installations
 
@@ -123,7 +124,7 @@ H03 partial verification (2026-10-20):
 |---|---|---|
 | U01 / RELEASED | WM/bar config validation contract; invalid values, hidden modules, unavailable/stale vs zero data; bound/coalesce WM hardware helpers. | Shared valid/invalid fixtures behave consistently; key storms cannot create unlimited children or freeze X. |
 | U02 / RELEASED | Nirubar responsive layout with priorities and an overflow panel; retain stable workspace cells. | 800px, 1366px, 1920px and two-output tests; hidden summaries remain accessible, hitboxes match visible geometry. |
-| U03 | Nirubar explicit media buttons/player selection and audio output/mic controls; deliberate click/scroll mappings. | Reading a panel never changes playback/mute; disabled actions explain missing providers; helpers remain bounded. |
+| U03 / RELEASED | Nirubar explicit media buttons/player selection and audio output/mic controls; deliberate click/scroll mappings. | Reading a panel never changes playback/mute; disabled actions explain missing providers; helpers remain bounded. |
 | U04 | Nirubar honest network state and aggregate battery details. | Distinguish link/IP/connectivity; no mandatory NetworkManager. Multi-battery fixtures; absent estimates stay unavailable. |
 | U05 | Launcher grouped actions, window switching, local recency/favourites and proper text input; lock layout/Caps indication and compose/AltGr review. | XDG desktop precedence and argv parsing preserved; Swedish/US/AltGr tests; no shell interpolation of desktop Exec. |
 | U06 | Saver checked input grabs and output/resize coverage; retire duplicated rendering only where proven useful. | Failed grabs cannot claim success; root resize/hotplug and documented mouse dismissal covered. Retain all locker regressions. |
@@ -147,6 +148,17 @@ that date and clock disappeared on Arch when an empty module left gaps in the
 module indexes; nirubar 0.18.10 maps placements by item slot, with a sparse-index
 regression. Released in nirubar 0.18.10 / niruwm 0.16.25 / NIRUX 0.10.23 and
 installed on both machines; the owner confirmed the clock after the bar restart.
+
+U03 verification (2026-10-21): left click only opens the information panel and
+never changes playback or mute. Media right-click is play/pause, scroll is
+previous/next and middle-click cycles MPRIS players; the selected player is used
+for subsequent reads and commands. Volume right-click toggles output mute, scroll
+changes volume and middle-click toggles the microphone. Missing `playerctl`,
+`wpctl` or ALSA is explained in the panel. Controls run through a bounded helper
+pool that coalesces an already-running control and caps concurrent children.
+Fake-provider Xvfb tests confirmed no action on left click, the exact commands for
+right/scroll, and player-aware `-p` commands. Released in nirubar 0.18.11 /
+niruwm 0.16.26 / NIRUX 0.10.24 and installed on both machines.
 
 ### M3 — coherent appearance and laptop behaviour
 
