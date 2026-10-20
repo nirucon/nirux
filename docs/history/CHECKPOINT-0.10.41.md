@@ -62,4 +62,21 @@ monitors, bar and key bindings. The mouse controls and autostart semantics are
 documented next to the settings they affect. NIRUX adds the autostart section to
 existing configs during migration.
 
-Full CI/release/host deployment results are added after publication.
+## Evidence
+
+- NIRUWM 0.16.40 unit tests, fmt and clippy passed; the mouse geometry tests
+  cover clamping, top-left resize and minimum size. A real Xvfb/xdotool run
+  moved a tiled xclock into floating geometry and resized it from the
+  bottom-right corner.
+- The autostart session test used two marker scripts on workspaces 2 and 1.
+  The workspace-2 marker recorded `tag=2`, the workspace-1 marker recorded
+  `tag=1`, and the final active workspace was 1.
+- NIRUX CI [39473046652](https://github.com/nirucon/nirux/actions/runs/39473046652)
+  passed check, Arch, Debian and Void. Release v0.10.41 published.
+- `niru@void` and `niru@thinkpad` run NIRUX 0.10.41 / NIRUWM 0.16.40 /
+  NIRUBAR 0.18.18 / NIRULAUNCHER 0.2.3. Both received the autostart config
+  section with `enabled = false` by migration.
+- The active sessions still ran older WM processes during deployment, so the
+  new mouse controls and session-driven autostart activate at the next
+  logout/login. `niructl autostart` already returns successfully against the
+  active displays. No session was logged out.
