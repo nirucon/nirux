@@ -22,7 +22,7 @@ This file is the authoritative **current plan**. The
 
 ## 2. Actual checkpoint
 
-Published NIRUX **0.10.13** pins:
+Published NIRUX **0.10.14** pins:
 
 | Component | Version | Responsibility |
 |---|---|---|
@@ -37,7 +37,7 @@ Launcher, notifier, weather, native desktop actions, manual brightness/night
 light and sleep delay inhibition **already exist**. Native notifications are the
 `auto` preference; Dunst is fallback. Do not rebuild these as new projects.
 
-The 2026-10-20 corrections are **published** in NIRUX 0.10.13, niruwm 0.16.20,
+The 2026-10-20 corrections are **published** in NIRUX 0.10.14, niruwm 0.16.20,
 nirubar 0.18.7 and updated installer/docs on the component main branches. They are
 **not yet deployed** to the owner's running machines. Publication is not physical
 acceptance: complete H01–H03 before treating the release as fully verified.
@@ -68,6 +68,7 @@ Commit/push/tag/release only when explicitly requested by the user.
 | I06 / TODO | `nirux/nirux`: define supported migration syntax; test quoted keys, multiline strings/arrays, duplicate tables and interrupted writes. Stop rather than damage unsupported input; use a validated staged candidate before activation. | Original file and active generation survive every rejection; candidate parses in both components. No mandatory Python/TOML runtime just for migration. |
 | I07 / TODO | `nirux/nirux`: forward staging to the verified target installer through a versioned internal handoff so new components install on the **first** update. Provision new shared-library dependencies before running staged components. | Old-installer → synthetic new-component and missing-library fixtures; corrupt assets or provisioning failure retain the old generation. |
 | I08 / TODO | `nirux/nirux`: finish owned purge coverage for nirubar config, nirulauncher, nirunotify and saver state; make missing configured programs actionable in doctor. | Normal uninstall keeps config; documented purge covers only owned suite data. Missing configured browser is visible and fails the relevant diagnostic. |
+| I11 / RELEASED | `nirux/nirux`: remove an accidental `cmp` dependency from owned-file comparison; use the existing SHA-256 checks. `nirulock/install.sh` does the same for PAM. | Arch base container runs the full integration without diffutils; suite/PAM files with equal content stay untouched. |
 | I09 / TODO | `niruwm/install.sh`: selected old-release bar version comes from that release's metadata, not checkout `nirubar-version`; align standalone version/ownership checks. | Test old and current releases from a newer checkout; no generation contents overwritten. |
 
 **Next implementation task: I06**, then I07. Complete M0/H02 before feature work.
@@ -79,7 +80,7 @@ Commit/push/tag/release only when explicitly requested by the user.
 | H01 / TODO | Fresh OS + empty normal-user home on Void/Arch/Debian; startx, then existing/selected display-manager paths. | Real release install → status/doctor → login → terminal/launcher/browser configuration, screenshots, icons, audio, lock/unlock → update → rollback → uninstall. Record OS release, manifest and exact results. |
 | H02 / TODO | Standalone saver/locker prebuilt and source installers, pinned PAM, modified-file preservation and failed-install boundaries. | All three distro mappings plus non-root wrong/correct-password PAM checks. No test writes to production `/etc/pam.d`. |
 | H03 / TODO | Physical Void + ThinkPad: lid close, suspend/resume, external output attach/remove, lock during topology changes, native notification privacy. | Never suspend before ready lock; no uncovered pixels; workspace/output identities survive; notifier cleans up on logout. Record physical separately from Xvfb. |
-| H04 / IN_PROGRESS | Compile/publish changed components, verify assets/checksums, then update NIRUX pins and run full distro CI. Components and NIRUX 0.10.13 published 2026-10-20; finish asset/CI verification and one install/update check. | One install/update reaches the intended complete generation. Immutable tags/assets; never relabel published releases. |
+| H04 / IN_PROGRESS | Compile/publish changed components, verify assets/checksums, then update NIRUX pins and run full distro CI. Components and NIRUX 0.10.14 published 2026-10-20; finish asset/CI verification and one install/update check. | One install/update reaches the intended complete generation. Immutable tags/assets; never relabel published releases. |
 
 Available hosts: `niru@void` and `niru@thinkpad`. Existing installs are **not clean
 OS evidence**. Debian currently has container evidence, no physical host supplied.

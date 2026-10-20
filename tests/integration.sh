@@ -81,7 +81,7 @@ unset -f package_present
 # Arch missing-only provisioning must not create a partial upgrade by syncing
 # databases without upgrading the installed system.
 (
-  OS=arch
+  export OS=arch
   pacman() { printf '%s\n' "$*"; }
   install_packages kitty
 ) > "$TEST/arch-packages.log"
@@ -113,7 +113,7 @@ add_missing_top_key "$config" enabled true
 add_missing_key "$config" bar scale '"bar-only"'
 add_missing_sections "$config" "$SOURCE/config.example.toml"
 add_missing_key "$config" monitors workspaces 9
-cmp -s "$config" "$TEST/once.toml" || fail 'config migration is not idempotent'
+[ "$(sha256sum "$config" | cut -d' ' -f1)" = "$(sha256sum "$TEST/once.toml" | cut -d' ' -f1)" ] || fail 'config migration is not idempotent'
 [ "$(stat -c %a "$config")" = 600 ] || fail 'config migration changed permissions'
 grep -qx 'enabled = true' "$config" || fail 'nested key suppressed root default'
 grep -qx 'scale = "bar-only"' "$config" || fail 'other table suppressed missing key'
