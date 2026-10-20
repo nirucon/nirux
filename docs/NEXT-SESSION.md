@@ -9,7 +9,7 @@ Läs först den aktuella planen och kontexten:
 - https://github.com/nirucon/nirux/blob/main/docs/REVIEW-2026-10-20.md
 - https://github.com/nirucon/nirux/blob/main/docs/REPOSITORIES.md
 
-Utgå från publicerad NIRUX 0.10.27 (niruwm 0.16.27, nirubar 0.18.12). Maskinerna
+Utgå från publicerad NIRUX 0.10.28 (niruwm 0.16.28, nirubar 0.18.13). Maskinerna
 niru@void och niru@thinkpad är uppdaterade. Fråga efter SSH-/sudo-uppgifter om de
 behövs; spara dem aldrig i filer, commits eller dokumentation.
 
@@ -23,7 +23,7 @@ Krav:
   orelaterade systemfiler.
 - Ingen bloat: inga nya obligatoriska daemons, GUI-ramverk, tjänster eller repon
   om befintliga komponenter kan lösa uppgiften.
-- Läs roadmapens acceptanskriterier för A01 innan du ändrar kod.
+- Läs roadmapens acceptanskriterier för A02 innan du ändrar kod.
 - Kör relevanta tester: nirux tests/integration.sh, shellcheck, berörda Rust-tester,
   fmt/clippy samt Arch/Debian/Void där det är relevant.
 - Committa, pusha, tagga och publicera varje avslutad checkpoint. Installera på
@@ -32,13 +32,12 @@ Krav:
 
 Börja med att kontrollera git-status i berörda repon och sammanfatta:
 1. vad du verifierat,
-2. din plan för A01,
+2. din plan för A02,
 3. vilka filer som behöver ändras.
 ```
 
 ## Task reminder
 
-**A01:** Small versioned XDG appearance contract with semantic colours, font,
-spacing, focus and reduced motion. Four built-in themes plus a custom fixture
-across WM, bar, launcher, notifier, lock and saver; invalid reload keeps the
-working state; lock stays opaque black.
+**A02:** Night-light fixed/solar schedules and resume/hotplug reapply;
+brightness device/step selection. Preserve offline manual mode, do not require
+GeoClue, keep one provider owner, and diagnose physical permissions.

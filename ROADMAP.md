@@ -23,16 +23,16 @@ This file is the authoritative **current plan**. The
 
 ## 2. Actual checkpoint
 
-Published NIRUX **0.10.27** pins:
+Published NIRUX **0.10.28** pins:
 
 | Component | Version | Responsibility |
 |---|---|---|
-| niruwm | 0.16.27 | WM, session, niructl, niruidle |
-| nirubar | 0.18.12 | Per-output bars, panels, tray |
-| niruscreensaver | 0.8.2 | Unlocked idle surface |
-| nirulock | 0.16.9 | PAM lock and explicit readiness |
-| nirulauncher | 0.2.0 | Applications and desktop actions |
-| nirunotify | 0.3.2 | Notifications, actions, DND, bounded history/OSD |
+| niruwm | 0.16.28 | WM, session, niructl, niruidle |
+| nirubar | 0.18.13 | Per-output bars, panels, tray |
+| niruscreensaver | 0.8.3 | Unlocked idle surface |
+| nirulock | 0.16.10 | PAM lock and explicit readiness |
+| nirulauncher | 0.2.1 | Applications and desktop actions |
+| nirunotify | 0.3.3 | Notifications, actions, DND, bounded history/OSD |
 
 Launcher, notifier, weather, native desktop actions, manual brightness/night
 light and sleep delay inhibition **already exist**. Native notifications are the
@@ -49,9 +49,10 @@ bounded hardware helpers; **0.10.22** added the U02 responsive bar with priority
 overflow; **0.10.23** fixed the U02 sparse-module clock regression; **0.10.24**
 added explicit U03 media/audio controls; **0.10.25** added the U04 network and
 battery state; **0.10.26** added U05 launcher and lock improvements; **0.10.27**
-adds U06 checked saver grabs and full resize coverage. All are installed on the
-owner's machines, and each update exercised the installed parent/update path.
-H03 physical checks were confirmed by the owner. H01 remains.
+added U06 checked saver grabs and full resize coverage; **0.10.28** adds the
+suite-wide A01 appearance contract. All are installed on the owner's machines,
+and each update exercised the installed parent/update path. H03 physical checks
+were confirmed by the owner. H01 remains.
 
 ## 3. Status vocabulary and execution rules
 
@@ -82,12 +83,12 @@ Commit/push/tag/release only when explicitly requested by the user.
 | I11 / RELEASED | `nirux/nirux`: remove an accidental `cmp` dependency from owned-file comparison; use the existing SHA-256 checks. `nirulock/install.sh` does the same for PAM. | Arch base container runs the full integration without diffutils; suite/PAM files with equal content stay untouched. |
 | I09 / RELEASED | `niruwm/install.sh`: selected old-release bar version comes from that release's metadata, not checkout `nirubar-version`; align standalone version/ownership checks. | Test old and current releases from a newer checkout; no generation contents overwritten. |
 
-**Next implementation task: A01.** I06–I09, H02, H03 and U01–U06 are complete.
-U06 made the saver verify its keyboard/pointer grabs, follow root resize and output
-hotplug with a fresh backing pixmap, dismiss on mouse as well as key, and keep
-the two-copy rendering because it is still independently useful. H01 remains as
-separate fresh-OS acceptance. A01 is next: the versioned XDG appearance contract
-across WM, bar, launcher, notifier, lock and saver.
+**Next implementation task: A02.** I06–I09, H02, H03, U01–U06 and A01 are
+complete. A01 gives all six components one schema-1 appearance file for semantic
+colours, font, spacing, focus and reduced motion, with user theme files taking
+precedence and invalid files ignored. H01 remains as separate fresh-OS acceptance.
+A02 is next: night-light fixed/solar schedules and resume/hotplug reapply, plus
+brightness device/step selection.
 
 ### M1 — release acceptance on vanilla installations
 
@@ -195,11 +196,23 @@ dismissal, repeated exposures without font reloads, and a second saver failing
 while the first owns the grabs. Released in niruscreensaver 0.8.2 / NIRUX 0.10.27
 and installed on both machines.
 
+A01 verification (2026-10-21): `~/.config/niruwm/appearance.toml` (schema 1)
+provides semantic colours, font size/path, spacing, focus width and reduced
+motion. NIRUWM, NIRUBAR, NIRULAUNCHER, NIRUNOTIFY, NIRULOCK and NIRUSCREENSAVER
+read it; user theme files take precedence and invalid schema/colour files are
+ignored with a diagnostic while the working theme remains. Lock and saver keep
+opaque black backgrounds. `nirux/tests/appearance-contract.sh` checks all four
+built-in themes, a custom theme and two invalid contracts against all six real
+binaries. Released in niruwm 0.16.28 / nirubar 0.18.13 / nirulauncher 0.2.1 /
+nirunotify 0.3.3 / nirulock 0.16.10 / niruscreensaver 0.8.3 / NIRUX 0.10.28.
+Existing hosts needed a second update because `install_config` still runs from
+the installed script; both machines now have `appearance.toml`.
+
 ### M3 — coherent appearance and laptop behaviour
 
 | ID | Work | Acceptance |
 |---|---|---|
-| A01 | Small versioned XDG appearance contract: semantic colours, font, spacing, focus, reduced motion. Existing user theme files take precedence. | Four built-in themes + custom fixture across WM/bar/launcher/notifier/lock/saver; invalid reload keeps the working state. Lock remains opaque black. |
+| A01 / RELEASED | Small versioned XDG appearance contract: semantic colours, font, spacing, focus, reduced motion. Existing user theme files take precedence. | Four built-in themes + custom fixture across WM/bar/launcher/notifier/lock/saver; invalid reload keeps the working state. Lock remains opaque black. |
 | A02 | Night-light fixed/solar schedules and resume/hotplug reapply; brightness device/step selection. | Offline manual mode preserved; no GeoClue requirement; one provider owner; physical permissions diagnosed. |
 | A03 | Optional weather/sun compact cell and daylight/precipitation timeline using existing cache. | Offline/stale/polar/explicit-0,0 fixtures; no extra polling daemon; no synchronous HTTP in the UI loop. |
 | A04 | Optional notification images/hints after bounded decoding and protocol tests. | Advertise only implemented capabilities; image/queue/memory limits; lock privacy and action signals remain correct. |
