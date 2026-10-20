@@ -23,12 +23,12 @@ This file is the authoritative **current plan**. The
 
 ## 2. Actual checkpoint
 
-Published NIRUX **0.10.22** pins:
+Published NIRUX **0.10.23** pins:
 
 | Component | Version | Responsibility |
 |---|---|---|
-| niruwm | 0.16.24 | WM, session, niructl, niruidle |
-| nirubar | 0.18.9 | Per-output bars, panels, tray |
+| niruwm | 0.16.25 | WM, session, niructl, niruidle |
+| nirubar | 0.18.10 | Per-output bars, panels, tray |
 | niruscreensaver | 0.8.1 | Unlocked idle surface |
 | nirulock | 0.16.8 | PAM lock and explicit readiness |
 | nirulauncher | 0.1.1 | Applications and desktop actions |
@@ -45,10 +45,10 @@ target-installer staging handoff; **0.10.18** completed owned purge coverage and
 made missing configured programs fail `doctor`; **0.10.19** pinned niruwm 0.16.21
 with the I09 standalone-installer metadata fix; **0.10.20** pinned niruwm 0.16.22
 and set the normal arrow root cursor; **0.10.21** added the U01 config contract and
-bounded hardware helpers; **0.10.22** adds the U02 responsive bar with priority
-overflow. All are installed on the owner's machines, and each update exercised
-the installed parent/update path. H03 physical checks were confirmed by the owner.
-H01 remains.
+bounded hardware helpers; **0.10.22** added the U02 responsive bar with priority
+overflow; **0.10.23** fixes the U02 sparse-module clock regression. All are
+installed on the owner's machines, and each update exercised the installed
+parent/update path. H03 physical checks were confirmed by the owner. H01 remains.
 
 ## 3. Status vocabulary and execution rules
 
@@ -142,8 +142,11 @@ and fits optional modules by priority; the lowest-priority modules collapse into
 a clickable `+N` panel whose summaries remain available. Layout tests cover
 800/1366/1920 px, independent two-output widths, non-overlapping hit boxes and
 the overflow position. The release workflow renders the bar at all three widths.
-An Xvfb click test opened and Escape closed the overflow panel. Released in
-nirubar 0.18.9 / niruwm 0.16.24 / NIRUX 0.10.22 and installed on both machines.
+An Xvfb click test opened and Escape closed the overflow panel. The owner found
+that date and clock disappeared on Arch when an empty module left gaps in the
+module indexes; nirubar 0.18.10 maps placements by item slot, with a sparse-index
+regression. Released in nirubar 0.18.10 / niruwm 0.16.25 / NIRUX 0.10.23 and
+installed on both machines; the owner confirmed the clock after the bar restart.
 
 ### M3 — coherent appearance and laptop behaviour
 

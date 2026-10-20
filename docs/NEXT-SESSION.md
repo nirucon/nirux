@@ -9,7 +9,7 @@ Läs först den aktuella planen och kontexten:
 - https://github.com/nirucon/nirux/blob/main/docs/REVIEW-2026-10-20.md
 - https://github.com/nirucon/nirux/blob/main/docs/REPOSITORIES.md
 
-Utgå från publicerad NIRUX 0.10.22 (niruwm 0.16.24, nirubar 0.18.9). Maskinerna
+Utgå från publicerad NIRUX 0.10.23 (niruwm 0.16.25, nirubar 0.18.10). Maskinerna
 niru@void och niru@thinkpad är uppdaterade. Fråga efter SSH-/sudo-uppgifter om de
 behövs; spara dem aldrig i filer, commits eller dokumentation.
 
