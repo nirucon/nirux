@@ -92,12 +92,28 @@ need the owner's machines available.
 |---|---|---|
 | H01 / TODO | Fresh OS + empty normal-user home on Void/Arch/Debian; startx, then existing/selected display-manager paths. | Real release install → status/doctor → login → terminal/launcher/browser configuration, screenshots, icons, audio, lock/unlock → update → rollback → uninstall. Record OS release, manifest and exact results. |
 | H02 / RELEASED | Standalone saver/locker prebuilt and source installers, pinned PAM, modified-file preservation and failed-install boundaries. | All three distro mappings plus non-root wrong/correct-password PAM checks. No test writes to production `/etc/pam.d`. |
-| H03 / TODO | Physical Void + ThinkPad: lid close, suspend/resume, external output attach/remove, lock during topology changes, native notification privacy. | Never suspend before ready lock; no uncovered pixels; workspace/output identities survive; notifier cleans up on logout. Record physical separately from Xvfb. |
+| H03 / IN_PROGRESS | Physical Void + ThinkPad: lid close, suspend/resume, external output attach/remove, lock during topology changes, native notification privacy. | Never suspend before ready lock; no uncovered pixels; workspace/output identities survive; notifier cleans up on logout. Record physical separately from Xvfb. |
 | H04 / RELEASED | Compile/publish changed components, verify assets/checksums, then update NIRUX pins and run full distro CI. Components and NIRUX 0.10.15 published 2026-10-20; finish asset/CI verification and one install/update check. | One install/update reaches the intended complete generation. Immutable tags/assets; never relabel published releases. |
 
 Available hosts: `niru@void` and `niru@thinkpad`. Existing installs are **not clean
 OS evidence**. Debian currently has container evidence, no physical host supplied.
 Never force an active desktop to log out for acceptance testing.
+
+H03 partial verification (2026-10-20):
+
+- **Void, real X session:** lock covered the full 1920x1080 root; RTC-assisted
+  suspend/resume kept Xorg and the lock alive with `_NIRU_LOCK_READY` and full
+  coverage after resume. A locked mode change to 1600x900 resized the lock and
+  restored cleanly, then returned to 1920x1080. The running session was still
+  niruwm 0.16.19, so the monitor metadata during a mode change must be rechecked
+  after logout/login on the installed 0.16.21.
+- **ThinkPad, current 0.16.21 on isolated Xvfb:** lock covered the full
+  1280x800 root. Native `nirunotify` kept a notification out of the lock (history
+  only). Root resize to 800x600 resized the lock and restored. An unlocked
+  session suspended via RTC/systemctl became locked before sleep and was still
+  ready with full coverage after resume. Logout killed the notifier, WM and bar.
+- **Remaining physical steps:** lid close/open and external output attach/remove.
+  These need the owner at the machines; they are not claimed as verified.
 
 ### M2 — reliable and useful controls
 

@@ -9,12 +9,15 @@ Läs först den aktuella planen och kontexten:
 - https://github.com/nirucon/nirux/blob/main/docs/REVIEW-2026-10-20.md
 - https://github.com/nirucon/nirux/blob/main/docs/REPOSITORIES.md
 
-Utgå från publicerad NIRUX 0.10.16 (niruwm 0.16.20, nirubar 0.18.7). Maskinerna
+Utgå från publicerad NIRUX 0.10.19 (niruwm 0.16.21, nirubar 0.18.7). Maskinerna
 niru@void och niru@thinkpad är uppdaterade. Fråga efter SSH-/sudo-uppgifter om de
 behövs; spara dem aldrig i filer, commits eller dokumentation.
 
-Fortsätt med roadmapens nästa uppgift, I07. Arbeta i små checkpoints och visa
-evidens.
+H03 är IN_PROGRESS: suspend/resume, lock-cover, native notification privacy,
+locked resize och logout-cleanup är verifierade. Lid close och fysisk extern
+skärm återstår och kräver att användaren är vid maskinerna. Slutför dessa när de
+är tillgängliga; fortsätt annars med U01 (WM/bar config validation contract).
+Arbeta i små checkpoints och visa evidens.
 
 Krav:
 - Stöd vanilla Void glibc, Debian och Arch Linux; x86_64/glibc är nuvarande release.
@@ -22,7 +25,7 @@ Krav:
   orelaterade systemfiler.
 - Ingen bloat: inga nya obligatoriska daemons, GUI-ramverk, tjänster eller repon
   om befintliga komponenter kan lösa uppgiften.
-- Läs roadmapens acceptanskriterier för H03 innan du ändrar kod.
+- Läs roadmapens acceptanskriterier för H03/U01 innan du ändrar kod.
 - Kör relevanta tester: nirux tests/integration.sh, shellcheck, berörda Rust-tester,
   fmt/clippy samt Arch/Debian/Void där det är relevant.
 - Committa, pusha, tagga och publicera varje avslutad checkpoint. Installera på
@@ -31,14 +34,13 @@ Krav:
 
 Börja med att kontrollera git-status i berörda repon och sammanfatta:
 1. vad du verifierat,
-2. din plan för H03,
+2. din plan för H03-resten eller U01,
 3. vilka filer som behöver ändras.
 ```
 
 ## Task reminder
 
-**H03:** physical Void + ThinkPad: lid close, suspend/resume, external output
-attach/remove, lock during topology changes, native notification privacy. Never
-suspend before a ready lock; no uncovered pixels; workspace/output identities
-survive; notifier cleans up on logout. Record physical results separately from
-Xvfb.
+**H03 remaining:** lid close/open on ThinkPad and external output attach/remove
+on Void. Do not claim these until performed physically. If the owner is not at
+the machines, proceed with **U01**: WM/bar config validation contract, invalid
+values, hidden modules, stale vs zero data, and bounded hardware helpers.
