@@ -1,6 +1,6 @@
 # Installation and maintenance
 
-**Verified-state note, 2026-10-20:** 0.10.31 implements the managed Helium
+**Verified-state note, 2026-10-20:** 0.10.32 implements the managed Helium
 option and the full distro CI now covers real-release install, doctor,
 config contract, startx and a normal-user sandboxed Helium launch. Containers
 are supporting evidence, not a fresh physical OS certification. S03, S04 and
@@ -116,7 +116,7 @@ installer cannot update itself. After that first migration the installed
 
 ```sh
 nirux update
-nirux update --release 0.10.31
+nirux update --release 0.10.32
 nirux rollback
 ```
 

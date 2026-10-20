@@ -4,7 +4,7 @@ Canonical raw URL:
 https://raw.githubusercontent.com/nirucon/nirux/main/docs/NEXT-SESSION.md
 
 This brief is independent of local session memory. **Start with S03.**
-S01/S02 are implemented in 0.10.31 and the full three-distro CI matrix is green;
+S01/S02 are implemented in 0.10.32 and the full three-distro CI matrix is green;
 physical H01 acceptance and the S04 runtime audit are still open.
 
 ## Copy-ready prompt
@@ -12,10 +12,10 @@ physical H01 acceptance and the S04 runtime audit are still open.
 ```text
 Fortsätt utvecklingen av NIRU-sviten. Läs först aktuella GitHub-filer:
 - https://raw.githubusercontent.com/nirucon/nirux/main/ROADMAP.md
-- https://raw.githubusercontent.com/nirucon/nirux/main/docs/history/CHECKPOINT-0.10.31.md
+- https://raw.githubusercontent.com/nirucon/nirux/main/docs/history/CHECKPOINT-0.10.32.md
 - https://raw.githubusercontent.com/nirucon/nirux/main/docs/REPOSITORIES.md
 
-Utgå från NIRUX 0.10.31:
+Utgå från NIRUX 0.10.32:
 niruwm 0.16.30, nirubar 0.18.15, niruscreensaver 0.8.3,
 nirulock 0.16.10, nirulauncher 0.2.1, nirunotify 0.3.3.
 Kontrollera manifest, git-status, GitHub main och senaste fulla CI på nytt.
@@ -68,10 +68,10 @@ vilka filer du behöver ändra. Fortsätt sedan arbetet.
 | Task | State | Evidence |
 |---|---|---|
 | S01 reproduce/fix full CI | DONE | original failure in 39406911647, green 39420180581 |
-| S02 managed Helium + opt-out + sandbox | DONE | 39420180581, [checkpoint](history/CHECKPOINT-0.10.31.md) |
+| S02 managed Helium + opt-out + sandbox | DONE | 39420180581, [checkpoint](history/CHECKPOINT-0.10.32.md) |
 | S03 target-installer handoff | TODO — start here | roadmap acceptance |
 | S04 vanilla runtime audit | TODO | roadmap acceptance |
 | H01 fresh OS/VM acceptance | TODO | physical evidence still required |
 
-0.10.31 also added the full distro matrix to the normal CI workflow. A green
+0.10.32 also added the full distro matrix to the normal CI workflow. A green
 release workflow alone is not proof of the distro matrix; check both.

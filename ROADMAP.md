@@ -1,12 +1,12 @@
 # NIRU desktop — current roadmap and restart handoff
 
-Updated **2026-10-20**, checked against **NIRUX 0.10.31**.
+Updated **2026-10-20**, checked against **NIRUX 0.10.32**.
 
 - **Start here after restarting OpenCode:** [NEXT-SESSION.md](docs/NEXT-SESSION.md)
 - **Evidence and open defects:** [restart review](docs/REVIEW-2026-10-20-RESTART.md)
 - **Repositories:** [inventory](docs/REPOSITORIES.md)
 - **Previous work:** [delivery history through 0.10.30](docs/history/ROADMAP-0.10.30.md)
-- **Current checkpoint evidence:** [0.10.31 Helium and full CI](docs/history/CHECKPOINT-0.10.31.md)
+- **Current checkpoint evidence:** [0.10.32 Helium and full CI](docs/history/CHECKPOINT-0.10.32.md)
 
 ## 1. Product contract
 
@@ -31,7 +31,7 @@ drivers/firmware must be documented separately from suite provisioning.
 
 | Repository | Pinned release | Responsibility |
 |---|---|---|
-| nirux | 0.10.31 | Packages, generations, installation, integration, managed Helium |
+| nirux | 0.10.32 | Packages, generations, installation, integration, managed Helium |
 | niruwm | 0.16.30 | WM, session, niructl, niruidle |
 | nirubar | 0.18.15 | Per-output bar, tray, panels, weather |
 | niruscreensaver | 0.8.3 | Unlocked idle surface |
@@ -41,9 +41,9 @@ drivers/firmware must be documented separately from suite provisioning.
 
 All listed releases/assets were found on GitHub. Previous sessions reported
 installation of 0.10.30 on `niru@void` and `niru@thinkpad` (Arch); those hosts
-still need the 0.10.31 deployment check.
+still need the 0.10.32 deployment check.
 
-**S01 and S02 are implemented in 0.10.31. The full CI matrix is green.**
+**S01 and S02 are implemented in 0.10.32. The full CI matrix is green.**
 [Run 39420180581](https://github.com/nirucon/nirux/actions/runs/39420180581)
 passes Arch, Debian Bookworm and Void glibc, including real pinned releases,
 doctor, config contract, startx and a normal-user Helium launch with the
@@ -69,7 +69,7 @@ environment, release/deployment status, remaining limits and next task.
 | ID / status | Exact next work | Acceptance |
 |---|---|---|
 | S01 / DONE | Reproduced the 0.10.30 failure: all three distros stopped at doctor with `missing configured brave`; config-contract/startx were not reached. Fixed by the S02 browser policy. Evidence: CI run 39420180581. | New full CI run passes Arch, Debian Bookworm and Void glibc; complete logs retained. |
-| S02 / DONE | Managed Helium 0.19.4.1 with recorded SHA-256, runtime dependencies, owned desktop entry, persistent `--browser helium|none|keep` policy, actionable status/doctor and owned removal. Evidence: run 39420180581 and [checkpoint](docs/history/CHECKPOINT-0.10.31.md). | Helium selected: empty-home browser install launches as a normal user with sandbox enabled. Opt-out survives updates. Corrupt download, update, rollback and owned uninstall covered by regressions. No `--no-sandbox` path. |
+| S02 / DONE | Managed Helium 0.19.4.1 with recorded SHA-256, runtime dependencies, owned desktop entry, persistent `--browser helium|none|keep` policy, actionable status/doctor and owned removal. Evidence: run 39420180581 and [checkpoint](docs/history/CHECKPOINT-0.10.32.md). | Helium selected: empty-home browser install launches as a normal user with sandbox enabled. Opt-out survives updates. Corrupt download, update, rollback and owned uninstall covered by regressions. No `--no-sandbox` path. |
 | S03 / TODO — **START HERE** | Complete target-installer handoff beyond binary staging. Current `install_config` and activation still execute in the old caller. New appearance/config changes previously required a second update. | A genuinely older installer updates once to a synthetic target with a new asset/config key/program; the target owns config/integration/activation semantics under a versioned protocol. Failures preserve original config and active generation. |
 | S04 / TODO | Recheck the complete vanilla dependency/runtime matrix: X11/input/fonts/cursors, audio, PAM, session bus, optional DM, screenshots and configured commands. Include Helium runtime and sandbox dependencies. | No manual suite-related package fixes on any supported distro. Record package versions and actual normal-user runtime, not only successful package lookup. |
 | H01 / TODO | Fresh OS/VM + empty normal-user home on all three distros, then upgrade from the published baseline. | Real released install → status/doctor → startx/login → apps/browser/audio/screenshot/lock → update once → rollback → uninstall/purge. Test existing DM separately. Containers/Xvfb are supporting evidence, not fresh physical OS evidence. |

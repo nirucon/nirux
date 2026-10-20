@@ -2,7 +2,7 @@
 # NIRUX: install a complete X11 desktop, or maintain an existing installation.
 set -eu
 
-VERSION=0.10.31
+VERSION=0.10.32
 PREFIX=${NIRUX_PREFIX:-$HOME/.local}
 BIN=$PREFIX/bin
 STATE=$PREFIX/share/nirux
@@ -599,6 +599,23 @@ install_appearance() {
   return 0
 }
 
+browser_available() {
+  command -v "$1" >/dev/null 2>&1 || [ -x "$BIN/$1" ]
+}
+upgrade_obsolete_default_browser() {
+  [ "${BROWSER_EFFECTIVE:-keep}" = helium ] || return 0
+  browser_available brave && return 0
+  grep -qx 'browser = \["brave"\]' "$1" || return 0
+  mig_mode=$(stat -c %a "$1") || die "could not read permissions for $1"
+  mig_tmp=$(mktemp "$1.nirux-browser.XXXXXX") || die "could not stage $1"
+  if awk '$0 == "browser = [\"brave\"]" {print "browser = [\"helium\"]"; next} {print}' "$1" > "$mig_tmp" &&
+     chmod "$mig_mode" "$mig_tmp" && mv -f "$mig_tmp" "$1"; then
+    say 'Updated the obsolete default browser from brave to helium; custom selections are unchanged.'
+  else
+    rm -f "$mig_tmp"
+    die "could not update the default browser in $1; original kept"
+  fi
+}
 fresh_config_source() {
   if [ "${BROWSER_EFFECTIVE:-keep}" = none ]; then
     awk '$0 == "browser = [\"helium\"]" {print "browser = []"; next} {print}' "$1"
@@ -661,6 +678,7 @@ install_config() {
   add_missing_key "$cfg_candidate" wallpaper files "[]"
   add_missing_key "$cfg_candidate" wallpaper shuffle_on_start true
   add_missing_key "$cfg_candidate" monitors workspaces 9
+  upgrade_obsolete_default_browser "$cfg_candidate"
   cfg_after=$(sha256sum "$cfg_candidate" | cut -d ' ' -f1)
   if [ "$cfg_before" = "$cfg_after" ]; then
     rm -f "$cfg_candidate"; CONFIG_CANDIDATE=

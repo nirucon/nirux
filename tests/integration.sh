@@ -576,10 +576,20 @@ browser_remove_managed
 [ ! -e "$BIN/helium" ] || fail 'owned browser link survived opt-out removal'
 [ ! -e "$desktop" ] || fail 'owned browser desktop entry survived opt-out removal'
 [ "$(cat "$XDG_CONFIG_HOME/net.imput.helium/Preferences")" = 'keep my profile' ] || fail 'browser profile was removed'
+mkdir -p "$browser_test/migrate"
+printf 'theme = "niru-noir"\nbrowser = ["brave"]\n' > "$browser_test/migrate/brave.toml"
+# shellcheck disable=SC2034 # read by upgrade_obsolete_default_browser in the sourced installer
+BROWSER_EFFECTIVE=helium
+browser_available() { return 1; }
+upgrade_obsolete_default_browser "$browser_test/migrate/brave.toml"
+grep -qx 'browser = \["helium"\]' "$browser_test/migrate/brave.toml" || fail 'obsolete default brave browser was not migrated'
+printf 'theme = "niru-noir"\nbrowser = ["firefox"]\n' > "$browser_test/migrate/custom.toml"
+upgrade_obsolete_default_browser "$browser_test/migrate/custom.toml"
+grep -qx 'browser = \["firefox"\]' "$browser_test/migrate/custom.toml" || fail 'custom browser selection was overwritten'
 # shellcheck disable=SC2034 # read by fresh_config_source in the sourced installer
 BROWSER_EFFECTIVE=none
 fresh_config_source "$SOURCE/config.example.toml" | grep -qx 'browser = \[\]' || fail 'fresh opt-out config kept the Helium default'
 # shellcheck disable=SC2034 # read by fresh_config_source in the sourced installer
 BROWSER_EFFECTIVE=helium
 fresh_config_source "$SOURCE/config.example.toml" | grep -qx 'browser = \["helium"\]' || fail 'fresh default config does not select Helium'
-say 'PASS: install/update/rollback/purge on all three distro mappings, status purity, checksum failure, PAM includes, managed Helium policy'
+say 'PASS: install/update/rollback/purge on all three distro mappings, status purity, checksum failure, PAM includes, managed Helium policy, obsolete browser migration'

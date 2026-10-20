@@ -7,7 +7,7 @@ Includes niruwm, niructl, niruidle, nirubar, niruscreensaver, nirulock,
 nirulauncher and nirunotify, plus Xorg and runtime dependencies. Niru Noir is the
 default theme; Nord, Satie and Carl Larsson are also available.
 
-**0.10.31 status:** the managed Helium option is implemented with a persistent
+**0.10.32 status:** the managed Helium option is implemented with a persistent
 opt-out, verified upstream asset, runtime dependencies, desktop entry and
 owned removal. Full distro CI now also starts Helium as a normal user with the
 sandbox enabled. See the [current roadmap](ROADMAP.md) for remaining S03/S04/H01

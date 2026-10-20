@@ -29,10 +29,14 @@ doctor
 [ -f "$PREFIX/share/applications/helium.desktop" ]
 grep -qF "Exec=\"$BIN/helium\"" "$PREFIX/share/applications/helium.desktop"
 first_generation=$(readlink "$STATE/current")
+sed -i 's/browser = \["helium"\]/browser = ["brave"]/' "$XDG_CONFIG_HOME/niruwm/config.toml"
+grep -qx 'browser = \["brave"\]' "$XDG_CONFIG_HOME/niruwm/config.toml"
 (install_or_update update --no-packages --browser helium --release "$VERSION")
 [ "$(readlink "$STATE/current")" != "$first_generation" ]
+grep -qx 'browser = \["helium"\]' "$XDG_CONFIG_HOME/niruwm/config.toml"
 "$BIN/helium" --version | grep -q "Helium $HELIUM_VERSION"
 [ "$(browser_policy)" = helium ]
+doctor >/dev/null
 (rollback)
 [ "$(readlink "$STATE/current")" = "$first_generation" ]
 "$BIN/helium" --version | grep -q "Helium $HELIUM_VERSION"
