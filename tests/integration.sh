@@ -181,6 +181,22 @@ make_apply_target() {
 }
 make_apply_target 99.4.0 0
 make_apply_target 99.4.1 1
+# 99.5.0 adds an asset the caller does not know about. Only the target apply
+# can fetch and install it, proving the target owns new asset semantics.
+mkdir -p "$FIXTURE/nirux/99.5.0" "$TEST/asset-build"
+sed -e "s/^VERSION=$VERSION$/VERSION=99.5.0/" "$SOURCE/nirux" > "$FIXTURE/nirux/99.5.0/nirux"
+sed -i '/^  install_terminal$/a\
+  release_optional_file nirux "$RELEASE" nirux-marker.tar.xz\
+  tar -xJf "$WORK/download/nirux/nirux-marker.tar.xz" -C "$HOME"' "$FIXTURE/nirux/99.5.0/nirux"
+chmod +x "$FIXTURE/nirux/99.5.0/nirux"
+sed "s/suite $VERSION/suite 99.5.0/" "$SOURCE/manifest" > "$FIXTURE/nirux/99.5.0/manifest"
+cp "$SOURCE/config.example.toml" "$FIXTURE/nirux/99.5.0/config.example.toml"
+cp "$SOURCE/appearance.example.toml" "$FIXTURE/nirux/99.5.0/appearance.example.toml"
+wallpaper_archive "$FIXTURE/nirux/99.5.0/nirux-wallpapers.tar.xz"
+terminal_archive "$FIXTURE/nirux/99.5.0/nirux-terminal.tar.xz"
+printf 'target-owned asset\n' > "$TEST/asset-build/nirux-target-asset-marker"
+tar -cJf "$FIXTURE/nirux/99.5.0/nirux-marker.tar.xz" -C "$TEST/asset-build" nirux-target-asset-marker
+checksums "$FIXTURE/nirux/99.5.0"
 mkdir -p "$FIXTURE/nirunew/1.0.0"
 make_binary "$FIXTURE/nirunew/1.0.0/nirunew" nirunew 1.0.0
 checksums "$FIXTURE/nirunew/1.0.0"
@@ -464,6 +480,17 @@ grep -qx 'newfeature = true' "$XDG_CONFIG_HOME/niruwm/config.toml" || fail 'targ
 grep -q 'Applied through the target installer' "$TEST/apply-one.log" || fail 'target apply was not used'
 operation uninstall --purge >/dev/null 2>&1 || :
 rm -rf "$PREFIX"
+
+# S03: a new asset known only to the target installer must still be fetched.
+TEST_OS=arch; PREFIX=$TEST/apply-asset; BIN=$PREFIX/bin; STATE=$PREFIX/share/nirux
+rm -f "$HOME/nirux-target-asset-marker"
+operation install_or_update install --no-packages --browser none --display-manager startx --release "$VERSION"
+operation install_or_update update --no-packages --release 99.5.0 > "$TEST/apply-asset.log" 2>&1 || \
+  fail 'target-owned new asset update failed'
+[ -f "$HOME/nirux-target-asset-marker" ] || fail 'target apply did not fetch its new asset'
+operation uninstall --purge >/dev/null 2>&1 || :
+rm -rf "$PREFIX"
+rm -f "$HOME/nirux-target-asset-marker"
 
 # S03 failure injection: a target apply that fails after changing config must
 # restore the original config and leave the active generation untouched.

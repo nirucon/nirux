@@ -2,7 +2,7 @@
 # NIRUX: install a complete X11 desktop, or maintain an existing installation.
 set -eu
 
-VERSION=0.10.36
+VERSION=0.10.37
 PREFIX=${NIRUX_PREFIX:-$HOME/.local}
 BIN=$PREFIX/bin
 STATE=$PREFIX/share/nirux
@@ -1337,6 +1337,11 @@ apply_target_release() {
   [ -f "$WORK/generation/manifest" ] || die 'target apply has no staged generation'
   [ "$(awk '$1 == "suite" {print $2}' "$WORK/generation/manifest")" = "$RELEASE" ] || \
     die 'staged generation does not match the apply release'
+  # The caller may predate an asset added by this target. The target owns the
+  # new asset list and fetches/verifies anything it needs before changing user
+  # or system files.
+  release_optional_file nirux "$RELEASE" nirux-wallpapers.tar.xz
+  release_optional_file nirux "$RELEASE" nirux-terminal.tar.xz
   apply_prepare_backup
   APPLY_OK=0
   trap 'apply_restore_config' EXIT INT TERM HUP
