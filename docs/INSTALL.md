@@ -1,10 +1,10 @@
 # Installation and maintenance
 
-**Verified-state note, 2026-10-20:** 0.10.32 implements the managed Helium
-option and the full distro CI now covers real-release install, doctor,
-config contract, startx and a normal-user sandboxed Helium launch. Containers
-are supporting evidence, not a fresh physical OS certification. S03, S04 and
-H01 remain open; follow [the roadmap](../ROADMAP.md) and the
+**Verified-state note, 2026-10-20:** 0.10.33 implements managed Helium and
+theme-follow wallpapers. The full distro CI covers real-release install,
+doctor, config contract, startx and a normal-user sandboxed Helium launch.
+Containers are supporting evidence, not a fresh physical OS certification.
+S03, S04 and H01 remain open; follow [the roadmap](../ROADMAP.md) and the
 [restart review](REVIEW-2026-10-20-RESTART.md).
 
 Install and maintain the NIRU X11 desktop on **Void Linux (glibc), Arch Linux
@@ -46,6 +46,32 @@ fonts, kitty, rofi, audio tools, notifications, the selected Helium browser and
 the other default session dependencies. It does not depend on NIRUPI.
 Distribution graphics drivers and firmware remain the OS/hardware installation's
 responsibility.
+
+### Theme wallpapers
+
+NIRUX installs the four theme wallpaper sets (Niru Noir, Nord, Satie and Carl
+Larsson, 4K and 8K) into `~/Pictures/Wallpapers/NIRU`. Existing files are kept
+unless they are untouched copies from an older NIRUX release; a wallpaper the
+user edited is never overwritten. The wallpaper directory can be changed with
+`XDG_PICTURES_DIR`, or by setting `[wallpaper] theme_dir`.
+
+The shared configuration adds:
+
+```toml
+[wallpaper]
+enabled = true                 # fresh installs; existing values are preserved
+mode = "random"
+rotation_minutes = 10
+follow_theme = true            # theme change applies that theme's wallpaper
+theme_dir = "~/Pictures/Wallpapers/NIRU"
+```
+
+`follow_theme` only acts when the wallpaper is enabled and the mode is not
+`single`. Your own directory, rotation, explicit `files`, `file` and
+`mode = "single"` keep working. A custom theme `foo` gets its own default from
+`theme_dir/nirux-wallpaper-foo-4k.png` (or `-8k.png`). If no matching asset
+exists, the current wallpaper is left alone. A normal uninstall keeps the
+pictures; `--purge` removes only unmodified NIRUX-owned copies.
 
 ### Browser
 
@@ -116,7 +142,7 @@ installer cannot update itself. After that first migration the installed
 
 ```sh
 nirux update
-nirux update --release 0.10.32
+nirux update --release 0.10.33
 nirux rollback
 ```
 
@@ -234,8 +260,9 @@ nirux uninstall --purge
 
 Only NIRUX-owned links, the managed browser files, the generated xinitrc,
 generated desktop entry and owned system integration are removed. Existing
-backed-up system files are restored. A browser profile and settings are kept by
-a normal uninstall. `--purge` additionally removes only these documented
+backed-up system files are restored. A browser profile and wallpaper pictures
+are kept by a normal uninstall. `--purge` additionally removes unmodified
+NIRUX-owned theme wallpapers. `--purge` additionally removes only these documented
 suite-owned directories:
 
 - `~/.config/niruwm`, `~/.config/niruui`
@@ -259,11 +286,12 @@ sh tests/integration.sh
 
 Offline regression tests use isolated homes and mock release downloads. They
 exercise all three distribution mappings, generation switches, rollback,
-checksum failures, status purity, PAM includes, managed-browser policy and
-uninstall/purge. CI also installs the real vanilla dependency package lists on
-all three distributions, runs the real pinned releases through startx, and
-starts Helium as a normal user with the Chromium sandbox enabled. The browser
-archive is never started with `--no-sandbox`.
+checksum failures, status purity, PAM includes, managed-browser policy,
+theme-wallpaper ownership and uninstall/purge. CI also installs the real vanilla
+dependency package lists on all three distributions, runs the real pinned
+releases through startx, verifies a theme change replaces the root wallpaper,
+and starts Helium as a normal user with the Chromium sandbox enabled. The
+browser archive is never started with `--no-sandbox`.
 `sh tests/release-smoke.sh` tests the actual pinned component releases, diagnostics,
 startx/xinit with the generated xinitrc, bar restart and uninstall in an isolated
 home (requires the dependencies and Xvfb). Component repositories additionally

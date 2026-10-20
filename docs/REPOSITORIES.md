@@ -4,13 +4,13 @@ All URLs are under `https://github.com/nirucon/`. Use the current heads below fo
 the restart baseline, and fetch again before editing. Older tables preserve the
 initial review scope; they are not a current certification of optional apps.
 
-## Restart baseline — 0.10.32
+## Restart baseline — 0.10.33
 
 | Repository | GitHub main observed 2026-10-20 | Release |
 |---|---|---|
-| nirux | `81e0889` | v0.10.32; wallpaper assets on main |
-| niruwm | `ceb78000eadf` | v0.16.30 |
-| nirubar | `e870f89d369b` | v0.18.15 |
+| nirux | pending 0.10.33 commit | v0.10.33 |
+| niruwm | `f8201d9` | v0.16.32 |
+| nirubar | `3aa9915` | v0.18.16 |
 | niruscreensaver | `52173f62718b` | v0.8.3 |
 | nirulock | `9929208c898d` | v0.16.10 |
 | nirulauncher | `8aa2a9004021` | v0.2.1 |
@@ -20,7 +20,7 @@ initial review scope; they are not a current certification of optional apps.
 and [next-session prompt](NEXT-SESSION.md) supersede the old next-task ordering.
 Helium upstream is `imputnet/helium-linux`; it is external software pinned by
 NIRUX, not another NIRU core repository. No mandatory new repository is currently
-justified. See the [0.10.32 checkpoint](history/CHECKPOINT-0.10.32.md).
+justified. See the [0.10.33 checkpoint](history/CHECKPOINT-0.10.33.md).
 
 Persistent clones may exist in `~/.cache/niru-work/`. Check status and applicable
 AGENTS.md instructions in every checkout. `/tmp/opencode` is disposable.

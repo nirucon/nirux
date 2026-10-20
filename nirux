@@ -2,7 +2,7 @@
 # NIRUX: install a complete X11 desktop, or maintain an existing installation.
 set -eu
 
-VERSION=0.10.32
+VERSION=0.10.33
 PREFIX=${NIRUX_PREFIX:-$HOME/.local}
 BIN=$PREFIX/bin
 STATE=$PREFIX/share/nirux
@@ -616,6 +616,87 @@ upgrade_obsolete_default_browser() {
     die "could not update the default browser in $1; original kept"
   fi
 }
+pictures_directory() {
+  if [ -n "${XDG_PICTURES_DIR:-}" ]; then
+    say "$XDG_PICTURES_DIR"; return 0
+  fi
+  if command -v xdg-user-dir >/dev/null 2>&1; then
+    pictures=$(xdg-user-dir PICTURES 2>/dev/null || :)
+    if [ -n "$pictures" ] && [ "$pictures" != "$HOME" ]; then
+      say "$pictures"; return 0
+    fi
+  fi
+  say "$HOME/Pictures"
+}
+wallpaper_manifest() {
+  say "$STATE/wallpapers.sha256"
+}
+install_wallpapers() {
+  archive=$WORK/download/nirux/nirux-wallpapers.tar.xz
+  [ -f "$archive" ] || return 0
+  [ -n "${HOME:-}" ] || return 0
+  unpack=$WORK/wallpapers-unpack
+  rm -rf "$unpack"
+  mkdir -p "$unpack" || die 'could not create the wallpaper extraction directory'
+  tar -xJf "$archive" -C "$unpack" || die 'could not extract the wallpaper archive'
+  destination=$(pictures_directory)/Wallpapers/NIRU
+  mkdir -p "$destination" || die "could not create $destination"
+  manifest=$(wallpaper_manifest)
+  previous=$WORK/wallpapers-previous.manifest
+  next=$WORK/wallpapers-next.manifest
+  rm -f "$previous" "$next"
+  [ ! -f "$manifest" ] || cp -p "$manifest" "$previous"
+  : > "$next"
+  found=0
+  for source in "$unpack"/wallpaper/*.png; do
+    [ -f "$source" ] || continue
+    found=1
+    name=${source##*/}
+    new_hash=$(sha256sum "$source" | cut -d ' ' -f1)
+    target=$destination/$name
+    old_hash=
+    [ ! -f "$previous" ] || old_hash=$(awk -v n="$name" '$2 == n {print $1; exit}' "$previous")
+    if [ -f "$target" ]; then
+      current_hash=$(sha256sum "$target" | cut -d ' ' -f1)
+      if [ "$current_hash" = "$new_hash" ]; then
+        printf '%s  %s\n' "$new_hash" "$name" >> "$next"
+        continue
+      fi
+      if [ -z "$old_hash" ] || [ "$current_hash" != "$old_hash" ]; then
+        say "Keeping modified wallpaper $target"
+        continue
+      fi
+    fi
+    install -m 644 "$source" "$target" || die "could not install $target"
+    printf '%s  %s\n' "$new_hash" "$name" >> "$next"
+  done
+  if [ "$found" = 1 ]; then
+    chmod 644 "$next" 2>/dev/null || :
+    mv -f "$next" "$manifest" || die 'could not record the installed wallpapers'
+    say "Installed NIRUX theme wallpapers in $destination"
+  else
+    rm -f "$next"
+    say 'wallpaper archive contained no PNG files'
+  fi
+  rm -rf "$unpack"
+}
+remove_owned_wallpapers() {
+  manifest=$(wallpaper_manifest)
+  [ -f "$manifest" ] || return 0
+  destination=$(pictures_directory)/Wallpapers/NIRU
+  while IFS= read -r line; do
+    hash=${line%%  *}
+    name=${line#*  }
+    [ -n "$hash" ] && [ -n "$name" ] || continue
+    target=$destination/$name
+    [ -f "$target" ] || continue
+    current_hash=$(sha256sum "$target" | cut -d ' ' -f1)
+    [ "$current_hash" = "$hash" ] || continue
+    rm -f "$target"
+  done < "$manifest"
+  rmdir "$destination" 2>/dev/null || :
+  rm -f "$manifest"
+}
 fresh_config_source() {
   if [ "${BROWSER_EFFECTIVE:-keep}" = none ]; then
     awk '$0 == "browser = [\"helium\"]" {print "browser = []"; next} {print}' "$1"
@@ -677,6 +758,8 @@ install_config() {
   add_missing_key "$cfg_candidate" wallpaper scale "\"fill\""
   add_missing_key "$cfg_candidate" wallpaper files "[]"
   add_missing_key "$cfg_candidate" wallpaper shuffle_on_start true
+  add_missing_key "$cfg_candidate" wallpaper follow_theme true
+  add_missing_key "$cfg_candidate" wallpaper theme_dir '"~/Pictures/Wallpapers/NIRU"'
   add_missing_key "$cfg_candidate" monitors workspaces 9
   upgrade_obsolete_default_browser "$cfg_candidate"
   cfg_after=$(sha256sum "$cfg_candidate" | cut -d ' ' -f1)
@@ -761,6 +844,16 @@ release_files() {
     fetch "$download_base/$download_file" "$download_dir/$download_file"
     verify "$download_dir" "$download_file"
   done
+}
+release_optional_file() {
+  download_repo=$1; download_version=$2; download_file=$3
+  download_dir=$WORK/download/$download_repo
+  [ -f "$download_dir/SHA256SUMS" ] || return 0
+  awk -v n="$download_file" '$2 == n {found = 1} END {exit !found}' \
+    "$download_dir/SHA256SUMS" || return 0
+  download_base=https://github.com/nirucon/$download_repo/releases/download/v$download_version
+  fetch "$download_base/$download_file" "$download_dir/$download_file"
+  verify "$download_dir" "$download_file"
 }
 
 # ── Managed Helium browser ──────────────────────────────────────────────────
@@ -1047,6 +1140,7 @@ stage_release() {
     RELEASE=$(sed -n 's/.*"tag_name": *"v\([0-9.]*\)".*/\1/p' "$WORK/latest.json" | head -n 1)
   fi
   release_files nirux "$RELEASE" nirux manifest config.example.toml appearance.example.toml
+  release_optional_file nirux "$RELEASE" nirux-wallpapers.tar.xz
   [ "$(manifest_version schema)" = 1 ] || die "unsupported manifest schema"
   [ "$(manifest_version suite)" = "$RELEASE" ] || die "suite/manifest version mismatch"
   sh -n "$WORK/download/nirux/nirux"
@@ -1348,6 +1442,7 @@ uninstall() {
   browser_remove_managed
   browser_remove_policy
   if [ "$purge" = 1 ]; then
+    remove_owned_wallpapers
     rm -rf "${XDG_CONFIG_HOME:-$HOME/.config}/niruwm" "${XDG_CONFIG_HOME:-$HOME/.config}/niruui" \
       "${XDG_CONFIG_HOME:-$HOME/.config}/nirubar" "${XDG_CONFIG_HOME:-$HOME/.config}/nirulauncher" \
       "${XDG_CONFIG_HOME:-$HOME/.config}/nirunotify" \
@@ -1409,6 +1504,7 @@ install_or_update() {
   # Configuration and system integration must succeed before switching the
   # active programs. A rejected configuration leaves the old generation intact.
   install_config
+  install_wallpapers
   prepare_pam
   register_session
   if [ "$operation" = install ]; then setup_startx; enable_services; fi

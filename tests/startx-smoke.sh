@@ -21,6 +21,17 @@ done
 if [ "$i" = 100 ]; then cat "$HOME/startx-test.log"; exit 1; fi
 "$BIN/niructl" status
 "$BIN/niructl" restart-bar
+# Theme-follow wallpaper: only assert when NIRUX installed the assets and a
+# real wallpaper setter is present. The WM must change the root pixmap.
+if [ -f "$HOME/Pictures/Wallpapers/NIRU/nirux-wallpaper-nord-4k.png" ] && command -v feh >/dev/null 2>&1; then
+  before=$(xprop -root _XROOTPMAP_ID 2>/dev/null || :)
+  "$BIN/niructl" theme niru-nord
+  after=$(xprop -root _XROOTPMAP_ID 2>/dev/null || :)
+  [ -n "$before" ] && [ -n "$after" ] && [ "$before" != "$after" ] || {
+    printf 'theme change did not replace the root wallpaper\n' >&2
+    exit 1
+  }
+fi
 "$BIN/niructl" quit
 wait "$START"
 START=

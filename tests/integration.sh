@@ -48,6 +48,13 @@ fixture() {
   for asset in "$@"; do make_binary "$FIXTURE/$repo/$ver/$asset" "$asset" "$ver"; done
 }
 checksums() { (cd "$1"; sha256sum ./* | sed 's@  ./@  @' > SHA256SUMS); }
+wallpaper_archive() {
+  build=$TEST/wallpaper-build
+  mkdir -p "$build/wallpaper"
+  : > "$build/wallpaper/nirux-wallpaper-noir-4k.png"
+  : > "$build/wallpaper/nirux-wallpaper-nord-4k.png"
+  tar -cJf "$1" -C "$build" wallpaper
+}
 # The target installer runs in a separate process. Give it the same offline
 # release fixture through a curl shim; the parent test shell keeps its fetch().
 mkdir -p "$TEST/bin"
@@ -95,6 +102,7 @@ for release in "$VERSION" 99.0.0; do
   sed "s/suite $VERSION/suite $release/" "$SOURCE/manifest" > "$FIXTURE/nirux/$release/manifest"
   cp "$SOURCE/config.example.toml" "$FIXTURE/nirux/$release/config.example.toml"
   cp "$SOURCE/appearance.example.toml" "$FIXTURE/nirux/$release/appearance.example.toml"
+  wallpaper_archive "$FIXTURE/nirux/$release/nirux-wallpapers.tar.xz"
   checksums "$FIXTURE/nirux/$release"
 done
 # 99.2.0 adds a synthetic component. The running installer does not know its
@@ -108,6 +116,7 @@ sed "s/suite $VERSION/suite 99.2.0/" "$SOURCE/manifest" > "$FIXTURE/nirux/99.2.0
 say 'nirufoo 1.0.0' >> "$FIXTURE/nirux/99.2.0/manifest"
 cp "$SOURCE/config.example.toml" "$FIXTURE/nirux/99.2.0/config.example.toml"
 cp "$SOURCE/appearance.example.toml" "$FIXTURE/nirux/99.2.0/appearance.example.toml"
+wallpaper_archive "$FIXTURE/nirux/99.2.0/nirux-wallpapers.tar.xz"
 make_binary "$FIXTURE/nirufoo/1.0.0/nirufoo" nirufoo 1.0.0
 checksums "$FIXTURE/nirufoo/1.0.0"
 checksums "$FIXTURE/nirux/99.2.0"
@@ -123,6 +132,7 @@ sed "s/suite $VERSION/suite 99.3.0/" "$SOURCE/manifest" > "$FIXTURE/nirux/99.3.0
 say 'nirulib 1.0.0' >> "$FIXTURE/nirux/99.3.0/manifest"
 cp "$SOURCE/config.example.toml" "$FIXTURE/nirux/99.3.0/config.example.toml"
 cp "$SOURCE/appearance.example.toml" "$FIXTURE/nirux/99.3.0/appearance.example.toml"
+wallpaper_archive "$FIXTURE/nirux/99.3.0/nirux-wallpapers.tar.xz"
 cat > "$FIXTURE/nirulib/1.0.0/nirulib" <<'EOF'
 #!/bin/sh
 [ "$1" = --version ] || exit 0
@@ -235,6 +245,8 @@ grep -qx 'enabled = false' "$i06/config/niruwm/config.toml" || fail 'existing ba
 grep -qx 'scale = "fit"' "$i06/config/niruwm/config.toml" || fail 'existing wallpaper value was overwritten'
 grep -qx 'workspaces = 9' "$i06/config/niruwm/config.toml" || fail 'missing monitor default was not added'
 grep -qx 'title_delay_seconds = 0' "$i06/config/niruwm/config.toml" || fail 'bar key was not added to the real table'
+grep -qx 'follow_theme = true' "$i06/config/niruwm/config.toml" || fail 'wallpaper follow_theme default was not added'
+grep -qx 'theme_dir = "~/Pictures/Wallpapers/NIRU"' "$i06/config/niruwm/config.toml" || fail 'wallpaper theme_dir default was not added'
 grep -q 'scale = "not-a-real-setting"' "$i06/config/niruwm/config.toml" || fail 'multiline string was changed'
 [ "$(wc -l < "$i06/validators.log")" = 2 ] || fail 'candidate was not validated by both components'
 
@@ -331,11 +343,13 @@ for TEST_OS in arch debian void; do
   [ "$(browser_policy)" = none ] || fail 'browser opt-out was not persisted'
   grep -qx 'browser = \[\]' "$XDG_CONFIG_HOME/niruwm/config.toml" || fail 'fresh opt-out did not disable the managed browser default'
   [ ! -e "$BIN/helium" ] || fail 'browser was installed despite opt-out'
+  [ -f "$HOME/Pictures/Wallpapers/NIRU/nirux-wallpaper-noir-4k.png" ] || fail 'theme wallpapers were not installed'
   first=$(readlink "$STATE/current")
   operation install_or_update update --no-packages --release 99.0.0
   second=$(readlink "$STATE/current")
   [ "$first" != "$second" ] || fail 'no generation switch'
   [ "$(browser_policy)" = none ] || fail 'update did not preserve the browser opt-out'
+  [ -f "$HOME/Pictures/Wallpapers/NIRU/nirux-wallpaper-noir-4k.png" ] || fail 'update removed theme wallpapers'
   operation rollback
   [ "$(readlink "$STATE/current")" = "$first" ] || fail 'rollback did not restore the generation'
   # Normal uninstall keeps settings; purge removes only the documented
@@ -354,7 +368,9 @@ for TEST_OS in arch debian void; do
   done
   [ -d "$XDG_STATE_HOME/nirulock" ] || fail 'normal uninstall removed lock state'
   [ -d "$XDG_STATE_HOME/niruscreensaver" ] || fail 'normal uninstall removed saver state'
+  [ -f "$HOME/Pictures/Wallpapers/NIRU/nirux-wallpaper-noir-4k.png" ] || fail 'normal uninstall removed theme wallpapers'
   operation uninstall --purge
+  [ ! -e "$HOME/Pictures/Wallpapers/NIRU/nirux-wallpaper-noir-4k.png" ] || fail 'purge kept an unmodified theme wallpaper'
   for dir in niruwm niruui nirubar nirulauncher nirunotify; do
     [ ! -d "$XDG_CONFIG_HOME/$dir" ] || fail "purge missed $dir config"
   done
@@ -592,4 +608,29 @@ fresh_config_source "$SOURCE/config.example.toml" | grep -qx 'browser = \[\]' ||
 # shellcheck disable=SC2034 # read by fresh_config_source in the sourced installer
 BROWSER_EFFECTIVE=helium
 fresh_config_source "$SOURCE/config.example.toml" | grep -qx 'browser = \["helium"\]' || fail 'fresh default config does not select Helium'
+# Theme wallpapers: updates replace untouched NIRUX files, never a user edit,
+# and purge removes only the unmodified owned copies.
+wallpaper_test=$TEST/wallpapers
+HOME=$wallpaper_test/home
+XDG_PICTURES_DIR=$wallpaper_test/pictures
+WORK=$wallpaper_test/work
+STATE=$wallpaper_test/state
+mkdir -p "$HOME" "$XDG_PICTURES_DIR" "$WORK/download/nirux" "$STATE" "$wallpaper_test/build/wallpaper"
+printf 'first\n' > "$wallpaper_test/build/wallpaper/nirux-wallpaper-noir-4k.png"
+printf 'first\n' > "$wallpaper_test/build/wallpaper/nirux-wallpaper-nord-4k.png"
+tar -cJf "$WORK/download/nirux/nirux-wallpapers.tar.xz" -C "$wallpaper_test/build" wallpaper
+install_wallpapers >/dev/null
+wallpaper_dir=$XDG_PICTURES_DIR/Wallpapers/NIRU
+[ "$(cat "$wallpaper_dir/nirux-wallpaper-noir-4k.png")" = first ] || fail 'theme wallpaper was not installed'
+printf 'mine\n' > "$wallpaper_dir/nirux-wallpaper-noir-4k.png"
+printf 'second\n' > "$wallpaper_test/build/wallpaper/nirux-wallpaper-noir-4k.png"
+printf 'second\n' > "$wallpaper_test/build/wallpaper/nirux-wallpaper-nord-4k.png"
+tar -cJf "$WORK/download/nirux/nirux-wallpapers.tar.xz" -C "$wallpaper_test/build" wallpaper
+install_wallpapers >/dev/null
+[ "$(cat "$wallpaper_dir/nirux-wallpaper-noir-4k.png")" = mine ] || fail 'user-modified wallpaper was overwritten'
+[ "$(cat "$wallpaper_dir/nirux-wallpaper-nord-4k.png")" = second ] || fail 'unmodified owned wallpaper was not updated'
+remove_owned_wallpapers
+[ "$(cat "$wallpaper_dir/nirux-wallpaper-noir-4k.png")" = mine ] || fail 'purge removed a user-modified wallpaper'
+[ ! -e "$wallpaper_dir/nirux-wallpaper-nord-4k.png" ] || fail 'purge kept an unmodified owned wallpaper'
+
 say 'PASS: install/update/rollback/purge on all three distro mappings, status purity, checksum failure, PAM includes, managed Helium policy, obsolete browser migration'

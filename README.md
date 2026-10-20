@@ -7,11 +7,12 @@ Includes niruwm, niructl, niruidle, nirubar, niruscreensaver, nirulock,
 nirulauncher and nirunotify, plus Xorg and runtime dependencies. Niru Noir is the
 default theme; Nord, Satie and Carl Larsson are also available.
 
-**0.10.32 status:** the managed Helium option is implemented with a persistent
-opt-out, verified upstream asset, runtime dependencies, desktop entry and
-owned removal. Full distro CI now also starts Helium as a normal user with the
-sandbox enabled. See the [current roadmap](ROADMAP.md) for remaining S03/S04/H01
-acceptance work and exact verification limits.
+**0.10.33 status:** managed Helium, theme wallpapers and theme-follow settings
+are implemented. Fresh installs get the four NIRU theme wallpaper sets under
+`~/Pictures/Wallpapers/NIRU`; changing the theme can switch to that theme's
+wallpaper while custom files, rotation and `mode = "single"` remain preserved.
+See the [current roadmap](ROADMAP.md) for remaining S03/S04/H01 acceptance work
+and exact verification limits.
 
 ## Install
 
@@ -25,9 +26,10 @@ cd nirux
 
 An existing display manager is preserved. Otherwise choose startx (default), SDDM
 or LightDM. A fresh install offers the managed Helium browser (default installed)
-and remembers the choice. Existing settings and browsers are preserved; NIRUPI is
-a separate installation. Use `--no-packages` only when runtime dependencies are
-already installed.
+and remembers the choice. It also installs the four theme wallpaper sets under
+`~/Pictures/Wallpapers/NIRU`. Existing settings, wallpapers and browsers are
+preserved; NIRUPI is a separate installation. Use `--no-packages` only when
+runtime dependencies are already installed.
 
 ```sh
 ./nirux install --browser helium

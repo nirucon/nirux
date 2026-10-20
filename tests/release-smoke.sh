@@ -11,7 +11,8 @@ mkdir -p "$HOME" "$NIRUX_SYSTEM_ROOT/etc/pam.d" "$TEST/release"
 . "$SOURCE/nirux"
 unset NIRUX_LIBRARY
 cp "$SOURCE/nirux" "$SOURCE/manifest" "$SOURCE/config.example.toml" "$SOURCE/appearance.example.toml" "$TEST/release/"
-(cd "$TEST/release"; sha256sum nirux manifest config.example.toml appearance.example.toml > SHA256SUMS)
+(cd "$SOURCE"; tar -cJf "$TEST/release/nirux-wallpapers.tar.xz" wallpaper/*.png)
+(cd "$TEST/release"; sha256sum nirux manifest config.example.toml appearance.example.toml nirux-wallpapers.tar.xz > SHA256SUMS)
 for include in system-auth common-auth common-account; do
   [ ! -f "/etc/pam.d/$include" ] || ln -s "/etc/pam.d/$include" "$ROOT/etc/pam.d/$include"
 done
@@ -26,6 +27,7 @@ status
 doctor
 [ -x "$BIN/helium" ]
 "$BIN/helium" --version | grep -q "Helium $HELIUM_VERSION"
+[ -f "$HOME/Pictures/Wallpapers/NIRU/nirux-wallpaper-noir-4k.png" ]
 [ -f "$PREFIX/share/applications/helium.desktop" ]
 grep -qF "Exec=\"$BIN/helium\"" "$PREFIX/share/applications/helium.desktop"
 first_generation=$(readlink "$STATE/current")
@@ -49,5 +51,6 @@ sh "$SOURCE/tests/startx-smoke.sh" "$BIN" "$HOME"
 [ ! -e "$ROOT/etc/pam.d/nirulock" ]
 [ ! -e "$BIN/helium" ]
 [ ! -f "$PREFIX/share/applications/helium.desktop" ]
+[ ! -e "$HOME/Pictures/Wallpapers/NIRU/nirux-wallpaper-noir-4k.png" ]
 [ "$(cat "$XDG_CONFIG_HOME/net.imput.helium/Preferences")" = 'keep my profile' ]
 printf 'PASS: real pinned releases install, Helium is managed, diagnose, startx and owned uninstall\n'
