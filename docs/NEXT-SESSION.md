@@ -73,7 +73,7 @@ vilka filer du behöver ändra. Fortsätt sedan arbetet.
 | S03 target-owned apply | DONE | [0.10.34 checkpoint](history/CHECKPOINT-0.10.34.md) |
 | S04 vanilla runtime audit | DONE | [S04 audit](history/AUDIT-S04-0.10.35.md) |
 | H01 fresh OS/VM acceptance | TODO — start here | physical evidence still required |
-| R01 performance/resource budget | TODO | owner request, after H01 |
+| R01 performance/resource baseline | BASELINE | [baseline](history/AUDIT-R01-BASELINE.md); enforce after H01 |
 
 0.10.35 updates the system module icon; S04 normal-user runtime audit is complete. A green
 release workflow alone is not proof of the distro matrix; check both.

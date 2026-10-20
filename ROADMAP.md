@@ -8,6 +8,7 @@ Updated **2026-10-20**, checked against **NIRUX 0.10.35**.
 - **Previous work:** [delivery history through 0.10.30](docs/history/ROADMAP-0.10.30.md)
 - **Current checkpoint evidence:** [0.10.35 system icon](docs/history/CHECKPOINT-0.10.35.md)
 - **S04 runtime audit:** [package and normal-user results](docs/history/AUDIT-S04-0.10.35.md)
+- **R01 performance baseline:** [idle and startup measurements](docs/history/AUDIT-R01-BASELINE.md)
 
 ## 1. Product contract
 
@@ -103,7 +104,7 @@ acceptance path before optional notification images or new repositories.
 | C05 / P1 | Weather: missing probability/temperature stays unavailable; timezone-aware forecast indexing, explicit wind units, current-day/polar daylight, age-based stale label. | Unknown is not 0%; stale-day sunrise is not today's event; forecast location time is handled correctly. No synchronous HTTP, no second fetch daemon. |
 | C06 / P2 | Responsive bar and controls: sparse indices, large fonts/titles/tray, small widths, input buttons, overflow access and configuration. Output selection and genuine panel controls still need a design beyond mouse shortcuts. | 800/1366/1920 and mixed-width outputs have pixel/hitbox/popup tests. Reading is side-effect free. Provider absence is visible; helper processes and their descendants have deadlines and bounded concurrency. |
 | C07 / P1 | Suite lifecycle/ownership: precise logout cleanup, live reload, stale singleton/lock state, unmanaged-file protection, failed activation and rollback of added/removed components. | Isolated X11/D-Bus tests and failure injection retain user data and leave no competing notifier, idle ladder, night-light watcher or leaked grabs/processes. No testing in production PAM. |
-| R01 / P2 — owner request | Performance and resource budget: idle CPU/RSS/process counts per component, login/startx latency, bar redraw and helper lifetimes, no unnecessary resident browser/notification processes. | Recorded baseline and explicit budgets on all three distros. No idle busy loop, duplicate helper or avoidable resident process. Optimize measured hot paths, not speculative micro-optimization. H01 runtime first. |
+| R01 / BASELINE — owner request | Performance and resource budget: idle CPU/PSS/process counts per component, login/startx latency, bar redraw and helper lifetimes, no unnecessary resident browser/notification processes. Baseline: [R01 audit](docs/history/AUDIT-R01-BASELINE.md). | Baseline and explicit budgets recorded on all three distros. Remaining: physical H01 repeat, automated regression and stale-session-bus cleanup (C07). Optimize measured hot paths only. |
 | A04 / TODO — later | Optional bounded notification images/hints in nirunotify. | Cap dimensions/decoded bytes/queue/history; advertise only implemented capabilities. Retain D-Bus actions, lock privacy, DND and cleanup regressions. |
 
 H02 installer/PAM and H03 sleep/output checks have previous automated and
