@@ -6,7 +6,7 @@ TEST=$(mktemp -d)
 trap 'rm -rf "$TEST"' EXIT
 export HOME=$TEST/home NIRUX_PREFIX=$TEST/prefix NIRUX_SYSTEM_ROOT=$TEST/system
 export XDG_CONFIG_HOME=$HOME/.config XDG_STATE_HOME=$HOME/.local/state
-export NIRUX_LIBRARY=1
+export NIRUX_LIBRARY=1 NIRUX_TEST_AS_ROOT=1
 mkdir -p "$HOME" "$NIRUX_SYSTEM_ROOT/etc/pam.d" "$NIRUX_SYSTEM_ROOT/usr/share/xsessions"
 . "$SOURCE/nirux"
 unset NIRUX_LIBRARY
@@ -142,6 +142,41 @@ EOF
 chmod +x "$FIXTURE/nirulib/1.0.0/nirulib"
 checksums "$FIXTURE/nirulib/1.0.0"
 checksums "$FIXTURE/nirux/99.3.0"
+
+# S03 fixtures: a target release that adds a config key, a wallpaper asset and
+# a component, applied by the target installer rather than the older caller.
+make_apply_target() {
+  release=$1; fail=$2
+  dir=$FIXTURE/nirux/$release
+  mkdir -p "$dir"
+  sed -e "s/^VERSION=$VERSION$/VERSION=$release/" \
+    -e 's/^PROGRAMS="\(.*\)"$/PROGRAMS="\1 nirunew"/' \
+    "$SOURCE/nirux" > "$dir/nirux"
+  sed -i '/add_missing_top_key "\$cfg_candidate" restore_session false/a\
+  add_missing_top_key "$cfg_candidate" newfeature true' "$dir/nirux"
+  if [ "$fail" = 1 ]; then
+    sed -i '/^  install_config$/a\
+  [ "${NIRUX_SIMULATE_APPLY_FAIL:-0}" = 1 ] \&\& die "simulated target apply failure"' "$dir/nirux"
+  fi
+  chmod +x "$dir/nirux"
+  sed "s/suite $VERSION/suite $release/" "$SOURCE/manifest" > "$dir/manifest"
+  say 'nirunew 1.0.0' >> "$dir/manifest"
+  cp "$SOURCE/config.example.toml" "$dir/config.example.toml"
+  sed -i '/^theme = "niru-noir"$/a newfeature = true' "$dir/config.example.toml"
+  cp "$SOURCE/appearance.example.toml" "$dir/appearance.example.toml"
+  build=$TEST/apply-wallpaper-$release
+  rm -rf "$build"
+  mkdir -p "$build/wallpaper"
+  : > "$build/wallpaper/nirux-wallpaper-noir-4k.png"
+  : > "$build/wallpaper/nirux-wallpaper-test-4k.png"
+  tar -cJf "$dir/nirux-wallpapers.tar.xz" -C "$build" wallpaper
+  checksums "$dir"
+}
+make_apply_target 99.4.0 0
+make_apply_target 99.4.1 1
+mkdir -p "$FIXTURE/nirunew/1.0.0"
+make_binary "$FIXTURE/nirunew/1.0.0/nirunew" nirunew 1.0.0
+checksums "$FIXTURE/nirunew/1.0.0"
 
 # Provisioning uses the new release's package list, not the caller's. Exercise
 # the missing-only path without touching a package manager.
@@ -398,6 +433,45 @@ operation rollback >/dev/null 2>&1 || fail 'rollback after a new component faile
 operation uninstall --purge >/dev/null 2>&1 || :
 rm -rf "$PREFIX"
 
+# S03: one update to a synthetic target that adds a config key, wallpaper asset
+# and component. The target installer owns config/integration/activation.
+TEST_OS=arch; PREFIX=$TEST/apply-one; BIN=$PREFIX/bin; STATE=$PREFIX/share/nirux
+operation install_or_update install --no-packages --browser none --display-manager startx --release "$VERSION"
+[ ! -e "$BIN/nirunew" ] || fail 'synthetic component existed before the target update'
+! grep -qx 'newfeature = true' "$XDG_CONFIG_HOME/niruwm/config.toml" || fail 'synthetic config key existed before the target update'
+before=$(readlink "$STATE/current")
+operation install_or_update update --no-packages --release 99.4.0 > "$TEST/apply-one.log" 2>&1 || \
+  fail 'one-update target apply failed'
+[ "$(readlink "$STATE/current")" != "$before" ] || fail 'target apply did not switch generation'
+[ -x "$BIN/nirunew" ] || fail 'target apply did not link the new component'
+grep -qx 'newfeature = true' "$XDG_CONFIG_HOME/niruwm/config.toml" || fail 'target apply did not add the new config key'
+[ -f "$HOME/Pictures/Wallpapers/NIRU/nirux-wallpaper-test-4k.png" ] || fail 'target apply did not install the new wallpaper asset'
+grep -q 'Applied through the target installer' "$TEST/apply-one.log" || fail 'target apply was not used'
+operation uninstall --purge >/dev/null 2>&1 || :
+rm -rf "$PREFIX"
+
+# S03 failure injection: a target apply that fails after changing config must
+# restore the original config and leave the active generation untouched.
+TEST_OS=arch; PREFIX=$TEST/apply-fail; BIN=$PREFIX/bin; STATE=$PREFIX/share/nirux
+operation install_or_update install --no-packages --browser none --display-manager startx --release "$VERSION"
+before=$(readlink "$STATE/current")
+before_sum=$(sha256sum "$XDG_CONFIG_HOME/niruwm/config.toml" | cut -d' ' -f1)
+set +e
+( export NIRUX_SIMULATE_APPLY_FAIL=1
+  install_or_update update --no-packages --release 99.4.1
+) > "$TEST/apply-fail.log" 2>&1
+rc=$?
+set -e
+[ "$rc" != 0 ] || fail 'injected target apply failure succeeded'
+[ "$(readlink "$STATE/current")" = "$before" ] || fail 'failed target apply changed the active generation'
+[ "$(sha256sum "$XDG_CONFIG_HOME/niruwm/config.toml" | cut -d' ' -f1)" = "$before_sum" ] || fail 'failed target apply changed the original config'
+! grep -qx 'newfeature = true' "$XDG_CONFIG_HOME/niruwm/config.toml" || fail 'failed target apply left the new config key'
+grep -q 'simulated target apply failure' "$TEST/apply-fail.log" || fail 'target apply failure was not reported'
+grep -q 'original configuration restored' "$TEST/apply-fail.log" || fail 'target apply did not restore the original config'
+grep -q 'target installer apply failed' "$TEST/apply-fail.log" || fail 'caller did not report the failed target apply'
+operation uninstall --purge >/dev/null 2>&1 || :
+rm -rf "$PREFIX"
+
 # I07: a new shared-library dependency is provisioned before staged components
 # are executed. The synthetic component fails its version check without it.
 TEST_OS=debian; PREFIX=$TEST/libdep; BIN=$PREFIX/bin; STATE=$PREFIX/share/nirux
@@ -489,7 +563,7 @@ done
 # Sudo validation can succeed while the privileged command fails. Preserve
 # that command's error status (the old implementation incorrectly returned 0).
 set +e
-NIRUX_LIBRARY=1 sh -c '
+NIRUX_LIBRARY=1 NIRUX_TEST_AS_ROOT=0 sh -c '
   . "$1"
   id() { printf "1000\n"; }
   sudo() { case "$*" in "-n true") return 0 ;; *) return 7 ;; esac; }
@@ -633,4 +707,4 @@ remove_owned_wallpapers
 [ "$(cat "$wallpaper_dir/nirux-wallpaper-noir-4k.png")" = mine ] || fail 'purge removed a user-modified wallpaper'
 [ ! -e "$wallpaper_dir/nirux-wallpaper-nord-4k.png" ] || fail 'purge kept an unmodified owned wallpaper'
 
-say 'PASS: install/update/rollback/purge on all three distro mappings, status purity, checksum failure, PAM includes, managed Helium policy, obsolete browser migration'
+say 'PASS: install/update/rollback/purge on all three distro mappings, status purity, checksum failure, PAM includes, managed Helium policy, obsolete browser migration, target-owned apply'

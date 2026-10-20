@@ -2,7 +2,7 @@
 # NIRUX: install a complete X11 desktop, or maintain an existing installation.
 set -eu
 
-VERSION=0.10.33
+VERSION=0.10.34
 PREFIX=${NIRUX_PREFIX:-$HOME/.local}
 BIN=$PREFIX/bin
 STATE=$PREFIX/share/nirux
@@ -13,6 +13,8 @@ WORK=
 LOCKED=0
 CONFIG_TMP=
 CONFIG_CANDIDATE=
+APPLY_PROTOCOL=0
+APPLY_OK=0
 # Pinned upstream release. The archive is verified before extraction, and the
 # extracted browser is still checked for shared libraries and its reported
 # version before the stable link is switched.
@@ -67,6 +69,9 @@ platform() {
   getconf GNU_LIBC_VERSION >/dev/null 2>&1 || die "release binaries require glibc; Void musl is not supported yet"
 }
 as_root() {
+  # Integration tests exercise the target-apply subprocess against a temporary
+  # system root. Production never sets this variable.
+  if [ "${NIRUX_TEST_AS_ROOT:-0}" = 1 ]; then "$@"; return; fi
   if [ "$(id -u)" = 0 ]; then "$@"; return; fi
   command -v sudo >/dev/null 2>&1 || die "install sudo and grant this user access, then retry"
   if ! sudo -n true 2>/dev/null; then
@@ -1134,6 +1139,86 @@ stage_target_release() {
   [ "$(manifest_version suite)" = "$VERSION" ] || die "target installer/manifest version mismatch"
   stage_components
 }
+apply_prepare_backup() {
+  mkdir -p "$WORK/apply-backup" || die 'could not create the apply backup directory'
+  APPLY_CONFIG_TARGET=$CONFDIR/config.toml
+  APPLY_CONFIG_EXISTED=0
+  if [ -e "$CONFDIR/config.toml" ] || [ -L "$CONFDIR/config.toml" ]; then
+    if [ -L "$CONFDIR/config.toml" ]; then
+      APPLY_CONFIG_TARGET=$(readlink -f "$CONFDIR/config.toml" 2>/dev/null || :)
+      [ -n "$APPLY_CONFIG_TARGET" ] || die 'the configuration symlink does not resolve'
+    fi
+    cp -p "$APPLY_CONFIG_TARGET" "$WORK/apply-backup/config.toml" || \
+      die 'could not back up the configuration before apply'
+    APPLY_CONFIG_EXISTED=1
+  fi
+  APPLY_APPEARANCE_TARGET=$CONFDIR/appearance.toml
+  APPLY_APPEARANCE_EXISTED=0
+  if [ -e "$CONFDIR/appearance.toml" ] || [ -L "$CONFDIR/appearance.toml" ]; then
+    if [ -L "$CONFDIR/appearance.toml" ]; then
+      APPLY_APPEARANCE_TARGET=$(readlink -f "$CONFDIR/appearance.toml" 2>/dev/null || :)
+      [ -n "$APPLY_APPEARANCE_TARGET" ] || die 'the appearance symlink does not resolve'
+    fi
+    cp -p "$APPLY_APPEARANCE_TARGET" "$WORK/apply-backup/appearance.toml" || \
+      die 'could not back up the appearance file before apply'
+    APPLY_APPEARANCE_EXISTED=1
+  fi
+}
+apply_restore_config() {
+  if [ "$APPLY_OK" = 1 ]; then
+    rm -rf "$WORK/apply-backup"
+    return 0
+  fi
+  if [ -n "${APPLY_CONFIG_TARGET:-}" ]; then
+    if [ "${APPLY_CONFIG_EXISTED:-0}" = 1 ]; then
+      cp -p "$WORK/apply-backup/config.toml" "$APPLY_CONFIG_TARGET" 2>/dev/null || :
+    else
+      rm -f "$APPLY_CONFIG_TARGET" 2>/dev/null || :
+    fi
+  fi
+  if [ -n "${APPLY_APPEARANCE_TARGET:-}" ]; then
+    if [ "${APPLY_APPEARANCE_EXISTED:-0}" = 1 ]; then
+      cp -p "$WORK/apply-backup/appearance.toml" "$APPLY_APPEARANCE_TARGET" 2>/dev/null || :
+    else
+      rm -f "$APPLY_APPEARANCE_TARGET" 2>/dev/null || :
+    fi
+  fi
+  rm -rf "$WORK/apply-backup"
+  say 'Target apply failed; original configuration restored.' >&2
+}
+apply_target_release() {
+  [ "$1" = 2 ] || die "unsupported apply protocol: $1"
+  [ -n "${NIRUX_STAGE_WORK:-}" ] || die 'target apply work directory is missing'
+  WORK=$NIRUX_STAGE_WORK
+  OS=${NIRUX_APPLY_OS:-$(distro)}
+  DM=${NIRUX_APPLY_DM:-keep}
+  BROWSER_EFFECTIVE=${NIRUX_APPLY_BROWSER:-keep}
+  operation=${NIRUX_APPLY_OPERATION:-update}
+  RELEASE=${NIRUX_APPLY_RELEASE:-$(manifest_version suite)}
+  [ "$(manifest_version schema)" = 1 ] || die 'unsupported manifest schema'
+  [ "$(manifest_version suite)" = "$VERSION" ] || die 'target installer/manifest version mismatch'
+  [ "$RELEASE" = "$VERSION" ] || die 'apply release does not match the target installer'
+  [ -f "$WORK/generation/manifest" ] || die 'target apply has no staged generation'
+  [ "$(awk '$1 == "suite" {print $2}' "$WORK/generation/manifest")" = "$RELEASE" ] || \
+    die 'staged generation does not match the apply release'
+  apply_prepare_backup
+  APPLY_OK=0
+  trap 'apply_restore_config' EXIT INT TERM HUP
+  browser_install
+  install_config
+  install_wallpapers
+  prepare_pam
+  register_session
+  if [ "$operation" = install ]; then setup_startx; enable_services; fi
+  activate
+  APPLY_OK=1
+  trap - EXIT INT TERM HUP
+  rm -rf "$WORK/apply-backup"
+  if [ -n "${DISPLAY:-}" ] && "$BIN/niructl" restart-bar; then
+    say 'Applied through the target installer. Running bar restarted; log out/in to activate the new WM, idle daemon and session.'
+  else say 'Applied through the target installer. Log out/in to activate all updated programs. In a new NIRU session: niructl restart-bar.'
+  fi
+}
 stage_release() {
   if [ -z "$RELEASE" ]; then
     fetch https://api.github.com/repos/nirucon/nirux/releases/latest "$WORK/latest.json"
@@ -1146,6 +1231,9 @@ stage_release() {
   sh -n "$WORK/download/nirux/nirux"
   reported=$(sh "$WORK/download/nirux/nirux" --version | awk '{print $2}')
   [ "$reported" = "$RELEASE" ] || die 'installer/manifest version mismatch'
+  APPLY_PROTOCOL=0
+  apply_version=$(sh "$WORK/download/nirux/nirux" _apply-version 2>/dev/null || :)
+  if [ "$apply_version" = 2 ]; then APPLY_PROTOCOL=2; fi
   # Packages come from the verified target installer and are provisioned before
   # any staged binary is executed. This lets a new shared-library dependency be
   # present when the new component is first started and version-checked.
@@ -1500,6 +1588,16 @@ install_or_update() {
   # its own package list below.
   if [ "$operation" = install ] && [ "$packages" = 1 ]; then install_packages; fi
   stage_release
+  if [ "$APPLY_PROTOCOL" = 2 ]; then
+    if ! NIRUX_PREFIX=$PREFIX NIRUX_SYSTEM_ROOT=$ROOT NIRUX_STAGE_WORK=$WORK \
+      NIRUX_APPLY_RELEASE=$RELEASE NIRUX_APPLY_OS=$OS \
+      NIRUX_APPLY_DM=$DM NIRUX_APPLY_BROWSER=$BROWSER_EFFECTIVE \
+      NIRUX_APPLY_OPERATION=$operation \
+      sh "$WORK/download/nirux/nirux" _apply 2; then
+      die 'target installer apply failed; current installation kept'
+    fi
+    return 0
+  fi
   browser_install
   # Configuration and system integration must succeed before switching the
   # active programs. A rejected configuration leaves the old generation intact.
@@ -1519,6 +1617,8 @@ main() {
     install|update) install_or_update "$@" ;;
     _provision) shift; provision_packages "$@" ;;
     _handoff-version) say 1 ;;
+    _apply-version) say 2 ;;
+    _apply) shift; [ "$#" = 1 ] || die 'apply takes one protocol version'; apply_target_release "$1" ;;
     _stage) shift; [ "$#" = 1 ] || die 'staging takes one protocol version'; stage_target_release "$1" ;;
     uninstall) shift; uninstall "$@" ;;
     rollback) [ "$#" = 1 ] || die 'rollback takes no arguments'; rollback ;;
