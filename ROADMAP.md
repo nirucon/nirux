@@ -23,12 +23,12 @@ This file is the authoritative **current plan**. The
 
 ## 2. Actual checkpoint
 
-Published NIRUX **0.10.20** pins:
+Published NIRUX **0.10.21** pins:
 
 | Component | Version | Responsibility |
 |---|---|---|
-| niruwm | 0.16.22 | WM, session, niructl, niruidle |
-| nirubar | 0.18.7 | Per-output bars, panels, tray |
+| niruwm | 0.16.23 | WM, session, niructl, niruidle |
+| nirubar | 0.18.8 | Per-output bars, panels, tray |
 | niruscreensaver | 0.8.1 | Unlocked idle surface |
 | nirulock | 0.16.8 | PAM lock and explicit readiness |
 | nirulauncher | 0.1.1 | Applications and desktop actions |
@@ -43,10 +43,11 @@ nirubar 0.18.7 and updated installer/docs on the component main branches. NIRUX
 **0.10.16** added the I06 configuration migration; **0.10.17** added the I07
 target-installer staging handoff; **0.10.18** completed owned purge coverage and
 made missing configured programs fail `doctor`; **0.10.19** pinned niruwm 0.16.21
-with the I09 standalone-installer metadata fix; **0.10.20** pins niruwm 0.16.22
-and sets the normal arrow root cursor. All are installed on the owner's machines,
-and each update exercised the installed parent/update path. H03 physical checks
-were confirmed by the owner. H01 remains.
+with the I09 standalone-installer metadata fix; **0.10.20** pinned niruwm 0.16.22
+and set the normal arrow root cursor; **0.10.21** adds the U01 config contract and
+bounded hardware helpers. All are installed on the owner's machines, and each
+update exercised the installed parent/update path. H03 physical checks were
+confirmed by the owner. H01 remains.
 
 ## 3. Status vocabulary and execution rules
 
@@ -77,11 +78,12 @@ Commit/push/tag/release only when explicitly requested by the user.
 | I11 / RELEASED | `nirux/nirux`: remove an accidental `cmp` dependency from owned-file comparison; use the existing SHA-256 checks. `nirulock/install.sh` does the same for PAM. | Arch base container runs the full integration without diffutils; suite/PAM files with equal content stay untouched. |
 | I09 / RELEASED | `niruwm/install.sh`: selected old-release bar version comes from that release's metadata, not checkout `nirubar-version`; align standalone version/ownership checks. | Test old and current releases from a newer checkout; no generation contents overwritten. |
 
-**Next implementation task: U01.** I06–I09, H02 and the verifiable parts of H03
-are complete; the owner confirmed lid and external-output behaviour. U01 is the
-next feature checkpoint: WM/bar config validation parity, hidden modules,
-unavailable/stale versus zero data, and bounded/coalesced WM hardware helpers.
-H01 remains as separate fresh-OS acceptance.
+**Next implementation task: U02.** I06–I09, H02, H03 and U01 are complete. U01
+aligned the shared config validators (including clock formats, modules, wallpaper,
+monitors, nightlight, scratchpad and rules), added the shared fixture contract,
+and bounded/coalesced WM hardware helpers. H01 remains as separate fresh-OS
+acceptance. U02 is the next feature checkpoint: responsive bar layout, priorities,
+overflow panel and stable workspace cells.
 
 ### M1 — release acceptance on vanilla installations
 
@@ -119,12 +121,21 @@ H03 partial verification (2026-10-20):
 
 | ID | Repositories / implementation boundary | Done when |
 |---|---|---|
-| U01 | WM/bar config validation contract; invalid values, hidden modules, unavailable/stale vs zero data; bound/coalesce WM hardware helpers. | Shared valid/invalid fixtures behave consistently; key storms cannot create unlimited children or freeze X. |
+| U01 / RELEASED | WM/bar config validation contract; invalid values, hidden modules, unavailable/stale vs zero data; bound/coalesce WM hardware helpers. | Shared valid/invalid fixtures behave consistently; key storms cannot create unlimited children or freeze X. |
 | U02 | Nirubar responsive layout with priorities and an overflow panel; retain stable workspace cells. | 800px, 1366px, 1920px and two-output tests; hidden summaries remain accessible, hitboxes match visible geometry. |
 | U03 | Nirubar explicit media buttons/player selection and audio output/mic controls; deliberate click/scroll mappings. | Reading a panel never changes playback/mute; disabled actions explain missing providers; helpers remain bounded. |
 | U04 | Nirubar honest network state and aggregate battery details. | Distinguish link/IP/connectivity; no mandatory NetworkManager. Multi-battery fixtures; absent estimates stay unavailable. |
 | U05 | Launcher grouped actions, window switching, local recency/favourites and proper text input; lock layout/Caps indication and compose/AltGr review. | XDG desktop precedence and argv parsing preserved; Swedish/US/AltGr tests; no shell interpolation of desktop Exec. |
 | U06 | Saver checked input grabs and output/resize coverage; retire duplicated rendering only where proven useful. | Failed grabs cannot claim success; root resize/hotplug and documented mouse dismissal covered. Retain all locker regressions. |
+
+U01 verification (2026-10-21): NIRUWM and NIRUBAR now reject the same shared
+invalid fixtures for clock formats, module shapes, tags, wallpaper, monitors,
+nightlight, scratchpad and rules. `nirux/tests/config-contract.sh` runs both real
+validators against the canonical, valid-future-module and invalid fixtures. The
+WM's hardware helpers (brightness, nightlight, DND, idle and media keys) run
+through a bounded pool that coalesces an already-running key and caps concurrent
+helpers. Released in niruwm 0.16.23 / nirubar 0.18.8 / NIRUX 0.10.21 and installed
+on both owner machines.
 
 ### M3 — coherent appearance and laptop behaviour
 
