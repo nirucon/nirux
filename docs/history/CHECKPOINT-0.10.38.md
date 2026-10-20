@@ -63,5 +63,12 @@ The agent path is optional for standalone NIRUWM; no WM dependency is added.
 - `niru@void` updated and its active bar restarted: bar background changed from
   the stale Noir value to Nord `#2e3440` after the appearance migration. A
   Polkit authentication agent was started in the active session as well.
-- `niru@thinkpad` was offline in Tailscale during deployment. Its update is
-  pending when it comes back online; no claim is made that it is already fixed.
+- `niru@thinkpad` updated to 0.10.38 / NIRUWM 0.16.36. Appearance migration
+  removed the old Noir override, the active bar was restarted, and a full-screen
+  capture verified the bar changed from Noir (15,15,16) to Nord (46,52,64) and
+  back when the theme was restored. A Polkit agent was started in the active
+  session; `loginctl CanReboot` reports `challenge`, so the agent can complete
+  the authentication.
+- On thinkpad, `tailscaled` was only active but not enabled. It is now
+  `systemctl enable --now tailscaled` and reports enabled + active, so it should
+  return after the next reboot.
