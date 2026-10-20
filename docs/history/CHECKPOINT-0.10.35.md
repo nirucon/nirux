@@ -23,4 +23,11 @@ Existing module text (`cpu N% mem N%`) and popup semantics are unchanged.
   NIRUWM.
 - Local render comparison used the actual JetBrainsMono Nerd Font from
   `niru@void`.
-- Full CI and host deployment are recorded after the 0.10.35 release.
+- NIRUX CI [39429990015](https://github.com/nirucon/nirux/actions/runs/39429990015)
+  passed check, Arch, Debian and Void.
+- Release workflow [39430601333](https://github.com/nirucon/nirux/actions/runs/39430601333)
+  published v0.10.35.
+- `niru@void` and `niru@thinkpad` are on NIRUX 0.10.35 / NIRUBAR 0.18.17. The
+  Void bar was restarted in the active session and a new screenshot confirms the
+  microchip glyph. No session was logged out. Thinkpad's current module list
+  does not include `pulse`, but its bar binary was updated and restarted.
