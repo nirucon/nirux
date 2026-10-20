@@ -7,6 +7,10 @@ Includes niruwm, niructl, niruidle, nirubar, niruscreensaver, nirulock,
 nirulauncher and nirunotify, plus Xorg and runtime dependencies. Niru Noir is the
 default theme; Nord, Satie and Carl Larsson are also available.
 
+**0.10.30 acceptance status:** full vanilla real-release/startx CI is failing;
+the managed Helium option is still missing. See the [current roadmap](ROADMAP.md)
+for the installation-first queue and exact verification limits.
+
 ## Install
 
 Run as your normal login user with sudo available:
@@ -37,7 +41,8 @@ Default prefix: `~/.local`; shared config: `~/.config/niruwm/config.toml`.
 XDG paths are respected. The session adds its bin directory to PATH.
 
 [Installation](docs/INSTALL.md) · [Roadmap / AI handoff](ROADMAP.md) ·
-[Current review](docs/REVIEW-2026-10-20.md) · [Baseline audit](AUDIT.md) ·
+[Restart prompt](docs/NEXT-SESSION.md) ·
+[Current review](docs/REVIEW-2026-10-20-RESTART.md) · [Baseline audit](AUDIT.md) ·
 [Measurements](MEASUREMENTS.md)
 
 MIT. Copyright 2026 Nicklas Rudolfsson.

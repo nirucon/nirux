@@ -1,7 +1,7 @@
 # NIRU desktop audit — 2026-10-19
 
 **Historical baseline.** For the 2026-10-20 review and current unresolved work,
-read [the current review](docs/REVIEW-2026-10-20.md) and [roadmap](ROADMAP.md).
+read [the restart review](docs/REVIEW-2026-10-20-RESTART.md) and [roadmap](ROADMAP.md).
 The findings below refer to the revisions listed here, not today's release.
 
 ## Summary

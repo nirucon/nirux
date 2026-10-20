@@ -1,5 +1,12 @@
 # Installation and maintenance
 
+**Verified-state note, 2026-10-20:** the published baseline is 0.10.30. Full
+vanilla real-release/startx CI currently fails on all three supported distros;
+the managed Helium browser option is not implemented. The commands below describe
+the existing installer, not a completed clean-OS certification. Follow
+[S01–S04/H01 in the roadmap](../ROADMAP.md) and the
+[restart review](REVIEW-2026-10-20-RESTART.md) for the actual acceptance gaps.
+
 Install and maintain the NIRU X11 desktop on **Void Linux (glibc), Arch Linux
 and Debian**, including a minimal OS installation without a graphical desktop.
 Released binaries currently target x86_64 with glibc. Void musl and other CPU
@@ -140,8 +147,9 @@ by NIRUX. Screenshots create `~/Pictures` when needed.
 the existing Super+N toggle. Fixed uses local `on = "20:00"` / `off = "07:00"`
 times; solar computes sunrise and sunset from the configured coordinates with
 gammastep, without GeoClue. Fixed and solar start one watcher in the NIRUWM
-session; it reapplies after resume and display changes and is the only
-gammastep owner. `niructl nightlight apply|watch|status` are the controls.
+session. Its current implementation polls saved temperature; actual unchanged-
+temperature resume/hotplug reapply and single-watcher ownership remain C02 in
+the roadmap. `niructl nightlight apply|watch|status` are the controls.
 
 `[brightness]` selects the brightnessctl `device` (empty means default) and the
 percentage `step` used by `niructl brightness up|down` and the hardware keys.
@@ -154,10 +162,11 @@ The optional `~/.config/niruwm/appearance.toml` (schema 1) is shared by NIRUWM,
 NIRUBAR, NIRULAUNCHER, NIRUNOTIFY, NIRULOCK and NIRUSCREENSAVER. It carries
 semantic colours, font size/path, spacing, focus width and reduced motion.
 A user theme file in `~/.config/niruwm/themes/NAME.toml` takes precedence.
-Unreadable, unsupported or invalid appearance files are ignored with a diagnostic,
-so the last working theme stays active. NIRULOCK and NIRUSCREENSAVER always keep
-an opaque black background. NIRUX creates the example as `appearance.toml` on a
-fresh install and leaves an existing file untouched.
+Unreadable, unsupported or invalid appearance files are ignored with a diagnostic;
+this is fallback loading, not proof of preserving the last applied live theme.
+Appearance/theme identity and reload/pixel acceptance remain C01. Lock/saver are
+intended to retain an opaque black background. NIRUX creates the example as
+`appearance.toml` on a fresh install and leaves an existing file untouched.
 
 ### Configuration migration
 

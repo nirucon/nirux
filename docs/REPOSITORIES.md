@@ -1,8 +1,30 @@
 # NIRU repository inventory — 2026-10-20
 
-All URLs are under `https://github.com/nirucon/`. Baseline revisions are the
-checked-out GitHub main heads before this review's uncommitted edits.
-No AGENTS.md was found in these checkouts.
+All URLs are under `https://github.com/nirucon/`. Use the current heads below for
+the restart baseline, and fetch again before editing. Older tables preserve the
+initial review scope; they are not a current certification of optional apps.
+
+## Restart baseline — 0.10.30
+
+| Repository | GitHub main observed 2026-10-20 | Release |
+|---|---|---|
+| nirux | `27f6661b40f5` before this documentation commit | v0.10.30 |
+| niruwm | `ceb78000eadf` | v0.16.30 |
+| nirubar | `e870f89d369b` | v0.18.15 |
+| niruscreensaver | `52173f62718b` | v0.8.3 |
+| nirulock | `9929208c898d` | v0.16.10 |
+| nirulauncher | `8aa2a9004021` | v0.2.1 |
+| nirunotify | `00d9ec47226f` | v0.3.3 |
+
+[Current roadmap](../ROADMAP.md), [restart review](REVIEW-2026-10-20-RESTART.md)
+and [next-session prompt](NEXT-SESSION.md) supersede the old next-task ordering.
+Helium upstream is `imputnet/helium-linux`; it is external software, not another
+NIRU core repository. No mandatory new repository is currently justified.
+
+Persistent clones may exist in `~/.cache/niru-work/`. Check status and applicable
+AGENTS.md instructions in every checkout. `/tmp/opencode` is disposable.
+
+## Initial review scope (historical revisions)
 
 ## Desktop core
 

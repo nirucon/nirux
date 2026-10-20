@@ -1,299 +1,168 @@
-# NIRU desktop — implementation roadmap
+# NIRU desktop — current roadmap and restart handoff
 
-Updated **2026-10-20**. Audience: human maintainers, OpenCode and DeepSeek.
-This file is the authoritative **current plan**. The
-[previous roadmap](docs/history/ROADMAP-2026-10-19.md) preserves release history.
-[Current review](docs/REVIEW-2026-10-20.md) records evidence and limits.
-[Next-session prompt](docs/NEXT-SESSION.md) is the copy-ready continuation brief.
+Updated **2026-10-20**, checked against published **NIRUX 0.10.30**.
+
+- **Start here after restarting OpenCode:** [NEXT-SESSION.md](docs/NEXT-SESSION.md)
+- **Evidence and open defects:** [restart review](docs/REVIEW-2026-10-20-RESTART.md)
+- **Repositories:** [inventory](docs/REPOSITORIES.md)
+- **Previous work:** [delivery history through 0.10.30](docs/history/ROADMAP-0.10.30.md)
 
 ## 1. Product contract
 
-- A small, coherent, keyboard-first X11 desktop on vanilla **Void glibc, Debian
-  and Arch Linux**. Current release target: **x86_64/glibc**.
-- Core: niruwm/session/niructl/niruidle, nirubar, niruscreensaver, nirulock,
-  nirulauncher, nirunotify. NIRUX owns provisioning and release integration.
-- Normal-user installation; sudo only for distribution packages/system files.
-  Preserve existing user values and unrelated system integration.
-- NIRUPI is outside this work. Do not install, update, clean or modify it.
-- English UI/docs, ISO dates, 24-hour time, Monday-first calendar, ISO weeks.
-- Niru Noir by default; Nord, Satie, Carl Larsson and custom themes supported.
-- No new mandatory daemon, GUI framework, network service or repository for
-  capabilities existing components can provide. Optional apps stay optional.
-- Every new mandatory dependency has a verified mapping on **all three** distros.
+A small, coherent, keyboard-first X11 desktop on vanilla **Void glibc, Debian
+and Arch Linux**, currently **x86_64/glibc**. Niru Noir by default; Nord, Satie,
+Carl Larsson and custom themes. English UI/docs, ISO dates, 24-hour clock,
+Monday-first calendar and ISO weeks.
 
-## 2. Actual checkpoint
+NIRUX must provision everything needed for the suite on a clean supported OS:
+X11/startx, session bus, fonts/cursors, terminal, audio, hardware helpers,
+screenshots, launcher, notifications and PAM lock integration. Preserve an
+existing display manager; offer startx by default when none exists, with SDDM
+or LightDM optional. **Helium must be an explicit installer option**, with its
+dependencies managed by NIRUX. Preserve existing browser/user configuration.
 
-Published NIRUX **0.10.30** pins:
+No NIRUPI dependency or modifications. No new mandatory daemon, framework,
+account or repository when an existing component can provide the feature.
+Networking, Git/bootstrap download tools, sudo access and OS/hardware-specific
+drivers/firmware must be documented separately from suite provisioning.
 
-| Component | Version | Responsibility |
+## 2. Published baseline — availability is not acceptance
+
+| Repository | Pinned release | Responsibility |
 |---|---|---|
+| nirux | 0.10.30 | Packages, generations, installation, integration |
 | niruwm | 0.16.30 | WM, session, niructl, niruidle |
-| nirubar | 0.18.15 | Per-output bars, panels, tray |
+| nirubar | 0.18.15 | Per-output bar, tray, panels, weather |
 | niruscreensaver | 0.8.3 | Unlocked idle surface |
-| nirulock | 0.16.10 | PAM lock and explicit readiness |
-| nirulauncher | 0.2.1 | Applications and desktop actions |
-| nirunotify | 0.3.3 | Notifications, actions, DND, bounded history/OSD |
+| nirulock | 0.16.10 | PAM lock, input grabs and readiness |
+| nirulauncher | 0.2.1 | Apps, actions, windows, local recency/favourites |
+| nirunotify | 0.3.3 | Native notifications, actions, DND, history/OSD |
 
-Launcher, notifier, weather, native desktop actions, manual brightness/night
-light and sleep delay inhibition **already exist**. Native notifications are the
-`auto` preference; Dunst is fallback. Do not rebuild these as new projects.
+All listed releases/assets were found on GitHub in this review. Previous sessions
+reported installation of 0.10.30 on `niru@void` and `niru@thinkpad` (Arch); this
+review did not reconnect to certify their current running sessions.
 
-The 2026-10-20 corrections are **published** in NIRUX 0.10.15, niruwm 0.16.20,
-nirubar 0.18.7 and updated installer/docs on the component main branches. NIRUX
-**0.10.16** added the I06 configuration migration; **0.10.17** added the I07
-target-installer staging handoff; **0.10.18** completed owned purge coverage and
-made missing configured programs fail `doctor`; **0.10.19** pinned niruwm 0.16.21
-with the I09 standalone-installer metadata fix; **0.10.20** pinned niruwm 0.16.22
-and set the normal arrow root cursor; **0.10.21** added the U01 config contract and
-bounded hardware helpers; **0.10.22** added the U02 responsive bar with priority
-overflow; **0.10.23** fixed the U02 sparse-module clock regression; **0.10.24**
-added explicit U03 media/audio controls; **0.10.25** added the U04 network and
-battery state; **0.10.26** added U05 launcher and lock improvements; **0.10.27**
-added U06 checked saver grabs and full resize coverage; **0.10.28** adds the
-suite-wide A01 appearance contract; **0.10.29** adds A02 night-light schedules and
-brightness selection; **0.10.30** adds the A03 weather rain timeline and daylight
-progress. All are installed on the owner's machines, and each update exercised
-the installed parent/update path. H03 physical checks were confirmed by the
-owner. H01 remains.
+**Clean-install acceptance is OPEN. Helium integration is NOT implemented.**
+There is no Helium flag or download path in 0.10.30. The canonical browser is
+`brave`, which NIRUX does not install. The latest full distro CI examined failed
+in real-release/startx integration on **all three** distributions:
+[run 39406911647](https://github.com/nirucon/nirux/actions/runs/39406911647).
+Its shell checks, mocked regression tests and earlier dependency-install steps
+passed. A successful release workflow does not run this entire matrix.
 
-## 3. Status vocabulary and execution rules
+The earlier I06–I09, U01–U06 and A01–A03 work is **shipped**, with useful
+regressions. It is not blanket proof that every original acceptance criterion
+passed. The follow-ups below supersede historical claims of full completion.
 
-Use `TODO`, `IN_PROGRESS`, `LOCAL_VERIFIED`, `RELEASED`, `BLOCKED`.
-`LOCAL_VERIFIED` never means published, installed, physically tested or complete.
-Start one task ID; finish its acceptance before another feature checkpoint.
+## 3. Immediate queue — installation before new features
 
-For each task, record: ID, repositories/paths, baseline revision, reproduction,
-implementation, test command/result, distro/environment, remaining limits,
-release/pin status and next task. Keep passwords/tokens out of every record.
-Run `git status` first and preserve work from earlier maintainers.
-Commit/push/tag/release only when explicitly requested by the user.
+Work one ID at a time; record reproduction, paths, revisions, commands/results,
+environment, release/deployment status, remaining limits and next task.
 
-## 4. Ordered implementation queue
-
-### M0 — make the current installation truthful
-
-| ID / status | Repositories and exact work | Acceptance |
+| ID / status | Exact next work | Acceptance |
 |---|---|---|
-| I01 / RELEASED | `nirux/nirux`: missing-only Arch installs use `pacman -S`, never `-Sy`. | Mock command regression on all three OS shells; expired mirror package errors retain the current generation. |
-| I02 / RELEASED | `nirux/nirux`: scope config keys to their TOML tables, handle indented/commented headers, preserve mode and user values. | Migration fixture: colliding keys, monitor profiles, 0600 mode, second-run idempotence. Full TOML edge cases remain I06. |
-| I03 / RELEASED | Canonical examples in nirux/niruwm/nirubar: remove dead NIRUPI/Flameshot overrides; create Pictures before screenshots; update opt-in. | Both real component validators accept the canonical file; fresh standalone shortcuts call installed tools. Physical shortcut check remains H01. |
-| I04 / RELEASED | Locker/saver installers: current default versions, reject NIRUX binary links, hash-check removals; locker removes only recorded PAM files and downloads release-pinned PAM. | Offline ownership/removal regressions on Void/Arch/Debian. Real standalone prebuilt install + PAM matrix remains H02. |
-| I05 / RELEASED | `nirubar/src/config.rs,module.rs`: reject bad strftime formats before rendering; disabled battery/network/clock have no module/hitbox. | Rust regressions and fmt/clippy. WM/bar validator parity remains U01. |
-| I06 / RELEASED | `nirux/nirux`: define supported migration syntax; test quoted keys, multiline strings/arrays, duplicate tables and interrupted writes. Stop rather than damage unsupported input; use a validated staged candidate before activation. | Original file and active generation survive every rejection; candidate parses in both components. No mandatory Python/TOML runtime just for migration. |
-| I07 / RELEASED | `nirux/nirux`: forward staging to the verified target installer through a versioned internal handoff so new components install on the **first** update. Provision new shared-library dependencies before running staged components. | Old-installer → synthetic new-component and missing-library fixtures; corrupt assets or provisioning failure retain the old generation. |
-| I08 / RELEASED | `nirux/nirux`: finish owned purge coverage for nirubar config, nirulauncher, nirunotify and saver state; make missing configured programs actionable in doctor. | Normal uninstall keeps config; documented purge covers only owned suite data. Missing configured browser is visible and fails the relevant diagnostic. |
-| I11 / RELEASED | `nirux/nirux`: remove an accidental `cmp` dependency from owned-file comparison; use the existing SHA-256 checks. `nirulock/install.sh` does the same for PAM. | Arch base container runs the full integration without diffutils; suite/PAM files with equal content stay untouched. |
-| I09 / RELEASED | `niruwm/install.sh`: selected old-release bar version comes from that release's metadata, not checkout `nirubar-version`; align standalone version/ownership checks. | Test old and current releases from a newer checkout; no generation contents overwritten. |
+| S01 / TODO — **START HERE** | Reproduce the full distro-CI failure using 0.10.30. Diagnose real-release install/doctor/config-contract/startx separately. Fix defects rather than ignoring failed diagnostics. | A new full CI run passes Arch, Debian Bookworm and Void glibc; retain complete logs. If browser absence is the blocker, track it explicitly through S02. |
+| S02 / TODO | Add an explicit, persistent Helium install/opt-out policy and align default shortcuts/desktop entry/doctor. Prefer official pinned upstream assets with recorded integrity; verify extraction tools, shared libraries and sandbox on all three distros. | With Helium selected: empty-home install launches it as a normal user with sandbox enabled. With opt-out: updates preserve the choice and existing browser settings. Missing chosen browser is actionable. Test failed/corrupt download, update, rollback and owned uninstall. Never use `--no-sandbox` to pass a test. |
+| S03 / TODO | Complete target-installer handoff beyond binary staging. Current `install_config` and activation still execute in the old caller. New appearance/config changes previously required a second update. | A genuinely older installer updates once to a synthetic target with a new asset/config key/program; the target owns config/integration/activation semantics under a versioned protocol. Failures preserve original config and active generation. |
+| S04 / TODO | Recheck the complete vanilla dependency/runtime matrix: X11/input/fonts/cursors, audio, PAM, session bus, optional DM, screenshots and configured commands. Include Helium runtime and sandbox dependencies. | No manual suite-related package fixes on any supported distro. Record package versions and actual normal-user runtime, not only successful package lookup. |
+| H01 / TODO | Fresh OS/VM + empty normal-user home on all three distros, then upgrade from the published baseline. | Real released install → status/doctor → startx/login → apps/browser/audio/screenshot/lock → update once → rollback → uninstall/purge. Test existing DM separately. Containers/Xvfb are supporting evidence, not fresh physical OS evidence. |
 
-**Next implementation task: A04.** I06–I09, H02, H03, U01–U06 and A01–A03 are
-complete. A03 adds the next-hour rain chance to the compact weather cell, an
-eight-hour rain timeline and daylight progress in the weather panel, and
-daylight progress in the sun panel, all from the existing cache. H01 remains as
-separate fresh-OS acceptance. A04 is next: optional notification images/hints
-after bounded decoding and protocol tests.
+**Next session starts with S01, not A04.** Finish the clean-install/Helium path
+before optional notification images or new repositories.
 
-### M1 — release acceptance on vanilla installations
+### Three-distro acceptance sheet
 
-| ID / status | Work | Acceptance |
+| Path | Arch | Debian | Void glibc |
+|---|---|---|---|
+| Package provisioning | CI step passed in examined run | CI step passed | CI step passed |
+| Mock install/update/rollback | Passed in examined CI | Passed in examined CI; rerun in container this review | Passed in examined CI |
+| Latest full real-release/startx CI | **Failed** | **Failed** | **Failed** |
+| Fresh normal-user OS desktop acceptance | Open | Open | Open |
+| Managed Helium option + sandboxed launch | Missing | Missing | Missing |
+| Physical sleep/output checks | Owner previously confirmed | No physical host supplied | Owner previously confirmed |
+
+## 4. Correctness and integration follow-ups
+
+| ID / priority | Repositories and work | Done when |
 |---|---|---|
-| H01 / TODO | Fresh OS + empty normal-user home on Void/Arch/Debian; startx, then existing/selected display-manager paths. | Real release install → status/doctor → login → terminal/launcher/browser configuration, screenshots, icons, audio, lock/unlock → update → rollback → uninstall. Record OS release, manifest and exact results. |
-| H02 / RELEASED | Standalone saver/locker prebuilt and source installers, pinned PAM, modified-file preservation and failed-install boundaries. | All three distro mappings plus non-root wrong/correct-password PAM checks. No test writes to production `/etc/pam.d`. |
-| H03 / RELEASED | Physical Void + ThinkPad: lid close, suspend/resume, external output attach/remove, lock during topology changes, native notification privacy. | Never suspend before ready lock; no uncovered pixels; workspace/output identities survive; notifier cleans up on logout. Record physical separately from Xvfb. |
-| H04 / RELEASED | Compile/publish changed components, verify assets/checksums, then update NIRUX pins and run full distro CI. Components and NIRUX 0.10.15 published 2026-10-20; finish asset/CI verification and one install/update check. | One install/update reaches the intended complete generation. Immutable tags/assets; never relabel published releases. |
+| C01 / P1 | Appearance: common validation, theme precedence, neutral defaults, explicit per-component overrides, font/spacing/focus/reduced-motion semantics. Current shipped example hardcodes Noir colours; invalid input falls back rather than retaining an in-memory last-good contract. | Four themes and custom theme retain their identity; actual rendered colours/geometry and black lock opacity are asserted. Live invalid reload preserves the previous applied state. Checks must assert values, not just six exit codes. |
+| C02 / P1 | Night light: manual/off/status must not need coordinates; fixed scheduling must work offline without a location. Reapply unchanged Kelvin after resume/RandR. One watcher per X session with manual override ownership and bounded helper timeouts. | No-coordinate manual/off/fixed tests; two invocations cannot compete; resume/output changes trigger an actual gamma call even when the saved temperature is unchanged. Include polar/0,0/timezone and permission evidence. |
+| C03 / P1 | Launcher/lock keyboard input: real Swedish/US/AltGr/Caps mapping, MappingNotify, Unicode and compose review. Favourites/groups/window-focus semantics and local-state writes. | Real X key sequences produce intended search/password characters. Dead-key/IME limitations remain explicit until implemented. Preserve desktop-file precedence, Hidden masks and argv-only Exec launch. |
+| C04 / P1 | Battery/network honesty: complete-pack rate accounting, coherent units, Full vs Not charging, IPv6 reject/default route filtering, selected-interface/address association. | Mixed energy/charge and partial-rate fixtures cannot produce a false estimate; no IP/default route is never described as proven Internet connectivity. No mandatory NetworkManager or online ping service. |
+| C05 / P1 | Weather: missing probability/temperature stays unavailable; timezone-aware forecast indexing, explicit wind units, current-day/polar daylight, age-based stale label. | Unknown is not 0%; stale-day sunrise is not today's event; forecast location time is handled correctly. No synchronous HTTP, no second fetch daemon. |
+| C06 / P2 | Responsive bar and controls: sparse indices, large fonts/titles/tray, small widths, input buttons, overflow access and configuration. Output selection and genuine panel controls still need a design beyond mouse shortcuts. | 800/1366/1920 and mixed-width outputs have pixel/hitbox/popup tests. Reading is side-effect free. Provider absence is visible; helper processes and their descendants have deadlines and bounded concurrency. |
+| C07 / P1 | Suite lifecycle/ownership: precise logout cleanup, live reload, stale singleton/lock state, unmanaged-file protection, failed activation and rollback of added/removed components. | Isolated X11/D-Bus tests and failure injection retain user data and leave no competing notifier, idle ladder, night-light watcher or leaked grabs/processes. No testing in production PAM. |
+| A04 / TODO — later | Optional bounded notification images/hints in nirunotify. | Cap dimensions/decoded bytes/queue/history; advertise only implemented capabilities. Retain D-Bus actions, lock privacy, DND and cleanup regressions. |
 
-Available hosts: `niru@void` and `niru@thinkpad`. Existing installs are **not clean
-OS evidence**. Debian currently has container evidence, no physical host supplied.
-Never force an active desktop to log out for acceptance testing.
+H02 installer/PAM and H03 sleep/output checks have previous automated and
+owner-confirmed evidence. Keep those regressions; rerun affected paths after
+runtime changes. Existing hosts are never clean-OS proof and active sessions
+must not be forcibly logged out for testing.
 
-H03 partial verification (2026-10-20):
+## 5. Useful innovations, implemented in existing components first
 
-- **Void, real X session:** lock covered the full 1920x1080 root; RTC-assisted
-  suspend/resume kept Xorg and the lock alive with `_NIRU_LOCK_READY` and full
-  coverage after resume. A locked mode change to 1600x900 resized the lock and
-  restored cleanly, then returned to 1920x1080. The running session was still
-  niruwm 0.16.19, so the monitor metadata during a mode change must be rechecked
-  after logout/login on the current 0.16.22.
-- **ThinkPad, current 0.16.21 on isolated Xvfb:** lock covered the full
-  1280x800 root. Native `nirunotify` kept a notification out of the lock (history
-  only). Root resize to 800x600 resized the lock and restored. An unlocked
-  session suspended via RTC/systemctl became locked before sleep and was still
-  ready with full coverage after resume. Logout killed the notifier, WM and bar.
-- **Owner-confirmed physical steps (2026-10-20):** lid close/open and external
-  output attach/remove work on both machines.
-- **Cursor correction:** the owner reported a cross root cursor on Arch/ThinkPad.
-  niruwm 0.16.22 / NIRUX 0.10.20 sets `left_ptr` after the root background;
-  a new login is required to replace the running session.
+Order these after S01–S04 and the relevant correctness gate:
 
-### M2 — reliable and useful controls
+1. **Explain this state** — launcher actions for missing backlight permissions,
+   audio sink/mic, browser, stale weather, notification ownership and inhibitors.
+   Reuse `nirux doctor`/`niructl`; one coherent diagnostic, no service.
+2. **Desktop lens** — local queries for `window`, `workspace`, `audio`, `battery`,
+   `display`, `weather`; show cached facts with explicit existing actions.
+3. **Focus session** — bounded timed DND + keep-awake, one visible countdown,
+   restore only settings the user has not changed. Manual lock/suspend independent.
+4. **Docking profiles** — output identity, workspace affinity, bar density and
+   night-light reapply, with preview and timed revert. Hardware acceptance first.
+5. **First-login self-check** — on-demand completion screen in the launcher:
+   audio/browser/font/backlight shortcuts and why something is unavailable.
+   No resident onboarding process and no telemetry.
+6. **Appearance export** — optional palette export to already-owned nplay/cmus/
+   terminal themes, with preview and modified-file preservation after C01.
 
-| ID | Repositories / implementation boundary | Done when |
+Every feature is opt-in where appropriate and records idle CPU/RSS/process count,
+helper/network activity, a failure regression and all three distro mappings.
+
+## 6. Related repositories and the no-bloat boundary
+
+There is **no demonstrated need for another mandatory core repository**.
+Use nirulauncher/niructl/nirubar before introducing another control-centre app.
+Use nplay/MPRIS for media/radio rather than requiring QuickShell. See the
+[repository inventory](docs/REPOSITORIES.md) for optional applications and limits.
+
+| Queue | Optional work | Gate |
 |---|---|---|
-| U01 / RELEASED | WM/bar config validation contract; invalid values, hidden modules, unavailable/stale vs zero data; bound/coalesce WM hardware helpers. | Shared valid/invalid fixtures behave consistently; key storms cannot create unlimited children or freeze X. |
-| U02 / RELEASED | Nirubar responsive layout with priorities and an overflow panel; retain stable workspace cells. | 800px, 1366px, 1920px and two-output tests; hidden summaries remain accessible, hitboxes match visible geometry. |
-| U03 / RELEASED | Nirubar explicit media buttons/player selection and audio output/mic controls; deliberate click/scroll mappings. | Reading a panel never changes playback/mute; disabled actions explain missing providers; helpers remain bounded. |
-| U04 / RELEASED | Nirubar honest network state and aggregate battery details. | Distinguish link/IP/connectivity; no mandatory NetworkManager. Multi-battery fixtures; absent estimates stay unavailable. |
-| U05 / RELEASED | Launcher grouped actions, window switching, local recency/favourites and proper text input; lock layout/Caps indication and compose/AltGr review. | XDG desktop precedence and argv parsing preserved; Swedish/US/AltGr tests; no shell interpolation of desktop Exec. |
-| U06 / RELEASED | Saver checked input grabs and output/resize coverage; retire duplicated rendering only where proven useful. | Failed grabs cannot claim success; root resize/hotplug and documented mouse dismissal covered. Retain all locker regressions. |
+| P01 | nirunote/niruorg | Void Python/PySide6 mappings, clean install/startup/upgrade/removal on all three systems. |
+| P02 | nirupres/niruflow | Qt/multimedia/WebEngine/venv packaging evidence; reconcile actual versions and READMEs. |
+| P03 | nplay/nirulize | MPRIS/PipeWire monitor capture and session-bus integration; no machine-specific paths. |
+| P04 | nirupresence | Explicit opt-in session lifetime, one instance, clean logout, no NIRUPI edits. |
+| P05 | QuickShell radio/presence adapters | Optional external-desktop adapters only; never default core dependencies. |
+| P06 | nplay/cmus/REAPER themes | Declarative validation, preserve edits, optional appearance export after C01. |
 
-U01 verification (2026-10-21): NIRUWM and NIRUBAR now reject the same shared
-invalid fixtures for clock formats, module shapes, tags, wallpaper, monitors,
-nightlight, scratchpad and rules. `nirux/tests/config-contract.sh` runs both real
-validators against the canonical, valid-future-module and invalid fixtures. The
-WM's hardware helpers (brightness, nightlight, DND, idle and media keys) run
-through a bounded pool that coalesces an already-running key and caps concurrent
-helpers. Released in niruwm 0.16.23 / nirubar 0.18.8 / NIRUX 0.10.21 and installed
-on both owner machines.
+**Conditional new repo idea: `nirudisplay`**, an optional native display-profile
+editor, only if docking-profile work proves independently reusable. Start with
+niructl/WM RandR support and preview/revert; no daemon, mandatory compositor,
+network service or replacement session manager. It is a proposal, not an
+approved dependency or a repository that already exists.
 
-U02 verification (2026-10-21): NIRUBAR keeps the configured workspace-cell width
-and fits optional modules by priority; the lowest-priority modules collapse into
-a clickable `+N` panel whose summaries remain available. Layout tests cover
-800/1366/1920 px, independent two-output widths, non-overlapping hit boxes and
-the overflow position. The release workflow renders the bar at all three widths.
-An Xvfb click test opened and Escape closed the overflow panel. The owner found
-that date and clock disappeared on Arch when an empty module left gaps in the
-module indexes; nirubar 0.18.10 maps placements by item slot, with a sparse-index
-regression. Released in nirubar 0.18.10 / niruwm 0.16.25 / NIRUX 0.10.23 and
-installed on both machines; the owner confirmed the clock after the bar restart.
+## 7. Working/release rules and restart
 
-U03 verification (2026-10-21): left click only opens the information panel and
-never changes playback or mute. Media right-click is play/pause, scroll is
-previous/next and middle-click cycles MPRIS players; the selected player is used
-for subsequent reads and commands. Volume right-click toggles output mute, scroll
-changes volume and middle-click toggles the microphone. Missing `playerctl`,
-`wpctl` or ALSA is explained in the panel. Controls run through a bounded helper
-pool that coalesces an already-running control and caps concurrent children.
-Fake-provider Xvfb tests confirmed no action on left click, the exact commands for
-right/scroll, and player-aware `-p` commands. Released in nirubar 0.18.11 /
-niruwm 0.16.26 / NIRUX 0.10.24 and installed on both machines.
+- Read the [restart prompt](docs/NEXT-SESSION.md) and review before changing code.
+- Inspect `git status`, fetch, compare local/main and preserve unfamiliar work.
+- Prefer persistent clones under `~/.cache/niru-work/`; `/tmp/opencode` was cleared
+  during previous work. GitHub main and the published manifest are authoritative.
+- The owner requests commit/push/publication after each **verified completed**
+  checkpoint and installation on Void/Arch when there is a deployable change.
+  Documentation-only updates are pushed; they do not need artificial binary tags.
+- Immutable releases: never move an existing published tag or replace its assets.
+  A release workflow passing is not equivalent to the full distro CI passing.
+- Keep concise READMEs, current task IDs, commands/evidence and remaining limits.
+  Archive useful history instead of deleting it. Never store credentials.
+- Tests: `sh tests/integration.sh`, `shellcheck -S warning nirux tests/*.sh`,
+  relevant Rust fmt/clippy/tests and real X11/D-Bus regressions. Run the actual
+  released-asset smoke and full distro CI before claiming install acceptance.
+- Deployment: inspect versions/config/status/doctor before and after; preserve
+  configuration and rollback. Ask for SSH/sudo credentials if needed.
 
-U04 verification (2026-10-21): NIRUBAR aggregates all battery packs, using total
-energy (or charge) for a weighted percentage and reporting mixed charging states
-honestly. Remaining time comes from the kernel power/current rate and is
-`unavailable` when that rate is absent; it is never shown as zero. Network state
-uses sysfs plus `/proc/net/route` and `/proc/net/ipv6_route` only: link up with no
-default route is shown with `!`, and the panel separates type, link, route,
-interface and address. Multi-battery, no-estimate, mixed-state, default-route and
-link-without-route fixtures pass. Released in nirubar 0.18.12 / niruwm 0.16.27 /
-NIRUX 0.10.25 and installed on both machines.
+Restart shorthand:
 
-U05 verification (2026-10-21): NIRULAUNCHER groups System, Display, Power,
-Appearance, Workspaces and Windows results; action mode also lists EWMH windows
-and focuses the selected one. Favourites from config and local usage recency
-order the filtered list, with the state kept under
-`~/.local/state/nirulauncher/`. Keyboard levels cover Shift, Caps Lock and AltGr,
-including Latin-1 Swedish letters. Unit tests cover level mapping, Caps, grouped
-search and favourite/recency ordering; the X11 smoke test still verifies launch
-argv, singleton and Escape. NIRULOCK now shows a Caps Lock warning and applies
-Caps Lock to Latin-1 letters; its AltGr password input remains verified by the
-locker tests. Dead-key compose sequences are explicitly not claimed. Released in
-nirulauncher 0.2.0 / nirulock 0.16.9 / NIRUX 0.10.26 and installed on both
-machines.
-
-U06 verification (2026-10-21): NIRUSCREENSAVER now checks the reply status of
-both keyboard and pointer grabs; a failed grab exits instead of claiming a
-covering screen. RandR screen/CRTC/output changes and root resizes reconfigure
-the override-redirect window and create a fresh backing pixmap, so no pixels are
-left uncovered. Xvfb tests cover 1024x768 → 800x600 → restore, key and mouse
-dismissal, repeated exposures without font reloads, and a second saver failing
-while the first owns the grabs. Released in niruscreensaver 0.8.2 / NIRUX 0.10.27
-and installed on both machines.
-
-A01 verification (2026-10-21): `~/.config/niruwm/appearance.toml` (schema 1)
-provides semantic colours, font size/path, spacing, focus width and reduced
-motion. NIRUWM, NIRUBAR, NIRULAUNCHER, NIRUNOTIFY, NIRULOCK and NIRUSCREENSAVER
-read it; user theme files take precedence and invalid schema/colour files are
-ignored with a diagnostic while the working theme remains. Lock and saver keep
-opaque black backgrounds. `nirux/tests/appearance-contract.sh` checks all four
-built-in themes, a custom theme and two invalid contracts against all six real
-binaries. Released in niruwm 0.16.28 / nirubar 0.18.13 / nirulauncher 0.2.1 /
-nirunotify 0.3.3 / nirulock 0.16.10 / niruscreensaver 0.8.3 / NIRUX 0.10.28.
-Existing hosts needed a second update because `install_config` still runs from
-the installed script; both machines now have `appearance.toml`.
-
-A02 verification (2026-10-21): `[nightlight]` supports manual, fixed (`on`/`off`
-local times, including midnight wrap) and solar (gammastep `-p` computes the
-current temperature from coordinates without GeoClue). Fixed/solar start one
-session watcher that owns gammastep, reconciles every 30 seconds and therefore
-reapplies after resume or output changes; manual mode starts no watcher.
-`[brightness]` selects the brightnessctl device and percentage step, used by
-both `niructl` and the hardware keys. `nirux doctor` reports a present backlight
-that brightnessctl cannot read. Schedule, bounds and config fixtures pass.
-Released in niruwm 0.16.29 / nirubar 0.18.14 / NIRUX 0.10.29. Existing hosts
-needed a second update for the new config keys; both now have them.
-
-A03 verification (2026-10-21): the optional weather cell now appends the
-next-hour rain chance when it is at least 20%. Its panel adds an eight-hour rain
-timeline and a daylight progress bar with remaining daylight; the sun panel uses
-the same daylight helper. All values come from the existing cache or the local
-solar calculation, with no synchronous HTTP in the UI loop and no extra polling
-daemon. Fixtures cover stale cache, missing data, explicit 0,0 and polar days
-without sunrise/sunset. Released in nirubar 0.18.15 / niruwm 0.16.30 / NIRUX
-0.10.30 and installed on both machines.
-
-### M3 — coherent appearance and laptop behaviour
-
-| ID | Work | Acceptance |
-|---|---|---|
-| A01 / RELEASED | Small versioned XDG appearance contract: semantic colours, font, spacing, focus, reduced motion. Existing user theme files take precedence. | Four built-in themes + custom fixture across WM/bar/launcher/notifier/lock/saver; invalid reload keeps the working state. Lock remains opaque black. |
-| A02 / RELEASED | Night-light fixed/solar schedules and resume/hotplug reapply; brightness device/step selection. | Offline manual mode preserved; no GeoClue requirement; one provider owner; physical permissions diagnosed. |
-| A03 / RELEASED | Optional weather/sun compact cell and daylight/precipitation timeline using existing cache. | Offline/stale/polar/explicit-0,0 fixtures; no extra polling daemon; no synchronous HTTP in the UI loop. |
-| A04 | Optional notification images/hints after bounded decoding and protocol tests. | Advertise only implemented capabilities; image/queue/memory limits; lock privacy and action signals remain correct. |
-
-## 5. Small innovations after the gates above
-
-1. **Explain this state** (first): launcher actions open existing diagnostics for
-   missing brightness, stale weather, notification ownership and active inhibitors.
-   Reuse collected state; add no service.
-2. **Focus session**: timed DND + keep-awake, one visible remaining-time indicator;
-   restore previous state only if the user has not changed it meanwhile. Lock and
-   manual suspend remain independent.
-3. **Desktop lens**: contextual palette queries (`battery`, `display`, `weather`,
-   `workspace`) expose cached facts and relevant existing actions.
-4. **Docking profiles**: connector-identity preferences for output layout/bar density;
-   explicit preview and timed revert, after H03 passes.
-
-Each starts as one optional action/panel in an existing component, with a measured
-idle CPU/RSS/process baseline and a regression for its actual failure modes.
-
-## 6. Related repositories and portability backlog
-
-See [repository inventory](docs/REPOSITORIES.md) for reviewed revisions and scope.
-These are independent optional apps, not default core dependencies.
-
-- **P01:** nirunote/niruorg: add verified Void Python/PySide6 package mappings,
-  X11/offscreen startup and upgrade/removal tests. Do not copy Arch names blindly.
-- **P02:** nirupres/niruflow: verify Python/Qt dependencies and clean installs on all
-  three systems; document wheel/system-package limits. Correct stale niruflow README.
-- **P03:** nirulize/nplay: verify PipeWire monitor/MPRIS/session-bus integration on
-  all three distros; replace machine-specific nirulize install instructions.
-- **P04:** nirupresence: opt-in NIRUWM startup contract without editing NIRUPI; one
-  daemon, same graphical D-Bus, clean logout. No remote service/account requirement
-  for the desktop itself.
-- **P05:** QuickShell plugins remain optional Omarchy adapters. Do not install
-  QuickShell in NIRUX to gain radio/presence; reuse nplay/MPRIS/native panels.
-- **P06:** cmus/NPLAY/REAPER themes: validate declarative files and preserve modified
-  files. Optional semantic palette export after A01; never force app settings.
-
-## 7. Verification and handoff template
-
-```text
-Task ID/status:
-Repositories + starting revisions:
-Files changed / behaviour:
-Reproduction before fix:
-Commands run + results:
-Distro + environment (mock / container / Xvfb / physical):
-Published versions + NIRUX pins (or UNPUBLISHED):
-Known limits / next task:
-```
-
-Core checks: `sh tests/integration.sh` in nirux; `sh tests/installer.sh` in
-locker/saver; Rust `cargo fmt --check`, appropriate `cargo clippy --locked ... --
--D warnings` and `cargo test --locked --bins`. Use component X11/D-Bus suites for
-changed runtime protocols and the NIRUX real-release smoke suite for release pins.
-Clean package installation and physical login/PAM/sleep are separate evidence.
-
-README policy: purpose, three-distro support/actual limits, install, essential
-commands, config path, links. Keep release chronology in history/changelogs.
-Delete obsolete generated artifacts only after tracing ownership; preserve
-regressions, user themes/settings and useful history.
+> Read https://raw.githubusercontent.com/nirucon/nirux/main/docs/NEXT-SESSION.md
+> and continue with its first task. Follow the linked current roadmap and review.
