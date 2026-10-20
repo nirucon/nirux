@@ -22,15 +22,15 @@ jobs:
         shell: sh
         run: |
           case '${{ matrix.image }}' in
-            debian*) apt-get update && apt-get install -y git ca-certificates curl ;;
-            arch*) pacman -Syu --noconfirm --needed git ca-certificates curl ;;
+            debian*) apt-get update && apt-get install -y git ca-certificates curl xz-utils ;;
+            arch*) pacman -Syu --noconfirm --needed git ca-certificates curl xz ;;
             void*)
               for directory in /etc/xbps.d /usr/share/xbps.d; do
                 for config in "$directory"/*.conf; do
                   [ ! -f "$config" ] || sed -i 's#alpha.de.repo.voidlinux.org#repo-default.voidlinux.org#g' "$config"
                 done
               done
-              xbps-install -Suy xbps && xbps-install -Suy && xbps-install -Sy git ca-certificates curl
+              xbps-install -Suy xbps && xbps-install -Suy && xbps-install -Sy git ca-certificates curl xz
               ;;
           esac
       - uses: actions/checkout@v4
