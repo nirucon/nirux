@@ -331,14 +331,30 @@ for TEST_OS in arch debian void; do
   [ "$first" != "$second" ] || fail 'no generation switch'
   operation rollback
   [ "$(readlink "$STATE/current")" = "$first" ] || fail 'rollback did not restore the generation'
-  # Uninstall preserves unowned user files, even when purging settings.
+  # Normal uninstall keeps settings; purge removes only the documented
+  # suite-owned config/state/cache directories. Unowned files stay.
   say 'my existing desktop' > "$HOME/.xinitrc"
-  mkdir -p "$XDG_CONFIG_HOME/niruui" "$XDG_STATE_HOME/nirulock" "$HOME/.cache/nirubar"
+  mkdir -p "$XDG_CONFIG_HOME/niruui" "$XDG_CONFIG_HOME/nirubar" \
+    "$XDG_CONFIG_HOME/nirulauncher" "$XDG_CONFIG_HOME/nirunotify" \
+    "$XDG_STATE_HOME/nirulock" "$XDG_STATE_HOME/niruscreensaver" \
+    "$HOME/.cache/nirubar"
   say stale > "$HOME/.cache/nirubar/updates"
-  operation uninstall --purge
+  operation uninstall
   [ ! -e "$BIN/niruwm" ] || fail 'program still installed'
   [ ! -e "$ROOT/etc/pam.d/nirulock" ] || fail 'owned PAM service remained'
-  [ ! -d "$XDG_STATE_HOME/nirulock" ] || fail 'purge missed lock state'
+  for dir in niruwm niruui nirubar nirulauncher nirunotify; do
+    [ -d "$XDG_CONFIG_HOME/$dir" ] || fail "normal uninstall removed $dir config"
+  done
+  [ -d "$XDG_STATE_HOME/nirulock" ] || fail 'normal uninstall removed lock state'
+  [ -d "$XDG_STATE_HOME/niruscreensaver" ] || fail 'normal uninstall removed saver state'
+  operation uninstall --purge
+  for dir in niruwm niruui nirubar nirulauncher nirunotify; do
+    [ ! -d "$XDG_CONFIG_HOME/$dir" ] || fail "purge missed $dir config"
+  done
+  for dir in nirulock niruscreensaver; do
+    [ ! -d "$XDG_STATE_HOME/$dir" ] || fail "purge missed $dir state"
+  done
+  [ ! -d "$HOME/.cache/nirubar" ] || fail 'purge missed bar cache'
   [ "$(cat "$HOME/.xinitrc")" = 'my existing desktop' ] || fail 'existing xinitrc was changed'
 done
 
@@ -459,4 +475,26 @@ NIRUX_LIBRARY=1 sh -c '
 rc=$?
 set -e
 [ "$rc" = 7 ] || fail "sudo error was lost: $rc"
+
+# A configured program that is not installed must be visible and fail doctor.
+doctor_dir=$TEST/doctor
+mkdir -p "$doctor_dir/bin"
+cat > "$doctor_dir/bin/niruwm" <<'EOF'
+#!/bin/sh
+if [ "$1" = --dump-config ]; then
+  printf 'browser = ["missing-browser-for-test"]\n'
+  exit 0
+fi
+echo 'NIRUWM 0.0.0'
+EOF
+chmod +x "$doctor_dir/bin/niruwm"
+set +e
+(
+  BIN=$doctor_dir/bin PREFIX=$doctor_dir STATE=$doctor_dir/share/nirux
+  doctor
+) > "$doctor_dir/doctor.log" 2>&1
+rc=$?
+set -e
+[ "$rc" != 0 ] || fail 'doctor succeeded with a missing configured program'
+grep -q 'missing configured missing-browser-for-test' "$doctor_dir/doctor.log" || fail 'missing configured program was not reported'
 say 'PASS: install/update/rollback/purge on all three distro mappings, status purity, checksum failure, PAM includes'

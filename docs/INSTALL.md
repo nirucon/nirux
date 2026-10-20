@@ -88,7 +88,7 @@ installer cannot update itself. After that first migration the installed
 
 ```sh
 nirux update
-nirux update --release 0.10.17
+nirux update --release 0.10.18
 nirux rollback
 ```
 
@@ -161,10 +161,12 @@ nirux doctor
 permissions, returning a failure status when required parts are missing.
 It never launches the session script to discover its version.
 
-`doctor` also checks the required launch tools and component settings. With
-`DISPLAY` set it checks the live control channel and WM/bar processes; from
-SSH or a TTY it reports that the live-session check was skipped. Reading PAM
-configuration does not prove that a user's password can authenticate.
+`doctor` also checks the required launch tools and component settings. A
+configured terminal, browser or launcher command that is not installed is
+reported and fails the diagnostic. With `DISPLAY` set it checks the live control
+channel and WM/bar processes; from SSH or a TTY it reports that the live-session
+check was skipped. Reading PAM configuration does not prove that a user's
+password can authenticate.
 
 ## Uninstall
 
@@ -174,9 +176,19 @@ nirux uninstall --purge
 ```
 
 Only NIRUX-owned links, generated xinitrc and owned system integration are
-removed. Existing backed-up system files are restored. `--purge` also removes
-the NIRU config/state directories. OS packages, the chosen display manager,
-and NIRUPI are retained. Log out to end already running programs.
+removed. Existing backed-up system files are restored. Settings are kept by a
+normal uninstall. `--purge` additionally removes only these documented
+suite-owned directories:
+
+- `~/.config/niruwm`, `~/.config/niruui`
+- `~/.config/nirubar`, `~/.config/nirulauncher`, `~/.config/nirunotify`
+- `~/.local/state/niruwm`, `~/.local/state/nirulock`,
+  `~/.local/state/niruscreensaver`
+- `~/.cache/nirubar`
+
+XDG config/state/cache variables are respected. OS packages, the chosen display
+manager, NIRUPI and unrelated files are retained. Log out to end already running
+programs.
 
 `NIRUX_PREFIX` changes the install prefix (default `$HOME/.local`); XDG config
 and state directories are respected. Use the same prefix for future commands.

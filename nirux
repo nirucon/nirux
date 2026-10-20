@@ -2,7 +2,7 @@
 # NIRUX: install a complete X11 desktop, or maintain an existing installation.
 set -eu
 
-VERSION=0.10.17
+VERSION=0.10.18
 PREFIX=${NIRUX_PREFIX:-$HOME/.local}
 BIN=$PREFIX/bin
 STATE=$PREFIX/share/nirux
@@ -964,6 +964,7 @@ doctor() {
       say "available configured $tool"
     else
       say "missing configured $tool (selected in config.toml)"
+      result=1
     fi
   done
   for tool in dunst picom feh maim playerctl wpctl amixer; do
@@ -1031,7 +1032,10 @@ uninstall() {
   if [ -f "$HOME/.xinitrc" ] && owned "$HOME/.xinitrc"; then rm -f "$HOME/.xinitrc"; fi
   if [ "$purge" = 1 ]; then
     rm -rf "${XDG_CONFIG_HOME:-$HOME/.config}/niruwm" "${XDG_CONFIG_HOME:-$HOME/.config}/niruui" \
+      "${XDG_CONFIG_HOME:-$HOME/.config}/nirubar" "${XDG_CONFIG_HOME:-$HOME/.config}/nirulauncher" \
+      "${XDG_CONFIG_HOME:-$HOME/.config}/nirunotify" \
       "${XDG_STATE_HOME:-$HOME/.local/state}/niruwm" "${XDG_STATE_HOME:-$HOME/.local/state}/nirulock" \
+      "${XDG_STATE_HOME:-$HOME/.local/state}/niruscreensaver" \
       "${XDG_CACHE_HOME:-$HOME/.cache}/nirubar"
   fi
   rm -rf "$STATE/generations"
