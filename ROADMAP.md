@@ -4,6 +4,7 @@ Updated **2026-10-20**. Audience: human maintainers, OpenCode and DeepSeek.
 This file is the authoritative **current plan**. The
 [previous roadmap](docs/history/ROADMAP-2026-10-19.md) preserves release history.
 [Current review](docs/REVIEW-2026-10-20.md) records evidence and limits.
+[Next-session prompt](docs/NEXT-SESSION.md) is the copy-ready continuation brief.
 
 ## 1. Product contract
 
