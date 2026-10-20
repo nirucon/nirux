@@ -22,7 +22,7 @@ Krav:
   orelaterade systemfiler.
 - Ingen bloat: inga nya obligatoriska daemons, GUI-ramverk, tjänster eller repon
   om befintliga komponenter kan lösa uppgiften.
-- Läs roadmapens acceptanskriterier för I08 innan du ändrar kod.
+- Läs roadmapens acceptanskriterier för I09 innan du ändrar kod.
 - Kör relevanta tester: nirux tests/integration.sh, shellcheck, berörda Rust-tester,
   fmt/clippy samt Arch/Debian/Void där det är relevant.
 - Committa, pusha, tagga och publicera varje avslutad checkpoint. Installera på
@@ -31,14 +31,13 @@ Krav:
 
 Börja med att kontrollera git-status i berörda repon och sammanfatta:
 1. vad du verifierat,
-2. din plan för I08,
+2. din plan för I09,
 3. vilka filer som behöver ändras.
 ```
 
 ## Task reminder
 
-**I08:** finish owned purge coverage for nirubar config, nirulauncher,
-nirunotify and saver state. Normal uninstall must keep configuration; documented
-purge must remove only owned suite data. A missing configured program must be
-visible and fail the relevant doctor diagnostic. Finish its acceptance before
-moving to I09.
+**I09:** `niruwm/install.sh` selected old-release bar version must come from that
+release's metadata, not the checkout's `nirubar-version`; align standalone
+version/ownership checks. Test old and current releases from a newer checkout and
+do not overwrite generation contents. Finish its acceptance before H02.
