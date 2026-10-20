@@ -23,15 +23,15 @@ This file is the authoritative **current plan**. The
 
 ## 2. Actual checkpoint
 
-Published NIRUX **0.10.25** pins:
+Published NIRUX **0.10.26** pins:
 
 | Component | Version | Responsibility |
 |---|---|---|
 | niruwm | 0.16.27 | WM, session, niructl, niruidle |
 | nirubar | 0.18.12 | Per-output bars, panels, tray |
 | niruscreensaver | 0.8.1 | Unlocked idle surface |
-| nirulock | 0.16.8 | PAM lock and explicit readiness |
-| nirulauncher | 0.1.1 | Applications and desktop actions |
+| nirulock | 0.16.9 | PAM lock and explicit readiness |
+| nirulauncher | 0.2.0 | Applications and desktop actions |
 | nirunotify | 0.3.2 | Notifications, actions, DND, bounded history/OSD |
 
 Launcher, notifier, weather, native desktop actions, manual brightness/night
@@ -47,10 +47,10 @@ with the I09 standalone-installer metadata fix; **0.10.20** pinned niruwm 0.16.2
 and set the normal arrow root cursor; **0.10.21** added the U01 config contract and
 bounded hardware helpers; **0.10.22** added the U02 responsive bar with priority
 overflow; **0.10.23** fixed the U02 sparse-module clock regression; **0.10.24**
-added explicit U03 media/audio controls; **0.10.25** adds the U04 network and
-battery state. All are installed on the owner's machines, and each update
-exercised the installed parent/update path. H03 physical checks were confirmed by
-the owner. H01 remains.
+added explicit U03 media/audio controls; **0.10.25** added the U04 network and
+battery state; **0.10.26** adds U05 launcher and lock improvements. All are
+installed on the owner's machines, and each update exercised the installed
+parent/update path. H03 physical checks were confirmed by the owner. H01 remains.
 
 ## 3. Status vocabulary and execution rules
 
@@ -81,12 +81,11 @@ Commit/push/tag/release only when explicitly requested by the user.
 | I11 / RELEASED | `nirux/nirux`: remove an accidental `cmp` dependency from owned-file comparison; use the existing SHA-256 checks. `nirulock/install.sh` does the same for PAM. | Arch base container runs the full integration without diffutils; suite/PAM files with equal content stay untouched. |
 | I09 / RELEASED | `niruwm/install.sh`: selected old-release bar version comes from that release's metadata, not checkout `nirubar-version`; align standalone version/ownership checks. | Test old and current releases from a newer checkout; no generation contents overwritten. |
 
-**Next implementation task: U05.** I06–I09, H02, H03, U01–U04 are complete.
-U04 aggregates multiple battery packs (weighted by energy when available), keeps
-absent remaining-time estimates unavailable, distinguishes link/route/address
-without NetworkManager, and marks a link without a default route with `!`. H01
-remains as separate fresh-OS acceptance. U05 is next: launcher grouping, window
-switching, recency/favourites, text input and lock layout/Caps/AltGr review.
+**Next implementation task: U06.** I06–I09, H02, H03, and U01–U05 are complete.
+U05 added grouped System/Display/Power/Appearance/Workspaces/Windows results,
+window switching, local favourites and recency, Shift/Caps/AltGr input, and a
+Caps Lock warning on the lock screen. H01 remains as separate fresh-OS
+acceptance. U06 is next: saver input grabs and output/resize coverage.
 
 ### M1 — release acceptance on vanilla installations
 
@@ -128,7 +127,7 @@ H03 partial verification (2026-10-20):
 | U02 / RELEASED | Nirubar responsive layout with priorities and an overflow panel; retain stable workspace cells. | 800px, 1366px, 1920px and two-output tests; hidden summaries remain accessible, hitboxes match visible geometry. |
 | U03 / RELEASED | Nirubar explicit media buttons/player selection and audio output/mic controls; deliberate click/scroll mappings. | Reading a panel never changes playback/mute; disabled actions explain missing providers; helpers remain bounded. |
 | U04 / RELEASED | Nirubar honest network state and aggregate battery details. | Distinguish link/IP/connectivity; no mandatory NetworkManager. Multi-battery fixtures; absent estimates stay unavailable. |
-| U05 | Launcher grouped actions, window switching, local recency/favourites and proper text input; lock layout/Caps indication and compose/AltGr review. | XDG desktop precedence and argv parsing preserved; Swedish/US/AltGr tests; no shell interpolation of desktop Exec. |
+| U05 / RELEASED | Launcher grouped actions, window switching, local recency/favourites and proper text input; lock layout/Caps indication and compose/AltGr review. | XDG desktop precedence and argv parsing preserved; Swedish/US/AltGr tests; no shell interpolation of desktop Exec. |
 | U06 | Saver checked input grabs and output/resize coverage; retire duplicated rendering only where proven useful. | Failed grabs cannot claim success; root resize/hotplug and documented mouse dismissal covered. Retain all locker regressions. |
 
 U01 verification (2026-10-21): NIRUWM and NIRUBAR now reject the same shared
@@ -171,6 +170,19 @@ default route is shown with `!`, and the panel separates type, link, route,
 interface and address. Multi-battery, no-estimate, mixed-state, default-route and
 link-without-route fixtures pass. Released in nirubar 0.18.12 / niruwm 0.16.27 /
 NIRUX 0.10.25 and installed on both machines.
+
+U05 verification (2026-10-21): NIRULAUNCHER groups System, Display, Power,
+Appearance, Workspaces and Windows results; action mode also lists EWMH windows
+and focuses the selected one. Favourites from config and local usage recency
+order the filtered list, with the state kept under
+`~/.local/state/nirulauncher/`. Keyboard levels cover Shift, Caps Lock and AltGr,
+including Latin-1 Swedish letters. Unit tests cover level mapping, Caps, grouped
+search and favourite/recency ordering; the X11 smoke test still verifies launch
+argv, singleton and Escape. NIRULOCK now shows a Caps Lock warning and applies
+Caps Lock to Latin-1 letters; its AltGr password input remains verified by the
+locker tests. Dead-key compose sequences are explicitly not claimed. Released in
+nirulauncher 0.2.0 / nirulock 0.16.9 / NIRUX 0.10.26 and installed on both
+machines.
 
 ### M3 — coherent appearance and laptop behaviour
 
