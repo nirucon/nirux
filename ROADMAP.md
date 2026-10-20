@@ -77,21 +77,21 @@ Commit/push/tag/release only when explicitly requested by the user.
 | I11 / RELEASED | `nirux/nirux`: remove an accidental `cmp` dependency from owned-file comparison; use the existing SHA-256 checks. `nirulock/install.sh` does the same for PAM. | Arch base container runs the full integration without diffutils; suite/PAM files with equal content stay untouched. |
 | I09 / RELEASED | `niruwm/install.sh`: selected old-release bar version comes from that release's metadata, not checkout `nirubar-version`; align standalone version/ownership checks. | Test old and current releases from a newer checkout; no generation contents overwritten. |
 
-**Next implementation task: H02.** I06 is released in NIRUX 0.10.16, I07 in
-0.10.17, I08 in 0.10.18 and I09 in niruwm 0.16.21/NIRUX 0.10.19. M0 is complete.
-The integration suite covers quoted/multiline config migration, rejected
-candidates, symlinks, a synthetic new component on the first update, missing
-shared-library provisioning order, rollback cleanup, normal uninstall versus
-purge, actionable `doctor` failures and old-release standalone installation on
-the host, Arch, Debian and the three distro mappings. Complete H02 before feature
-work.
+**Next implementation task: H03.** I06 is released in NIRUX 0.10.16, I07 in
+0.10.17, I08 in 0.10.18 and I09 in niruwm 0.16.21/NIRUX 0.10.19. M0 and H02 are
+complete. H02 was verified with the released nirulock 0.16.8 and
+niruscreensaver 0.8.1 assets: source and prebuilt installers, pinned PAM,
+modified-file preservation, corrupt/missing assets and non-root wrong/correct
+PAM checks on Arch, Debian and Void. No test wrote production
+`/etc/pam.d`. H03 is next; its lid/suspend, docking and physical output checks
+need the owner's machines available.
 
 ### M1 — release acceptance on vanilla installations
 
 | ID / status | Work | Acceptance |
 |---|---|---|
 | H01 / TODO | Fresh OS + empty normal-user home on Void/Arch/Debian; startx, then existing/selected display-manager paths. | Real release install → status/doctor → login → terminal/launcher/browser configuration, screenshots, icons, audio, lock/unlock → update → rollback → uninstall. Record OS release, manifest and exact results. |
-| H02 / TODO | Standalone saver/locker prebuilt and source installers, pinned PAM, modified-file preservation and failed-install boundaries. | All three distro mappings plus non-root wrong/correct-password PAM checks. No test writes to production `/etc/pam.d`. |
+| H02 / RELEASED | Standalone saver/locker prebuilt and source installers, pinned PAM, modified-file preservation and failed-install boundaries. | All three distro mappings plus non-root wrong/correct-password PAM checks. No test writes to production `/etc/pam.d`. |
 | H03 / TODO | Physical Void + ThinkPad: lid close, suspend/resume, external output attach/remove, lock during topology changes, native notification privacy. | Never suspend before ready lock; no uncovered pixels; workspace/output identities survive; notifier cleans up on logout. Record physical separately from Xvfb. |
 | H04 / RELEASED | Compile/publish changed components, verify assets/checksums, then update NIRUX pins and run full distro CI. Components and NIRUX 0.10.15 published 2026-10-20; finish asset/CI verification and one install/update check. | One install/update reaches the intended complete generation. Immutable tags/assets; never relabel published releases. |
 

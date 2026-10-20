@@ -22,7 +22,7 @@ Krav:
   orelaterade systemfiler.
 - Ingen bloat: inga nya obligatoriska daemons, GUI-ramverk, tjänster eller repon
   om befintliga komponenter kan lösa uppgiften.
-- Läs roadmapens acceptanskriterier för H02 innan du ändrar kod.
+- Läs roadmapens acceptanskriterier för H03 innan du ändrar kod.
 - Kör relevanta tester: nirux tests/integration.sh, shellcheck, berörda Rust-tester,
   fmt/clippy samt Arch/Debian/Void där det är relevant.
 - Committa, pusha, tagga och publicera varje avslutad checkpoint. Installera på
@@ -31,13 +31,14 @@ Krav:
 
 Börja med att kontrollera git-status i berörda repon och sammanfatta:
 1. vad du verifierat,
-2. din plan för H02,
+2. din plan för H03,
 3. vilka filer som behöver ändras.
 ```
 
 ## Task reminder
 
-**H02:** standalone saver/locker prebuilt and source installers, pinned PAM,
-modified-file preservation and failed-install boundaries. All three distro
-mappings plus non-root wrong/correct-password PAM checks. No test may write to
-production `/etc/pam.d`. Finish its acceptance before feature work.
+**H03:** physical Void + ThinkPad: lid close, suspend/resume, external output
+attach/remove, lock during topology changes, native notification privacy. Never
+suspend before a ready lock; no uncovered pixels; workspace/output identities
+survive; notifier cleans up on logout. Record physical results separately from
+Xvfb.
