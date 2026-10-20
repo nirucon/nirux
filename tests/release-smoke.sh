@@ -22,6 +22,27 @@ fetch() {
     *) curl -fsSL --connect-timeout 20 --max-time 300 --retry 3 -o "$2" "$1" ;;
   esac
 }
+# The target installer runs in a subprocess, so give it the local NIRUX
+# fixture through a curl shim; component releases still use the real network.
+REAL_CURL=$(command -v curl)
+mkdir -p "$TEST/bin"
+cat > "$TEST/bin/curl" <<EOF
+#!/bin/sh
+out=; url=; prev=
+for arg in "\$@"; do
+  [ "\$prev" = "-o" ] && out=\$arg
+  case "\$arg" in http*) url=\$arg ;; esac
+  prev=\$arg
+done
+case "\$url" in
+  https://github.com/nirucon/nirux/releases/download/v*)
+    cp "$TEST/release/\${url##*/}" "\$out" ;;
+  *) exec "$REAL_CURL" "\$@" ;;
+esac
+EOF
+chmod +x "$TEST/bin/curl"
+export PATH="$TEST/bin:$PATH"
+
 (install_or_update install --no-packages --browser helium --display-manager startx --release "$VERSION")
 status
 doctor
