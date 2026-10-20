@@ -22,7 +22,7 @@ Krav:
   orelaterade systemfiler.
 - Ingen bloat: inga nya obligatoriska daemons, GUI-ramverk, tjänster eller repon
   om befintliga komponenter kan lösa uppgiften.
-- Läs roadmapens acceptanskriterier för I07 innan du ändrar kod.
+- Läs roadmapens acceptanskriterier för I08 innan du ändrar kod.
 - Kör relevanta tester: nirux tests/integration.sh, shellcheck, berörda Rust-tester,
   fmt/clippy samt Arch/Debian/Void där det är relevant.
 - Committa, pusha, tagga och publicera varje avslutad checkpoint. Installera på
@@ -31,14 +31,14 @@ Krav:
 
 Börja med att kontrollera git-status i berörda repon och sammanfatta:
 1. vad du verifierat,
-2. din plan för I07,
+2. din plan för I08,
 3. vilka filer som behöver ändras.
 ```
 
 ## Task reminder
 
-**I07:** forward staging to the verified target installer through a versioned
-internal handoff so new components install on the **first** update. Provision new
-shared-library dependencies before running staged components. Finish the
-old-installer -> synthetic new-component and missing-library fixtures before
-moving to I08.
+**I08:** finish owned purge coverage for nirubar config, nirulauncher,
+nirunotify and saver state. Normal uninstall must keep configuration; documented
+purge must remove only owned suite data. A missing configured program must be
+visible and fail the relevant doctor diagnostic. Finish its acceptance before
+moving to I09.
