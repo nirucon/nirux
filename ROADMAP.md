@@ -23,12 +23,12 @@ This file is the authoritative **current plan**. The
 
 ## 2. Actual checkpoint
 
-Published NIRUX **0.10.29** pins:
+Published NIRUX **0.10.30** pins:
 
 | Component | Version | Responsibility |
 |---|---|---|
-| niruwm | 0.16.29 | WM, session, niructl, niruidle |
-| nirubar | 0.18.14 | Per-output bars, panels, tray |
+| niruwm | 0.16.30 | WM, session, niructl, niruidle |
+| nirubar | 0.18.15 | Per-output bars, panels, tray |
 | niruscreensaver | 0.8.3 | Unlocked idle surface |
 | nirulock | 0.16.10 | PAM lock and explicit readiness |
 | nirulauncher | 0.2.1 | Applications and desktop actions |
@@ -51,9 +51,10 @@ added explicit U03 media/audio controls; **0.10.25** added the U04 network and
 battery state; **0.10.26** added U05 launcher and lock improvements; **0.10.27**
 added U06 checked saver grabs and full resize coverage; **0.10.28** adds the
 suite-wide A01 appearance contract; **0.10.29** adds A02 night-light schedules and
-brightness selection. All are installed on the owner's machines, and each update
-exercised the installed parent/update path. H03 physical checks were confirmed by
-the owner. H01 remains.
+brightness selection; **0.10.30** adds the A03 weather rain timeline and daylight
+progress. All are installed on the owner's machines, and each update exercised
+the installed parent/update path. H03 physical checks were confirmed by the
+owner. H01 remains.
 
 ## 3. Status vocabulary and execution rules
 
@@ -84,12 +85,12 @@ Commit/push/tag/release only when explicitly requested by the user.
 | I11 / RELEASED | `nirux/nirux`: remove an accidental `cmp` dependency from owned-file comparison; use the existing SHA-256 checks. `nirulock/install.sh` does the same for PAM. | Arch base container runs the full integration without diffutils; suite/PAM files with equal content stay untouched. |
 | I09 / RELEASED | `niruwm/install.sh`: selected old-release bar version comes from that release's metadata, not checkout `nirubar-version`; align standalone version/ownership checks. | Test old and current releases from a newer checkout; no generation contents overwritten. |
 
-**Next implementation task: A03.** I06–I09, H02, H03, U01–U06, A01 and A02 are
-complete. A02 adds manual/fixed/solar night light, one session watcher that
-reapplies every 30 seconds after resume/hotplug, brightnessctl device/step
-selection, and a doctor check for unreadable backlights. H01 remains as separate
-fresh-OS acceptance. A03 is next: the optional compact weather/sun cell and
-daylight/precipitation timeline using the existing cache.
+**Next implementation task: A04.** I06–I09, H02, H03, U01–U06 and A01–A03 are
+complete. A03 adds the next-hour rain chance to the compact weather cell, an
+eight-hour rain timeline and daylight progress in the weather panel, and
+daylight progress in the sun panel, all from the existing cache. H01 remains as
+separate fresh-OS acceptance. A04 is next: optional notification images/hints
+after bounded decoding and protocol tests.
 
 ### M1 — release acceptance on vanilla installations
 
@@ -220,13 +221,22 @@ that brightnessctl cannot read. Schedule, bounds and config fixtures pass.
 Released in niruwm 0.16.29 / nirubar 0.18.14 / NIRUX 0.10.29. Existing hosts
 needed a second update for the new config keys; both now have them.
 
+A03 verification (2026-10-21): the optional weather cell now appends the
+next-hour rain chance when it is at least 20%. Its panel adds an eight-hour rain
+timeline and a daylight progress bar with remaining daylight; the sun panel uses
+the same daylight helper. All values come from the existing cache or the local
+solar calculation, with no synchronous HTTP in the UI loop and no extra polling
+daemon. Fixtures cover stale cache, missing data, explicit 0,0 and polar days
+without sunrise/sunset. Released in nirubar 0.18.15 / niruwm 0.16.30 / NIRUX
+0.10.30 and installed on both machines.
+
 ### M3 — coherent appearance and laptop behaviour
 
 | ID | Work | Acceptance |
 |---|---|---|
 | A01 / RELEASED | Small versioned XDG appearance contract: semantic colours, font, spacing, focus, reduced motion. Existing user theme files take precedence. | Four built-in themes + custom fixture across WM/bar/launcher/notifier/lock/saver; invalid reload keeps the working state. Lock remains opaque black. |
 | A02 / RELEASED | Night-light fixed/solar schedules and resume/hotplug reapply; brightness device/step selection. | Offline manual mode preserved; no GeoClue requirement; one provider owner; physical permissions diagnosed. |
-| A03 | Optional weather/sun compact cell and daylight/precipitation timeline using existing cache. | Offline/stale/polar/explicit-0,0 fixtures; no extra polling daemon; no synchronous HTTP in the UI loop. |
+| A03 / RELEASED | Optional weather/sun compact cell and daylight/precipitation timeline using existing cache. | Offline/stale/polar/explicit-0,0 fixtures; no extra polling daemon; no synchronous HTTP in the UI loop. |
 | A04 | Optional notification images/hints after bounded decoding and protocol tests. | Advertise only implemented capabilities; image/queue/memory limits; lock privacy and action signals remain correct. |
 
 ## 5. Small innovations after the gates above
