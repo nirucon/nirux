@@ -18,6 +18,11 @@ launcher_version=$(awk '$1 == "nirulauncher" {print $2}' "$SOURCE/manifest")
 notifier_version=$(awk '$1 == "nirunotify" {print $2}' "$SOURCE/manifest")
 FIXTURE=$TEST/releases
 fail() { printf 'FAIL: %s\n' "$*" >&2; exit 1; }
+no_config_candidates() {
+  for leftover in "$1"/.*.nirux.*; do
+    [ ! -e "$leftover" ] || return 1
+  done
+}
 fetch() {
   case "$1" in
     https://github.com/nirucon/*/releases/download/v*)
@@ -121,6 +126,133 @@ grep -qx 'scale = "fit"' "$config" || fail 'existing setting overwritten'
 [ "$(grep -c '^[[:space:]]*\[bar\]' "$config")" = 1 ] || fail 'duplicate commented table'
 grep -qx 'workspaces = 9' "$config" || fail 'profile suppressed monitor default'
 
+# I06: quoted keys and multiline values are scanned, and a staged candidate is
+# validated by both components before it can replace the user file.
+i06=$TEST/i06
+mkdir -p "$i06/work/download/nirux" "$i06/work/generation/bin" "$i06/config/niruwm"
+cp "$SOURCE/config.example.toml" "$i06/work/download/nirux/config.example.toml"
+for program in niruwm nirubar; do
+  cat > "$i06/work/generation/bin/$program" <<'EOF'
+#!/bin/sh
+[ "$1" = --check-config ] || exit 0
+printf '%s\n' "$1" >> "$VALIDATOR_LOG"
+grep -q 'REJECT_CANDIDATE' "$XDG_CONFIG_HOME/niruwm/config.toml" && exit 1
+exit 0
+EOF
+  chmod +x "$i06/work/generation/bin/$program"
+done
+cat > "$i06/config/niruwm/config.toml" <<'EOF'
+theme = "niru-noir"
+"weather_latitude" = 1.0
+font_path = """
+[bar]
+scale = "not-a-real-setting"
+"""
+terminal = [
+  "kitty",
+]
+  [wallpaper] # user settings
+files = ["my wallpaper.png"]
+scale = "fit"
+  [bar] # keep this comment
+enabled = false
+[[monitors.profiles]]
+name = "eDP-1"
+workspaces = ["web", "code"]
+EOF
+chmod 640 "$i06/config/niruwm/config.toml"
+(
+  WORK=$i06/work CONFDIR=$i06/config/niruwm VALIDATOR_LOG=$i06/validators.log
+  export WORK CONFDIR VALIDATOR_LOG
+  install_config
+) > "$i06/install.log" 2>&1 || fail 'quoted/multiline config migration failed'
+[ "$(stat -c %a "$i06/config/niruwm/config.toml")" = 640 ] || fail 'migration changed config permissions'
+[ "$(config_scan "$i06/config/niruwm/config.toml" | awk -F '\t' '$1 == "H" && $3 == "bar" && $4 == "table" { n++ } END { print n + 0 }')" = 1 ] || fail 'multiline value created a duplicate table'
+[ "$(grep -c 'weather_latitude' "$i06/config/niruwm/config.toml")" = 1 ] || fail 'quoted key was duplicated'
+grep -qx 'enabled = false' "$i06/config/niruwm/config.toml" || fail 'existing bar value was overwritten'
+grep -qx 'scale = "fit"' "$i06/config/niruwm/config.toml" || fail 'existing wallpaper value was overwritten'
+grep -qx 'workspaces = 9' "$i06/config/niruwm/config.toml" || fail 'missing monitor default was not added'
+grep -qx 'title_delay_seconds = 0' "$i06/config/niruwm/config.toml" || fail 'bar key was not added to the real table'
+grep -q 'scale = "not-a-real-setting"' "$i06/config/niruwm/config.toml" || fail 'multiline string was changed'
+[ "$(wc -l < "$i06/validators.log")" = 2 ] || fail 'candidate was not validated by both components'
+
+# A symlinked config keeps its link and updates the resolved target atomically.
+mkdir -p "$i06/symlink/niruwm" "$i06/symlink/real"
+cat > "$i06/symlink/real/config.toml" <<'EOF'
+theme = "niru-noir"
+EOF
+chmod 640 "$i06/symlink/real/config.toml"
+ln -s "$i06/symlink/real/config.toml" "$i06/symlink/niruwm/config.toml"
+(
+  WORK=$i06/work CONFDIR=$i06/symlink/niruwm VALIDATOR_LOG=$i06/symlink.log
+  export WORK CONFDIR VALIDATOR_LOG
+  install_config
+) > "$i06/symlink.out" 2>&1 || fail 'symlinked config migration failed'
+[ -L "$i06/symlink/niruwm/config.toml" ] || fail 'migration replaced the config symlink'
+grep -qx 'workspaces = 9' "$i06/symlink/real/config.toml" || fail 'migration did not update the symlink target'
+[ "$(stat -c %a "$i06/symlink/real/config.toml")" = 640 ] || fail 'symlink target permissions changed'
+
+# Unsupported or invalid input stops before the original file changes.
+mkdir -p "$i06/duplicate/niruwm" "$i06/reject/niruwm"
+cat > "$i06/duplicate/niruwm/config.toml" <<'EOF'
+theme = "niru-noir"
+[bar]
+enabled = true
+[bar]
+tray = true
+EOF
+duplicate_sum=$(sha256sum "$i06/duplicate/niruwm/config.toml" | cut -d' ' -f1)
+set +e
+(
+  WORK=$i06/work CONFDIR=$i06/duplicate/niruwm VALIDATOR_LOG=$i06/duplicate.log
+  export WORK CONFDIR VALIDATOR_LOG
+  install_config
+) > "$i06/duplicate.log" 2>&1
+rc=$?
+set -e
+[ "$rc" != 0 ] || fail 'duplicate-table migration succeeded'
+[ "$(sha256sum "$i06/duplicate/niruwm/config.toml" | cut -d' ' -f1)" = "$duplicate_sum" ] || fail 'duplicate-table migration changed the original'
+grep -q 'duplicate table' "$i06/duplicate.log" || fail 'duplicate table was not diagnosed'
+no_config_candidates "$i06/duplicate/niruwm" || fail 'duplicate-table rejection left a candidate'
+
+cat > "$i06/reject/niruwm/config.toml" <<'EOF'
+theme = "niru-noir"
+# REJECT_CANDIDATE
+EOF
+reject_sum=$(sha256sum "$i06/reject/niruwm/config.toml" | cut -d' ' -f1)
+set +e
+(
+  WORK=$i06/work CONFDIR=$i06/reject/niruwm VALIDATOR_LOG=$i06/reject.log
+  export WORK CONFDIR VALIDATOR_LOG
+  install_config
+) > "$i06/reject.log" 2>&1
+rc=$?
+set -e
+[ "$rc" != 0 ] || fail 'component-rejected migration succeeded'
+[ "$(sha256sum "$i06/reject/niruwm/config.toml" | cut -d' ' -f1)" = "$reject_sum" ] || fail 'component-rejected migration changed the original'
+grep -q 'rejected by niruwm' "$i06/reject.log" || fail 'component rejection was not diagnosed'
+no_config_candidates "$i06/reject/niruwm" || fail 'component rejection left a candidate'
+
+# A failed activation write leaves the original file intact.
+mkdir -p "$i06/interrupt/niruwm"
+cat > "$i06/interrupt/niruwm/config.toml" <<'EOF'
+theme = "niru-noir"
+EOF
+interrupt_sum=$(sha256sum "$i06/interrupt/niruwm/config.toml" | cut -d' ' -f1)
+set +e
+(
+  WORK=$i06/work CONFDIR=$i06/interrupt/niruwm VALIDATOR_LOG=$i06/interrupt.log
+  export WORK CONFDIR VALIDATOR_LOG
+  mv() { last=; for arg in "$@"; do last=$arg; done; case "$last" in */config.toml) return 1 ;; *) command mv "$@" ;; esac; }
+  install_config
+) > "$i06/interrupt.log" 2>&1
+rc=$?
+set -e
+[ "$rc" != 0 ] || fail 'failed activation write succeeded'
+[ "$(sha256sum "$i06/interrupt/niruwm/config.toml" | cut -d' ' -f1)" = "$interrupt_sum" ] || fail 'failed activation write changed the original'
+grep -q 'could not activate' "$i06/interrupt.log" || fail 'failed activation write was not diagnosed'
+no_config_candidates "$i06/interrupt/niruwm" || fail 'failed activation write left a candidate'
+
 # Fresh-install key overrides must not bypass the explicit compatibility profile.
 if grep -Eq '^action = ".*(nirupi|clip-menu|flameshot)' "$SOURCE/config.example.toml"; then
   fail 'canonical config overrides native defaults with absent helper scripts'
@@ -150,6 +282,30 @@ for TEST_OS in arch debian void; do
   [ ! -d "$XDG_STATE_HOME/nirulock" ] || fail 'purge missed lock state'
   [ "$(cat "$HOME/.xinitrc")" = 'my existing desktop' ] || fail 'existing xinitrc was changed'
 done
+
+# A rejected config migration must not switch the active generation.
+TEST_OS=arch; PREFIX=$TEST/config-reject; BIN=$PREFIX/bin; STATE=$PREFIX/share/nirux
+operation install_or_update install --no-packages --display-manager startx --release "$VERSION"
+before=$(readlink "$STATE/current")
+mkdir -p "$XDG_CONFIG_HOME/niruwm"
+cat > "$XDG_CONFIG_HOME/niruwm/config.toml" <<'EOF'
+theme = "niru-noir"
+[bar]
+enabled = true
+[bar]
+tray = true
+EOF
+config_sum=$(sha256sum "$XDG_CONFIG_HOME/niruwm/config.toml" | cut -d' ' -f1)
+set +e
+(set -e; install_or_update update --no-packages --release 99.0.0) > "$TEST/config-reject.log" 2>&1
+rc=$?
+set -e
+[ "$rc" != 0 ] || fail 'unsafe config migration update succeeded'
+[ "$(readlink "$STATE/current")" = "$before" ] || fail 'rejected config changed the active generation'
+[ "$(sha256sum "$XDG_CONFIG_HOME/niruwm/config.toml" | cut -d' ' -f1)" = "$config_sum" ] || fail 'rejected config changed the user file'
+grep -q 'duplicate table' "$TEST/config-reject.log" || fail 'rejected config was not diagnosed'
+no_config_candidates "$XDG_CONFIG_HOME/niruwm" || fail 'rejected config left a candidate'
+operation uninstall --purge >/dev/null 2>&1 || :
 
 # A corrupt late download must leave the active installation unchanged.
 TEST_OS=arch; PREFIX=$TEST/failure; BIN=$PREFIX/bin; STATE=$PREFIX/share/nirux

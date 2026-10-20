@@ -2,7 +2,7 @@
 # NIRUX: install a complete X11 desktop, or maintain an existing installation.
 set -eu
 
-VERSION=0.10.15
+VERSION=0.10.16
 PREFIX=${NIRUX_PREFIX:-$HOME/.local}
 BIN=$PREFIX/bin
 STATE=$PREFIX/share/nirux
@@ -11,6 +11,8 @@ ROOT=${NIRUX_SYSTEM_ROOT:-}
 PROGRAMS="niruwm niructl niruidle nirubar niruscreensaver nirulock nirulauncher nirunotify niruwm-session nirux"
 WORK=
 LOCKED=0
+CONFIG_TMP=
+CONFIG_CANDIDATE=
 
 say() { printf '%s\n' "$*"; }
 die() { say "nirux: $*" >&2; exit 1; }
@@ -24,6 +26,8 @@ usage() {
   say "Updates check and install missing runtime packages from the downloaded release unless --no-packages is given."
 }
 cleanup() {
+  [ -z "$CONFIG_TMP" ] || rm -f "$CONFIG_TMP"
+  [ -z "$CONFIG_CANDIDATE" ] || rm -f "$CONFIG_CANDIDATE"
   [ -z "$WORK" ] || rm -rf "$WORK"
   [ "$LOCKED" = 0 ] || rmdir "$STATE/.lock" 2>/dev/null || :
 }
@@ -177,106 +181,451 @@ provision_packages() {
     *) die "unknown provisioning mode: $mode" ;;
   esac
 }
+# Configuration migration deliberately supports a small, explicit TOML subset:
+# comments and blank lines, bare or quoted keys, [tables] and [[arrays]], plus
+# scalar, string, multiline string, array and inline-table values. Dotted keys,
+# duplicate tables/keys and any line that is not a header or assignment stop the
+# migration instead of guessing. The original file is only replaced after a
+# staged candidate parses in both niruwm and nirubar.
+config_scan() {
+  awk '
+function trim(s) {
+  sub(/^[ \t]+/, "", s)
+  sub(/[ \t\r]+$/, "", s)
+  return s
+}
+function fail(msg) {
+  printf "E\t%d\t%s\n", NR, msg
+}
+function escaped(s, pos,    n, c) {
+  n = 0
+  pos--
+  while (pos > 0) {
+    c = substr(s, pos, 1)
+    if (c != "\\") break
+    n++
+    pos--
+  }
+  return n % 2
+}
+function unquote(k,    qc, body, i, c, out) {
+  k = trim(k)
+  if (k == "") return "\001"
+  qc = substr(k, 1, 1)
+  if (length(k) >= 2 && (qc == "\"" || qc == "\047") && substr(k, length(k), 1) == qc) {
+    body = substr(k, 2, length(k) - 2)
+    if (qc == "\047") return body
+    out = ""
+    for (i = 1; i <= length(body); i++) {
+      c = substr(body, i, 1)
+      if (c != "\\") { out = out c; continue }
+      i++
+      if (i > length(body)) return "\001"
+      c = substr(body, i, 1)
+      if (c == "n") out = out "\n"
+      else if (c == "t") out = out "\t"
+      else if (c == "r") out = out "\r"
+      else if (c == "b") out = out "\b"
+      else if (c == "f") out = out "\f"
+      else if (c == "\\") out = out "\\"
+      else if (c == "\"") out = out "\""
+      else return "\001"
+    }
+    return out
+  }
+  if (k ~ /^[A-Za-z0-9_-]+$/) return k
+  return "\001"
+}
+function normalize_table(s,    n, i, c, qc, start, seg, out, segs) {
+  n = length(s)
+  qc = ""
+  start = 1
+  out = ""
+  segs = 0
+  for (i = 1; i <= n; i++) {
+    c = substr(s, i, 1)
+    if (qc != "") {
+      if (qc == "\"" && c == "\\") { i++; continue }
+      if (c == qc) qc = ""
+      continue
+    }
+    if (c == "\"" || c == "\047") { qc = c; continue }
+    if (c == ".") {
+      seg = unquote(substr(s, start, i - start))
+      if (seg == "\001") return "\001"
+      out = out (segs ? "." : "") seg
+      segs++
+      start = i + 1
+    }
+  }
+  if (qc != "") return "\001"
+  seg = unquote(substr(s, start))
+  if (seg == "\001") return "\001"
+  out = out (segs ? "." : "") seg
+  return out
+}
+function header_end(s, start, aot,    n, i, c, qc) {
+  n = length(s)
+  qc = ""
+  for (i = start; i <= n; i++) {
+    c = substr(s, i, 1)
+    if (qc != "") {
+      if (qc == "\"" && c == "\\") { i++; continue }
+      if (c == qc) qc = ""
+      continue
+    }
+    if (c == "\"" || c == "\047") { qc = c; continue }
+    if (aot && substr(s, i, 2) == "]]") return i
+    if (!aot && c == "]") return i
+  }
+  return 0
+}
+function find_equal(s,    n, i, c, qc) {
+  n = length(s)
+  qc = ""
+  for (i = 1; i <= n; i++) {
+    c = substr(s, i, 1)
+    if (qc != "") {
+      if (qc == "\"" && c == "\\") { i++; continue }
+      if (c == qc) qc = ""
+      continue
+    }
+    if (c == "\"" || c == "\047") { qc = c; continue }
+    if (c == "=") return i
+  }
+  return 0
+}
+function scan_value(s,    n, i, c) {
+  n = length(s)
+  i = 1
+  while (i <= n) {
+    if (ml != "") {
+      if (substr(s, i, 3) == ml && (ml != "\"\"\"" || !escaped(s, i))) {
+        ml = ""
+        i += 3
+        continue
+      }
+      i++
+      continue
+    }
+    c = substr(s, i, 1)
+    if (q != "") {
+      if (q == "\"" && c == "\\") { i += 2; continue }
+      if (c == q) q = ""
+      i++
+      continue
+    }
+    if (c == "\"") {
+      if (substr(s, i, 3) == "\"\"\"") { ml = "\"\"\""; i += 3; continue }
+      q = "\""
+      i++
+      continue
+    }
+    if (c == "\047") {
+      if (substr(s, i, 3) == "\047\047\047") { ml = "\047\047\047"; i += 3; continue }
+      q = "\047"
+      i++
+      continue
+    }
+    if (c == "#") return
+    if (c == "[") { ad++; i++; continue }
+    if (c == "]") {
+      ad--
+      if (ad < 0) { fail("unexpected ] in value"); ad = 0 }
+      i++
+      continue
+    }
+    if (c == "{") { bd++; i++; continue }
+    if (c == "}") {
+      bd--
+      if (bd < 0) { fail("unexpected } in value"); bd = 0 }
+      i++
+      continue
+    }
+    i++
+  }
+  if (q != "") {
+    fail("unterminated string")
+    q = ""
+  }
+}
+{
+  line = $0
+  sub(/\r$/, "", line)
+  if (ml != "" || q != "" || ad > 0 || bd > 0) {
+    scan_value(line)
+    next
+  }
+  lead = line
+  sub(/^[ \t]+/, "", lead)
+  if (lead == "" || substr(lead, 1, 1) == "#") next
+  if (substr(lead, 1, 1) == "[") {
+    aot = 0
+    start = 2
+    if (substr(lead, 1, 2) == "[[") { aot = 1; start = 3 }
+    end = header_end(lead, start, aot)
+    if (end == 0) { fail("unterminated table header"); next }
+    body = substr(lead, start, end - start)
+    rest = trim(substr(lead, end + (aot ? 2 : 1)))
+    if (rest != "" && substr(rest, 1, 1) != "#") { fail("unexpected text after table header"); next }
+    t = normalize_table(body)
+    if (t == "\001" || t == "") { fail("unsupported table name"); next }
+    if (aot) {
+      aot_count[t]++
+      ctx = t
+      printf "H\t%d\t%s\taot\n", NR, t
+    } else {
+      if (seen_table[t]) fail("duplicate table [" t "]")
+      seen_table[t] = 1
+      ctx = t
+      printf "H\t%d\t%s\ttable\n", NR, t
+    }
+    next
+  }
+  eq = find_equal(lead)
+  if (eq == 0) { fail("unsupported line (expected key = value)"); next }
+  key = unquote(substr(lead, 1, eq - 1))
+  if (key == "\001" || key == "") { fail("unsupported key"); next }
+  kid = ctx SUBSEP key
+  if (ctx != "" && aot_count[ctx] > 0) kid = kid SUBSEP aot_count[ctx]
+  if (seen_key[kid]) fail("duplicate key " key)
+  seen_key[kid] = 1
+  printf "K\t%d\t%s\t%s\n", NR, ctx, key
+  scan_value(substr(lead, eq + 1))
+  next
+}
+END {
+  if (ml != "") fail("unterminated multiline string")
+  if (q != "") fail("unterminated string")
+  if (ad > 0) fail("unterminated array")
+  if (bd > 0) fail("unterminated inline table")
+}
+  ' "$1"
+}
+
+config_errors() {
+  config_scan "$1" | awk -F '\t' '
+    $1 == "E" { printf "line %s: %s\n", $2, $3; found = 1 }
+    END { exit !found }
+  '
+}
+
+config_has_section() {
+  config_scan "$1" | awk -F '\t' -v wanted="$2" '
+    $1 == "H" && $3 == wanted && $4 == "table" { found = 1 }
+    END { exit !found }
+  '
+}
+
+config_has_key() {
+  config_scan "$1" | awk -F '\t' -v wanted_ctx="$2" -v wanted_key="$3" '
+    $1 == "K" && $3 == wanted_ctx && $4 == wanted_key { found = 1 }
+    END { exit !found }
+  '
+}
+
+config_header_line() {
+  config_scan "$1" | awk -F '\t' -v wanted="$2" '
+    $1 == "H" && $3 == wanted && $4 == "table" { print $2; exit }
+  '
+}
+
+config_next_header_line() {
+  config_scan "$1" | awk -F '\t' -v after="$2" '
+    $1 == "H" && $2 > after { print $2; exit }
+  '
+}
+
+insert_config_line() {
+  mig_file=$1
+  mig_after=$2
+  mig_text=$3
+  mig_mode=$(stat -c %a "$mig_file") || die "could not read permissions for $mig_file"
+  mig_tmp=$(mktemp "$mig_file.nirux.XXXXXX") || die "could not stage $mig_file"
+  CONFIG_TMP=$mig_tmp
+  if ! cp -p "$mig_file" "$mig_tmp"; then
+    rm -f "$mig_tmp"; CONFIG_TMP=
+    die "could not stage $mig_file"
+  fi
+  if ! chmod u+w "$mig_tmp"; then
+    rm -f "$mig_tmp"; CONFIG_TMP=
+    die "could not stage $mig_file"
+  fi
+  if awk -v n="$mig_after" -v text="$mig_text" '
+    NR == 1 && n == 0 { print text }
+    { print }
+    NR == n && n > 0 { print text }
+    END { if (NR == 0 && n == 0) print text }
+  ' "$mig_file" > "$mig_tmp" &&
+     chmod "$mig_mode" "$mig_tmp" &&
+     mv -f "$mig_tmp" "$mig_file"; then
+    CONFIG_TMP=
+  else
+    rm -f "$mig_tmp"; CONFIG_TMP=
+    die "could not update $mig_file; original kept"
+  fi
+}
+
 # Create the shared configuration on a fresh install, or append settings a new
 # release introduced. Existing values are never rewritten.
 add_missing_sections() {
-  file=$1
-  example=$2
-  added=""
-  for section in nightlight wallpaper monitors bar; do
-    grep -q "^[[:space:]]*\[$section\][[:space:]]*\(#.*\)\?$" "$file" && continue
-    block=$(awk -v s="[$section]" '
+  mig_file=$1
+  mig_example=$2
+  mig_added=""
+  for mig_section in nightlight wallpaper monitors bar; do
+    if config_has_section "$mig_file" "$mig_section"; then continue; fi
+    mig_block=$(awk -v s="[$mig_section]" '
       $0 == s {found=1; print; next}
       found && /^[[:space:]]*\[/ {exit}
       found {print}
-    ' "$example")
-    [ -n "$block" ] || continue
+    ' "$mig_example")
+    [ -n "$mig_block" ] || continue
     {
       printf '\n# Added by NIRUX; values are defaults.\n'
-      printf '%s\n' "$block"
-    } >> "$file"
-    added="$added $section"
+      printf '%s\n' "$mig_block"
+    } >> "$mig_file"
+    mig_added="$mig_added $mig_section"
   done
-  [ -z "$added" ] || say "Added missing config sections:$added"
+  [ -z "$mig_added" ] || say "Added missing config sections:$mig_added"
 }
 
 add_missing_top_key() {
-  file=$1
-  key=$2
-  value=$3
-  if awk -v key="$key" '
-    /^[[:space:]]*\[/ {exit}
-    $0 ~ "^[[:space:]]*" key "[[:space:]]*=" {found=1}
-    END {exit !found}
-  ' "$file"; then return 0; fi
-  config_tmp=$(mktemp "$file.nirux.XXXXXX")
-  cp -p "$file" "$config_tmp"
-  awk -v line="$key = $value" '
-    /^[[:space:]]*\[/ && !done {print line; done=1}
-    {print}
-    END {if (!done) print line}
-  ' "$file" > "$config_tmp" && mv "$config_tmp" "$file" || {
-    rm -f "$config_tmp"; die "could not migrate $file"
-  }
+  mig_file=$1
+  mig_key=$2
+  mig_value=$3
+  if config_has_key "$mig_file" "" "$mig_key"; then return 0; fi
+  mig_first=$(config_scan "$mig_file" | awk -F '\t' '$1 == "H" { print $2; exit }')
+  if [ -n "$mig_first" ]; then
+    mig_after=$(awk -v last="$((mig_first - 1))" 'NR <= last && NF { line = NR } END { print line + 0 }' "$mig_file")
+  else
+    mig_after=$(awk 'NF { line = NR } END { print line + 0 }' "$mig_file")
+  fi
+  insert_config_line "$mig_file" "$mig_after" "$mig_key = $mig_value"
 }
 
 add_missing_key() {
-  file=$1
-  section=$2
-  key=$3
-  value=$4
-  config_tmp=$(mktemp "$file.nirux.XXXXXX")
-  cp -p "$file" "$config_tmp"
-  awk -v s="[$section]" -v key="$key" -v line="$key = $value" '
-    {text[NR]=$0}
-    /^[[:space:]]*\[/ {
-      header=$0
-      sub(/^[[:space:]]*/, "", header)
-      sub(/[[:space:]]*(#.*)?$/, "", header)
-      inside=(header == s)
-      if (inside) last=NR
-      next
-    }
-    inside && $0 ~ "^[[:space:]]*" key "[[:space:]]*=" {found=1}
-    inside && NF {last=NR}
-    END {
-      if (last == 0 || found) {
-        for (i=1; i<=NR; i++) print text[i]
-        exit
-      }
-      for (i=1; i<=NR; i++) {
-        print text[i]
-        if (i == last) print line
-      }
-    }
-  ' "$file" > "$config_tmp" && mv "$config_tmp" "$file" || {
-    rm -f "$config_tmp"; die "could not migrate $file"
+  mig_file=$1
+  mig_section=$2
+  mig_key=$3
+  mig_value=$4
+  if config_has_key "$mig_file" "$mig_section" "$mig_key"; then return 0; fi
+  mig_header=$(config_header_line "$mig_file" "$mig_section")
+  [ -n "$mig_header" ] || return 0
+  mig_next=$(config_next_header_line "$mig_file" "$mig_header")
+  if [ -n "$mig_next" ]; then
+    mig_after=$(awk -v first="$((mig_header + 1))" -v last="$((mig_next - 1))" '
+      NR >= first && NR <= last && NF { line = NR }
+      END { print line + 0 }
+    ' "$mig_file")
+  else
+    mig_after=$(awk -v first="$((mig_header + 1))" 'NR >= first && NF { line = NR } END { print line + 0 }' "$mig_file")
+  fi
+  [ "$mig_after" -gt 0 ] || mig_after=$mig_header
+  insert_config_line "$mig_file" "$mig_after" "$mig_key = $mig_value"
+}
+
+validate_config_candidate() {
+  mig_candidate=$1
+  if [ -n "${WORK:-}" ]; then
+    mig_validator_root=$WORK/config-validate
+    rm -rf "$mig_validator_root"
+    mkdir -p "$mig_validator_root/niruwm"
+  else
+    mig_validator_root=$(mktemp -d "${TMPDIR:-/tmp}/nirux-config.XXXXXX") || return 1
+    mkdir -p "$mig_validator_root/niruwm"
+  fi
+  if [ -d "$CONFDIR/themes" ]; then
+    ln -s "$CONFDIR/themes" "$mig_validator_root/niruwm/themes" 2>/dev/null || :
+  fi
+  cp "$mig_candidate" "$mig_validator_root/niruwm/config.toml" || {
+    rm -rf "$mig_validator_root"; return 1
   }
+  for mig_program in niruwm nirubar; do
+    if [ -n "${WORK:-}" ] && [ -x "$WORK/generation/bin/$mig_program" ]; then
+      mig_validator=$WORK/generation/bin/$mig_program
+    elif [ -x "$BIN/$mig_program" ]; then
+      mig_validator=$BIN/$mig_program
+    else
+      say "cannot validate the configuration: $mig_program is not available"
+      rm -rf "$mig_validator_root"
+      return 1
+    fi
+    if ! XDG_CONFIG_HOME="$mig_validator_root" "$mig_validator" --check-config >/dev/null 2>"$mig_validator_root/$mig_program.err"; then
+      mig_reason=$(sed -n '1p' "$mig_validator_root/$mig_program.err")
+      say "configuration candidate rejected by $mig_program${mig_reason:+: $mig_reason}"
+      rm -rf "$mig_validator_root"
+      return 1
+    fi
+  done
+  rm -rf "$mig_validator_root"
+  return 0
 }
 
 install_config() {
-  example="$WORK/download/nirux/config.example.toml"
-  [ -f "$example" ] || { say 'config example missing; user configuration unchanged'; return 0; }
+  cfg_example="$WORK/download/nirux/config.example.toml"
+  [ -f "$cfg_example" ] || { say 'config example missing; user configuration unchanged'; return 0; }
   mkdir -p "$CONFDIR"
-  file="$CONFDIR/config.toml"
-  if [ ! -e "$file" ]; then
-    install -m 644 "$example" "$file"
-    say "Created $file"
+  cfg_file="$CONFDIR/config.toml"
+  if [ ! -e "$cfg_file" ] && [ ! -L "$cfg_file" ]; then
+    install -m 644 "$cfg_example" "$cfg_file"
+    say "Created $cfg_file"
     return 0
   fi
-  say "Keeping existing $file"
-  add_missing_sections "$file" "$example"
-  add_missing_top_key "$file" nirupi_compat false
-  add_missing_top_key "$file" restore_session false
-  add_missing_top_key "$file" weather_latitude 58.22
-  add_missing_top_key "$file" weather_longitude 11.93
-  add_missing_key "$file" bar title_delay_seconds 0
-  add_missing_key "$file" bar graph_width 24
-  add_missing_key "$file" bar tray true
-  add_missing_key "$file" wallpaper scale "\"fill\""
-  add_missing_key "$file" wallpaper files "[]"
-  add_missing_key "$file" wallpaper shuffle_on_start true
-  add_missing_key "$file" monitors workspaces 9
+  say "Keeping existing $cfg_file"
+  if [ -L "$cfg_file" ]; then
+    cfg_target=$(readlink -f "$cfg_file" 2>/dev/null || :)
+    if [ -z "$cfg_target" ] || [ ! -f "$cfg_target" ]; then
+      die "$cfg_file is a symlink that does not resolve to a regular file; configuration migration stopped"
+    fi
+  else
+    [ -f "$cfg_file" ] || die "$cfg_file is not a regular file; configuration migration stopped"
+    cfg_target=$cfg_file
+  fi
+  cfg_mode=$(stat -c %a "$cfg_target") || die "could not read permissions for $cfg_target"
+  cfg_candidate=$(mktemp "$(dirname "$cfg_target")/.$(basename "$cfg_target").nirux.XXXXXX") || \
+    die "could not stage configuration next to $cfg_target"
+  CONFIG_CANDIDATE=$cfg_candidate
+  if ! cp -p "$cfg_target" "$cfg_candidate" || ! chmod u+w "$cfg_candidate"; then
+    rm -f "$cfg_candidate"; CONFIG_CANDIDATE=
+    die "could not stage configuration for $cfg_file"
+  fi
+  if config_errors "$cfg_candidate"; then
+    rm -f "$cfg_candidate"; CONFIG_CANDIDATE=
+    die "configuration migration stopped: unsupported or invalid TOML (original kept)"
+  fi
+  cfg_before=$(sha256sum "$cfg_candidate" | cut -d ' ' -f1)
+  add_missing_sections "$cfg_candidate" "$cfg_example"
+  add_missing_top_key "$cfg_candidate" nirupi_compat false
+  add_missing_top_key "$cfg_candidate" restore_session false
+  add_missing_top_key "$cfg_candidate" weather_latitude 58.22
+  add_missing_top_key "$cfg_candidate" weather_longitude 11.93
+  add_missing_key "$cfg_candidate" bar title_delay_seconds 0
+  add_missing_key "$cfg_candidate" bar graph_width 24
+  add_missing_key "$cfg_candidate" bar tray true
+  add_missing_key "$cfg_candidate" wallpaper scale "\"fill\""
+  add_missing_key "$cfg_candidate" wallpaper files "[]"
+  add_missing_key "$cfg_candidate" wallpaper shuffle_on_start true
+  add_missing_key "$cfg_candidate" monitors workspaces 9
+  cfg_after=$(sha256sum "$cfg_candidate" | cut -d ' ' -f1)
+  if [ "$cfg_before" = "$cfg_after" ]; then
+    rm -f "$cfg_candidate"; CONFIG_CANDIDATE=
+    say 'No missing configuration settings; existing values unchanged.'
+    return 0
+  fi
+  if config_errors "$cfg_candidate"; then
+    rm -f "$cfg_candidate"; CONFIG_CANDIDATE=
+    die "configuration migration stopped: candidate is not valid TOML (original kept)"
+  fi
+  if ! validate_config_candidate "$cfg_candidate"; then
+    rm -f "$cfg_candidate"; CONFIG_CANDIDATE=
+    die "configuration candidate was rejected; original kept"
+  fi
+  if ! chmod "$cfg_mode" "$cfg_candidate" || ! mv -f "$cfg_candidate" "$cfg_target"; then
+    rm -f "$cfg_candidate"; CONFIG_CANDIDATE=
+    die "could not activate $cfg_file; original kept"
+  fi
+  CONFIG_CANDIDATE=
+  say "Migrated $cfg_file with missing defaults; existing values kept."
   return 0
 }
 
@@ -647,12 +996,13 @@ install_or_update() {
     NIRUX_PROVISION_OS=$OS NIRUX_PROVISION_DM=$DM \
       sh "$WORK/download/nirux/nirux" _provision missing
   fi
-  # System integration must succeed before switching the active programs.
+  # Configuration and system integration must succeed before switching the
+  # active programs. A rejected configuration leaves the old generation intact.
+  install_config
   prepare_pam
   register_session
   if [ "$operation" = install ]; then setup_startx; enable_services; fi
   activate
-  install_config
   if [ -n "${DISPLAY:-}" ] && "$BIN/niructl" restart-bar; then
     say 'Running bar restarted. Log out/in to activate the new WM, idle daemon and session.'
   else say 'Log out/in to activate all updated programs. In a new NIRU session: niructl restart-bar.'

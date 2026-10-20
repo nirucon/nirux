@@ -88,7 +88,7 @@ installer cannot update itself. After that first migration the installed
 
 ```sh
 nirux update
-nirux update --release 0.10.15
+nirux update --release 0.10.16
 nirux rollback
 ```
 
@@ -129,6 +129,22 @@ or Flameshot, replace that binding with an installed action or remove the
 override to restore the built-in default. Use `action = "unbind"` to disable a
 default. Set `browser` to your installed browser; browsers are not provisioned
 by NIRUX. Screenshots create `~/Pictures` when needed.
+
+### Configuration migration
+
+Updates add new default keys and sections to an existing `config.toml` without
+rewriting values the user already set. The supported migration subset is:
+comments and blank lines, bare or quoted keys, `[tables]`, `[[arrays]]`, and
+scalar, string, multiline-string, array and inline-table values.
+
+Dotted keys, duplicate tables or keys, unterminated values and any other
+unparseable line stop the migration before the file changes. NIRUX writes a
+staged candidate next to the target, checks that it parses with both
+`niruwm --check-config` and `nirubar --check-config`, preserves the original
+file mode, follows a symlink without replacing it, and only then replaces the
+target atomically. If anything is rejected, the original configuration and the
+active program generation remain unchanged. Migration uses the existing
+`awk`/`sed` toolchain; it does not require Python or a TOML runtime.
 
 ## Diagnostics
 
