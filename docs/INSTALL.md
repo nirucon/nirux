@@ -9,16 +9,17 @@ binary releases.
 The suite consists of [niruwm](https://github.com/nirucon/niruwm) (window manager,
 session, `niructl`, `niruidle`), [nirubar](https://github.com/nirucon/nirubar),
 [niruscreensaver](https://github.com/nirucon/niruscreensaver), and
-[nirulock](https://github.com/nirucon/nirulock).
+[nirulock](https://github.com/nirucon/nirulock),
+[nirulauncher](https://github.com/nirucon/nirulauncher) and
+[nirunotify](https://github.com/nirucon/nirunotify).
 
 A personal hobby project. Early software, used at your own risk.
 
 This is a personal desktop for the author's own use; others are welcome to try it.
 The implementation roadmap and continuation checkpoints are in [ROADMAP.md](../ROADMAP.md).
 The code review and verified findings are in [AUDIT.md](../AUDIT.md).
-Native [nirulauncher](https://github.com/nirucon/nirulauncher) and
-[nirunotify](https://github.com/nirucon/nirunotify) are design-stage projects;
-they are not installed until working releases pass the roadmap's integration gates.
+Native launcher and notifier releases are included. The notification provider
+defaults to `auto`: native when installed, with Dunst fallback.
 
 ## Install
 
@@ -103,6 +104,11 @@ and missing runtime packages are installed; use `nirux update --no-packages` to
 skip that step. Missing shared libraries and wrong binary versions fail before
 switching programs. Operations on the same prefix are locked.
 
+Missing-only Arch provisioning uses the current pacman database (`pacman -S`),
+without refreshing it into a partial upgrade. If package files have expired on
+the mirror, run `sudo pacman -Syu` explicitly, then retry. Initial full installs
+already use `pacman -Syu`.
+
 Program generations live in `~/.local/share/nirux/generations`. Stable links in
 `~/.local/bin` point through one `current` link, which is switched atomically.
 Legacy flat installations are adopted with a snapshot of their existing files.
@@ -117,10 +123,12 @@ owner and waits for acknowledgement. `niructl reload` reloads configuration.
 Older running WMs need a logout/login before they support the restart command.
 The WM, idle daemon and session changes always require a new login.
 
-The 0.6.0 checkpoint removes unauthenticated lock timers and keycode diagnostics,
-reaps idle children, and reduces bar/screensaver work. Log out/in after updating:
-an old running idle daemon can still wrap a new locker in its former timeout.
-Measured fixture results and tradeoffs are in [MEASUREMENTS.md](../MEASUREMENTS.md).
+Fresh configuration uses suite-native shortcuts. Existing user overrides are
+preserved: if an old config explicitly calls `nirupi-power.sh`, `clip-menu.sh`
+or Flameshot, replace that binding with an installed action or remove the
+override to restore the built-in default. Use `action = "unbind"` to disable a
+default. Set `browser` to your installed browser; browsers are not provisioned
+by NIRUX. Screenshots create `~/Pictures` when needed.
 
 ## Diagnostics
 
