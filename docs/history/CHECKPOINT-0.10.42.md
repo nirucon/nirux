@@ -55,4 +55,15 @@ NIRUX 0.10.42 pins NIRUNOTIFY 0.3.4. No config migration is needed: the
 notifier follows the existing NIRUWM theme file and the existing appearance
 contract. H01 remains the next roadmap task.
 
-CI, release and host deployment evidence is added after publication.
+## Release and deployment evidence
+
+- NIRUNOTIFY v0.3.5 published from commit `d861da8`; CI run 39477551020 passed.
+- NIRUX 0.10.43 CI run 39478227427 passed check, Arch, Debian and Void.
+- NIRUX v0.10.43 published with NIRUNOTIFY 0.3.5.
+- `niru@void` and `niru@thinkpad` run NIRUX 0.10.43 / NIRUNOTIFY 0.3.5.
+  `nirunotify --check-config` reports `theme: niru-noir` with the Noir palette
+  on Void and `theme: niru-nord` with the Nord palette on ThinkPad.
+- Both hosts keep Tailscale enabled and active. The running notification
+  processes started before the update, so the live theme reload and the fixed
+  theme label take effect after the next logout/login. No session was forced
+  to log out.
