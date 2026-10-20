@@ -2,7 +2,7 @@
 # NIRUX: install a complete X11 desktop, or maintain an existing installation.
 set -eu
 
-VERSION=0.10.14
+VERSION=0.10.15
 PREFIX=${NIRUX_PREFIX:-$HOME/.local}
 BIN=$PREFIX/bin
 STATE=$PREFIX/share/nirux
@@ -427,7 +427,7 @@ write_system() {
   if [ -f "$target" ]; then
     installed_sum=$(sha256sum "$target" | cut -d ' ' -f1)
     source_sum=$(sha256sum "$source" | cut -d ' ' -f1)
-    [ "$installed_sum" != "$source_sum" ] || return
+    [ "$installed_sum" != "$source_sum" ] || return 0
   fi
   if [ -f "$target" ] && ! owned "$target" && ! legacy_owned "$target"; then
     if grep -q '^# NIRUX owner:' "$target"; then die "$target belongs to another NIRUX installation"; fi
