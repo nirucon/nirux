@@ -88,7 +88,7 @@ installer cannot update itself. After that first migration the installed
 
 ```sh
 nirux update
-nirux update --release 0.10.27
+nirux update --release 0.10.28
 nirux rollback
 ```
 
@@ -133,6 +133,17 @@ or Flameshot, replace that binding with an installed action or remove the
 override to restore the built-in default. Use `action = "unbind"` to disable a
 default. Set `browser` to your installed browser; browsers are not provisioned
 by NIRUX. Screenshots create `~/Pictures` when needed.
+
+### Appearance contract
+
+The optional `~/.config/niruwm/appearance.toml` (schema 1) is shared by NIRUWM,
+NIRUBAR, NIRULAUNCHER, NIRUNOTIFY, NIRULOCK and NIRUSCREENSAVER. It carries
+semantic colours, font size/path, spacing, focus width and reduced motion.
+A user theme file in `~/.config/niruwm/themes/NAME.toml` takes precedence.
+Unreadable, unsupported or invalid appearance files are ignored with a diagnostic,
+so the last working theme stays active. NIRULOCK and NIRUSCREENSAVER always keep
+an opaque black background. NIRUX creates the example as `appearance.toml` on a
+fresh install and leaves an existing file untouched.
 
 ### Configuration migration
 

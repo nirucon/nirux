@@ -94,6 +94,7 @@ for release in "$VERSION" 99.0.0; do
   chmod +x "$FIXTURE/nirux/$release/nirux"
   sed "s/suite $VERSION/suite $release/" "$SOURCE/manifest" > "$FIXTURE/nirux/$release/manifest"
   cp "$SOURCE/config.example.toml" "$FIXTURE/nirux/$release/config.example.toml"
+  cp "$SOURCE/appearance.example.toml" "$FIXTURE/nirux/$release/appearance.example.toml"
   checksums "$FIXTURE/nirux/$release"
 done
 # 99.2.0 adds a synthetic component. The running installer does not know its
@@ -106,6 +107,7 @@ chmod +x "$FIXTURE/nirux/99.2.0/nirux"
 sed "s/suite $VERSION/suite 99.2.0/" "$SOURCE/manifest" > "$FIXTURE/nirux/99.2.0/manifest"
 say 'nirufoo 1.0.0' >> "$FIXTURE/nirux/99.2.0/manifest"
 cp "$SOURCE/config.example.toml" "$FIXTURE/nirux/99.2.0/config.example.toml"
+cp "$SOURCE/appearance.example.toml" "$FIXTURE/nirux/99.2.0/appearance.example.toml"
 make_binary "$FIXTURE/nirufoo/1.0.0/nirufoo" nirufoo 1.0.0
 checksums "$FIXTURE/nirufoo/1.0.0"
 checksums "$FIXTURE/nirux/99.2.0"
@@ -120,6 +122,7 @@ chmod +x "$FIXTURE/nirux/99.3.0/nirux"
 sed "s/suite $VERSION/suite 99.3.0/" "$SOURCE/manifest" > "$FIXTURE/nirux/99.3.0/manifest"
 say 'nirulib 1.0.0' >> "$FIXTURE/nirux/99.3.0/manifest"
 cp "$SOURCE/config.example.toml" "$FIXTURE/nirux/99.3.0/config.example.toml"
+cp "$SOURCE/appearance.example.toml" "$FIXTURE/nirux/99.3.0/appearance.example.toml"
 cat > "$FIXTURE/nirulib/1.0.0/nirulib" <<'EOF'
 #!/bin/sh
 [ "$1" = --version ] || exit 0

@@ -2,7 +2,7 @@
 # NIRUX: install a complete X11 desktop, or maintain an existing installation.
 set -eu
 
-VERSION=0.10.27
+VERSION=0.10.28
 PREFIX=${NIRUX_PREFIX:-$HOME/.local}
 BIN=$PREFIX/bin
 STATE=$PREFIX/share/nirux
@@ -561,14 +561,28 @@ validate_config_candidate() {
   return 0
 }
 
+install_appearance() {
+  appearance_example="$WORK/download/nirux/appearance.example.toml"
+  [ -f "$appearance_example" ] || return 0
+  mkdir -p "$CONFDIR"
+  appearance_file="$CONFDIR/appearance.toml"
+  if [ ! -e "$appearance_file" ] && [ ! -L "$appearance_file" ]; then
+    install -m 644 "$appearance_example" "$appearance_file"
+    say "Created $appearance_file"
+  fi
+  return 0
+}
+
 install_config() {
   cfg_example="$WORK/download/nirux/config.example.toml"
   [ -f "$cfg_example" ] || { say 'config example missing; user configuration unchanged'; return 0; }
   mkdir -p "$CONFDIR"
+  install_appearance || :
   cfg_file="$CONFDIR/config.toml"
   if [ ! -e "$cfg_file" ] && [ ! -L "$cfg_file" ]; then
     install -m 644 "$cfg_example" "$cfg_file"
     say "Created $cfg_file"
+    install_appearance || :
     return 0
   fi
   say "Keeping existing $cfg_file"
@@ -773,7 +787,7 @@ stage_release() {
     fetch https://api.github.com/repos/nirucon/nirux/releases/latest "$WORK/latest.json"
     RELEASE=$(sed -n 's/.*"tag_name": *"v\([0-9.]*\)".*/\1/p' "$WORK/latest.json" | head -n 1)
   fi
-  release_files nirux "$RELEASE" nirux manifest config.example.toml
+  release_files nirux "$RELEASE" nirux manifest config.example.toml appearance.example.toml
   [ "$(manifest_version schema)" = 1 ] || die "unsupported manifest schema"
   [ "$(manifest_version suite)" = "$RELEASE" ] || die "suite/manifest version mismatch"
   sh -n "$WORK/download/nirux/nirux"

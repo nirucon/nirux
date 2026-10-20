@@ -28,13 +28,14 @@ jobs:
               nirulock) for distro in arch debian void; do grep -qx "pam-$distro" /tmp/assets; done ;;
             esac
           done
-      - run: sha256sum nirux manifest config.example.toml > SHA256SUMS
+      - run: sha256sum nirux manifest config.example.toml appearance.example.toml > SHA256SUMS
       - uses: softprops/action-gh-release@v2
         with:
           files: |
             nirux
             manifest
             config.example.toml
+            appearance.example.toml
             SHA256SUMS
           make_latest: true
           generate_release_notes: true
