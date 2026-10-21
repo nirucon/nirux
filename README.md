@@ -8,12 +8,13 @@ nirulauncher and nirunotify, plus Xorg, kitty/fish, theme wallpapers, the NIRU
 terminal colours and a graphical Polkit agent for power actions. Niru Noir is the
 default theme; Nord, Satie and Carl Larsson are also available.
 
-**0.10.48 status:** managed Helium, theme and extra wallpapers, target-owned
+**0.10.49 status:** managed Helium, theme and extra wallpapers, target-owned
 updates, kitty/fish terminal integration, correct bar colours, graphical Polkit
 prompts, wallpaper controls, dwm-style mouse move/resize and per-workspace
 autostart, live notification theme colours, a working power menu, themed
 SDDM/LightDM greeters, a session welcome, reliable notification stacking, provider-aware DND, a shared visual scale,
-font-aware launcher rows and a configurable session welcome are implemented. A new installer now
+font-aware launcher rows, a configurable session welcome and audio device/mute
+controls are implemented. A new installer now
 owns config/integration/activation, so a future update
 applies new config keys, assets and components in one pass. Fresh installs get
 the four NIRU theme wallpaper sets under
