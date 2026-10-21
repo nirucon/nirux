@@ -871,6 +871,7 @@ grep -qx 'background = "101010"' "$appearance_test/custom.toml" || fail 'custom 
   grep -q '^// NIRUX owner: ' "$ROOT/usr/share/sddm/themes/nirux/Main.qml" || fail 'SDDM theme is not owned'
   grep -qx 'Current=nirux' "$ROOT/etc/sddm.conf.d/50-nirux.conf" || fail 'SDDM theme was not selected'
   grep -q 'subject.isInGroup("wheel")' "$ROOT/etc/polkit-1/rules.d/49-nirux-power.rules" || fail 'missing power polkit rule'
+  grep -Fq "subject.user == \"$(id -un)\"" "$ROOT/etc/polkit-1/rules.d/49-nirux-power.rules" || fail 'power rule does not trust the installing account'
   [ -f "$ROOT/usr/share/sddm/themes/nirux/background.png" ] || fail 'missing SDDM background'
   install_greeters lightdm
   [ -f "$ROOT/usr/share/lightdm/lightdm-gtk-greeter.conf.d/50-nirux.conf" ] || fail 'missing LightDM greeter config'

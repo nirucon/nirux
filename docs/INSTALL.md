@@ -212,9 +212,10 @@ Cancel leaves no file. Notifications use the active NIRUNOTIFY/Dunst provider.
 
 ### Power actions
 
-NIRUX installs a Polkit agent and a narrow rule that lets a local, active user in
-`wheel` or `sudo` power off, reboot or suspend without a password. Remote
-sessions and other identities still authenticate normally.
+NIRUX installs a Polkit agent and a narrow rule that lets the installing NIRUX
+account, plus local active users in `wheel` or `sudo`, power off, reboot or
+suspend without a password. Remote sessions and other identities still
+authenticate normally.
 
 ## Update and rollback
 

@@ -2,7 +2,7 @@
 # NIRUX: install a complete X11 desktop, or maintain an existing installation.
 set -eu
 
-VERSION=0.10.69
+VERSION=0.10.70
 PREFIX=${NIRUX_PREFIX:-$HOME/.local}
 BIN=$PREFIX/bin
 STATE=$PREFIX/share/nirux
@@ -1568,8 +1568,12 @@ install_greeters() {
   mkdir -p "$unpack" || die 'could not create the integration extraction directory'
   tar -xJf "$archive" -C "$unpack" || die 'could not extract the NIRUX integration assets'
   [ -f "$unpack/polkit/49-nirux-power.rules" ] || die 'integration archive is missing the power rule'
-  { say "// NIRUX owner: $PREFIX"; cat "$unpack/polkit/49-nirux-power.rules"; } > "$WORK/power.rules"
-  # Power actions stay passwordless only for a local, active administrator.
+  # The installing account can already use sudo, so it is also trusted for the
+  # local power menu even when sudo comes from a sudoers rule rather than a
+  # wheel/sudo group membership. Remote sessions remain excluded.
+  rule_user=$(id -un)
+  case "$rule_user" in *[!A-Za-z0-9._-]*) rule_user= ;; esac
+  { say "// NIRUX owner: $PREFIX"; sed "s/__NIRUX_USER__/$rule_user/g" "$unpack/polkit/49-nirux-power.rules"; } > "$WORK/power.rules"
   write_system "$ROOT/etc/polkit-1/rules.d/49-nirux-power.rules" "$WORK/power.rules"
 
   case "$greeter_dm" in
