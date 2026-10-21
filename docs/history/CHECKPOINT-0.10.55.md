@@ -38,5 +38,13 @@ informational rows are inert. A fixed “Run diagnostics” action opens the ful
 
 ## Release and deployment evidence
 
-NIRUWM v0.16.52 and NIRULAUNCHER v0.2.6 are published; NIRUX 0.10.55 pins them.
-CI, release and host deployment results are added after publication.
+NIRUWM v0.16.52 and NIRULAUNCHER v0.2.6 are published. NIRUX CI run
+39579534088 passed check, Arch, Debian and Void; v0.10.55 was released and
+deployed to both hosts. They now run NIRUX 0.10.55 / NIRUWM 0.16.52 /
+NIRULAUNCHER 0.2.6.
+
+Live `niructl explain --launcher` on both hosts reported only one warning:
+the running session was NIRUWM 0.16.40 while 0.16.52 is installed, with the
+explicit “log out/in to activate” cause and a `doctor` action. Notifications,
+audio, display, sleep protection and weather produced no warnings. The launcher
+Diagnostics group will show the same row after logout/login.
