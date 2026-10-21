@@ -2,7 +2,7 @@
 # NIRUX: install a complete X11 desktop, or maintain an existing installation.
 set -eu
 
-VERSION=0.10.60
+VERSION=0.10.61
 PREFIX=${NIRUX_PREFIX:-$HOME/.local}
 BIN=$PREFIX/bin
 STATE=$PREFIX/share/nirux
@@ -1641,8 +1641,20 @@ enable_services() {
       [ -d "$ROOT/etc/sv/$DM" ] || die "missing runit service for $DM"
       [ -e "$ROOT/var/service/$DM" ] || as_root ln -s "/etc/sv/$DM" "$ROOT/var/service/$DM"
       ;; esac
+    for service in bluetoothd power-profiles-daemon; do
+      if [ -d "$ROOT/etc/sv/$service" ] && [ ! -e "$ROOT/var/service/$service" ]; then
+        as_root ln -s "/etc/sv/$service" "$ROOT/var/service/$service"
+      fi
+    done
   else
     case "$DM" in sddm|lightdm) as_root systemctl enable "$DM.service" ;; esac
+    for service in bluetooth.service power-profiles-daemon.service; do
+      if [ -f "$ROOT/usr/lib/systemd/system/$service" ] ||
+         [ -f "$ROOT/lib/systemd/system/$service" ]; then
+        as_root systemctl enable "$service" >/dev/null 2>&1 || :
+        as_root systemctl start "$service" >/dev/null 2>&1 || :
+      fi
+    done
   fi
 }
 check_pam() {

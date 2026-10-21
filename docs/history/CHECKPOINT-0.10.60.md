@@ -48,8 +48,11 @@ Real PPD service interaction and hardware profile changes remain host tests.
 Tests for earlier P1–P6 work remain deferred by the owner. Next feature is N5
 nirushot.
 
-## Release and deployment evidence
+## Follow-up 0.10.61
 
-NIRUWM v0.16.57, NIRUBAR v0.18.26 and NIRULAUNCHER v0.2.11 are published;
-NIRUX 0.10.60 pins them. CI, release and host deployment results are added after
-publication.
+The first deployment exposed two integration defects: the service-enable block
+was missing from the released installer, leaving `power-profiles-daemon` disabled
+on Arch and unlinked on Void, and a failed provider query printed an audio-specific
+error. NIRUWM 0.16.58 makes provider errors generic; NIRUX 0.10.61 restores the
+Bluetooth/PPD service enabling for both installs and updates. The service state
+was verified on both hosts after the follow-up deployment.

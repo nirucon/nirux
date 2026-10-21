@@ -18,8 +18,8 @@ Fortsätt utvecklingen av NIRU-sviten. Läs först aktuella GitHub-filer:
 - https://raw.githubusercontent.com/nirucon/nirux/main/docs/history/CHECKPOINT-0.10.57.md
 - https://raw.githubusercontent.com/nirucon/nirux/main/docs/REPOSITORIES.md
 
-Utgå från NIRUX 0.10.60:
-niruwm 0.16.57, nirubar 0.18.26, niruscreensaver 0.8.3,
+Utgå från NIRUX 0.10.61:
+niruwm 0.16.58, nirubar 0.18.26, niruscreensaver 0.8.3,
 nirulock 0.16.10, nirulauncher 0.2.11, nirunotify 0.3.7.
 Kontrollera manifest, git-status, GitHub main och senaste fulla CI på nytt.
 Versionslistan är en startpunkt, inte ett skäl att skriva över nyare arbete.
