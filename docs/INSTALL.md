@@ -1,6 +1,6 @@
 # Installation and maintenance
 
-**Verified-state note, 2026-10-21:** 0.10.45 implements managed Helium,
+**Verified-state note, 2026-10-21:** 0.10.57 implements managed Helium,
 theme-follow wallpapers, target-owned apply and the kitty/fish terminal
 integration. The full distro CI covers real-release install,
 doctor, config contract, startx and a normal-user sandboxed Helium launch.

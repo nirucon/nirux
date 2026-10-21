@@ -36,6 +36,14 @@
 - Shared configuration accepts `microphone_visibility = "muted"` and rejects
   unsupported values in both NIRUWM and NIRUBAR.
 
-Release CI and host verification are recorded after publication. Owner-present
-audible microphone and USB hotplug checks remain separate from fixture/Xvfb
-evidence. Next feature is N2 Bluetooth.
+NIRUX v0.10.57 passed CI and was deployed to both hosts. ThinkPad and Void now
+run NIRUX 0.10.57 / NIRUWM 0.16.54 / NIRUBAR 0.18.23 / NIRULAUNCHER 0.2.8.
+Read-only validation on both:
+`niructl audio mic-status` reported the default input and gain, and the level
+was byte-for-byte unchanged before/after; no mute or gain mutation was sent.
+ThinkPad reports Built-in Audio Analog Stereo, Void the Digital Microphone.
+The module is optional, so both existing configs remain on their current module
+list until `"microphone"` is added.
+
+Owner-present audible microphone and USB hotplug checks remain separate from
+fixture/Xvfb evidence. Next feature is N2 Bluetooth.

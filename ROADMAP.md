@@ -1,20 +1,19 @@
 # NIRU desktop — current roadmap and restart handoff
 
-Priority order updated **2026-10-21**. Published baseline: **NIRUX 0.10.56**.
+Priority order updated **2026-10-21**. Published baseline: **NIRUX 0.10.57**.
 
 ## Start here — the active work queue
 
-**Start with N1. Work in order N1 → N2 → N3 → N4 → N5.**
-This is the owner's next feature queue. N1 is implemented locally and awaiting
-release/deployment verification; N2–N5 remain planned. Reuse existing components
-for N1–N4. Display profiles stay built
+**N1 is done. Start with N2. Work in order N2 → N3 → N4 → N5.**
+This is the owner's next feature queue. N1 is implemented; N2–N5 remain planned.
+Reuse existing components for N1–N4. Display profiles stay built
 into NIRUX; a larger display repository is deferred. N5 plans a separate,
 on-demand `nirushot` tool.
 
 | Order / ID | Status | Deliverable |
 |---|---|---|
-| 1 / N1 | IN PROGRESS — release/deploy verification | Microphone state, mute, input selection and level |
-| 2 / N2 | TODO | Bluetooth state and controls for paired devices |
+| 1 / N1 | DONE in 0.10.57 | Microphone state, mute, input selection and level |
+| 2 / N2 | TODO — **START HERE** | Bluetooth state and controls for paired devices |
 | 3 / N3 | TODO | Built-in display profiles with preview and automatic revert |
 | 4 / N4 | TODO | Capability-aware power-profile selection |
 | 5 / N5 | TODO | nirushot: capture, copy/save and small annotation workflow |
@@ -231,7 +230,7 @@ active feature order is N1–N5 at the top of this file.
 - **Evidence and open defects:** [restart review](docs/REVIEW-2026-10-20-RESTART.md)
 - **Repositories:** [inventory](docs/REPOSITORIES.md)
 - **Previous work:** [delivery history through 0.10.30](docs/history/ROADMAP-0.10.30.md)
-- **Current checkpoint evidence:** [0.10.56 work modes and recipes](docs/history/CHECKPOINT-0.10.56.md)
+- **Current checkpoint evidence:** [0.10.57 microphone module](docs/history/CHECKPOINT-0.10.57.md)
 - **S04 runtime audit:** [package and normal-user results](docs/history/AUDIT-S04-0.10.35.md)
 - **R01 performance baseline:** [idle and startup measurements](docs/history/AUDIT-R01-BASELINE.md)
 - **H01 partial fresh-VM evidence:** [Debian/Arch VMs and gaps](docs/history/AUDIT-H01-PARTIAL.md)
@@ -259,18 +258,18 @@ drivers/firmware must be documented separately from suite provisioning.
 
 | Repository | Pinned release | Responsibility |
 |---|---|---|
-| nirux | 0.10.56 | Packages, generations, target-owned apply, managed Helium, wallpapers, kitty/fish |
-| niruwm | 0.16.53 | WM, session, niructl, niruidle, theme wallpapers, terminal hook |
-| nirubar | 0.18.22 | Per-output bar, tray, panels, weather |
+| nirux | 0.10.57 | Packages, generations, target-owned apply, managed Helium, wallpapers, kitty/fish |
+| niruwm | 0.16.54 | WM, session, niructl, niruidle, theme wallpapers, terminal hook |
+| nirubar | 0.18.23 | Per-output bar, tray, panels, weather |
 | niruscreensaver | 0.8.3 | Unlocked idle surface |
 | nirulock | 0.16.10 | PAM lock, input grabs and readiness |
-| nirulauncher | 0.2.7 | Apps, actions, windows, local recency/favourites |
+| nirulauncher | 0.2.8 | Apps, actions, windows, local recency/favourites |
 | nirunotify | 0.3.7 | Native notifications, actions, DND, history/OSD |
 
 All listed releases/assets were found on GitHub. Previous sessions reported
 installation of 0.10.30 on `niru@void` and `niru@thinkpad` (Arch). Those hosts
 now run NIRUX 0.10.46 / NIRUWM 0.16.43 / NIRUNOTIFY 0.3.7; the 0.10.46 deployment
-check is recorded in the P1 checkpoint.
+check is recorded in the N1 checkpoint.
 
 **S01, S02 and S03 are implemented; 0.10.33 added theme wallpapers.**
 [Run 39420180581](https://github.com/nirucon/nirux/actions/runs/39420180581)

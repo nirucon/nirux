@@ -3,12 +3,12 @@
 Canonical raw URL:
 https://raw.githubusercontent.com/nirucon/nirux/main/docs/NEXT-SESSION.md
 
-This brief is independent of local session memory. **Start with N1.**
-The active feature order is **N1 microphone → N2 Bluetooth → N3 built-in display
-profiles → N4 power profiles → N5 nirushot**. The first section of
+This brief is independent of local session memory. **N1 is done; start with N2.**
+The active feature order is **N2 Bluetooth → N3 built-in display profiles →
+N4 power profiles → N5 nirushot** (N1 microphone is done). The first section of
 [ROADMAP.md](../ROADMAP.md) defines scope and completion criteria. P1–P6 are
 recorded as implemented with deferred verification; P2 remains partial.
-S01/S02, S03, S04, theme/extra wallpapers, kitty/fish, the wallpaper launcher, mouse move/resize, workspace autostart, live notification themes, the power menu, greeter themes and the session welcome are done in 0.10.56.
+S01/S02, S03, S04, theme/extra wallpapers, kitty/fish, the wallpaper launcher, mouse move/resize, workspace autostart, live notification themes, the power menu, greeter themes and the session welcome are done in 0.10.57.
 H01 is partially complete: Debian and Arch passed fresh VMs. A fresh Void VM and physical audio/lock/suspend checks remain.
 
 ## Copy-ready prompt
@@ -16,12 +16,12 @@ H01 is partially complete: Debian and Arch passed fresh VMs. A fresh Void VM and
 ```text
 Fortsätt utvecklingen av NIRU-sviten. Läs först aktuella GitHub-filer:
 - https://raw.githubusercontent.com/nirucon/nirux/main/ROADMAP.md
-- https://raw.githubusercontent.com/nirucon/nirux/main/docs/history/CHECKPOINT-0.10.56.md
+- https://raw.githubusercontent.com/nirucon/nirux/main/docs/history/CHECKPOINT-0.10.57.md
 - https://raw.githubusercontent.com/nirucon/nirux/main/docs/REPOSITORIES.md
 
-Utgå från NIRUX 0.10.56:
-niruwm 0.16.53, nirubar 0.18.22, niruscreensaver 0.8.3,
-nirulock 0.16.10, nirulauncher 0.2.7, nirunotify 0.3.7.
+Utgå från NIRUX 0.10.57:
+niruwm 0.16.54, nirubar 0.18.23, niruscreensaver 0.8.3,
+nirulock 0.16.10, nirulauncher 0.2.8, nirunotify 0.3.7.
 Kontrollera manifest, git-status, GitHub main och senaste fulla CI på nytt.
 Versionslistan är en startpunkt, inte ett skäl att skriva över nyare arbete.
 
@@ -37,12 +37,12 @@ DND, ljudnoder, display, inhibit och processöversikt. Kvar för P2 är att äga
 är närvarande för lock/unlock, suspend/resume, hörbart ljud, faktisk poweroff
 och extern skärm. Lämna P2 öppen.
 
-Börja med N1: läs befintliga niructl audio sources/mic-mute och bygg en valfri
-microphone-modul i NIRUBAR ovanpå samma CLI. Visa mute, vald ingång och nivå;
-skilj unmuted från faktiskt inspelande. Följ roadmapens klarkriterier.
+N1 är klar i 0.10.57: valfri microphone-modul, mute/ingång/nivå via samma CLI,
+läsning utan sidoeffekter, nivåändring som bevarar mute och tangentbordsval i
+launchern. Fortsätt nu med N2.
 
-Fortsätt sedan exakt N2 → N3 → N4 → N5:
-- N2: BlueZ-status och kontroll av parade Bluetooth-enheter.
+Arbeta sedan exakt N2 → N3 → N4 → N5:
+- N2: BlueZ-status och kontroll av parade Bluetooth-enheter. Börja här.
 - N3: skärmprofiler INBYGGT i niructl/WM/bar/launcher, med preview och revert.
   Vänta med större nytt skärmrepo; skapa inte nirudisplay.
 - N4: strömprofiler via en befintlig provider och ärlig capability-detektering.
@@ -82,7 +82,7 @@ Lokala kloner kan finnas i ~/.cache/niru-work/{nirux,niruwm,nirubar}.
 Lita inte på /tmp/opencode; den katalogen tömdes under tidigare arbete.
 Om kloner saknas, klona från https://github.com/nirucon/<repo>.
 
-Börja med en kort sammanfattning av verifierat läge och första steget i N1 samt
+Börja med en kort sammanfattning av verifierat läge och första steget i N2 samt
 vilka filer du behöver ändra. Fortsätt sedan arbetet.
 ```
 
