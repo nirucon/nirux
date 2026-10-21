@@ -3,9 +3,9 @@
 Canonical raw URL:
 https://raw.githubusercontent.com/nirucon/nirux/main/docs/NEXT-SESSION.md
 
-This brief is independent of local session memory. **N2 is implemented and in release verification; start with N2 verification, then N3.**
-The active feature order is **N2 Bluetooth → N3 built-in display profiles →
-N4 power profiles → N5 nirushot** (N1 is done; N2 is implemented). The first section of
+This brief is independent of local session memory. **N2 is done; start with N3.**
+The active feature order is **N3 built-in display profiles → N4 power profiles →
+N5 nirushot** (N1 and N2 are done). The first section of
 [ROADMAP.md](../ROADMAP.md) defines scope and completion criteria. P1–P6 are
 recorded as implemented with deferred verification; P2 remains partial.
 S01/S02, S03, S04, theme/extra wallpapers, kitty/fish, the wallpaper launcher, mouse move/resize, workspace autostart, live notification themes, the power menu, greeter themes and the session welcome are done in 0.10.57.

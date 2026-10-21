@@ -54,6 +54,12 @@ deferred by the owner. Next feature is N3 built-in display profiles.
 
 ## Release and deployment evidence
 
-NIRUWM v0.16.55, NIRUBAR v0.18.24 and NIRULAUNCHER v0.2.9 are published;
-NIRUX 0.10.58 pins them. CI, release and host deployment results are added after
-publication.
+NIRUX 0.10.58 passed CI and was deployed to ThinkPad and Void. Both run
+NIRUX 0.10.58 / NIRUWM 0.16.55 / NIRUBAR 0.18.24 / NIRULAUNCHER 0.2.9.
+`bluetoothctl`, BlueZ and the platform service are present; `bluetooth.service`
+is enabled+active on ThinkPad, and the `bluetoothd` runit service is linked on
+Void. Both adapters report `state=ready`, `powered=true`:
+ThinkPad 7C:7A:91:3E:25:FF, Void 94:E2:3C:CA:91:7A. No devices were paired on
+either host, so connect/disconnect and battery remain unexercised hardware paths.
+The modules are optional and existing `[bar] modules` lists are preserved; add
+`"bluetooth"` or `"microphone"` to opt in. No session was forced to log out.
