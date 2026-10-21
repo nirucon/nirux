@@ -1,6 +1,6 @@
 # nirushot — N5 design contract
 
-Status: design started; repository not created yet.
+Status: capture and review surface implemented in NIRUSHOT 0.2.0; notification actions and physical multi-output verification remain.
 
 ## Existing baseline
 
@@ -16,6 +16,8 @@ nirushot [--region|--window|--full] [--delay SECONDS]
 ```
 
 - `--region` uses slop selection; Escape/cancel exits with a clear status.
+- `--review` forces the native review window; it is also the default when no
+  explicit `--copy` or `--save` output is requested.
 - `--window` captures the active window; `--full` captures all outputs.
 - Without `--copy`/`--save`, open the review surface and do not write a file
   until the user chooses.
@@ -33,9 +35,12 @@ nirushot [--region|--window|--full] [--delay SECONDS]
 
 ## Review surface
 
-Native X11, on demand, NIRU theme/type/spacing. Show the image, cursor position,
-crop rectangle, rectangle/arrow annotation and opaque mask. Escape cancels;
-Enter applies; saving an edited image never overwrites the original silently.
+Native X11, on demand. NIRUSHOT 0.2.0 shows the image and supports `c` crop,
+`r` rectangle, `a` arrow and `m` opaque black mask. `s`/Enter saves a new ISO
+filename under `~/Pictures` and copies it; `y` copies without saving; Escape
+closes without keeping a file. Instructions are shown in the managed window
+title. Saving never silently overwrites the original. The in-window toolbar,
+theme typography and notification actions are still open polish items.
 No upload, recorder, history daemon or required clipboard manager.
 
 ## Backend and failure rules
