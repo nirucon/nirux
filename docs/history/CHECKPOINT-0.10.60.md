@@ -48,11 +48,15 @@ Real PPD service interaction and hardware profile changes remain host tests.
 Tests for earlier P1–P6 work remain deferred by the owner. Next feature is N5
 nirushot.
 
-## Follow-up 0.10.61
+## Follow-up 0.10.61 and 0.10.62
 
 The first deployment exposed two integration defects: the service-enable block
 was missing from the released installer, leaving `power-profiles-daemon` disabled
 on Arch and unlinked on Void, and a failed provider query printed an audio-specific
 error. NIRUWM 0.16.58 makes provider errors generic; NIRUX 0.10.61 restores the
-Bluetooth/PPD service enabling for both installs and updates. The service state
-was verified on both hosts after the follow-up deployment.
+Bluetooth/PPD service enabling for both installs and updates.
+
+The next verification showed the PPD profile switch itself was denied by Polkit
+(`org.freedesktop.UPower.PowerProfiles.switch-profile`). NIRUX 0.10.62 extends the
+local-active-admin rule to PPD switch/hold actions. The service and profile
+switching are then verified on both hosts.

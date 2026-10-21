@@ -8,7 +8,9 @@ polkit.addRule(function(action, subject) {
         "org.freedesktop.login1.reboot",
         "org.freedesktop.login1.reboot-multiple-sessions",
         "org.freedesktop.login1.suspend",
-        "org.freedesktop.login1.suspend-multiple-sessions"
+        "org.freedesktop.login1.suspend-multiple-sessions",
+        "org.freedesktop.UPower.PowerProfiles.switch-profile",
+        "org.freedesktop.UPower.PowerProfiles.hold-profile"
     ];
     if (actions.indexOf(action.id) >= 0 && subject.local && subject.active &&
         (subject.isInGroup("wheel") || subject.isInGroup("sudo"))) {
