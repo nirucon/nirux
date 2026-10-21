@@ -33,9 +33,20 @@ explains the missing state in the panel instead of failing the bar.
   installing `xprop` for the test and narrowing its fake `playerctl` script to
   count only real playback actions.
 
-P3 still needs rendered-value assertions for launcher, notifications, greeters
-and lock, plus the complete small-screen/hotplug matrix. P2 remains partial for
-owner-present tests.
+Additional rendered-value coverage:
+
+- NIRULAUNCHER `tests/theme-colors.sh` samples a real X11 window for all four
+  built-in themes. Background and 3 px focus accents matched
+  (`0f0f10`/`5a5a60`, `2e3440`/`88c0d0`, `141414`/`b08d7d`,
+  `f3ece0`/`a63d2f`). CI run 39573277282 passed.
+- NIRUNOTIFY's UI smoke now checks a real notification window for the theme
+  error strip `d77a7a` and surface `202021`. CI run 39573363779 passed.
+- NIRUBAR continues to verify all four themes plus a custom theme and the
+  800/1366/1920 render matrix; CI run 39567976680 passed.
+
+P3 still needs rendered-value assertions for greeters and lock, plus the
+complete small-screen/hotplug matrix. P2 remains partial for owner-present
+tests.
 
 ## Release and deployment evidence
 

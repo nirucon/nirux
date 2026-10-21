@@ -39,9 +39,8 @@ och extern skärm. Lämna P2 öppen.
 P3 är påbörjad i 0.10.53: docs/STYLE.md, fontanpassade launcher-rader med
 accentmarkering, WELCOME_NOTIFICATION=always|once|off, niructl audio för
 utgång/mikrofon/mute/volym samt NIRUBARs displaymodul för flera skärmar.
-NIRUBAR har nu exakta renderade temafärgstester för alla fyra teman plus custom.
-Fortsätt P3 med motsvarande rendered-value-tester för launcher, notiser, greeters
-och lock samt småskärms-/hotplug-matris.
+NIRUBAR, NIRULAUNCHER och NIRUNOTIFY har nu rendered-value-tester för temafärger.
+Fortsätt P3 med greeters och lock samt den kompletta småskärms-/hotplug-matrisen.
 P4: tillförlitlig workspace-autostart även för långsamma appar.
 P5: förklara saknade funktioner och fel i launchern via doctor/niructl.
 P6: arbetslägen och workspace-recept ovanpå P4/P5.

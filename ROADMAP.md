@@ -13,7 +13,7 @@ IDs below are supporting requirements and evidence, not a competing queue.
 |---|---|---|
 | 1 / P1 | DONE in 0.10.46 | Reliable notification stacking and one working native DND path |
 | 2 / P2 | PARTIAL — owner-present tests open | Real power, login, suspend/resume and display acceptance |
-| 3 / P3 | IN PROGRESS — bar rendered colours done; launcher/notifier/greeter/lock pixel checks and hotplug matrix remain | Consistent typography, spacing, scaling and controls across the suite |
+| 3 / P3 | IN PROGRESS — bar/launcher/notifier pixel checks done; greeter/lock and hotplug matrix remain | Consistent typography, spacing, scaling and controls across the suite |
 | 4 / P4 | TODO | Reliable workspace autostart for slow applications |
 | 5 / P5 | TODO | “Why is this unavailable?” diagnostics in the launcher |
 | 6 / P6 | TODO | Work modes and reusable workspace recipes |
