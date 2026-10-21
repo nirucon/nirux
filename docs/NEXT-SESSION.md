@@ -3,7 +3,9 @@
 Canonical raw URL:
 https://raw.githubusercontent.com/nirucon/nirux/main/docs/NEXT-SESSION.md
 
-This brief is independent of local session memory. **Start with H01.**
+This brief is independent of local session memory. **Start with P1.**
+The owner's active order is **P1 → P2 → P3 → P4 → P5 → P6**, defined at the
+top of [ROADMAP.md](../ROADMAP.md). This replaces the old H01-first ordering.
 S01/S02, S03, S04, theme/extra wallpapers, kitty/fish, the wallpaper launcher, mouse move/resize, workspace autostart, live notification themes, the power menu, greeter themes and the session welcome are done in 0.10.45.
 H01 is partially complete: Debian and Arch passed fresh VMs. A fresh Void VM and physical audio/lock/suspend checks remain.
 
@@ -28,11 +30,21 @@ program. Ett injicerat fel återställer originalconfig och aktiv generation.
 Helium är pinnat till 0.19.4.1 med SHA-256. CI-containrar är stödjande evidens,
 inte fysisk clean-OS-certifiering.
 
-Börja med H01: fysisk/VM-installation på alla tre distros, inklusive riktig
-audio, PAM-upplåsning, suspend/output och hela release-flödet. Därefter R01:
-mät och sätt budget för idle CPU/RSS/processer och login-latens. S04 är redan
-verifierad i containrar; se AUDIT-S04-0.10.35.md.
-Läs acceptanskriterierna innan kodändringar. Implementera inte A04/bloat först.
+Börja med P1: reproducera att en notis hamnar under terminalen och kontrollera
+att niructl dnd styr NIRUNOTIFY när den är aktiv (koden använder ännu dunstctl).
+Fixa notislager och en gemensam DND-väg för launcher, tangentbord och bar.
+
+Arbeta sedan i exakt denna ordning enligt roadmapens första avsnitt:
+P2: riktiga power/login/lock/suspend/skärmtester, inklusive återstående H01.
+P3: gemensam typografi, spacing, skalning och små kontrollförbättringar.
+P4: tillförlitlig workspace-autostart även för långsamma appar.
+P5: förklara saknade funktioner och fel i launchern via doctor/niructl.
+P6: arbetslägen och workspace-recept ovanpå P4/P5.
+
+Läs första steg och klarkriterier för aktuell punkt innan kodändringar.
+Gamla H01/C01–C07/R01 är krav och evidens, inte en konkurrerande arbetskö.
+Dokumentera exakt blockerare om fysisk hårdvara saknas; markera inte P2 klar
+utifrån containertester. Fortsätt då oberoende P3-arbete enligt roadmapen.
 
 Krav:
 - Stöd vanilla Void glibc, Debian och Arch, x86_64/glibc.
@@ -41,7 +53,9 @@ Krav:
   och rollback.
 - Ingen ny obligatorisk daemon, GUI-framework, tjänst eller repo när befintliga
   komponenter räcker. Använd launcher/WM/bar/niructl för små innovationer.
-- Arbeta i små verifierade checkpoints med riktig evidens. Följ C01–C07.
+- Arbeta i små verifierade checkpoints med riktig evidens, en P1–P6-punkt
+  åt gången. Samla närliggande småfixar inom respektive punkt och följ dess
+  klarkriterier samt relevanta C01–C07-krav. Uppdatera status i roadmapen.
 - Committa/pusha/publicera efter varje verifierad färdig punkt enligt användarens
   stående önskemål. Installera deploybara ändringar på niru@void och
   niru@thinkpad (Arch), kontrollera före/efter. Dokumentationsändringar pushas
@@ -59,7 +73,7 @@ Lokala kloner kan finnas i ~/.cache/niru-work/{nirux,niruwm,nirubar}.
 Lita inte på /tmp/opencode; den katalogen tömdes under tidigare arbete.
 Om kloner saknas, klona från https://github.com/nirucon/<repo>.
 
-Börja med en kort sammanfattning av verifierat läge, första steget för S03 och
+Börja med en kort sammanfattning av verifierat läge, första steget för P1 och
 vilka filer du behöver ändra. Fortsätt sedan arbetet.
 ```
 
@@ -78,7 +92,7 @@ vilka filer du behöver ändra. Fortsätt sedan arbetet.
 | W07 power menu, greeters + session welcome | DONE | [0.10.44/0.10.45 checkpoint](history/CHECKPOINT-0.10.44.md) |
 | S03 target-owned apply | DONE | [0.10.34 checkpoint](history/CHECKPOINT-0.10.34.md) |
 | S04 vanilla runtime audit | DONE | [S04 audit](history/AUDIT-S04-0.10.35.md) |
-| H01 fresh OS/VM acceptance | PARTIAL — start here | Debian/Arch VMs pass; fresh Void VM + physical audio/lock/suspend open |
+| H01 fresh OS/VM acceptance | PARTIAL — included in P2 | Debian/Arch VMs pass; fresh Void VM + physical audio/lock/suspend open |
 | R01 performance/resource baseline | BASELINE | [baseline](history/AUDIT-R01-BASELINE.md); enforce after H01 |
 
 0.10.35 updates the system module icon; S04 normal-user runtime audit is complete. A green
