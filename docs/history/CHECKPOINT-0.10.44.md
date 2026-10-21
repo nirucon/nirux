@@ -1,4 +1,4 @@
-# 0.10.44 — power menu, themed greeters and startx welcome
+# 0.10.44/0.10.45 — power menu, themed greeters and session welcome
 
 Date: 2026-10-20. Owner requests after testing Arch and Void:
 
@@ -56,17 +56,19 @@ Arch's `sddm-greeter` links Qt5 while the package only recommends the Qt5 QML
 runtime, so selecting SDDM now also installs `qt5-declarative` on Arch. Debian
 and Void already pull the required QML modules.
 
-## startx welcome
+## Session welcome
 
-The generated `~/.xinitrc` exports `NIRUX_STARTX=1`; NIRUX refreshes its own
-old xinitrc on update. The session sends a six-second NIRUNOTIFY notification,
-“Welcome to NIRUX — A minimal X11 desktop”, after NIRUWM starts. Display-manager
-sessions do not get the startx marker and therefore no welcome popup.
+The session sends a six-second NIRUNOTIFY notification, “Welcome to NIRUX — A
+minimal X11 desktop”, after NIRUWM starts. NIRUWM 0.16.41 first gated this on a
+generated-xinitrc marker. Testing showed the owner starts NIRUX from a custom
+xinitrc that execs another WM for legacy use, so 0.16.42 makes the welcome
+unconditional for every NIRU session. The generated xinitrc is still refreshed
+on update, but no longer decides whether the welcome appears.
 
 ## Verification
 
-- NIRUWM 0.16.41: fmt, clippy and all unit tests passed, including the
-  `shutdown → loginctl poweroff` regression.
+- NIRUWM 0.16.42: fmt, clippy and all unit tests passed, including the
+  `shutdown → loginctl poweroff` regression and the session shell syntax.
 - NIRUNOTIFY 0.3.6: fmt, clippy, unit tests and the D-Bus/X11 UI smoke test
   passed.
 - The SDDM QML theme was rendered with `sddm-greeter --test-mode` under Xvfb;
@@ -75,8 +77,11 @@ sessions do not get the startx marker and therefore no welcome popup.
   covered by installer tests, but a real LightDM login was not exercised.
 - NIRUX integration tests cover the Polkit rule, both greeter themes, owner
   removal, the startx marker and the existing install/update/rollback paths.
-- The generated startx session is asserted to publish the welcome notification
-  through NIRUNOTIFY before the autostart checks.
+- The startx session is asserted to publish the welcome notification through
+  NIRUNOTIFY before the autostart checks, including when the xinitrc is custom.
+- NIRUX 0.10.45 follows 0.10.44 only to pin NIRUWM 0.16.42 and document the
+  unconditional welcome; the power, greeter and notification-strip changes are
+  otherwise unchanged.
 
 Remaining limits: the real power-off path and greeter login buttons were not
 executed on the physical hosts; H01 still requires physical audio, lock/unlock

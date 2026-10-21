@@ -1,12 +1,12 @@
 # NIRU desktop — current roadmap and restart handoff
 
-Updated **2026-10-20**, checked against **NIRUX 0.10.44**.
+Updated **2026-10-20**, checked against **NIRUX 0.10.45**.
 
 - **Start here after restarting OpenCode:** [NEXT-SESSION.md](docs/NEXT-SESSION.md)
 - **Evidence and open defects:** [restart review](docs/REVIEW-2026-10-20-RESTART.md)
 - **Repositories:** [inventory](docs/REPOSITORIES.md)
 - **Previous work:** [delivery history through 0.10.30](docs/history/ROADMAP-0.10.30.md)
-- **Current checkpoint evidence:** [0.10.44 power, greeters and welcome](docs/history/CHECKPOINT-0.10.44.md)
+- **Current checkpoint evidence:** [0.10.44/0.10.45 power, greeters and welcome](docs/history/CHECKPOINT-0.10.44.md)
 - **S04 runtime audit:** [package and normal-user results](docs/history/AUDIT-S04-0.10.35.md)
 - **R01 performance baseline:** [idle and startup measurements](docs/history/AUDIT-R01-BASELINE.md)
 - **H01 partial fresh-VM evidence:** [Debian/Arch VMs and gaps](docs/history/AUDIT-H01-PARTIAL.md)
@@ -34,8 +34,8 @@ drivers/firmware must be documented separately from suite provisioning.
 
 | Repository | Pinned release | Responsibility |
 |---|---|---|
-| nirux | 0.10.44 | Packages, generations, target-owned apply, managed Helium, wallpapers, kitty/fish |
-| niruwm | 0.16.41 | WM, session, niructl, niruidle, theme wallpapers, terminal hook |
+| nirux | 0.10.45 | Packages, generations, target-owned apply, managed Helium, wallpapers, kitty/fish |
+| niruwm | 0.16.42 | WM, session, niructl, niruidle, theme wallpapers, terminal hook |
 | nirubar | 0.18.18 | Per-output bar, tray, panels, weather |
 | niruscreensaver | 0.8.3 | Unlocked idle surface |
 | nirulock | 0.16.10 | PAM lock, input grabs and readiness |
@@ -44,7 +44,7 @@ drivers/firmware must be documented separately from suite provisioning.
 
 All listed releases/assets were found on GitHub. Previous sessions reported
 installation of 0.10.30 on `niru@void` and `niru@thinkpad` (Arch); those hosts
-still need the 0.10.44 deployment check.
+still need the 0.10.45 deployment check.
 
 **S01, S02 and S03 are implemented; 0.10.33 added theme wallpapers.**
 [Run 39420180581](https://github.com/nirucon/nirux/actions/runs/39420180581)
@@ -73,7 +73,7 @@ environment, release/deployment status, remaining limits and next task.
 |---|---|---|
 | S01 / DONE | Reproduced the 0.10.30 failure: all three distros stopped at doctor with `missing configured brave`; config-contract/startx were not reached. Fixed by the S02 browser policy. Evidence: CI run 39420180581. | New full CI run passes Arch, Debian Bookworm and Void glibc; complete logs retained. |
 | S02 / DONE | Managed Helium 0.19.4.1 with recorded SHA-256, runtime dependencies, owned desktop entry, persistent `--browser helium|none|keep` policy, actionable status/doctor and owned removal. Evidence: run 39420180581 and [checkpoint](docs/history/CHECKPOINT-0.10.32.md). | Helium selected: empty-home browser install launches as a normal user with sandbox enabled. Opt-out survives updates. Corrupt download, update, rollback and owned uninstall covered by regressions. No `--no-sandbox` path. |
-| W07 / DONE (owner request) | Fix shutdown in Super+Shift+P and make local power actions work without sudo; add themed SDDM/LightDM greeters with the Rooted in Less wallpaper and a startx welcome. | `loginctl`/`systemctl` use the real `poweroff` verb; a NIRUX polkit rule allows local active wheel/sudo users to power off, reboot and suspend while remote sessions still authenticate normally. SDDM and LightDM GTK get NIRU Noir themes and the Rooted in Less background; startx shows a themed welcome notification. Evidence: 0.10.44 checkpoint. |
+| W07 / DONE (owner request) | Fix shutdown in Super+Shift+P and make local power actions work without sudo; add themed SDDM/LightDM greeters with the Rooted in Less wallpaper and a session welcome. | `loginctl`/`systemctl` use the real `poweroff` verb; a NIRUX polkit rule allows local active wheel/sudo users to power off, reboot and suspend while remote sessions still authenticate normally. SDDM and LightDM GTK get NIRU Noir themes and the Rooted in Less background; every NIRU session shows a themed welcome notification, including startx with a custom xinitrc. Evidence: 0.10.44/0.10.45 checkpoint. |
 | W06 / DONE (owner request) | Make native notification popups and OSD follow the active NIRUWM theme, including live changes. | Palette comes from the current theme and shared appearance; `niructl theme`/`niructl reload` restyles existing popups without restarting the notifier; custom themes get a derived surface colour; urgency strips use the theme accent, muted and error colours. Evidence: 0.10.42/0.10.43 checkpoint. |
 | W05 / DONE (owner request) | Add dwm-style Super+mouse move/resize and workspace-ordered autostart from the shared config. | All four resize corners, floating/tiling toggle, ordered workspace launch, settle, safe return to workspace 1, no duplicate with restore/NIRUPI, clear English config documentation. Evidence: 0.10.41 checkpoint. |
 | W04 / DONE (owner request) | Add wallpaper choices and settings to the unified launcher, including the three extra NIRUX wallpapers. | Super+Shift+P lists theme and extra wallpapers; selecting one applies it with `mode=single`; mode, rotation, scale and follow-theme are visible and cyclable. Evidence: 0.10.41 checkpoint. |

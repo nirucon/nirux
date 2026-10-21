@@ -14,10 +14,6 @@ cleanup() {
   [ -z "${START:-}" ] || kill "$START" 2>/dev/null || :
 }
 trap cleanup EXIT INT TERM
-grep -qx 'export NIRUX_STARTX=1' "$HOME/.xinitrc" || {
-  printf 'generated xinitrc is missing the startx marker\n' >&2
-  exit 1
-}
 # Configure two autostart entries on different workspaces before starting X.
 # The sequence must launch them in workspace order and return to workspace 1.
 autostart_cfg=$XDG_CONFIG_HOME/niruwm/config.toml

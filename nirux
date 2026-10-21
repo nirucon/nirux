@@ -2,7 +2,7 @@
 # NIRUX: install a complete X11 desktop, or maintain an existing installation.
 set -eu
 
-VERSION=0.10.44
+VERSION=0.10.45
 PREFIX=${NIRUX_PREFIX:-$HOME/.local}
 BIN=$PREFIX/bin
 STATE=$PREFIX/share/nirux
@@ -1621,10 +1621,10 @@ register_session() {
 }
 setup_startx() {
   # Never replace an existing user's xinitrc, including a symlink. Refresh the
-  # NIRUX-owned file so an update can add the startx welcome marker.
+  # NIRUX-owned file so an update keeps the current session path.
   if { [ ! -e "$HOME/.xinitrc" ] && [ ! -L "$HOME/.xinitrc" ]; } ||
      { [ -f "$HOME/.xinitrc" ] && owned "$HOME/.xinitrc"; }; then
-    { say '#!/bin/sh'; say "# NIRUX owner: $PREFIX"; say 'export NIRUX_STARTX=1'; say "exec \"$BIN/niruwm-session\""; } > "$WORK/xinitrc"
+    { say '#!/bin/sh'; say "# NIRUX owner: $PREFIX"; say "exec \"$BIN/niruwm-session\""; } > "$WORK/xinitrc"
     install -m 755 "$WORK/xinitrc" "$HOME/.xinitrc"
   fi
   say "From a local TTY: startx $BIN/niruwm-session"
