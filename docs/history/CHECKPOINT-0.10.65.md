@@ -22,12 +22,18 @@ Date: 2026-10-21
   the exported PNG.
 - Notification-helper test: Show in folder invoked the expected directory.
 - NIRUWM 0.16.59 tests and clippy remain green.
-- NIRUX integration and real-release CI on Arch, Debian and Void are recorded
-  after publication.
+- NIRUX integration passed; CI passed on Arch, Debian and Void with the real
+  pinned releases.
+- NIRUX v0.10.65 was published and deployed to ThinkPad and Void. Both report
+  NIRUX 0.10.65, NIRUWM 0.16.59 and NIRUSHOT 0.3.0.
+- A real full-screen direct save on both hosts produced a valid 1920x1080 RGBA
+  PNG in a temporary directory; the test file was removed.
 
 ## Limits
 
 - Physical multi-output geometry and the new shortcuts need a new graphical
-  session; no session was forced to log out.
+  session; no session was forced to log out. Automated XTest key injection did
+  not reach windows in the running real session, so interaction evidence comes
+  from the isolated Xvfb tests.
 - Notification actions depend on the installed `notify-send`; the plain
   notification fallback is intentional.
