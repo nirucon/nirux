@@ -16,7 +16,7 @@ on-demand `nirushot` tool.
 | 2 / N2 | DONE in 0.10.58 | Bluetooth state and controls for paired devices |
 | 3 / N3 | DONE in 0.10.59 | Built-in display profiles with preview and automatic revert |
 | 4 / N4 | DONE in 0.10.62 | Capability-aware power-profile selection |
-| 5 / N5 | TODO — **START HERE** | nirushot: capture, copy/save and small annotation workflow |
+| 5 / N5 | DESIGN STARTED | nirushot: capture, copy/save and small annotation workflow |
 
 ### N1 — Microphone module
 
@@ -89,6 +89,7 @@ on-demand `nirushot` tool.
 
 - **First step:** inspect existing maim/slop/clipboard shortcuts and define the
   CLI, capture backend and minimal native review UI before creating the repo.
+  The contract is now recorded in [NIRUSHOT.md](docs/NIRUSHOT.md).
 - **First delivery:** region, selected window and full-screen capture; save to
   a chosen file or copy the image; delayed capture; Escape/cancel; notification
   actions for Open, Copy and Show in folder. Keep the existing screenshot
