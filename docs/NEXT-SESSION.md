@@ -3,8 +3,8 @@
 Canonical raw URL:
 https://raw.githubusercontent.com/nirucon/nirux/main/docs/NEXT-SESSION.md
 
-This brief is independent of local session memory. **N3 is done; start with N4.**
-The active feature order is **N4 power profiles → N5 nirushot** (N1–N3 are done). The first section of
+This brief is independent of local session memory. **N4 is implemented and in release verification; verify then start N5.**
+The active feature order is **N4 power profiles → N5 nirushot** (N1–N3 are done; N4 is implemented). The first section of
 [ROADMAP.md](../ROADMAP.md) defines scope and completion criteria. P1–P6 are
 recorded as implemented with deferred verification; P2 remains partial.
 S01/S02, S03, S04, theme/extra wallpapers, kitty/fish, the wallpaper launcher, mouse move/resize, workspace autostart, live notification themes, the power menu, greeter themes and the session welcome are done in 0.10.57.
@@ -18,9 +18,9 @@ Fortsätt utvecklingen av NIRU-sviten. Läs först aktuella GitHub-filer:
 - https://raw.githubusercontent.com/nirucon/nirux/main/docs/history/CHECKPOINT-0.10.57.md
 - https://raw.githubusercontent.com/nirucon/nirux/main/docs/REPOSITORIES.md
 
-Utgå från NIRUX 0.10.59:
-niruwm 0.16.56, nirubar 0.18.25, niruscreensaver 0.8.3,
-nirulock 0.16.10, nirulauncher 0.2.10, nirunotify 0.3.7.
+Utgå från NIRUX 0.10.60:
+niruwm 0.16.57, nirubar 0.18.26, niruscreensaver 0.8.3,
+nirulock 0.16.10, nirulauncher 0.2.11, nirunotify 0.3.7.
 Kontrollera manifest, git-status, GitHub main och senaste fulla CI på nytt.
 Versionslistan är en startpunkt, inte ett skäl att skriva över nyare arbete.
 
@@ -78,7 +78,7 @@ Lokala kloner kan finnas i ~/.cache/niru-work/{nirux,niruwm,nirubar}.
 Lita inte på /tmp/opencode; den katalogen tömdes under tidigare arbete.
 Om kloner saknas, klona från https://github.com/nirucon/<repo>.
 
-Börja med en kort sammanfattning av verifierat läge och första steget i N4 samt
+Börja med en kort sammanfattning av verifierat läge och första steget i N5 samt
 vilka filer du behöver ändra. Fortsätt sedan arbetet.
 ```
 

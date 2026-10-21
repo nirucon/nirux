@@ -4,16 +4,16 @@ All URLs are under `https://github.com/nirucon/`. Use the current heads below fo
 the restart baseline, and fetch again before editing. Older tables preserve the
 initial review scope; they are not a current certification of optional apps.
 
-## Restart baseline — 0.10.59
+## Restart baseline — 0.10.60
 
 | Repository | GitHub main observed 2026-10-20 | Release |
 |---|---|---|
-| nirux | `3b8059f` | v0.10.59 |
-| niruwm | `5656b96` | v0.16.56 |
-| nirubar | `4c76778` | v0.18.25 |
+| nirux | `PENDING` | v0.10.60 |
+| niruwm | `PENDING` | v0.16.57 |
+| nirubar | `PENDING` | v0.18.26 |
 | niruscreensaver | `52173f62718b` | v0.8.3 |
 | nirulock | `9929208c898d` | v0.16.10 |
-| nirulauncher | `81a2989` | v0.2.10 |
+| nirulauncher | `PENDING` | v0.2.11 |
 | nirunotify | `18c7e37` | v0.3.7 |
 
 [Current roadmap](../ROADMAP.md), [restart review](REVIEW-2026-10-20-RESTART.md)

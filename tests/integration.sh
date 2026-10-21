@@ -227,6 +227,10 @@ for os in arch debian void; do
     OS=$os
     packages_for "$OS"
   ) | grep -qw bluez || fail "bluez missing from $os package list"
+  (
+    OS=$os
+    packages_for "$OS"
+  ) | grep -qw power-profiles-daemon || fail "power-profiles-daemon missing from $os package list"
 done
 (
   OS=arch

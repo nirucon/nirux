@@ -340,6 +340,25 @@ Pairing and discovery still use the distribution Bluetooth manager or
 the panel are read-only. Connect/disconnect and power are explicit actions, and
 connect verifies the connected state reported by BlueZ.
 
+### Power profiles
+
+NIRUX installs `power-profiles-daemon` on Arch, Debian and Void, and enables
+`power-profiles-daemon.service`/the Void runit service. Add `"powerprofile"` to
+`[bar] modules` to show the active profile. The panel lists supported profiles
+and the AC/battery source; only profiles reported by the provider are offered.
+
+```sh
+niructl powerprofile status
+niructl powerprofile list
+niructl powerprofile set balanced
+niructl powerprofile next
+nirulauncher --power
+```
+
+Unsupported or denied profile changes are reported; a missing provider keeps
+the bar module hidden instead of guessing at sysfs controls. No automatic
+battery-based switching is performed.
+
 ### Display profiles
 
 Display profiles are built into niructl; no additional dependency is needed
