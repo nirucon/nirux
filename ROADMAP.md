@@ -4,7 +4,7 @@ Priority order updated **2026-10-21**. Published baseline: **NIRUX 0.10.62**.
 
 ## Start here — the active work queue
 
-**N1 is done. Start with N2. Work in order N2 → N3 → N4 → N5.**
+**N1–N4 are done. Start with N5.**
 This is the owner's next feature queue. N1–N4 are implemented; N5 remains planned.
 Reuse existing components for N1–N4. Display profiles stay built
 into NIRUX; a larger display repository is deferred. N5 plans a separate,
@@ -15,8 +15,8 @@ on-demand `nirushot` tool.
 | 1 / N1 | DONE in 0.10.57 | Microphone state, mute, input selection and level |
 | 2 / N2 | DONE in 0.10.58 | Bluetooth state and controls for paired devices |
 | 3 / N3 | DONE in 0.10.59 | Built-in display profiles with preview and automatic revert |
-| 4 / N4 | IN PROGRESS — release/deploy verification | Capability-aware power-profile selection |
-| 5 / N5 | TODO — **START HERE after N4** | nirushot: capture, copy/save and small annotation workflow |
+| 4 / N4 | DONE in 0.10.62 | Capability-aware power-profile selection |
+| 5 / N5 | TODO — **START HERE** | nirushot: capture, copy/save and small annotation workflow |
 
 ### N1 — Microphone module
 

@@ -59,4 +59,9 @@ Bluetooth/PPD service enabling for both installs and updates.
 The next verification showed the PPD profile switch itself was denied by Polkit
 (`org.freedesktop.UPower.PowerProfiles.switch-profile`). NIRUX 0.10.62 extends the
 local-active-admin rule to PPD switch/hold actions. The service and profile
-switching are then verified on both hosts.
+switching are then verified on both hosts. Because this session reaches the
+hosts over SSH, direct `powerprofilesctl set` is correctly denied as a remote
+subject; `pkcheck --process <local niruwm>` returns `result=yes` for both hosts,
+so the local launcher/bar path is authorized. PPD is enabled+active on ThinkPad
+and the Void runit service is linked; both report balanced/performance/
+power-saver with AC power. NIRUX 0.10.62 is deployed on both. N4 is complete.
