@@ -1,6 +1,6 @@
 # NIRU desktop — current roadmap and restart handoff
 
-Priority order updated **2026-10-21**. Published baseline: **NIRUX 0.10.65**.
+Priority order updated **2026-10-21**. Published baseline: **NIRUX 0.10.66**.
 
 ## Start here — the active work queue
 
@@ -18,7 +18,7 @@ on-demand `nirushot` tool.
 | 2 / N2 | DONE in 0.10.58 | Bluetooth state and controls for paired devices |
 | 3 / N3 | DONE in 0.10.59 | Built-in display profiles with preview and automatic revert |
 | 4 / N4 | DONE in 0.10.62 | Capability-aware power-profile selection |
-| 5 / N5 | DONE in 0.10.65 — physical multi-output check queued | nirushot: capture, themed review, annotation, shortcuts and notification actions |
+| 5 / N5 | DONE in 0.10.66 — physical multi-output check queued | nirushot: capture, floating themed review, annotation, zoom, shortcuts and notification actions |
 
 ### N1 — Microphone module
 
@@ -233,7 +233,7 @@ active feature order is N1–N5 at the top of this file.
 - **Evidence and open defects:** [restart review](docs/REVIEW-2026-10-20-RESTART.md)
 - **Repositories:** [inventory](docs/REPOSITORIES.md)
 - **Previous work:** [delivery history through 0.10.30](docs/history/ROADMAP-0.10.30.md)
-- **Current checkpoint evidence:** [0.10.65 nirushot polish](docs/history/CHECKPOINT-0.10.65.md)
+- **Current checkpoint evidence:** [0.10.66 nirushot WM fixes](docs/history/CHECKPOINT-0.10.66.md)
 - **S04 runtime audit:** [package and normal-user results](docs/history/AUDIT-S04-0.10.35.md)
 - **R01 performance baseline:** [idle and startup measurements](docs/history/AUDIT-R01-BASELINE.md)
 - **H01 partial fresh-VM evidence:** [Debian/Arch VMs and gaps](docs/history/AUDIT-H01-PARTIAL.md)
@@ -261,14 +261,14 @@ drivers/firmware must be documented separately from suite provisioning.
 
 | Repository | Pinned release | Responsibility |
 |---|---|---|
-| nirux | 0.10.65 | Packages, generations, target-owned apply, managed Helium, wallpapers, kitty/fish |
+| nirux | 0.10.66 | Packages, generations, target-owned apply, managed Helium, wallpapers, kitty/fish |
 | niruwm | 0.16.59 | WM, session, niructl, niruidle, theme wallpapers, terminal hook |
 | nirubar | 0.18.26 | Per-output bar, tray, panels, weather |
 | niruscreensaver | 0.8.3 | Unlocked idle surface |
 | nirulock | 0.16.10 | PAM lock, input grabs and readiness |
 | nirulauncher | 0.2.11 | Apps, actions, windows, local recency/favourites |
 | nirunotify | 0.3.7 | Native notifications, actions, DND, history/OSD |
-| nirushot | 0.3.0 | Capture, themed review/crop/annotation and notification actions |
+| nirushot | 0.4.0 | Capture, floating themed review, crop/annotation, zoom/pan and notification actions |
 
 All listed releases/assets were found on GitHub. Previous sessions reported
 installation of 0.10.30 on `niru@void` and `niru@thinkpad` (Arch). Those hosts

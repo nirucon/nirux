@@ -1,6 +1,6 @@
 # nirushot — N5 design contract
 
-Status: implemented in NIRUSHOT 0.3.0. Physical multi-output verification remains in the deferred test backlog.
+Status: implemented in NIRUSHOT 0.4.0. Physical multi-output verification remains in the deferred test backlog.
 
 ## Existing baseline
 
@@ -35,15 +35,19 @@ nirushot [--region|--window|--full] [--delay SECONDS]
 
 ## Review surface
 
-Native X11, on demand. NIRUSHOT 0.3.0 shows the image with a themed toolbar and
-typography from NIRUWM's Niru Noir, Nord, Satie and Carl Larsson palettes. It
-supports `c` crop, `r` rectangle, `a` arrow and `m` opaque black mask. The
-toolbar also selects modes with the pointer. `s`/Enter saves a new ISO filename
-under `~/Pictures` and copies it; `y` copies without saving; Escape closes
-without keeping a file. Saving never silently overwrites the original. Saved
-files use NIRU notification actions for Open, Copy and Show in folder when the
-installed client supports actions, with a plain notification fallback.
-No upload, recorder, history daemon or required clipboard manager.
+Native X11, on demand. NIRUSHOT 0.4.0 opens a centred floating dialog so NIRUWM
+does not tile it. It shows the image with a themed toolbar and typography from
+NIRUWM's Niru Noir, Nord, Satie and Carl Larsson palettes. It supports `c` crop,
+`r` rectangle, `a` arrow and `m` opaque black mask. The toolbar also selects
+modes with the pointer. `v` returns to view/pan; drag or middle-drag pans,
+`+`/`-` or the wheel zooms and `0` fits. `s`/Enter saves a new ISO filename under
+`~/Pictures` and copies it; `y` copies without saving; Escape or the close
+button discards the capture. Pointer and keyboard grabs exist only while the
+dialog is open, so shortcuts work regardless of the previous focus. Saving
+never silently overwrites the original. Saved files use NIRU notification
+actions for Open, Copy and Show in folder when the installed client supports
+actions, with a plain notification fallback. No upload, recorder, history daemon
+or required clipboard manager.
 
 ## Backend and failure rules
 
