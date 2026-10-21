@@ -2,7 +2,7 @@
 # NIRUX: install a complete X11 desktop, or maintain an existing installation.
 set -eu
 
-VERSION=0.10.67
+VERSION=0.10.68
 PREFIX=${NIRUX_PREFIX:-$HOME/.local}
 BIN=$PREFIX/bin
 STATE=$PREFIX/share/nirux
@@ -103,7 +103,7 @@ packages_for() {
 browser_packages_for() {
   case "$1" in
     arch) say "nss nspr cups gtk3 libxcomposite libxdamage libxfixes libxrandr libxkbcommon mesa alsa-lib xz" ;;
-    debian) say "libnss3 libnspr4 libcups2 libgtk-3-0 libxcomposite1 libxdamage1 libxfixes3 libxrandr2 libxkbcommon0 libgbm1 libasound2 xz-utils" ;;
+    debian) say "libnss3 libnspr4 libcups2t64 libgtk-3-0t64 libxcomposite1 libxdamage1 libxfixes3 libxrandr2 libxkbcommon0 libgbm1 libasound2t64 xz-utils" ;;
     void) say "nss nspr cups gtk+3 libXcomposite libXdamage libXfixes libXrandr libxkbcommon mesa alsa-lib xz" ;;
   esac
 }

@@ -14,7 +14,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        image: [debian:bookworm-slim, archlinux:base, voidlinux/voidlinux:latest]
+        image: [debian:bookworm-slim, debian:trixie-slim, archlinux:base, voidlinux/voidlinux:latest]
     container:
       image: ${{ matrix.image }}
       options: --privileged
