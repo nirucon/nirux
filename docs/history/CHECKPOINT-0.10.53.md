@@ -29,7 +29,9 @@ explains the missing state in the panel instead of failing the bar.
   background for Noir, Nord, Satie, Carl Larsson and a custom theme. All five
   matched the theme file (`0f0f10`, `2e3440`, `141414`, `f3ece0`, `212121`).
   NIRUBAR CI and release now run this check, together with the existing
-  800/1366/1920 render matrix.
+  800/1366/1920 render matrix. NIRUBAR CI run 39567976680 passed after also
+  installing `xprop` for the test and narrowing its fake `playerctl` script to
+  count only real playback actions.
 
 P3 still needs rendered-value assertions for launcher, notifications, greeters
 and lock, plus the complete small-screen/hotplug matrix. P2 remains partial for
