@@ -25,8 +25,15 @@ explains the missing state in the panel instead of failing the bar.
   module.
 - NIRUX integration and real-release startx smoke pass on Arch, Debian and Void
   before release.
-- P3 still needs rendered-value assertions across themes and the explicit
-  small-screen/hotplug matrix. P2 remains partial for owner-present tests.
+- Follow-up test-only commit: `tests/theme-colors.sh` samples the actual bar
+  background for Noir, Nord, Satie, Carl Larsson and a custom theme. All five
+  matched the theme file (`0f0f10`, `2e3440`, `141414`, `f3ece0`, `212121`).
+  NIRUBAR CI and release now run this check, together with the existing
+  800/1366/1920 render matrix.
+
+P3 still needs rendered-value assertions for launcher, notifications, greeters
+and lock, plus the complete small-screen/hotplug matrix. P2 remains partial for
+owner-present tests.
 
 ## Release and deployment evidence
 
