@@ -39,5 +39,9 @@ geometry remain hardware checks. N5 review/annotation is next.
 
 ## Release and deployment evidence
 
-NIRUSHOT v0.1.0 is published; NIRUX 0.10.63 pins it. CI, release and host
-deployment results are added after publication.
+NIRUSHOT v0.1.0 and NIRUX v0.10.63 are published. Both ThinkPad and Void run
+NIRUX 0.10.63 / NIRUSHOT 0.1.0. `maim`, `slop` and `xclip` are installed, and a
+real full-screen capture on each host produced a valid 1920x1080 RGBA PNG in a
+temporary directory. The test file was removed afterwards. No session was forced
+to log out. Existing Super+Print/maim bindings remain the declared fallback until
+the native review/annotation surface is delivered and verified.
