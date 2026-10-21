@@ -34,9 +34,16 @@ Date: 2026-10-21
 - Toolbar click selected Crop; drag exported 100x50 from a 900x560 capture.
 - `m` selected Mask, `s` saved a 900x560 PNG and exited without hanging.
 - CLI smoke, fmt and clippy passed.
-- NIRUX integration and release CI are recorded after publication.
+- NIRUX integration passed; CI passed on Arch, Debian and Void with the real
+  pinned releases.
+- NIRUX v0.10.66 was published and deployed to ThinkPad and Void. Both report
+  NIRUX 0.10.66 / NIRUSHOT 0.4.0.
+- Real Void session on the 1920x1080 display: the review window appeared
+  centred at 200,86 as a 1516x903 floating dialog. A toolbar click selected
+  Crop; a drag followed by `s` saved a 100x49 PNG and exited cleanly. The test
+  PNG was removed afterwards.
 
 ## Limits
 
-- Physical multi-output and the actual Void session still need the owner's
-  manual check after login. No session was forced to log out.
+- Physical multi-output still needs the owner's manual check. No session was
+  forced to log out; the actual single-output Void session passed.
