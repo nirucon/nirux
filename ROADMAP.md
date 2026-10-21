@@ -1,11 +1,11 @@
 # NIRU desktop — current roadmap and restart handoff
 
-Priority order updated **2026-10-21**. Published baseline: **NIRUX 0.10.54**.
+Priority order updated **2026-10-21**. Published baseline: **NIRUX 0.10.55**.
 
 ## Start here — the active work queue
 
-**P1 is done. P2 has passing non-disruptive checks and owner-present tests remain open. P3 and P4 are implemented; the owner will run the deferred greeter/lock/hotplug and autostart edge-case tests later. Start P5.**
-Work in order P5 → P6, keeping P2 open and P3/P4 tests deferred by the owner.
+**P1 is done. P2 has passing non-disruptive checks and owner-present tests remain open. P3, P4 and P5 are implemented; the owner will run deferred tests later. Start P6.**
+Work on P6, keeping P2 open and deferred tests for P3/P4/P5 with the owner.
 These six points supersede the previous H01-first ordering. The older task
 IDs below are supporting requirements and evidence, not a competing queue.
 
@@ -15,8 +15,8 @@ IDs below are supporting requirements and evidence, not a competing queue.
 | 2 / P2 | PARTIAL — owner-present tests open | Real power, login, suspend/resume and display acceptance |
 | 3 / P3 | IMPLEMENTED — owner deferred greeter/lock pixel and hotplug tests | Consistent typography, spacing, scaling and controls across the suite |
 | 4 / P4 | IMPLEMENTED — owner deferred edge-case tests | Reliable workspace autostart for slow applications |
-| 5 / P5 | TODO — **START HERE** | “Why is this unavailable?” diagnostics in the launcher |
-| 6 / P6 | TODO | Work modes and reusable workspace recipes |
+| 5 / P5 | IMPLEMENTED — verification deferred | “Why is this unavailable?” diagnostics in the launcher |
+| 6 / P6 | TODO — **START HERE** | Work modes and reusable workspace recipes |
 
 ### P1 — Notifications and DND
 
@@ -145,12 +145,12 @@ drivers/firmware must be documented separately from suite provisioning.
 
 | Repository | Pinned release | Responsibility |
 |---|---|---|
-| nirux | 0.10.54 | Packages, generations, target-owned apply, managed Helium, wallpapers, kitty/fish |
-| niruwm | 0.16.51 | WM, session, niructl, niruidle, theme wallpapers, terminal hook |
+| nirux | 0.10.55 | Packages, generations, target-owned apply, managed Helium, wallpapers, kitty/fish |
+| niruwm | 0.16.52 | WM, session, niructl, niruidle, theme wallpapers, terminal hook |
 | nirubar | 0.18.21 | Per-output bar, tray, panels, weather |
 | niruscreensaver | 0.8.3 | Unlocked idle surface |
 | nirulock | 0.16.10 | PAM lock, input grabs and readiness |
-| nirulauncher | 0.2.5 | Apps, actions, windows, local recency/favourites |
+| nirulauncher | 0.2.6 | Apps, actions, windows, local recency/favourites |
 | nirunotify | 0.3.7 | Native notifications, actions, DND, history/OSD |
 
 All listed releases/assets were found on GitHub. Previous sessions reported
