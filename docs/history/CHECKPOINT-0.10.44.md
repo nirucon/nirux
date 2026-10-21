@@ -87,4 +87,19 @@ Remaining limits: the real power-off path and greeter login buttons were not
 executed on the physical hosts; H01 still requires physical audio, lock/unlock
 and suspend/output verification.
 
-CI, release and host deployment evidence is added after publication.
+## Release and deployment evidence
+
+- NIRUWM v0.16.42 and NIRUNOTIFY v0.3.6 published.
+- NIRUX 0.10.45 CI run 39541300401 passed check, Arch, Debian and Void.
+- NIRUX v0.10.45 published with the new integration archive.
+- `niru@void` and `niru@thinkpad` run NIRUX 0.10.45 / NIRUWM 0.16.42 /
+  NIRUNOTIFY 0.3.6. The power rule exists on both, and both users are in
+  `wheel` (Void also in `sudo`-equivalent groups).
+- Tailscale boot is enabled: ThinkPad `tailscaled.service` is `enabled` and
+  `active`; Void has `/var/service/tailscaled` linked. Both report online.
+- The running sessions still use the previous NIRUWM/NIRUNOTIFY process; the
+  power fix and rules are active through the updated `niructl`/polkit files,
+  while the session welcome and notification strip appear after logout/login.
+  No session was forced to log out.
+- The real power-off button was not pressed on the hosts; the mapping and rule
+  are covered by unit and installer tests.

@@ -43,8 +43,9 @@ drivers/firmware must be documented separately from suite provisioning.
 | nirunotify | 0.3.6 | Native notifications, actions, DND, history/OSD |
 
 All listed releases/assets were found on GitHub. Previous sessions reported
-installation of 0.10.30 on `niru@void` and `niru@thinkpad` (Arch); those hosts
-still need the 0.10.45 deployment check.
+installation of 0.10.30 on `niru@void` and `niru@thinkpad` (Arch). Those hosts
+now run NIRUX 0.10.45 / NIRUWM 0.16.42 / NIRUNOTIFY 0.3.6; the 0.10.45 deployment
+check is complete.
 
 **S01, S02 and S03 are implemented; 0.10.33 added theme wallpapers.**
 [Run 39420180581](https://github.com/nirucon/nirux/actions/runs/39420180581)
