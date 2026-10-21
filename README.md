@@ -8,9 +8,9 @@ nirulauncher and nirunotify, plus Xorg, kitty/fish, theme wallpapers, the NIRU
 terminal colours and a graphical Polkit agent for power actions. Niru Noir is the
 default theme; Nord, Satie and Carl Larsson are also available.
 
-**0.10.62 status:** adds optional microphone/Bluetooth/power-profile modules plus built-in display
-profiles. NIRUX provisions BlueZ and power-profiles-daemon and enables their
-services; profile changes validate provider capability before applying.
+**0.10.63 status:** adds optional microphone/Bluetooth/power-profile modules, built-in display
+profiles and the first nirushot screenshot helper release. NIRUX provisions
+BlueZ, power-profiles-daemon and xclip alongside the existing tools.
 The suite includes managed Helium, kitty/fish integration, themed panels and
 greeters, dwm-style mouse controls, workspace autostart, diagnostics, work modes
 and recipes. See [microphone setup](docs/INSTALL.md#microphone-module).

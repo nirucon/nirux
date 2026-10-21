@@ -16,6 +16,7 @@ saver_version=$(awk '$1 == "niruscreensaver" {print $2}' "$SOURCE/manifest")
 lock_version=$(awk '$1 == "nirulock" {print $2}' "$SOURCE/manifest")
 launcher_version=$(awk '$1 == "nirulauncher" {print $2}' "$SOURCE/manifest")
 notifier_version=$(awk '$1 == "nirunotify" {print $2}' "$SOURCE/manifest")
+shot_version=$(awk '$1 == "nirushot" {print $2}' "$SOURCE/manifest")
 FIXTURE=$TEST/releases
 fail() { printf 'FAIL: %s\n' "$*" >&2; exit 1; }
 no_config_candidates() {
@@ -101,11 +102,12 @@ fixture niruscreensaver "$saver_version" niruscreensaver
 fixture nirulock "$lock_version" nirulock
 fixture nirulauncher "$launcher_version" nirulauncher
 fixture nirunotify "$notifier_version" nirunotify
+fixture nirushot "$shot_version" nirushot
 for os in arch void; do
   printf 'auth include system-auth\naccount include system-auth\n' > "$FIXTURE/nirulock/$lock_version/pam-$os"
 done
 printf 'auth include common-auth\naccount include common-account\n' > "$FIXTURE/nirulock/$lock_version/pam-debian"
-for item in "niruwm/$wm_version" "nirubar/$bar_version" "niruscreensaver/$saver_version" "nirulock/$lock_version" "nirulauncher/$launcher_version" "nirunotify/$notifier_version"; do checksums "$FIXTURE/$item"; done
+for item in "niruwm/$wm_version" "nirubar/$bar_version" "niruscreensaver/$saver_version" "nirulock/$lock_version" "nirulauncher/$launcher_version" "nirunotify/$notifier_version" "nirushot/$shot_version"; do checksums "$FIXTURE/$item"; done
 # 99.0.0 is a synthetic second release, never a real network dependency.
 for release in "$VERSION" 99.0.0; do
   mkdir -p "$FIXTURE/nirux/$release"

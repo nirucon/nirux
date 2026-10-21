@@ -1,6 +1,6 @@
 # NIRU desktop — current roadmap and restart handoff
 
-Priority order updated **2026-10-21**. Published baseline: **NIRUX 0.10.62**.
+Priority order updated **2026-10-21**. Published baseline: **NIRUX 0.10.63**.
 
 ## Start here — the active work queue
 
@@ -16,7 +16,7 @@ on-demand `nirushot` tool.
 | 2 / N2 | DONE in 0.10.58 | Bluetooth state and controls for paired devices |
 | 3 / N3 | DONE in 0.10.59 | Built-in display profiles with preview and automatic revert |
 | 4 / N4 | DONE in 0.10.62 | Capability-aware power-profile selection |
-| 5 / N5 | DESIGN STARTED | nirushot: capture, copy/save and small annotation workflow |
+| 5 / N5 | IN PROGRESS — capture helper released, review/annotation pending | nirushot: capture, copy/save and small annotation workflow |
 
 ### N1 — Microphone module
 
@@ -231,7 +231,7 @@ active feature order is N1–N5 at the top of this file.
 - **Evidence and open defects:** [restart review](docs/REVIEW-2026-10-20-RESTART.md)
 - **Repositories:** [inventory](docs/REPOSITORIES.md)
 - **Previous work:** [delivery history through 0.10.30](docs/history/ROADMAP-0.10.30.md)
-- **Current checkpoint evidence:** [0.10.60 power profiles](docs/history/CHECKPOINT-0.10.60.md)
+- **Current checkpoint evidence:** [0.10.63 nirushot first delivery](docs/history/CHECKPOINT-0.10.63.md)
 - **S04 runtime audit:** [package and normal-user results](docs/history/AUDIT-S04-0.10.35.md)
 - **R01 performance baseline:** [idle and startup measurements](docs/history/AUDIT-R01-BASELINE.md)
 - **H01 partial fresh-VM evidence:** [Debian/Arch VMs and gaps](docs/history/AUDIT-H01-PARTIAL.md)
@@ -259,7 +259,7 @@ drivers/firmware must be documented separately from suite provisioning.
 
 | Repository | Pinned release | Responsibility |
 |---|---|---|
-| nirux | 0.10.62 | Packages, generations, target-owned apply, managed Helium, wallpapers, kitty/fish |
+| nirux | 0.10.63 | Packages, generations, target-owned apply, managed Helium, wallpapers, kitty/fish |
 | niruwm | 0.16.58 | WM, session, niructl, niruidle, theme wallpapers, terminal hook |
 | nirubar | 0.18.26 | Per-output bar, tray, panels, weather |
 | niruscreensaver | 0.8.3 | Unlocked idle surface |
@@ -270,7 +270,7 @@ drivers/firmware must be documented separately from suite provisioning.
 All listed releases/assets were found on GitHub. Previous sessions reported
 installation of 0.10.30 on `niru@void` and `niru@thinkpad` (Arch). Those hosts
 now run NIRUX 0.10.46 / NIRUWM 0.16.43 / NIRUNOTIFY 0.3.7; the 0.10.46 deployment
-check is recorded in the N4 checkpoint.
+check is recorded in the N5 checkpoint.
 
 **S01, S02 and S03 are implemented; 0.10.33 added theme wallpapers.**
 [Run 39420180581](https://github.com/nirucon/nirux/actions/runs/39420180581)

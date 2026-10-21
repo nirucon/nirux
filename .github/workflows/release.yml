@@ -18,7 +18,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          for repo in niruwm nirubar niruscreensaver nirulock nirulauncher nirunotify; do
+          for repo in niruwm nirubar niruscreensaver nirulock nirulauncher nirunotify nirushot; do
             version=$(awk -v repo="$repo" '$1 == repo {print $2}' manifest)
             gh release view "v$version" -R "nirucon/$repo" --json assets --jq '.assets[].name' > /tmp/assets
             grep -qx "$repo" /tmp/assets

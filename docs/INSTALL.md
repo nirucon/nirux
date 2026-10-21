@@ -1,6 +1,6 @@
 # Installation and maintenance
 
-**Verified-state note, 2026-10-21:** 0.10.62 implements managed Helium,
+**Verified-state note, 2026-10-21:** 0.10.63 implements managed Helium,
 theme-follow wallpapers, target-owned apply and the kitty/fish terminal
 integration. The full distro CI covers real-release install,
 doctor, config contract, startx and a normal-user sandboxed Helium launch.
@@ -339,6 +339,23 @@ Pairing and discovery still use the distribution Bluetooth manager or
 `bluetoothctl`; NIRUX does not pair devices implicitly. Status/list and opening
 the panel are read-only. Connect/disconnect and power are explicit actions, and
 connect verifies the connected state reported by BlueZ.
+
+### Screenshots and nirushot
+
+NIRUX installs `nirushot` plus `maim`, `slop` and `xclip`. First-delivery usage:
+
+```sh
+nirushot --region          # copy selected region by default
+nirushot --window
+nirushot --full
+nirushot --region --delay 3
+nirushot --region --save ~/Pictures/shot.png
+```
+
+`--save` writes only that file unless `--copy` is also given. Cancel creates no
+file. The completion notification goes through the active NIRUNOTIFY/Dunst
+provider. The existing Super+Print/maim bindings remain as fallback until the
+native review/annotation surface is released and verified.
 
 ### Power profiles
 
