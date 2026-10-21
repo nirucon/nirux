@@ -74,6 +74,20 @@ printf '%s\n' "$autostart_status" | grep -q 'tag=1' || {
 }
 grep -q 'tag=2' "$HOME/autostart-2" || { printf 'autostart ran on the wrong workspace\n' >&2; exit 1; }
 grep -q 'tag=1' "$HOME/autostart-1" || { printf 'autostart ran on the wrong workspace\n' >&2; exit 1; }
+# Provider-aware DND must reach the running native notifier.
+if [ -x "$BIN/nirunotify" ]; then
+  "$BIN/niructl" dnd status | grep -qx 'dnd off' || {
+    "$BIN/niructl" dnd status >&2 || :
+    printf 'native DND is not off at session start\n' >&2
+    exit 1
+  }
+  "$BIN/niructl" dnd toggle >/dev/null
+  "$BIN/niructl" dnd status | grep -qx 'dnd on' || {
+    printf 'niructl did not reach the native DND provider\n' >&2
+    exit 1
+  }
+  "$BIN/niructl" dnd toggle >/dev/null
+fi
 "$BIN/niructl" status
 "$BIN/niructl" restart-bar
 # Theme-follow wallpaper: only assert when NIRUX installed the assets and a

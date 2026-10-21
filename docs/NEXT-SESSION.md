@@ -6,7 +6,7 @@ https://raw.githubusercontent.com/nirucon/nirux/main/docs/NEXT-SESSION.md
 This brief is independent of local session memory. **Start with P1.**
 The owner's active order is **P1 → P2 → P3 → P4 → P5 → P6**, defined at the
 top of [ROADMAP.md](../ROADMAP.md). This replaces the old H01-first ordering.
-S01/S02, S03, S04, theme/extra wallpapers, kitty/fish, the wallpaper launcher, mouse move/resize, workspace autostart, live notification themes, the power menu, greeter themes and the session welcome are done in 0.10.45.
+S01/S02, S03, S04, theme/extra wallpapers, kitty/fish, the wallpaper launcher, mouse move/resize, workspace autostart, live notification themes, the power menu, greeter themes and the session welcome are done in 0.10.46.
 H01 is partially complete: Debian and Arch passed fresh VMs. A fresh Void VM and physical audio/lock/suspend checks remain.
 
 ## Copy-ready prompt
@@ -14,12 +14,12 @@ H01 is partially complete: Debian and Arch passed fresh VMs. A fresh Void VM and
 ```text
 Fortsätt utvecklingen av NIRU-sviten. Läs först aktuella GitHub-filer:
 - https://raw.githubusercontent.com/nirucon/nirux/main/ROADMAP.md
-- https://raw.githubusercontent.com/nirucon/nirux/main/docs/history/CHECKPOINT-0.10.44.md
+- https://raw.githubusercontent.com/nirucon/nirux/main/docs/history/CHECKPOINT-0.10.46.md
 - https://raw.githubusercontent.com/nirucon/nirux/main/docs/REPOSITORIES.md
 
-Utgå från NIRUX 0.10.45:
-niruwm 0.16.42, nirubar 0.18.18, niruscreensaver 0.8.3,
-nirulock 0.16.10, nirulauncher 0.2.3, nirunotify 0.3.6.
+Utgå från NIRUX 0.10.46:
+niruwm 0.16.43, nirubar 0.18.19, niruscreensaver 0.8.3,
+nirulock 0.16.10, nirulauncher 0.2.3, nirunotify 0.3.7.
 Kontrollera manifest, git-status, GitHub main och senaste fulla CI på nytt.
 Versionslistan är en startpunkt, inte ett skäl att skriva över nyare arbete.
 
@@ -30,11 +30,11 @@ program. Ett injicerat fel återställer originalconfig och aktiv generation.
 Helium är pinnat till 0.19.4.1 med SHA-256. CI-containrar är stödjande evidens,
 inte fysisk clean-OS-certifiering.
 
-Börja med P1: reproducera att en notis hamnar under terminalen och kontrollera
-att niructl dnd styr NIRUNOTIFY när den är aktiv (koden använder ännu dunstctl).
-Fixa notislager och en gemensam DND-väg för launcher, tangentbord och bar.
+P1 är implementerad i 0.10.46: notiser hålls ovanför vanliga fönster,
+popupmått följer fonten och niructl dnd väljer aktiv notifierare. Verifiera
+release/deploy, markera P1 klar och börja sedan med P2.
 
-Arbeta sedan i exakt denna ordning enligt roadmapens första avsnitt:
+Arbeta i exakt denna ordning enligt roadmapens första avsnitt:
 P2: riktiga power/login/lock/suspend/skärmtester, inklusive återstående H01.
 P3: gemensam typografi, spacing, skalning och små kontrollförbättringar.
 P4: tillförlitlig workspace-autostart även för långsamma appar.
