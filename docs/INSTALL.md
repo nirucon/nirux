@@ -287,6 +287,33 @@ migrates only the exact old Noir-only default; custom colours are preserved.
 Live last-good reload and pixel acceptance remain C01. Lock/saver are intended
 to retain an opaque black background.
 
+### Microphone module
+
+Add `"microphone"` to the existing `[bar] modules` list in
+`~/.config/niruwm/config.toml`. It is optional; updates preserve your module list.
+In the same section set `microphone_visibility = "always"` (the default), or
+`"muted"` to hide a healthy unmuted input. A missing input/provider stays visible
+to explain the problem. Apply with `niructl reload` after activating the updated
+session.
+
+The bar shows mute or input gain; left click shows the selected input and level.
+Right click toggles mute, scrolling adjusts gain without unmuting, and middle
+click opens keyboard source selection via `nirulauncher --microphone`.
+The same controls are in Super+Shift+P. Direct commands:
+
+```sh
+niructl audio mic-status
+niructl audio mic-mute on    # off or toggle
+niructl audio mic-level up  # down or set 65
+nirulauncher --microphone
+```
+
+Gain is limited to 100% for these controls. Status reports the current provider
+value, including values set externally. Recording activity is not monitored;
+unmuted is not labelled as actively recording. WirePlumber (`wpctl`) and the
+suite's `niructl` are required. Queries run off the bar's X11 thread, with bounded
+output/timeouts and a two-second refresh interval.
+
 ### Graphical privilege prompts
 
 NIRUX installs a Polkit authentication agent (`polkit-gnome` on Arch/Void,

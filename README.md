@@ -8,14 +8,13 @@ nirulauncher and nirunotify, plus Xorg, kitty/fish, theme wallpapers, the NIRU
 terminal colours and a graphical Polkit agent for power actions. Niru Noir is the
 default theme; Nord, Satie and Carl Larsson are also available.
 
-**0.10.56 status:** managed Helium, theme and extra wallpapers, target-owned
-updates, kitty/fish terminal integration, correct bar colours, graphical Polkit
-prompts, wallpaper controls, dwm-style mouse move/resize and per-workspace
-autostart, live notification theme colours, a working power menu, themed
-SDDM/LightDM greeters, a session welcome, reliable notification stacking, provider-aware DND, a shared visual scale,
-font-aware launcher rows, a configurable session welcome and audio device/mute controls and a multi-display status module and reliable window-aware autostart, in-launcher diagnostics, work
-modes and workspace recipes are implemented. A new installer now
-owns config/integration/activation, so a future update
+**0.10.57 status:** adds an optional microphone module with selected-input,
+mute and gain information, plus keyboard input selection and gain controls.
+It uses the existing audio CLI and never treats an unmuted mic as recording.
+The suite includes managed Helium, kitty/fish integration, themed panels and
+greeters, dwm-style mouse controls, workspace autostart, diagnostics, work modes
+and recipes. See [microphone setup](docs/INSTALL.md#microphone-module).
+The target installer owns config/integration/activation, so an update
 applies new config keys, assets and components in one pass. Fresh installs get
 the four NIRU theme wallpaper sets under
 `~/Pictures/Wallpapers/NIRU`; changing the theme can switch to that theme's
