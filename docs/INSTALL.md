@@ -1,6 +1,6 @@
 # Installation and maintenance
 
-**Verified-state note, 2026-10-21:** 0.10.58 implements managed Helium,
+**Verified-state note, 2026-10-21:** 0.10.59 implements managed Helium,
 theme-follow wallpapers, target-owned apply and the kitty/fish terminal
 integration. The full distro CI covers real-release install,
 doctor, config contract, startx and a normal-user sandboxed Helium launch.
@@ -339,6 +339,29 @@ Pairing and discovery still use the distribution Bluetooth manager or
 `bluetoothctl`; NIRUX does not pair devices implicitly. Status/list and opening
 the panel are read-only. Connect/disconnect and power are explicit actions, and
 connect verifies the connected state reported by BlueZ.
+
+### Display profiles
+
+Display profiles are built into niructl; no additional dependency is needed
+beyond `xrandr`, which NIRUX already installs. Edit
+`~/.config/niruwm/displays.toml` (the repository includes
+`displays.example.toml` with Laptop, Desk and Presentation templates) using output
+names and modes from `xrandr --query`.
+
+```sh
+niructl display save Laptop       # save the active layout
+niructl display list
+niructl display preview Desk 15   # apply and revert after 15s unless kept
+niructl display keep              # confirm
+niructl display revert            # restore immediately
+niructl display status
+```
+
+Only connected outputs and supported modes are accepted. Preview keeps a
+known-good previous layout and restores it after the deadline or on failure.
+Outputs omitted from a profile are turned off, so validate the active layout
+before confirming. Hotplug does not silently apply a profile in this version;
+use `niructl display preview` from Super+Shift+P or the bar's display panel.
 
 ### Graphical privilege prompts
 

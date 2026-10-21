@@ -3,9 +3,9 @@
 Canonical raw URL:
 https://raw.githubusercontent.com/nirucon/nirux/main/docs/NEXT-SESSION.md
 
-This brief is independent of local session memory. **N2 is done; start with N3.**
+This brief is independent of local session memory. **N3 is implemented and in release verification; verify then start N4.**
 The active feature order is **N3 built-in display profiles → N4 power profiles →
-N5 nirushot** (N1 and N2 are done). The first section of
+N5 nirushot** (N1 and N2 are done; N3 is implemented). The first section of
 [ROADMAP.md](../ROADMAP.md) defines scope and completion criteria. P1–P6 are
 recorded as implemented with deferred verification; P2 remains partial.
 S01/S02, S03, S04, theme/extra wallpapers, kitty/fish, the wallpaper launcher, mouse move/resize, workspace autostart, live notification themes, the power menu, greeter themes and the session welcome are done in 0.10.57.
@@ -19,9 +19,9 @@ Fortsätt utvecklingen av NIRU-sviten. Läs först aktuella GitHub-filer:
 - https://raw.githubusercontent.com/nirucon/nirux/main/docs/history/CHECKPOINT-0.10.57.md
 - https://raw.githubusercontent.com/nirucon/nirux/main/docs/REPOSITORIES.md
 
-Utgå från NIRUX 0.10.58:
-niruwm 0.16.55, nirubar 0.18.24, niruscreensaver 0.8.3,
-nirulock 0.16.10, nirulauncher 0.2.9, nirunotify 0.3.7.
+Utgå från NIRUX 0.10.59:
+niruwm 0.16.56, nirubar 0.18.25, niruscreensaver 0.8.3,
+nirulock 0.16.10, nirulauncher 0.2.10, nirunotify 0.3.7.
 Kontrollera manifest, git-status, GitHub main och senaste fulla CI på nytt.
 Versionslistan är en startpunkt, inte ett skäl att skriva över nyare arbete.
 
@@ -43,7 +43,6 @@ launchern ger tangentbordsstyrda power/connect/disconnect-val. Verifiera
 release/deploy och fortsätt sedan med N3.
 - N3: skärmprofiler INBYGGT i niructl/WM/bar/launcher, med preview och revert.
   Vänta med större nytt skärmrepo; skapa inte nirudisplay.
-- N4: strömprofiler via en befintlig provider och ärlig capability-detektering.
 - N5: nirushot som eget on-demand-verktyg; capture/copy/save först, sedan enkel
   crop/markering/maskning. Skapa repot först när arbetet med N5 börjar.
 
@@ -80,7 +79,7 @@ Lokala kloner kan finnas i ~/.cache/niru-work/{nirux,niruwm,nirubar}.
 Lita inte på /tmp/opencode; den katalogen tömdes under tidigare arbete.
 Om kloner saknas, klona från https://github.com/nirucon/<repo>.
 
-Börja med en kort sammanfattning av verifierat läge och första steget i N3 samt
+Börja med en kort sammanfattning av verifierat läge och första steget i N4 samt
 vilka filer du behöver ändra. Fortsätt sedan arbetet.
 ```
 

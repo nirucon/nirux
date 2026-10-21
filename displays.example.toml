@@ -1,0 +1,38 @@
+# NIRUX display profiles. Copy to ~/.config/niruwm/displays.toml and replace
+# output names/modes with the values from `xrandr --query` on this machine.
+# Apply with: niructl display preview NAME [SECONDS]
+# Confirm with: niructl display keep
+# Undo with: niructl display revert
+
+[[profile]]
+name = "Laptop"
+[[profile.outputs]]
+name = "eDP-1"
+mode = "preferred"
+position = "0x0"
+rotation = "normal"
+primary = true
+
+[[profile]]
+name = "Desk"
+[[profile.outputs]]
+name = "eDP-1"
+mode = "preferred"
+position = "0x0"
+rotation = "normal"
+primary = true
+[[profile.outputs]]
+name = "HDMI-1"
+mode = "preferred"
+position = "1920x0"
+rotation = "normal"
+primary = false
+
+[[profile]]
+name = "Presentation"
+[[profile.outputs]]
+name = "HDMI-1"
+mode = "preferred"
+position = "0x0"
+rotation = "normal"
+primary = true
