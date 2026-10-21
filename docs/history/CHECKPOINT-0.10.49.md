@@ -51,4 +51,19 @@ NIRUWM 0.16.46 and NIRULAUNCHER 0.2.5 were published in 0.10.49; NIRUWM 0.16.47 
 sources and verified default changes; 0.16.49 excluded the current device when
 cycling; 0.16.50 corrected the plural section name used for selection. NIRUX
 0.10.52 pins 0.16.50.
-CI, release and both-host deployment results are added after publication.
+NIRUX 0.10.52 CI passed on Arch, Debian and Void, and was deployed to both
+hosts. Both run NIRUX 0.10.52 / NIRUWM 0.16.50 / NIRULAUNCHER 0.2.5.
+
+Live verification on both hosts:
+
+- `niructl audio outputs` lists only audio sinks; `audio sources` now excludes
+  the V4L2 cameras that `wpctl status` also places under a Video Sources heading.
+- Explicitly selecting the current output succeeds and leaves it default.
+- On Void the other listed sinks are unavailable HDMI ports; `audio output next`
+  now reports that no other usable output could become default instead of
+  pretending success. ThinkPad has one output and reports that case clearly.
+- The launcher exposes these devices and both mute actions without duplicating
+  WirePlumber logic.
+
+The running launcher process is older, so the new audio actions appear at the
+next logout/login. No session was forced to log out.
