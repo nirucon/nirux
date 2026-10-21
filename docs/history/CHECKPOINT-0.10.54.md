@@ -36,5 +36,9 @@ the previous behaviour.
 
 ## Release and deployment evidence
 
-NIRUWM v0.16.51 is published; NIRUX 0.10.54 pins it. CI, release and host
-deployment results are added after publication.
+NIRUWM v0.16.51 is published. NIRUX CI run 39577994885 passed check, Arch,
+Debian and Void; v0.10.54 was released and deployed to both hosts. They now run
+NIRUX 0.10.54 / NIRUWM 0.16.51 / NIRUWM session 0.16.51, and `niructl audio`
+still works. Existing autostart blocks keep their values; the new defaults and
+optional `class` fields activate after logout/login with the new WM. No session
+was forced to log out.
