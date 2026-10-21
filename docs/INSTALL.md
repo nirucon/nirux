@@ -1,6 +1,6 @@
 # Installation and maintenance
 
-**Verified-state note, 2026-10-21:** 0.10.57 implements managed Helium,
+**Verified-state note, 2026-10-21:** 0.10.58 implements managed Helium,
 theme-follow wallpapers, target-owned apply and the kitty/fish terminal
 integration. The full distro CI covers real-release install,
 doctor, config contract, startx and a normal-user sandboxed Helium launch.
@@ -313,6 +313,32 @@ value, including values set externally. Recording activity is not monitored;
 unmuted is not labelled as actively recording. WirePlumber (`wpctl`) and the
 suite's `niructl` are required. Queries run off the bar's X11 thread, with bounded
 output/timeouts and a two-second refresh interval.
+
+### Bluetooth
+
+NIRUX installs BlueZ (`bluez`, plus `bluez-utils` on Arch) and enables the
+distribution Bluetooth service: `bluetooth.service` on Arch/Debian and the
+`bluetoothd` runit service on Void. Package/service failures are visible in
+`nirux status`/`doctor`; a container without systemd as PID 1 does not fail an
+otherwise valid install.
+
+Add `"bluetooth"` to `[bar] modules` to show adapter/device state. The module is
+hidden without an adapter. Its panel lists paired devices and battery only when
+BlueZ reports it; unknown battery is not displayed as 0%. Direct controls:
+
+```sh
+niructl bluetooth status
+niructl bluetooth list
+niructl bluetooth power on|off|toggle
+niructl bluetooth connect MAC
+niructl bluetooth disconnect MAC
+nirulauncher --bluetooth
+```
+
+Pairing and discovery still use the distribution Bluetooth manager or
+`bluetoothctl`; NIRUX does not pair devices implicitly. Status/list and opening
+the panel are read-only. Connect/disconnect and power are explicit actions, and
+connect verifies the connected state reported by BlueZ.
 
 ### Graphical privilege prompts
 

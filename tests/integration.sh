@@ -222,6 +222,16 @@ NIRUX_PACKAGES_DRY_RUN=1 NIRUX_PROVISION_OS=debian NIRUX_PROVISION_DM=keep \
   provision_packages missing > "$TEST/provision.log" 2>&1
 grep -q 'would install missing: kitty' "$TEST/provision.log" || fail 'provision dry run did not report the missing package'
 unset -f package_present
+for os in arch debian void; do
+  (
+    OS=$os
+    packages_for "$OS"
+  ) | grep -qw bluez || fail "bluez missing from $os package list"
+done
+(
+  OS=arch
+  packages_for "$OS"
+) | grep -qw bluez-utils || fail 'bluez-utils missing from arch package list'
 
 # Arch missing-only provisioning must not create a partial upgrade by syncing
 # databases without upgrading the installed system.

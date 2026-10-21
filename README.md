@@ -8,9 +8,9 @@ nirulauncher and nirunotify, plus Xorg, kitty/fish, theme wallpapers, the NIRU
 terminal colours and a graphical Polkit agent for power actions. Niru Noir is the
 default theme; Nord, Satie and Carl Larsson are also available.
 
-**0.10.57 status:** adds an optional microphone module with selected-input,
-mute and gain information, plus keyboard input selection and gain controls.
-It uses the existing audio CLI and never treats an unmuted mic as recording.
+**0.10.58 status:** adds optional microphone and Bluetooth modules, with BlueZ packaged and its
+service enabled by the installer. Microphone shows selected input, mute/gain;
+Bluetooth shows adapter/paired-device state and explicit controls.
 The suite includes managed Helium, kitty/fish integration, themed panels and
 greeters, dwm-style mouse controls, workspace autostart, diagnostics, work modes
 and recipes. See [microphone setup](docs/INSTALL.md#microphone-module).
