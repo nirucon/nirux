@@ -46,6 +46,10 @@ NIRULAUNCHER 0.2.7 lists recipes under **Recipes** and work modes under
 
 ## Release and deployment evidence
 
-NIRUWM v0.16.53, NIRUBAR v0.18.22 and NIRULAUNCHER v0.2.7 are published;
-NIRUX 0.10.56 pins them. CI, release and host deployment results are added
-after publication.
+NIRUWM v0.16.53, NIRUBAR v0.18.22 and NIRULAUNCHER v0.2.7 are published.
+NIRUX CI run 39586727800 passed check, Arch, Debian and Void; v0.10.56 was
+released and deployed to both hosts. They now run NIRUX 0.10.56 / NIRUWM
+0.16.53 / NIRUBAR 0.18.22 / NIRULAUNCHER 0.2.7. `niructl mode status`
+reports `mode off` and `niructl recipe list` runs cleanly. The running session
+still uses the older WM/launcher, so the launcher entries and bar countdown
+activate after logout/login. No session was forced to log out.
