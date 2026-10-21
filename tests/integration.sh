@@ -434,6 +434,9 @@ for TEST_OS in arch debian void; do
   [ -f "$XDG_CONFIG_HOME/nirux/theme/fish.fish" ] || fail 'fish theme was not generated'
   grep -q 'NIRUX terminal integration' "$XDG_CONFIG_HOME/fish/config.fish" || fail 'fish integration block was not installed'
   [ -x "$BIN/nirux-theme-hook" ] || fail 'theme hook was not installed'
+  session_desktop=$ROOT/usr/share/xsessions/niruwm.desktop
+  grep -qxF "Exec=$BIN/niruwm-session" "$session_desktop" || fail 'display-manager session Exec must be an unquoted absolute path'
+  ! grep -q '"' "$session_desktop" || fail 'display-manager session must not quote Exec'
   first=$(readlink "$STATE/current")
   operation install_or_update update --no-packages --release 99.0.0
   second=$(readlink "$STATE/current")

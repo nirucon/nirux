@@ -2,7 +2,7 @@
 # NIRUX: install a complete X11 desktop, or maintain an existing installation.
 set -eu
 
-VERSION=0.10.66
+VERSION=0.10.67
 PREFIX=${NIRUX_PREFIX:-$HOME/.local}
 BIN=$PREFIX/bin
 STATE=$PREFIX/share/nirux
@@ -1512,7 +1512,9 @@ owned() {
 }
 legacy_owned() {
   case "$1" in
-    */xsessions/niruwm.desktop) grep -qxF "Exec=\"$BIN/niruwm-session\"" "$1" ;;
+    */xsessions/niruwm.desktop)
+      grep -qxF "Exec=$BIN/niruwm-session" "$1" ||
+        grep -qxF "Exec=\"$BIN/niruwm-session\"" "$1" ;;
     */pam.d/nirulock) grep -q '^# Installed by nirux\.' "$1" ;;
     *) return 1 ;;
   esac
@@ -1616,7 +1618,7 @@ remove_greeters() {
 }
 
 register_session() {
-  { say "# NIRUX owner: $PREFIX"; say '[Desktop Entry]'; say 'Name=NIRUWM'; say 'Type=Application'; say "Exec=\"$BIN/niruwm-session\""; say 'DesktopNames=NIRUWM'; } > "$WORK/session.desktop"
+  { say "# NIRUX owner: $PREFIX"; say '[Desktop Entry]'; say 'Name=NIRUWM'; say 'Type=Application'; say "Exec=$BIN/niruwm-session"; say 'DesktopNames=NIRUWM'; } > "$WORK/session.desktop"
   write_system "$ROOT/usr/share/xsessions/niruwm.desktop" "$WORK/session.desktop"
 }
 setup_startx() {
