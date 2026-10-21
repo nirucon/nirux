@@ -65,11 +65,3 @@ hitboxes away from the visible control.
 | NIRUNOTIFY | Font-aware wrapping/height, 4 px urgency strip, 12 px padding |
 | Greeters | Noir palette, consistent panel padding and focus |
 | NIRULOCK/NIRUSCREENSAVER | Theme text, opaque black privacy surface |
-
-## Status
-
-Implemented: theme-role palettes across the suite, font-aware notification and
-launcher geometry, launcher accent selection, configurable session welcome and
-audio output/source/mute controls through `niructl audio` and a multi-display
-count/popup. Still open in P3: rendered-value checks for every component and the
-small-screen/hotplug matrix.
