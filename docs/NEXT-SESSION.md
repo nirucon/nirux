@@ -3,8 +3,8 @@
 Canonical raw URL:
 https://raw.githubusercontent.com/nirucon/nirux/main/docs/NEXT-SESSION.md
 
-This brief is independent of local session memory. **Start with P1.**
-The owner's active order is **P1 → P2 → P3 → P4 → P5 → P6**, defined at the
+This brief is independent of local session memory. **P1 is done; start with P2.**
+The owner's active order is **P2 → P3 → P4 → P5 → P6**, defined at the
 top of [ROADMAP.md](../ROADMAP.md). This replaces the old H01-first ordering.
 S01/S02, S03, S04, theme/extra wallpapers, kitty/fish, the wallpaper launcher, mouse move/resize, workspace autostart, live notification themes, the power menu, greeter themes and the session welcome are done in 0.10.46.
 H01 is partially complete: Debian and Arch passed fresh VMs. A fresh Void VM and physical audio/lock/suspend checks remain.
@@ -30,9 +30,8 @@ program. Ett injicerat fel återställer originalconfig och aktiv generation.
 Helium är pinnat till 0.19.4.1 med SHA-256. CI-containrar är stödjande evidens,
 inte fysisk clean-OS-certifiering.
 
-P1 är implementerad i 0.10.46: notiser hålls ovanför vanliga fönster,
-popupmått följer fonten och niructl dnd väljer aktiv notifierare. Verifiera
-release/deploy, markera P1 klar och börja sedan med P2.
+P1 är klar i 0.10.46: notiser hålls ovanför vanliga fönster, popupmått följer
+fonten och niructl dnd väljer aktiv notifierare. Börja nu med P2.
 
 Arbeta i exakt denna ordning enligt roadmapens första avsnitt:
 P2: riktiga power/login/lock/suspend/skärmtester, inklusive återstående H01.
@@ -73,7 +72,7 @@ Lokala kloner kan finnas i ~/.cache/niru-work/{nirux,niruwm,nirubar}.
 Lita inte på /tmp/opencode; den katalogen tömdes under tidigare arbete.
 Om kloner saknas, klona från https://github.com/nirucon/<repo>.
 
-Börja med en kort sammanfattning av verifierat läge, första steget för P1 och
+Börja med en kort sammanfattning av verifierat läge, första steget för P2 och
 vilka filer du behöver ändra. Fortsätt sedan arbetet.
 ```
 
@@ -90,6 +89,7 @@ vilka filer du behöver ändra. Fortsätt sedan arbetet.
 | W05 mouse move/resize + autostart | DONE | [0.10.41 checkpoint](history/CHECKPOINT-0.10.41.md) |
 | W06 live notification theme | DONE | [0.10.42 checkpoint](history/CHECKPOINT-0.10.42.md) |
 | W07 power menu, greeters + session welcome | DONE | [0.10.44/0.10.45 checkpoint](history/CHECKPOINT-0.10.44.md) |
+| P1 notification stacking + provider-aware DND | DONE | [0.10.46 checkpoint](history/CHECKPOINT-0.10.46.md) |
 | S03 target-owned apply | DONE | [0.10.34 checkpoint](history/CHECKPOINT-0.10.34.md) |
 | S04 vanilla runtime audit | DONE | [S04 audit](history/AUDIT-S04-0.10.35.md) |
 | H01 fresh OS/VM acceptance | PARTIAL — included in P2 | Debian/Arch VMs pass; fresh Void VM + physical audio/lock/suspend open |

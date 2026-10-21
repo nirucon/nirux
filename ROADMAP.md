@@ -4,14 +4,14 @@ Priority order updated **2026-10-21**. Published baseline: **NIRUX 0.10.46**.
 
 ## Start here — the active work queue
 
-**Start with P1. Work in order P1 → P2 → P3 → P4 → P5 → P6.**
+**P1 is done in 0.10.46. Start with P2. Work in order P2 → P3 → P4 → P5 → P6.**
 These six points supersede the previous H01-first ordering. The older task
 IDs below are supporting requirements and evidence, not a competing queue.
 
 | Order / ID | Status | Deliverable |
 |---|---|---|
-| 1 / P1 | IN PROGRESS — verify release/deploy | Reliable notification stacking and one working native DND path |
-| 2 / P2 | TODO | Real power, login, suspend/resume and display acceptance |
+| 1 / P1 | DONE in 0.10.46 | Reliable notification stacking and one working native DND path |
+| 2 / P2 | TODO — **START HERE** | Real power, login, suspend/resume and display acceptance |
 | 3 / P3 | TODO | Consistent typography, spacing, scaling and controls across the suite |
 | 4 / P4 | TODO | Reliable workspace autostart for slow applications |
 | 5 / P5 | TODO | “Why is this unavailable?” diagnostics in the launcher |

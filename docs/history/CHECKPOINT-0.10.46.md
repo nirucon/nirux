@@ -48,4 +48,13 @@ Remaining P1 notes: bounded duplicate-message grouping was not added; visible
 and history limits still bound repeated notifications. Fullscreen and physical
 lock-screen interaction remain part of the P2 hardware/session verification.
 
-CI, release and host deployment evidence is added after publication.
+## Release and deployment evidence
+
+- NIRUBAR v0.18.19, NIRUNOTIFY v0.3.7 and NIRUWM v0.16.43 published.
+- NIRUX 0.10.46 CI run 39545067701 passed check, Arch, Debian and Void.
+- NIRUX v0.10.46 published and deployed to `niru@void` and `niru@thinkpad`.
+- Both hosts report NIRUX 0.10.46 / NIRUWM 0.16.43 / NIRUBAR 0.18.19 /
+  NIRUNOTIFY 0.3.7. `niructl dnd status` and toggle reached the running native
+  notifier on both; DND was restored to off after the check.
+- The running notifier process predates 0.3.7, so the new stacking and font
+  sizing activate at the next logout/login. No session was forced to log out.
