@@ -49,5 +49,9 @@ asserts the welcome notification in a real session.
 
 ## Release and deployment evidence
 
-NIRULAUNCHER 0.2.4 and NIRUWM 0.16.45 are published; NIRUX 0.10.48 pins them.
-CI, release and both-host deployment results are added after publication.
+NIRULAUNCHER v0.2.4 and NIRUWM v0.16.45 are published. NIRUX 0.10.48 CI run
+39549220456 passed check, Arch, Debian and Void; release v0.10.48 was published.
+Both `niru@void` and `niru@thinkpad` now run NIRUX 0.10.48 / NIRUWM 0.16.45 /
+NIRULAUNCHER 0.2.4 / NIRUNOTIFY 0.3.7. The running session processes are older,
+so the launcher focus bar and welcome setting activate after logout/login. No
+session was forced to log out.
