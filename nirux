@@ -2,7 +2,7 @@
 # NIRUX: install a complete X11 desktop, or maintain an existing installation.
 set -eu
 
-VERSION=0.10.70
+VERSION=0.10.71
 PREFIX=${NIRUX_PREFIX:-$HOME/.local}
 BIN=$PREFIX/bin
 STATE=$PREFIX/share/nirux
@@ -1571,7 +1571,11 @@ install_greeters() {
   # The installing account can already use sudo, so it is also trusted for the
   # local power menu even when sudo comes from a sudoers rule rather than a
   # wheel/sudo group membership. Remote sessions remain excluded.
-  rule_user=$(id -un)
+  rule_user=${SUDO_USER:-$(id -un)}
+  if [ -d "$PREFIX" ]; then
+    prefix_owner=$(stat -c '%U' "$PREFIX" 2>/dev/null || :)
+    [ -z "$prefix_owner" ] || [ "$prefix_owner" = root ] || rule_user=$prefix_owner
+  fi
   case "$rule_user" in *[!A-Za-z0-9._-]*) rule_user= ;; esac
   { say "// NIRUX owner: $PREFIX"; sed "s/__NIRUX_USER__/$rule_user/g" "$unpack/polkit/49-nirux-power.rules"; } > "$WORK/power.rules"
   write_system "$ROOT/etc/polkit-1/rules.d/49-nirux-power.rules" "$WORK/power.rules"

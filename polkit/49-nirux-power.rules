@@ -1,6 +1,6 @@
-// NIRUX owner: allow the installing account and local active administrators to
-// use the power menu. Remote sessions are never matched. The NIRUX polkit agent
-// handles any other identity or session state with the normal authentication prompt.
+// NIRUX owner: allow the installing account and local administrators to use the
+// power menu. Remote sessions are never matched. The NIRUX polkit agent handles
+// any other identity or session state with the normal authentication prompt.
 polkit.addRule(function(action, subject) {
     var actions = [
         "org.freedesktop.login1.power-off",
@@ -12,9 +12,10 @@ polkit.addRule(function(action, subject) {
         "org.freedesktop.UPower.PowerProfiles.switch-profile",
         "org.freedesktop.UPower.PowerProfiles.hold-profile"
     ];
-    if (actions.indexOf(action.id) >= 0 && subject.local && subject.active &&
+    if (actions.indexOf(action.id) >= 0 && subject.local &&
         (subject.user == "__NIRUX_USER__" ||
-         subject.isInGroup("wheel") || subject.isInGroup("sudo"))) {
+         (subject.active &&
+          (subject.isInGroup("wheel") || subject.isInGroup("sudo"))))) {
         return polkit.Result.YES;
     }
 });
