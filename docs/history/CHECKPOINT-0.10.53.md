@@ -30,5 +30,12 @@ explains the missing state in the panel instead of failing the bar.
 
 ## Release and deployment evidence
 
-NIRUBAR v0.18.21 is published and NIRUX 0.10.53 pins it. CI, release and
-both-host deployment results are added after publication.
+NIRUBAR v0.18.21 is published and NIRUX 0.10.53 pins it. NIRUX CI run
+39562979674 passed check, Arch, Debian and Void; v0.10.53 was published and
+deployed to both hosts. They now run NIRUX 0.10.53 / NIRUBAR 0.18.21 /
+NIRUWM 0.16.50 / NIRULAUNCHER 0.2.5.
+
+Both hosts have one connected display, so the new module stays hidden until a
+second output is connected or `"display"` is added to `[bar] modules` and the
+session is restarted. The parser and panel are covered by unit tests. No session
+was forced to log out.
