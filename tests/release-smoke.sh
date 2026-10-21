@@ -52,7 +52,8 @@ export PATH="$TEST/bin:$PATH"
 status
 doctor
 [ -f "$ROOT/etc/polkit-1/rules.d/49-nirux-power.rules" ]
-grep -q 'subject.local && subject.active' "$ROOT/etc/polkit-1/rules.d/49-nirux-power.rules"
+grep -q 'subject.local' "$ROOT/etc/polkit-1/rules.d/49-nirux-power.rules"
+grep -q 'subject.active' "$ROOT/etc/polkit-1/rules.d/49-nirux-power.rules"
 [ -x "$BIN/helium" ]
 "$BIN/helium" --version | grep -q "Helium $HELIUM_VERSION"
 [ -f "$HOME/Pictures/Wallpapers/NIRU/nirux-wallpaper-noir-4k.png" ]
