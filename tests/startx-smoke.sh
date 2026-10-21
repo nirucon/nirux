@@ -5,12 +5,19 @@ set -eu
 BIN=${1:?usage: startx-smoke.sh BINDIR HOME}
 export HOME=${2:?missing test home}
 export XDG_CONFIG_HOME=$HOME/.config XAUTHORITY=$HOME/.Xauthority DISPLAY=:97
+export XDG_RUNTIME_DIR=$HOME/runtime
+mkdir -p "$XDG_RUNTIME_DIR"
+chmod 700 "$XDG_RUNTIME_DIR"
 export PATH=$BIN:$PATH
 cleanup() {
   "$BIN/niructl" quit >/dev/null 2>&1 || :
   [ -z "${START:-}" ] || kill "$START" 2>/dev/null || :
 }
 trap cleanup EXIT INT TERM
+grep -qx 'export NIRUX_STARTX=1' "$HOME/.xinitrc" || {
+  printf 'generated xinitrc is missing the startx marker\n' >&2
+  exit 1
+}
 # Configure two autostart entries on different workspaces before starting X.
 # The sequence must launch them in workspace order and return to workspace 1.
 autostart_cfg=$XDG_CONFIG_HOME/niruwm/config.toml
@@ -39,6 +46,20 @@ while [ "$i" -lt 100 ]; do
   i=$((i + 1)); sleep 0.1
 done
 if [ "$i" = 100 ]; then cat "$HOME/startx-test.log"; exit 1; fi
+if [ -x "$BIN/nirunotify" ]; then
+  i=0
+  while [ "$i" -lt 100 ]; do
+    "$BIN/nirunotify" --history 2>/dev/null | grep -q 'Welcome to NIRUX' && break
+    i=$((i + 1)); sleep 0.1
+  done
+  [ "$i" -lt 100 ] || {
+    printf 'startx welcome notification did not appear\n' >&2
+    "$BIN/nirunotify" --count 2>&1 >&2 || :
+    pgrep -a nirunotify >&2 || :
+    [ ! -f "$HOME/.local/state/niruwm/session.log" ] || tail -30 "$HOME/.local/state/niruwm/session.log" >&2
+    exit 1
+  }
+fi
 i=0
 while [ "$i" -lt 100 ]; do
   if [ -f "$HOME/autostart-1" ] && [ -f "$HOME/autostart-2" ]; then break; fi

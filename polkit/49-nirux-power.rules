@@ -1,0 +1,17 @@
+// NIRUX owner: allow local active administrators to use the power menu.
+// Remote sessions are never matched. The NIRUX polkit agent handles any other
+// identity or session state with the normal authentication prompt.
+polkit.addRule(function(action, subject) {
+    var actions = [
+        "org.freedesktop.login1.power-off",
+        "org.freedesktop.login1.power-off-multiple-sessions",
+        "org.freedesktop.login1.reboot",
+        "org.freedesktop.login1.reboot-multiple-sessions",
+        "org.freedesktop.login1.suspend",
+        "org.freedesktop.login1.suspend-multiple-sessions"
+    ];
+    if (actions.indexOf(action.id) >= 0 && subject.local && subject.active &&
+        (subject.isInGroup("wheel") || subject.isInGroup("sudo"))) {
+        return polkit.Result.YES;
+    }
+});

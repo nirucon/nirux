@@ -1,0 +1,12 @@
+[SddmGreeterTheme]
+Name=NIRUX
+Description=NIRUX Noir greeter
+Author=NIRUX
+Copyright=(c) 2026 NIRUX
+License=MIT
+Type=sddm-theme
+Version=1.0
+MainScript=Main.qml
+ConfigFile=theme.conf
+Theme-Id=nirux
+Theme-API=2.0

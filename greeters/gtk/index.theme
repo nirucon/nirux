@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=X-GNOME-Metatheme
+Name=NIRU
+Comment=NIRU Noir greeter theme
+Encoding=UTF-8
+
+[X-GNOME-Metatheme]
+GtkTheme=NIRU
+IconTheme=Adwaita
+CursorTheme=Adwaita

@@ -181,6 +181,12 @@ NIRUX will not replace another enabled display manager automatically. Selected
 display-manager services are enabled for login (runit on Void, systemd on
 Arch/Debian). On Void, missing dbus/elogind service links are also enabled.
 The session starts a private D-Bus session when one is not already available.
+
+Selecting **SDDM** installs a NIRUX QML greeter with the Niru Noir palette and
+the Rooted in Less wallpaper. Selecting **LightDM** installs a matching GTK
+greeter theme and the same background. Both are installed as NIRUX-owned system
+files and removed on uninstall; an existing display manager is not restyled.
+
 Log out or reboot when OS/service changes require it; do not run startx over SSH.
 
 ### Existing desktop / dependencies already installed
@@ -285,9 +291,14 @@ to retain an opaque black background.
 
 NIRUX installs a Polkit authentication agent (`polkit-gnome` on Arch/Void,
 `policykit-1-gnome` on Debian) and the session starts one if no other agent owns
-the role. Reboot/shutdown/logout therefore go through `loginctl`/`systemctl`
-with a graphical authentication prompt. If a power action fails, `niructl`
-shows a critical notification instead of failing silently.
+the role. Reboot/shutdown/logout therefore go through `loginctl`/`systemctl`;
+shutdown uses the real `poweroff` verb on both backends. If a power action
+fails, `niructl` shows a notification instead of failing silently.
+
+NIRUX also installs a narrow Polkit rule: a **local, active** user in `wheel`
+or `sudo` may power off, reboot or suspend without a password. Remote sessions
+and other identities still use the normal authentication prompt. The rule is
+NIRUX-owned and removed on uninstall.
 
 ### Configuration migration
 
@@ -359,8 +370,9 @@ sh tests/integration.sh
 
 Offline regression tests use isolated homes and mock release downloads. They
 exercise all three distribution mappings, generation switches, rollback,
-checksum failures, status purity, PAM includes, managed-browser policy,
-theme-wallpaper ownership, terminal config preservation and uninstall/purge. CI also installs the real vanilla
+checksum failures, status purity, PAM includes, the local power rule, both
+greeter themes, managed-browser policy, theme-wallpaper ownership, terminal
+config preservation and uninstall/purge. CI also installs the real vanilla
 dependency package lists on all three distributions, runs the real pinned
 releases through startx, verifies a theme change replaces the root wallpaper,
 and starts Helium as a normal user with the Chromium sandbox enabled. The

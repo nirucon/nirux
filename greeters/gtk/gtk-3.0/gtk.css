@@ -1,0 +1,60 @@
+/* NIRUX owner: Niru Noir greeter colours. */
+@define-color theme_bg_color #0f0f10;
+@define-color theme_fg_color #e5e5e5;
+@define-color theme_base_color #161618;
+@define-color theme_text_color #e5e5e5;
+@define-color theme_selected_bg_color #5a5a60;
+@define-color theme_selected_fg_color #e5e5e5;
+@define-color insensitive_bg_color #161618;
+@define-color insensitive_fg_color #a8a8a8;
+@define-color borders #2a2a2d;
+
+window,
+.background {
+    background-color: #0f0f10;
+    color: #e5e5e5;
+}
+
+entry {
+    background-color: #161618;
+    color: #e5e5e5;
+    border: 1px solid #2a2a2d;
+    border-radius: 4px;
+    padding: 6px;
+    caret-color: #e5e5e5;
+}
+
+entry:focus {
+    border-color: #5a5a60;
+}
+
+button {
+    background-image: none;
+    background-color: #202021;
+    color: #e5e5e5;
+    border: 1px solid #2a2a2d;
+    border-radius: 4px;
+    padding: 6px 12px;
+}
+
+button:hover {
+    background-color: #2a2a2d;
+}
+
+button:active,
+button:checked {
+    background-color: #5a5a60;
+}
+
+menubar,
+.menubar,
+menu,
+.menu {
+    background-color: #161618;
+    color: #e5e5e5;
+}
+
+label,
+text {
+    color: #e5e5e5;
+}

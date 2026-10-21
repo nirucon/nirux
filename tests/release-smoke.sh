@@ -12,7 +12,12 @@ mkdir -p "$HOME" "$NIRUX_SYSTEM_ROOT/etc/pam.d" "$TEST/release"
 unset NIRUX_LIBRARY
 cp "$SOURCE/nirux" "$SOURCE/manifest" "$SOURCE/config.example.toml" "$SOURCE/appearance.example.toml" "$TEST/release/"
 (cd "$SOURCE"; tar -cJf "$TEST/release/nirux-wallpapers.tar.xz" wallpaper/*.png; tar -cJf "$TEST/release/nirux-terminal.tar.xz" terminal)
-(cd "$TEST/release"; sha256sum nirux manifest config.example.toml appearance.example.toml nirux-wallpapers.tar.xz nirux-terminal.tar.xz > SHA256SUMS)
+mkdir -p "$TEST/integration-build/polkit"
+cp -R "$SOURCE/greeters/." "$TEST/integration-build/"
+cp "$SOURCE/polkit/49-nirux-power.rules" "$TEST/integration-build/polkit/"
+cp "$SOURCE/wallpaper/nirux-wallpaper-noir-rooted-in-less-4k.png" "$TEST/integration-build/background.png"
+tar -cJf "$TEST/release/nirux-integration.tar.xz" -C "$TEST/integration-build" .
+(cd "$TEST/release"; sha256sum nirux manifest config.example.toml appearance.example.toml nirux-wallpapers.tar.xz nirux-terminal.tar.xz nirux-integration.tar.xz > SHA256SUMS)
 for include in system-auth common-auth common-account; do
   [ ! -f "/etc/pam.d/$include" ] || ln -s "/etc/pam.d/$include" "$ROOT/etc/pam.d/$include"
 done
@@ -46,6 +51,8 @@ export PATH="$TEST/bin:$PATH"
 (install_or_update install --no-packages --browser helium --display-manager startx --release "$VERSION")
 status
 doctor
+[ -f "$ROOT/etc/polkit-1/rules.d/49-nirux-power.rules" ]
+grep -q 'subject.local && subject.active' "$ROOT/etc/polkit-1/rules.d/49-nirux-power.rules"
 [ -x "$BIN/helium" ]
 "$BIN/helium" --version | grep -q "Helium $HELIUM_VERSION"
 [ -f "$HOME/Pictures/Wallpapers/NIRU/nirux-wallpaper-noir-4k.png" ]

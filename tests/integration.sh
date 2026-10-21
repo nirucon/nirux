@@ -58,6 +58,15 @@ wallpaper_archive() {
 terminal_archive() {
   ( cd "$SOURCE" && tar -cJf "$1" terminal )
 }
+integration_archive() {
+  build=$TEST/integration-build
+  rm -rf "$build"
+  mkdir -p "$build/polkit"
+  cp -R "$SOURCE/greeters/." "$build/"
+  cp "$SOURCE/polkit/49-nirux-power.rules" "$build/polkit/"
+  cp "$SOURCE/wallpaper/nirux-wallpaper-noir-rooted-in-less-4k.png" "$build/background.png"
+  tar -cJf "$1" -C "$build" .
+}
 # The target installer runs in a separate process. Give it the same offline
 # release fixture through a curl shim; the parent test shell keeps its fetch().
 mkdir -p "$TEST/bin"
@@ -107,6 +116,7 @@ for release in "$VERSION" 99.0.0; do
   cp "$SOURCE/appearance.example.toml" "$FIXTURE/nirux/$release/appearance.example.toml"
   wallpaper_archive "$FIXTURE/nirux/$release/nirux-wallpapers.tar.xz"
   terminal_archive "$FIXTURE/nirux/$release/nirux-terminal.tar.xz"
+  integration_archive "$FIXTURE/nirux/$release/nirux-integration.tar.xz"
   checksums "$FIXTURE/nirux/$release"
 done
 # 99.2.0 adds a synthetic component. The running installer does not know its
@@ -826,4 +836,33 @@ EOF
 migrate_appearance_defaults "$appearance_test/custom.toml" >/dev/null
 grep -qx 'background = "101010"' "$appearance_test/custom.toml" || fail 'custom appearance colour was removed'
 
-say 'PASS: install/update/rollback/purge on all three distro mappings, status purity, checksum failure, PAM includes, managed Helium policy, obsolete browser migration, target-owned apply'
+# Greeter integration and the power polkit rule are installed from the
+# target-owned archive. Verify both display-manager themes and owned removal
+# without touching the host system.
+(
+  saved_root=$ROOT
+  saved_work=$WORK
+  ROOT=$TEST/greeter-root
+  WORK=$TEST/greeter-work
+  rm -rf "$ROOT" "$WORK"
+  mkdir -p "$WORK/download/nirux"
+  cp "$FIXTURE/nirux/$VERSION/nirux-integration.tar.xz" "$WORK/download/nirux/"
+  install_greeters sddm
+  [ -f "$ROOT/usr/share/sddm/themes/nirux/Main.qml" ] || fail 'missing SDDM QML theme'
+  grep -q '^// NIRUX owner: ' "$ROOT/usr/share/sddm/themes/nirux/Main.qml" || fail 'SDDM theme is not owned'
+  grep -qx 'Current=nirux' "$ROOT/etc/sddm.conf.d/50-nirux.conf" || fail 'SDDM theme was not selected'
+  grep -q 'subject.isInGroup("wheel")' "$ROOT/etc/polkit-1/rules.d/49-nirux-power.rules" || fail 'missing power polkit rule'
+  [ -f "$ROOT/usr/share/sddm/themes/nirux/background.png" ] || fail 'missing SDDM background'
+  install_greeters lightdm
+  [ -f "$ROOT/usr/share/lightdm/lightdm-gtk-greeter.conf.d/50-nirux.conf" ] || fail 'missing LightDM greeter config'
+  [ -f "$ROOT/usr/share/themes/NIRU/gtk-3.0/gtk.css" ] || fail 'missing NIRU GTK theme'
+  [ -f "$ROOT/usr/share/nirux/greeter/rooted-in-less.png" ] || fail 'missing LightDM background'
+  remove_greeters
+  [ ! -e "$ROOT/usr/share/sddm/themes/nirux" ] || fail 'greeter removal left the SDDM theme'
+  [ ! -e "$ROOT/usr/share/themes/NIRU" ] || fail 'greeter removal left the GTK theme'
+  [ ! -e "$ROOT/etc/polkit-1/rules.d/49-nirux-power.rules" ] || fail 'greeter removal left the power rule'
+  ROOT=$saved_root
+  WORK=$saved_work
+)
+
+say 'PASS: install/update/rollback/purge on all three distro mappings, status purity, checksum failure, PAM includes, power rule, greeter themes, managed Helium policy, obsolete browser migration, target-owned apply'

@@ -2,7 +2,7 @@
 # NIRUX: install a complete X11 desktop, or maintain an existing installation.
 set -eu
 
-VERSION=0.10.43
+VERSION=0.10.44
 PREFIX=${NIRUX_PREFIX:-$HOME/.local}
 BIN=$PREFIX/bin
 STATE=$PREFIX/share/nirux
@@ -127,7 +127,12 @@ install_packages() {
       void) pkgs="$pkgs mesa-dri" ;;
     esac
     case "$DM" in
-      sddm) pkgs="$pkgs sddm" ;;
+      sddm)
+        pkgs="$pkgs sddm"
+        # Arch's sddm-greeter links Qt5 but the package only recommends the
+        # Qt5 QML runtime. Without it the greeter cannot start.
+        [ "$OS" = arch ] && pkgs="$pkgs qt5-declarative"
+        ;;
       lightdm) pkgs="$pkgs lightdm lightdm-gtk-greeter" ;;
     esac
   fi
@@ -1395,6 +1400,7 @@ apply_target_release() {
   # or system files.
   release_optional_file nirux "$RELEASE" nirux-wallpapers.tar.xz
   release_optional_file nirux "$RELEASE" nirux-terminal.tar.xz
+  release_optional_file nirux "$RELEASE" nirux-integration.tar.xz
   apply_prepare_backup
   APPLY_OK=0
   trap 'apply_restore_config' EXIT INT TERM HUP
@@ -1403,8 +1409,10 @@ apply_target_release() {
   install_wallpapers
   install_terminal
   prepare_pam
+  install_greeters "$DM"
   register_session
-  if [ "$operation" = install ]; then setup_startx; enable_services; fi
+  setup_startx
+  if [ "$operation" = install ]; then enable_services; fi
   activate
   APPLY_OK=1
   trap - EXIT INT TERM HUP
@@ -1422,6 +1430,7 @@ stage_release() {
   release_files nirux "$RELEASE" nirux manifest config.example.toml appearance.example.toml
   release_optional_file nirux "$RELEASE" nirux-wallpapers.tar.xz
   release_optional_file nirux "$RELEASE" nirux-terminal.tar.xz
+  release_optional_file nirux "$RELEASE" nirux-integration.tar.xz
   [ "$(manifest_version schema)" = 1 ] || die "unsupported manifest schema"
   [ "$(manifest_version suite)" = "$RELEASE" ] || die "suite/manifest version mismatch"
   sh -n "$WORK/download/nirux/nirux"
@@ -1496,7 +1505,11 @@ activate() {
   sync_front_links
   say "Activated NIRUX $RELEASE. Previous generation retained for nirux rollback."
 }
-owned() { grep -qxF "# NIRUX owner: $PREFIX" "$1"; }
+owned() {
+  grep -qxF "# NIRUX owner: $PREFIX" "$1" ||
+    grep -qxF "// NIRUX owner: $PREFIX" "$1" ||
+    grep -qxF "/* NIRUX owner: $PREFIX */" "$1"
+}
 legacy_owned() {
   case "$1" in
     */xsessions/niruwm.desktop) grep -qxF "Exec=\"$BIN/niruwm-session\"" "$1" ;;
@@ -1526,14 +1539,92 @@ prepare_pam() {
   { say "# NIRUX owner: $PREFIX"; cat "$pam_source"; } > "$WORK/pam"
   write_system "$ROOT/etc/pam.d/nirulock" "$WORK/pam"
 }
+install_greeters() {
+  greeter_dm=${1:-keep}
+  case "$greeter_dm" in
+    keep)
+      if [ -f "$ROOT/etc/sddm.conf.d/50-nirux.conf" ] && owned "$ROOT/etc/sddm.conf.d/50-nirux.conf"; then
+        greeter_dm=sddm
+      elif [ -f "$ROOT/usr/share/lightdm/lightdm-gtk-greeter.conf.d/50-nirux.conf" ] &&
+           owned "$ROOT/usr/share/lightdm/lightdm-gtk-greeter.conf.d/50-nirux.conf"; then
+        greeter_dm=lightdm
+      fi
+      ;;
+  esac
+
+  archive=$WORK/download/nirux/nirux-integration.tar.xz
+  [ -f "$archive" ] || return 0
+  unpack=$WORK/integration-unpack
+  rm -rf "$unpack"
+  mkdir -p "$unpack" || die 'could not create the integration extraction directory'
+  tar -xJf "$archive" -C "$unpack" || die 'could not extract the NIRUX integration assets'
+  [ -f "$unpack/polkit/49-nirux-power.rules" ] || die 'integration archive is missing the power rule'
+  { say "// NIRUX owner: $PREFIX"; cat "$unpack/polkit/49-nirux-power.rules"; } > "$WORK/power.rules"
+  # Power actions stay passwordless only for a local, active administrator.
+  write_system "$ROOT/etc/polkit-1/rules.d/49-nirux-power.rules" "$WORK/power.rules"
+
+  case "$greeter_dm" in
+    sddm)
+      for file in theme.conf metadata.desktop arrow.png; do
+        [ -f "$unpack/sddm/$file" ] || die "integration archive is missing sddm/$file"
+        write_system "$ROOT/usr/share/sddm/themes/nirux/$file" "$unpack/sddm/$file"
+      done
+      [ -f "$unpack/background.png" ] || die 'integration archive is missing background.png'
+      write_system "$ROOT/usr/share/sddm/themes/nirux/background.png" "$unpack/background.png"
+      [ -f "$unpack/sddm/Main.qml" ] || die 'integration archive is missing sddm/Main.qml'
+      { say "// NIRUX owner: $PREFIX"; cat "$unpack/sddm/Main.qml"; } > "$WORK/sddm-Main.qml"
+      write_system "$ROOT/usr/share/sddm/themes/nirux/Main.qml" "$WORK/sddm-Main.qml"
+      { say "# NIRUX owner: $PREFIX"; say '[Theme]'; say 'Current=nirux'; } > "$WORK/sddm-nirux.conf"
+      write_system "$ROOT/etc/sddm.conf.d/50-nirux.conf" "$WORK/sddm-nirux.conf"
+      say 'Installed NIRUX SDDM greeter'
+      ;;
+    lightdm)
+      [ -f "$unpack/lightdm/50-nirux.conf" ] || die 'integration archive is missing the LightDM greeter config'
+      [ -f "$unpack/gtk/index.theme" ] || die 'integration archive is missing the GTK theme'
+      [ -f "$unpack/gtk/gtk-3.0/gtk.css" ] || die 'integration archive is missing the GTK stylesheet'
+      as_root install -d -m 755 "$ROOT/usr/share/nirux/greeter"
+      write_system "$ROOT/usr/share/nirux/greeter/rooted-in-less.png" "$unpack/background.png"
+      { say "# NIRUX owner: $PREFIX"; cat "$unpack/lightdm/50-nirux.conf"; } > "$WORK/lightdm-nirux.conf"
+      write_system "$ROOT/usr/share/lightdm/lightdm-gtk-greeter.conf.d/50-nirux.conf" \
+        "$WORK/lightdm-nirux.conf"
+      { say "# NIRUX owner: $PREFIX"; cat "$unpack/gtk/index.theme"; } > "$WORK/gtk-index.theme"
+      write_system "$ROOT/usr/share/themes/NIRU/index.theme" "$WORK/gtk-index.theme"
+      { say "/* NIRUX owner: $PREFIX */"; cat "$unpack/gtk/gtk-3.0/gtk.css"; } > "$WORK/gtk.css"
+      write_system "$ROOT/usr/share/themes/NIRU/gtk-3.0/gtk.css" "$WORK/gtk.css"
+      say 'Installed NIRUX LightDM GTK greeter'
+      ;;
+  esac
+  rm -rf "$unpack"
+}
+
+remove_greeters() {
+  remove_system "$ROOT/etc/polkit-1/rules.d/49-nirux-power.rules"
+  remove_system "$ROOT/etc/sddm.conf.d/50-nirux.conf"
+  if [ -f "$ROOT/usr/share/sddm/themes/nirux/Main.qml" ] &&
+     owned "$ROOT/usr/share/sddm/themes/nirux/Main.qml"; then
+    as_root rm -rf "$ROOT/usr/share/sddm/themes/nirux"
+  fi
+  remove_system "$ROOT/usr/share/lightdm/lightdm-gtk-greeter.conf.d/50-nirux.conf"
+  if [ -f "$ROOT/usr/share/themes/NIRU/index.theme" ] &&
+     owned "$ROOT/usr/share/themes/NIRU/index.theme"; then
+    as_root rm -rf "$ROOT/usr/share/themes/NIRU"
+  fi
+  if [ -f "$ROOT/usr/share/nirux/greeter/rooted-in-less.png" ]; then
+    as_root rm -f "$ROOT/usr/share/nirux/greeter/rooted-in-less.png"
+    as_root rmdir "$ROOT/usr/share/nirux/greeter" "$ROOT/usr/share/nirux" 2>/dev/null || :
+  fi
+}
+
 register_session() {
   { say "# NIRUX owner: $PREFIX"; say '[Desktop Entry]'; say 'Name=NIRUWM'; say 'Type=Application'; say "Exec=\"$BIN/niruwm-session\""; say 'DesktopNames=NIRUWM'; } > "$WORK/session.desktop"
   write_system "$ROOT/usr/share/xsessions/niruwm.desktop" "$WORK/session.desktop"
 }
 setup_startx() {
-  # Never replace an existing user's xinitrc, including a symlink.
-  if [ ! -e "$HOME/.xinitrc" ] && [ ! -L "$HOME/.xinitrc" ]; then
-    { say '#!/bin/sh'; say "# NIRUX owner: $PREFIX"; say "exec \"$BIN/niruwm-session\""; } > "$WORK/xinitrc"
+  # Never replace an existing user's xinitrc, including a symlink. Refresh the
+  # NIRUX-owned file so an update can add the startx welcome marker.
+  if { [ ! -e "$HOME/.xinitrc" ] && [ ! -L "$HOME/.xinitrc" ]; } ||
+     { [ -f "$HOME/.xinitrc" ] && owned "$HOME/.xinitrc"; }; then
+    { say '#!/bin/sh'; say "# NIRUX owner: $PREFIX"; say 'export NIRUX_STARTX=1'; say "exec \"$BIN/niruwm-session\""; } > "$WORK/xinitrc"
     install -m 755 "$WORK/xinitrc" "$HOME/.xinitrc"
   fi
   say "From a local TTY: startx $BIN/niruwm-session"
@@ -1612,6 +1703,10 @@ status() {
   else say 'missing or different display-manager session'; result=1
   fi
   if check_pam; then say 'PAM includes and permissions OK (password authentication not exercised)'; else result=1; fi
+  if [ -f "$ROOT/etc/polkit-1/rules.d/49-nirux-power.rules" ] &&
+     owned "$ROOT/etc/polkit-1/rules.d/49-nirux-power.rules"; then
+    say 'installed local power polkit rule'
+  else say 'missing local power polkit rule'; result=1; fi
   browser_status || result=1
   if [ -L "$STATE/current" ]; then say "generation: $(readlink "$STATE/current")"; fi
   if [ -x "$HOME/.local/bin/nirupi-session" ] || [ -f "$ROOT/usr/share/xsessions/nirupi-dwm.desktop" ]; then say 'NIRUPI present (separate session)'; fi
@@ -1719,6 +1814,7 @@ uninstall() {
   lock
   remove_system "$ROOT/usr/share/xsessions/niruwm.desktop"
   remove_system "$ROOT/etc/pam.d/nirulock"
+  remove_greeters
   for program in $PROGRAMS; do
     if [ -L "$BIN/$program" ] && [ "$(readlink "$BIN/$program")" = "$STATE/current/bin/$program" ]; then rm -f "$BIN/$program"; fi
   done
@@ -1802,8 +1898,10 @@ install_or_update() {
   install_wallpapers
   install_terminal
   prepare_pam
+  install_greeters "$DM"
   register_session
-  if [ "$operation" = install ]; then setup_startx; enable_services; fi
+  setup_startx
+  if [ "$operation" = install ]; then enable_services; fi
   activate
   if [ -n "${DISPLAY:-}" ] && "$BIN/niructl" restart-bar; then
     say 'Running bar restarted. Log out/in to activate the new WM, idle daemon and session.'
