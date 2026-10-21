@@ -3,8 +3,8 @@
 Canonical raw URL:
 https://raw.githubusercontent.com/nirucon/nirux/main/docs/NEXT-SESSION.md
 
-This brief is independent of local session memory. **N5 capture and review are released; finish notification actions and physical verification.**
-The active feature order is **N5 nirushot** (N1–N4 are done). The first section of
+This brief is independent of local session memory. **N1–N5 are done; physical multi-output verification is queued.**
+The active feature queue N1–N5 is complete. The first section of
 [ROADMAP.md](../ROADMAP.md) defines scope and completion criteria. P1–P6 are
 recorded as implemented with deferred verification; P2 remains partial.
 S01/S02, S03, S04, theme/extra wallpapers, kitty/fish, the wallpaper launcher, mouse move/resize, workspace autostart, live notification themes, the power menu, greeter themes and the session welcome are done in 0.10.57.
@@ -18,9 +18,9 @@ Fortsätt utvecklingen av NIRU-sviten. Läs först aktuella GitHub-filer:
 - https://raw.githubusercontent.com/nirucon/nirux/main/docs/history/CHECKPOINT-0.10.57.md
 - https://raw.githubusercontent.com/nirucon/nirux/main/docs/REPOSITORIES.md
 
-Utgå från NIRUX 0.10.64:
+Utgå från NIRUX 0.10.65:
 niruwm 0.16.59, nirubar 0.18.26, niruscreensaver 0.8.3,
-nirulock 0.16.10, nirulauncher 0.2.11, nirunotify 0.3.7, nirushot 0.2.0.
+nirulock 0.16.10, nirulauncher 0.2.11, nirunotify 0.3.7, nirushot 0.3.0.
 Kontrollera manifest, git-status, GitHub main och senaste fulla CI på nytt.
 Versionslistan är en startpunkt, inte ett skäl att skriva över nyare arbete.
 

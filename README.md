@@ -8,10 +8,10 @@ nirulauncher and nirunotify, plus Xorg, kitty/fish, theme wallpapers, the NIRU
 terminal colours and a graphical Polkit agent for power actions. Niru Noir is the
 default theme; Nord, Satie and Carl Larsson are also available.
 
-**0.10.64 status:** adds nirushot's native review surface with crop, rectangle,
-arrow and opaque masking, and routes Super+Print/Print through nirushot.
-NIRUX provisions BlueZ, power-profiles-daemon and xclip alongside the existing
-tools.
+**0.10.65 status:** completes nirushot's native review surface with themed
+toolbar/typography, crop, rectangle, arrow and opaque masking, plus notification
+actions. Super+Print/Print route through nirushot. NIRUX provisions BlueZ,
+power-profiles-daemon and xclip alongside the existing tools.
 The suite includes managed Helium, kitty/fish integration, themed panels and
 greeters, dwm-style mouse controls, workspace autostart, diagnostics, work modes
 and recipes. See [microphone setup](docs/INSTALL.md#microphone-module).
