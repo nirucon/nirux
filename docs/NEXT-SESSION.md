@@ -3,10 +3,11 @@
 Canonical raw URL:
 https://raw.githubusercontent.com/nirucon/nirux/main/docs/NEXT-SESSION.md
 
-This brief is independent of local session memory. **P1–P6 are implemented.**
-No feature milestone remains in the active queue. The owner will run the
-deferred rendered-value, autostart edge-case, hardware and hotplug tests. P2
-remains partly open for owner-present hardware checks.
+This brief is independent of local session memory. **Start with N1.**
+The active feature order is **N1 microphone → N2 Bluetooth → N3 built-in display
+profiles → N4 power profiles → N5 nirushot**. The first section of
+[ROADMAP.md](../ROADMAP.md) defines scope and completion criteria. P1–P6 are
+recorded as implemented with deferred verification; P2 remains partial.
 S01/S02, S03, S04, theme/extra wallpapers, kitty/fish, the wallpaper launcher, mouse move/resize, workspace autostart, live notification themes, the power menu, greeter themes and the session welcome are done in 0.10.56.
 H01 is partially complete: Debian and Arch passed fresh VMs. A fresh Void VM and physical audio/lock/suspend checks remain.
 
@@ -36,19 +37,23 @@ DND, ljudnoder, display, inhibit och processöversikt. Kvar för P2 är att äga
 är närvarande för lock/unlock, suspend/resume, hörbart ljud, faktisk poweroff
 och extern skärm. Lämna P2 öppen.
 
-P3 är påbörjad i 0.10.56: docs/STYLE.md, fontanpassade launcher-rader med
-accentmarkering, WELCOME_NOTIFICATION=always|once|off, niructl audio för
-utgång/mikrofon/mute/volym samt NIRUBARs displaymodul för flera skärmar.
-NIRUBAR, NIRULAUNCHER och NIRUNOTIFY har nu rendered-value-tester för temafärger.
-Fortsätt P3 med greeters och lock samt den kompletta småskärms-/hotplug-matrisen.
-P4: tillförlitlig workspace-autostart även för långsamma appar.
-P5: förklara saknade funktioner och fel i launchern via doctor/niructl.
-P6: arbetslägen och workspace-recept ovanpå P4/P5.
+Börja med N1: läs befintliga niructl audio sources/mic-mute och bygg en valfri
+microphone-modul i NIRUBAR ovanpå samma CLI. Visa mute, vald ingång och nivå;
+skilj unmuted från faktiskt inspelande. Följ roadmapens klarkriterier.
+
+Fortsätt sedan exakt N2 → N3 → N4 → N5:
+- N2: BlueZ-status och kontroll av parade Bluetooth-enheter.
+- N3: skärmprofiler INBYGGT i niructl/WM/bar/launcher, med preview och revert.
+  Vänta med större nytt skärmrepo; skapa inte nirudisplay.
+- N4: strömprofiler via en befintlig provider och ärlig capability-detektering.
+- N5: nirushot som eget on-demand-verktyg; capture/copy/save först, sedan enkel
+  crop/markering/maskning. Skapa repot först när arbetet med N5 börjar.
 
 Läs första steg och klarkriterier för aktuell punkt innan kodändringar.
-Gamla H01/C01–C07/R01 är krav och evidens, inte en konkurrerande arbetskö.
-Dokumentera exakt blockerare om fysisk hårdvara saknas; markera inte P2 klar
-utifrån containertester. Fortsätt då oberoende P3-arbete enligt roadmapen.
+Gamla P1–P6/H01/C01–C07/R01 är krav och evidens, inte en konkurrerande arbetskö.
+Ägaren har skjutit upp närvarokrävande tester. Bevara dem som öppna punkter,
+markera inte P2 klar utifrån containertester och fortsätt det oberoende arbetet
+enligt N1–N5.
 
 Krav:
 - Stöd vanilla Void glibc, Debian och Arch, x86_64/glibc.
@@ -57,7 +62,7 @@ Krav:
   och rollback.
 - Ingen ny obligatorisk daemon, GUI-framework, tjänst eller repo när befintliga
   komponenter räcker. Använd launcher/WM/bar/niructl för små innovationer.
-- Arbeta i små verifierade checkpoints med riktig evidens, en P1–P6-punkt
+- Arbeta i små verifierade checkpoints med riktig evidens, en N1–N5-punkt
   åt gången. Samla närliggande småfixar inom respektive punkt och följ dess
   klarkriterier samt relevanta C01–C07-krav. Uppdatera status i roadmapen.
 - Committa/pusha/publicera efter varje verifierad färdig punkt enligt användarens
@@ -77,7 +82,7 @@ Lokala kloner kan finnas i ~/.cache/niru-work/{nirux,niruwm,nirubar}.
 Lita inte på /tmp/opencode; den katalogen tömdes under tidigare arbete.
 Om kloner saknas, klona från https://github.com/nirucon/<repo>.
 
-Börja med en kort sammanfattning av verifierat läge och nästa testpunkt och
+Börja med en kort sammanfattning av verifierat läge och första steget i N1 samt
 vilka filer du behöver ändra. Fortsätt sedan arbetet.
 ```
 

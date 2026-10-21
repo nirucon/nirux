@@ -4,10 +4,123 @@ Priority order updated **2026-10-21**. Published baseline: **NIRUX 0.10.56**.
 
 ## Start here — the active work queue
 
-**All six milestones P1–P6 are implemented. P2 has passing non-disruptive checks; the owner will run the deferred test/hardware matrix when available.**
-No feature milestone remains. Use the deferred test checklist below when the owner is ready.
-These six points supersede the previous H01-first ordering. The older task
-IDs below are supporting requirements and evidence, not a competing queue.
+**Start with N1. Work in order N1 → N2 → N3 → N4 → N5.**
+This is the owner's next feature queue. All five points are planned, not yet
+implemented. Reuse existing components for N1–N4. Display profiles stay built
+into NIRUX; a larger display repository is deferred. N5 plans a separate,
+on-demand `nirushot` tool.
+
+| Order / ID | Status | Deliverable |
+|---|---|---|
+| 1 / N1 | TODO — **START HERE** | Microphone state, mute, input selection and level |
+| 2 / N2 | TODO | Bluetooth state and controls for paired devices |
+| 3 / N3 | TODO | Built-in display profiles with preview and automatic revert |
+| 4 / N4 | TODO | Capability-aware power-profile selection |
+| 5 / N5 | TODO | nirushot: capture, copy/save and small annotation workflow |
+
+### N1 — Microphone module
+
+- **First step:** inspect the existing `niructl audio sources` and mic-mute
+  controls. Extend that path instead of adding a second audio implementation.
+- Add an optional NIRUBAR `microphone` module showing muted, unmuted, no input
+  or provider unavailable. Show the selected input and level in its panel.
+- Provide explicit mute, input selection and level controls using the same
+  CLI as the launcher. Reading a panel must never toggle mute.
+- Keep the bar compact with a documented visibility setting. Recording-use
+  indication is optional and only shown when confirmed by PipeWire; unmuted
+  must never be labelled as actively recording.
+- **Done when:** changing the default input or mute externally updates the
+  module; controls and CLI agree; missing provider/device is explained; theme
+  colours, keyboard access and large-font layout work.
+- **Main repositories:** nirubar, niruwm/niructl, nirulauncher, nirux.
+
+### N2 — Bluetooth module
+
+- **First step:** inspect BlueZ adapter/device properties and the dependency
+  and service mappings on Arch, Debian and Void.
+- Add an optional NIRUBAR `bluetooth` module: unavailable, blocked/off, on,
+  connected. Hide by default when no adapter exists.
+- Panel: paired devices, connection state and battery percentage only when
+  the device reports it. Provide power on/off and connect/disconnect actions
+  for paired devices through one shared CLI path.
+- Use BlueZ signals or bounded cached queries. Pairing can open an existing
+  manager/agent on demand; include its dependencies when offered.
+- **Done when:** external state changes, missing BlueZ/adapter, rfkill,
+  connection failure and unknown battery are handled honestly. Opening the
+  panel performs no connection or pairing action. No new resident NIRU daemon.
+- **Main repositories:** nirubar, niruwm/niructl, nirulauncher, nirux.
+
+### N3 — Display profiles, built in
+
+- **First step:** inspect current RandR/hotplug handling and define a small
+  profile format for outputs, modes, positions, rotation and primary output.
+- Implement list/save/preview/keep/revert in niructl, applied through the WM's
+  existing output handling. Add launcher selection and access from the bar's
+  display panel. Ship opt-in examples: Laptop, Desk and Presentation.
+- Preserve a known-good layout before preview. Require an explicit Keep;
+  automatically revert after a short countdown if it is not confirmed.
+- Validate connected output identities and supported modes before applying.
+  Unplugging a display or a failed apply must leave a usable internal/remaining
+  display and reachable windows. Hotplug may suggest a profile; first version
+  does not silently apply one.
+- **Done when:** valid profiles apply, invalid/unavailable profiles explain
+  why, timeout and cancellation restore the layout, and WM/bar/workspaces and
+  night light recover after output changes.
+- **Main repositories:** niruwm/niructl, nirubar, nirulauncher, nirux.
+  **No nirudisplay repository in this queue.**
+
+### N4 — Power-profile module
+
+- **First step:** detect available provider capabilities on all three distros;
+  define one CLI adapter for status/list/set and provider errors.
+- Add an optional NIRUBAR `powerprofile` module and launcher actions for
+  Power saver, Balanced and Performance, exposing only profiles the provider
+  actually supports. Show AC/battery context and reported restrictions.
+- Use an existing provider such as power-profiles-daemon or a compatible
+  alternative. Do not run competing policy services or write guessed CPU/sysfs
+  settings when no provider exists. NIRUX provisions the selected provider and
+  service when the feature is enabled.
+- **Done when:** profile changes are confirmed, external changes update the
+  UI, unsupported/denied/held profiles are explained, and no-provider machines
+  keep a clean bar. No automatic battery-based switching in the first version.
+- **Main repositories:** nirubar, niruwm/niructl, nirulauncher, nirux.
+
+### N5 — nirushot
+
+- **First step:** inspect existing maim/slop/clipboard shortcuts and define the
+  CLI, capture backend and minimal native review UI before creating the repo.
+- **First delivery:** region, selected window and full-screen capture; save to
+  a chosen file or copy the image; delayed capture; Escape/cancel; notification
+  actions for Open, Copy and Show in folder. Keep the existing screenshot
+  shortcut as fallback until the released tool is integrated.
+- **Second delivery, same point:** an on-demand review surface with crop,
+  simple rectangle/arrow annotation and opaque masking. Save an edited copy
+  without silently overwriting the original. Use NIRU theme/type/spacing.
+- Reuse working X11 capture and clipboard tools where suitable. No upload,
+  screen recorder, mandatory clipboard manager or background screenshot service.
+- **Done when:** capture/cancel/save/copy and notification actions work across
+  multi-output geometry, saved files have the expected content, editing/masking
+  produces the exported result, and failure leaves no grabs or stray helpers.
+  Then publish checksummed assets and integrate manifest, dependencies,
+  shortcuts, diagnostics, rollback and owned uninstall in NIRUX.
+- **Main repositories:** new nirushot (created during N5), nirux, niruwm,
+  nirulauncher, nirunotify.
+
+### Working rule for N1–N5
+
+Finish one point before starting the next. Each point needs implementation,
+configuration/example, concise docs, appropriate automated checks and a recorded
+result. Release and deploy verified runtime changes to ThinkPad and Void,
+preserving the separate NIRUPI setup. Keep owner-present hardware checks on an
+explicit deferred list when the owner is unavailable; do not mark them passed.
+Update the current ID, status and next concrete step in this file and the
+next-session prompt together.
+
+## Previous queue — P1–P6 and deferred acceptance
+
+P1–P6 are recorded as implemented, with verification limits below. P2 remains
+partial. The owner's deferred hardware/test work is retained and does not
+replace the new N1–N5 feature order.
 
 | Order / ID | Status | Deliverable |
 |---|---|---|
@@ -105,19 +218,19 @@ IDs below are supporting requirements and evidence, not a competing queue.
   engine; no extra resident service or mandatory application is introduced.
 - **Main repositories:** niructl, niruwm, nirulauncher, nirubar.
 
-### How to work through the queue
+### Earlier queue acceptance rules
 
 Take one point at a time: reproduce → implement → verify → document → release
-and deploy when applicable. Change its status here as work progresses. Record
-remaining limits and the next concrete step before moving on. If hardware or
-access blocks P2, record the exact blocker and continue independent work in
-P3; P2 remains open. Existing detailed acceptance requirements below still apply.
+and deploy when applicable. Record remaining limits and the next concrete
+step. P2 remains open for the deferred owner-present work. These earlier
+acceptance requirements still apply to changes touching those paths; the
+active feature order is N1–N5 at the top of this file.
 
 - **Start here after restarting OpenCode:** [NEXT-SESSION.md](docs/NEXT-SESSION.md)
 - **Evidence and open defects:** [restart review](docs/REVIEW-2026-10-20-RESTART.md)
 - **Repositories:** [inventory](docs/REPOSITORIES.md)
 - **Previous work:** [delivery history through 0.10.30](docs/history/ROADMAP-0.10.30.md)
-- **Current checkpoint evidence:** [0.10.53 P3 display status](docs/history/CHECKPOINT-0.10.53.md)
+- **Current checkpoint evidence:** [0.10.56 work modes and recipes](docs/history/CHECKPOINT-0.10.56.md)
 - **S04 runtime audit:** [package and normal-user results](docs/history/AUDIT-S04-0.10.35.md)
 - **R01 performance baseline:** [idle and startup measurements](docs/history/AUDIT-R01-BASELINE.md)
 - **H01 partial fresh-VM evidence:** [Debian/Arch VMs and gaps](docs/history/AUDIT-H01-PARTIAL.md)
@@ -179,7 +292,7 @@ passed. The follow-ups below supersede historical claims of full completion.
 ## 3. Previous delivery and hardware evidence — reference only
 
 The table below preserves previous delivery evidence. Start new work from the
-P1–P6 queue above, not from the order of these historical rows.
+N1–N5 queue above, not from the order of these historical rows.
 
 | ID / status | Exact next work | Acceptance |
 |---|---|---|
@@ -196,8 +309,8 @@ P1–P6 queue above, not from the order of these historical rows.
 | S04 / DONE | Rechecked the complete vanilla package/runtime matrix on Arch, Debian Bookworm and Void glibc. Release install as a normal user, status/doctor, startx, WM/bar, theme wallpaper, maim screenshot, font/cursor fallback, audio process start and Helium were exercised. Evidence: [S04 audit](docs/history/AUDIT-S04-0.10.35.md). | No manual suite package fixes; package versions and normal-user runtime recorded. Physical audio, PAM unlock and lock/suspend remain H01. |
 | H01 / PARTIAL — now part of P2 | Debian and Arch passed on fresh LXD VMs: empty-home 0.10.35 install, status/doctor, startx/WM/bar, wallpaper theme change, maim screenshot, Helium sandbox, PAM auth, update, rollback and purge. Evidence: [H01 partial audit](docs/history/AUDIT-H01-PARTIAL.md). Remaining: fresh Void VM/physical clean OS, physical audio, lock/unlock and suspend/output. | Debian/Arch VM acceptance done. H01 completes only when Void and physical hardware paths are recorded. Containers/Xvfb remain supporting evidence. |
 
-**The active queue is P1–P6 at the top of this file.** H01 is included in P2;
-optional notification images and new repositories remain later work.
+**The active queue is N1–N5 at the top of this file.** H01 is included in P2;
+optional notification images and repositories outside N5 remain later work.
 
 ### Three-distro acceptance sheet
 
@@ -218,7 +331,7 @@ These are detailed requirements, not a second priority list. Apply C01/C06 in
 P3, C02/C07 and hardware/resource verification in P2, notification lifecycle in
 P1, and relevant input/provider checks wherever P1–P6 touch them. Unrelated
 remaining C03–C05 work stays in the backlog after P6. Legacy priority labels do
-not override the active queue.
+not override the active N1–N5 queue.
 
 | ID / priority | Repositories and work | Done when |
 |---|---|---|
@@ -240,12 +353,13 @@ must not be forcibly logged out for testing.
 ## 5. Later ideas — after the active queue
 
 Explain this state is now P5; Focus/Presentation modes and workspace recipes
-are P6. The remaining ideas below are not prerequisites for starting P1–P6:
+are P6. The remaining ideas below are not prerequisites for starting N1–N5:
 
 1. **Desktop lens** — local queries for `window`, `workspace`, `audio`, `battery`,
    `display`, `weather`; show cached facts with explicit existing actions.
-2. **Docking profiles** — output identity, workspace affinity, bar density and
-   night-light reapply, with preview and timed revert. Hardware acceptance first.
+2. **Advanced docking automation** — beyond N3's built-in manual display
+   profiles: workspace affinity, bar density and optional automatic matching.
+   Reuse N3 preview/revert and hardware evidence before expanding it.
 3. **First-login self-check** — on-demand completion screen in the launcher:
    audio/browser/font/backlight shortcuts and why something is unavailable.
    No resident onboarding process and no telemetry.
@@ -272,11 +386,10 @@ Use nplay/MPRIS for media/radio rather than requiring QuickShell. See the
 | P06 | nplay/cmus/REAPER themes | Declarative validation, preserve edits, optional appearance export after C01. |
 | P07 | DAW and REAPER compatibility | Test REAPER on all three distros with ALSA and PipeWire JACK, correct window classes/floating rules for plugin/dialog windows, realtime permissions and documented plugin limitations. Optional app only; no mandatory DAW package or Wine/yabridge layer. |
 
-**Conditional new repo idea: `nirudisplay`**, an optional native display-profile
-editor, only if docking-profile work proves independently reusable. Start with
-niructl/WM RandR support and preview/revert; no daemon, mandatory compositor,
-network service or replacement session manager. It is a proposal, not an
-approved dependency or a repository that already exists.
+**Repository scope:** N3 display profiles remain in niructl/WM/bar/launcher.
+The larger `nirudisplay` repository idea is deferred. N5 plans `nirushot` as an
+independent, on-demand capture/review tool; it has not been created by this
+roadmap update.
 
 ## 7. Working/release rules and restart
 
