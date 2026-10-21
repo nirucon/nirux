@@ -1,4 +1,4 @@
-# 0.10.49/0.10.50 — P3 audio device controls
+# 0.10.49–0.10.51 — P3 audio device controls
 
 Date: 2026-10-21. P3 remains in progress.
 
@@ -47,6 +47,7 @@ external-display checks.
 
 ## Release and deployment evidence
 
-NIRUWM 0.16.46 and NIRULAUNCHER 0.2.5 were published in 0.10.49; NIRUWM
-0.16.47 fixes offline audio execution. NIRUX 0.10.50 pins the fixed NIRUWM.
+NIRUWM 0.16.46 and NIRULAUNCHER 0.2.5 were published in 0.10.49; NIRUWM 0.16.47 fixed offline audio execution; 0.16.48 filters video
+sources and verifies default changes; 0.16.49 excludes the current device when
+cycling. NIRUX 0.10.51 pins 0.16.49.
 CI, release and both-host deployment results are added after publication.

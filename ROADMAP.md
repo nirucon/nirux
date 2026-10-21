@@ -1,6 +1,6 @@
 # NIRU desktop — current roadmap and restart handoff
 
-Priority order updated **2026-10-21**. Published baseline: **NIRUX 0.10.50**.
+Priority order updated **2026-10-21**. Published baseline: **NIRUX 0.10.51**.
 
 ## Start here — the active work queue
 
@@ -145,8 +145,8 @@ drivers/firmware must be documented separately from suite provisioning.
 
 | Repository | Pinned release | Responsibility |
 |---|---|---|
-| nirux | 0.10.50 | Packages, generations, target-owned apply, managed Helium, wallpapers, kitty/fish |
-| niruwm | 0.16.47 | WM, session, niructl, niruidle, theme wallpapers, terminal hook |
+| nirux | 0.10.51 | Packages, generations, target-owned apply, managed Helium, wallpapers, kitty/fish |
+| niruwm | 0.16.49 | WM, session, niructl, niruidle, theme wallpapers, terminal hook |
 | nirubar | 0.18.19 | Per-output bar, tray, panels, weather |
 | niruscreensaver | 0.8.3 | Unlocked idle surface |
 | nirulock | 0.16.10 | PAM lock, input grabs and readiness |
