@@ -379,8 +379,12 @@ and starts Helium as a normal user with the Chromium sandbox enabled. The
 browser archive is never started with `--no-sandbox`.
 `sh tests/release-smoke.sh` tests the actual pinned component releases, diagnostics,
 startx/xinit with the generated xinitrc, bar restart and uninstall in an isolated
-home (requires the dependencies and Xvfb). Component repositories additionally
-test bar crash recovery, logout cleanup and real non-root PAM authentication.
+home (requires the dependencies and Xvfb). `tests/live-acceptance.sh` is a
+read-only check for an already running session: versions, displays, power
+authorisation, DND, audio nodes, sleep inhibitor, notification owner and a
+resource snapshot. It reports owner-present hardware checks as warnings rather
+than claiming them as passed. Component repositories additionally test bar crash
+recovery, logout cleanup and real non-root PAM authentication.
 A physical local-TTY/GPU startx boot is separate from container/Xvfb testing.
 
 MIT. Copyright 2026 Nicklas Rudolfsson.

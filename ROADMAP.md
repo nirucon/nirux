@@ -1,18 +1,19 @@
 # NIRU desktop — current roadmap and restart handoff
 
-Priority order updated **2026-10-21**. Published baseline: **NIRUX 0.10.46**.
+Priority order updated **2026-10-21**. Published baseline: **NIRUX 0.10.47**.
 
 ## Start here — the active work queue
 
-**P1 is done in 0.10.46. Start with P2. Work in order P2 → P3 → P4 → P5 → P6.**
+**P1 is done. P2 has passing non-disruptive evidence but owner-present hardware tests remain open. Start with P3; finish P2 when the owner is present.**
+Work in order P3 → P4 → P5 → P6, keeping P2 open for the remaining hardware checks.
 These six points supersede the previous H01-first ordering. The older task
 IDs below are supporting requirements and evidence, not a competing queue.
 
 | Order / ID | Status | Deliverable |
 |---|---|---|
 | 1 / P1 | DONE in 0.10.46 | Reliable notification stacking and one working native DND path |
-| 2 / P2 | TODO — **START HERE** | Real power, login, suspend/resume and display acceptance |
-| 3 / P3 | TODO | Consistent typography, spacing, scaling and controls across the suite |
+| 2 / P2 | PARTIAL — owner-present tests open | Real power, login, suspend/resume and display acceptance |
+| 3 / P3 | TODO — **START HERE** | Consistent typography, spacing, scaling and controls across the suite |
 | 4 / P4 | TODO | Reliable workspace autostart for slow applications |
 | 5 / P5 | TODO | “Why is this unavailable?” diagnostics in the launcher |
 | 6 / P6 | TODO | Work modes and reusable workspace recipes |
@@ -115,7 +116,7 @@ P3; P2 remains open. Existing detailed acceptance requirements below still apply
 - **Evidence and open defects:** [restart review](docs/REVIEW-2026-10-20-RESTART.md)
 - **Repositories:** [inventory](docs/REPOSITORIES.md)
 - **Previous work:** [delivery history through 0.10.30](docs/history/ROADMAP-0.10.30.md)
-- **Current checkpoint evidence:** [0.10.46 notifications and DND](docs/history/CHECKPOINT-0.10.46.md)
+- **Current checkpoint evidence:** [0.10.47 P2 live acceptance](docs/history/CHECKPOINT-0.10.47.md)
 - **S04 runtime audit:** [package and normal-user results](docs/history/AUDIT-S04-0.10.35.md)
 - **R01 performance baseline:** [idle and startup measurements](docs/history/AUDIT-R01-BASELINE.md)
 - **H01 partial fresh-VM evidence:** [Debian/Arch VMs and gaps](docs/history/AUDIT-H01-PARTIAL.md)
@@ -143,8 +144,8 @@ drivers/firmware must be documented separately from suite provisioning.
 
 | Repository | Pinned release | Responsibility |
 |---|---|---|
-| nirux | 0.10.46 | Packages, generations, target-owned apply, managed Helium, wallpapers, kitty/fish |
-| niruwm | 0.16.43 | WM, session, niructl, niruidle, theme wallpapers, terminal hook |
+| nirux | 0.10.47 | Packages, generations, target-owned apply, managed Helium, wallpapers, kitty/fish |
+| niruwm | 0.16.44 | WM, session, niructl, niruidle, theme wallpapers, terminal hook |
 | nirubar | 0.18.19 | Per-output bar, tray, panels, weather |
 | niruscreensaver | 0.8.3 | Unlocked idle surface |
 | nirulock | 0.16.10 | PAM lock, input grabs and readiness |
