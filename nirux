@@ -2,7 +2,7 @@
 # NIRUX: install a complete X11 desktop, or maintain an existing installation.
 set -eu
 
-VERSION=0.10.71
+VERSION=0.10.72
 PREFIX=${NIRUX_PREFIX:-$HOME/.local}
 BIN=$PREFIX/bin
 STATE=$PREFIX/share/nirux
@@ -10,6 +10,10 @@ CONFDIR=${XDG_CONFIG_HOME:-$HOME/.config}/niruwm
 ROOT=${NIRUX_SYSTEM_ROOT:-}
 PROGRAMS="niruwm niructl niruidle nirubar niruscreensaver nirulock nirulauncher nirunotify nirushot niruwm-session nirux"
 WORK=
+POLICY_TARGET=
+POLICY_BACKUP=
+POLICY_TMP=
+POLICY_HAD=0
 LOCKED=0
 CONFIG_TMP=
 CONFIG_CANDIDATE=
@@ -39,6 +43,7 @@ usage() {
   say "Updates check and install missing runtime packages from the downloaded release unless --no-packages is given."
 }
 cleanup() {
+  restore_policy
   [ -z "$CONFIG_TMP" ] || rm -f "$CONFIG_TMP"
   [ -z "$CONFIG_CANDIDATE" ] || rm -f "$CONFIG_CANDIDATE"
   [ -z "$WORK" ] || rm -rf "$WORK"
@@ -119,6 +124,39 @@ browser_packages() {
     helium) browser_packages_for "$1" ;;
   esac
 }
+# Debian package post-install scripts start display managers immediately. NIRUX
+# has not installed the session yet at that point, so a newly started LightDM
+# or SDDM can take over the console before NIRUWM exists. Deny service starts
+# during package installation and restore the previous policy afterwards.
+restore_policy() {
+  [ -n "$POLICY_TARGET" ] || return 0
+  if [ "$POLICY_HAD" = 1 ] && [ -f "$POLICY_BACKUP" ]; then
+    as_root cp -p "$POLICY_BACKUP" "$POLICY_TARGET" || :
+  else
+    as_root rm -f "$POLICY_TARGET" || :
+  fi
+  POLICY_TARGET=
+  POLICY_BACKUP=
+  POLICY_HAD=0
+  [ -z "$POLICY_TMP" ] || rm -rf "$POLICY_TMP"
+  POLICY_TMP=
+}
+
+disable_service_starts() {
+  [ "$OS" = debian ] || return 0
+  POLICY_TARGET=$ROOT/usr/sbin/policy-rc.d
+  POLICY_TMP=$(mktemp -d "${TMPDIR:-/tmp}/nirux-policy.XXXXXX") || die 'could not create policy temp directory'
+  POLICY_BACKUP=$POLICY_TMP/policy-rc.d.saved
+  POLICY_HAD=0
+  if [ -e "$POLICY_TARGET" ]; then
+    as_root cp -p "$POLICY_TARGET" "$POLICY_BACKUP" || die 'could not preserve policy-rc.d'
+    POLICY_HAD=1
+  fi
+  printf '#!/bin/sh\nexit 101\n' > "$POLICY_TMP/policy-rc.d"
+  as_root install -d -m 755 "$ROOT/usr/sbin"
+  as_root install -m 755 "$POLICY_TMP/policy-rc.d" "$POLICY_TARGET" || die 'could not disable package service starts'
+}
+
 install_packages() {
   install_only=0
   if [ "$#" -gt 0 ]; then
@@ -163,7 +201,14 @@ install_packages() {
       ;;
     debian)
       as_root apt-get update
-      as_root env DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends $pkgs
+      disable_service_starts
+      if as_root env DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends $pkgs; then
+        apt_status=0
+      else
+        apt_status=$?
+      fi
+      restore_policy
+      [ "$apt_status" = 0 ] || return "$apt_status"
       ;;
     void)
       if [ "$install_only" = 1 ]; then
@@ -1421,6 +1466,7 @@ apply_target_release() {
   setup_startx
   enable_services
   activate
+  start_selected_dm
   APPLY_OK=1
   trap - EXIT INT TERM HUP
   rm -rf "$WORK/apply-backup"
@@ -1450,7 +1496,7 @@ stage_release() {
   # any staged binary is executed. This lets a new shared-library dependency be
   # present when the new component is first started and version-checked.
   if [ "$packages" = 1 ]; then
-    NIRUX_PROVISION_OS=$OS NIRUX_PROVISION_DM=$DM NIRUX_PROVISION_BROWSER=$BROWSER_EFFECTIVE \
+    NIRUX_SYSTEM_ROOT=$ROOT NIRUX_PROVISION_OS=$OS NIRUX_PROVISION_DM=$DM NIRUX_PROVISION_BROWSER=$BROWSER_EFFECTIVE \
       sh "$WORK/download/nirux/nirux" _provision missing
   fi
   # A new target installer stages the release through a versioned handoff, so a
@@ -1647,6 +1693,18 @@ setup_startx() {
   say "From a local TTY: startx $BIN/niruwm-session"
   say "If ~/.xinitrc selects NIRU, plain startx works too. Existing ~/.xinitrc is preserved."
 }
+# Start a selected display manager only after the session entry and the active
+# generation exist. Package installation must never start it early.
+start_selected_dm() {
+  [ "$operation" = install ] || return 0
+  case "$DM" in sddm|lightdm) ;; *) return 0 ;; esac
+  case "$OS" in arch|debian) ;; *) return 0 ;; esac
+  if ! as_root systemctl is-active --quiet "$DM.service" 2>/dev/null; then
+    as_root systemctl start "$DM.service" >/dev/null 2>&1 ||
+      say "Could not start $DM; reboot to use it"
+  fi
+}
+
 enable_services() {
   if [ "$OS" = void ]; then
     for service in dbus elogind; do
@@ -1932,6 +1990,7 @@ install_or_update() {
   setup_startx
   enable_services
   activate
+  start_selected_dm
   if [ -n "${DISPLAY:-}" ] && "$BIN/niructl" restart-bar; then
     say 'Running bar restarted. Log out/in to activate the new WM, idle daemon and session.'
   else say 'Log out/in to activate all updated programs. In a new NIRU session: niructl restart-bar.'
