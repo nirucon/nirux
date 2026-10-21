@@ -3,11 +3,11 @@
 Canonical raw URL:
 https://raw.githubusercontent.com/nirucon/nirux/main/docs/NEXT-SESSION.md
 
-This brief is independent of local session memory. **P1 is done. P2 is
-partially verified; start with P3 and finish P2 when the owner is present.**
-The owner's active order is **P3 → P4 → P5 → P6**, with P2 kept open, defined at
-the top of [ROADMAP.md](../ROADMAP.md).
-S01/S02, S03, S04, theme/extra wallpapers, kitty/fish, the wallpaper launcher, mouse move/resize, workspace autostart, live notification themes, the power menu, greeter themes and the session welcome are done in 0.10.47.
+This brief is independent of local session memory. **P3 is in progress.**
+The shared scale, font-aware launcher rows and configurable welcome are done.
+Continue P3 with controls and rendered-value checks; finish P2 when the owner
+is present. The active order is **P3 → P4 → P5 → P6**, with P2 kept open.
+S01/S02, S03, S04, theme/extra wallpapers, kitty/fish, the wallpaper launcher, mouse move/resize, workspace autostart, live notification themes, the power menu, greeter themes and the session welcome are done in 0.10.48.
 H01 is partially complete: Debian and Arch passed fresh VMs. A fresh Void VM and physical audio/lock/suspend checks remain.
 
 ## Copy-ready prompt
@@ -15,12 +15,12 @@ H01 is partially complete: Debian and Arch passed fresh VMs. A fresh Void VM and
 ```text
 Fortsätt utvecklingen av NIRU-sviten. Läs först aktuella GitHub-filer:
 - https://raw.githubusercontent.com/nirucon/nirux/main/ROADMAP.md
-- https://raw.githubusercontent.com/nirucon/nirux/main/docs/history/CHECKPOINT-0.10.47.md
+- https://raw.githubusercontent.com/nirucon/nirux/main/docs/history/CHECKPOINT-0.10.48.md
 - https://raw.githubusercontent.com/nirucon/nirux/main/docs/REPOSITORIES.md
 
-Utgå från NIRUX 0.10.47:
-niruwm 0.16.44, nirubar 0.18.19, niruscreensaver 0.8.3,
-nirulock 0.16.10, nirulauncher 0.2.3, nirunotify 0.3.7.
+Utgå från NIRUX 0.10.48:
+niruwm 0.16.45, nirubar 0.18.19, niruscreensaver 0.8.3,
+nirulock 0.16.10, nirulauncher 0.2.4, nirunotify 0.3.7.
 Kontrollera manifest, git-status, GitHub main och senaste fulla CI på nytt.
 Versionslistan är en startpunkt, inte ett skäl att skriva över nyare arbete.
 
@@ -36,8 +36,9 @@ DND, ljudnoder, display, inhibit och processöversikt. Kvar för P2 är att äga
 är närvarande för lock/unlock, suspend/resume, hörbart ljud, faktisk poweroff
 och extern skärm. Lämna P2 öppen.
 
-Börja nu med P3: gemensam typografi, spacing, skalning och små
-kontrollförbättringar. Fortsätt sedan P4–P6 enligt roadmapen.
+P3 är påbörjad i 0.10.48: docs/STYLE.md, fontanpassade launcher-rader med
+accentmarkering och WELCOME_NOTIFICATION=always|once|off. Fortsätt P3 med
+ljud-/skärmkontroller, rendered-value-tester och småskärms-/hotplug-matris.
 P4: tillförlitlig workspace-autostart även för långsamma appar.
 P5: förklara saknade funktioner och fel i launchern via doctor/niructl.
 P6: arbetslägen och workspace-recept ovanpå P4/P5.
@@ -74,7 +75,7 @@ Lokala kloner kan finnas i ~/.cache/niru-work/{nirux,niruwm,nirubar}.
 Lita inte på /tmp/opencode; den katalogen tömdes under tidigare arbete.
 Om kloner saknas, klona från https://github.com/nirucon/<repo>.
 
-Börja med en kort sammanfattning av verifierat läge, första steget för P3 och
+Börja med en kort sammanfattning av verifierat läge, nästa steg i P3 och
 vilka filer du behöver ändra. Fortsätt sedan arbetet.
 ```
 

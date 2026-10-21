@@ -1,10 +1,10 @@
 # NIRU desktop — current roadmap and restart handoff
 
-Priority order updated **2026-10-21**. Published baseline: **NIRUX 0.10.47**.
+Priority order updated **2026-10-21**. Published baseline: **NIRUX 0.10.48**.
 
 ## Start here — the active work queue
 
-**P1 is done. P2 has passing non-disruptive evidence but owner-present hardware tests remain open. Start with P3; finish P2 when the owner is present.**
+**P1 is done. P2 non-disruptive checks pass; owner-present hardware tests remain open. P3 is in progress: the shared scale, launcher rows and welcome setting are done. Continue with the remaining P3 controls and rendered-value checks.**
 Work in order P3 → P4 → P5 → P6, keeping P2 open for the remaining hardware checks.
 These six points supersede the previous H01-first ordering. The older task
 IDs below are supporting requirements and evidence, not a competing queue.
@@ -13,7 +13,7 @@ IDs below are supporting requirements and evidence, not a competing queue.
 |---|---|---|
 | 1 / P1 | DONE in 0.10.46 | Reliable notification stacking and one working native DND path |
 | 2 / P2 | PARTIAL — owner-present tests open | Real power, login, suspend/resume and display acceptance |
-| 3 / P3 | TODO — **START HERE** | Consistent typography, spacing, scaling and controls across the suite |
+| 3 / P3 | IN PROGRESS — scale, launcher and welcome done | Consistent typography, spacing, scaling and controls across the suite |
 | 4 / P4 | TODO | Reliable workspace autostart for slow applications |
 | 5 / P5 | TODO | “Why is this unavailable?” diagnostics in the launcher |
 | 6 / P6 | TODO | Work modes and reusable workspace recipes |
@@ -53,6 +53,7 @@ IDs below are supporting requirements and evidence, not a competing queue.
 
 - **First step:** define a small shared scale for typography, spacing, focus
   and semantic colours, then compare the existing components against it.
+  The scale is now recorded in [STYLE.md](docs/STYLE.md).
 - Apply it to launcher, bar panels, notifications and greeters. Preserve theme
   identity, custom overrides and an opaque lock background.
 - Make large fonts, small screens and mixed-width outputs work with measured
@@ -116,7 +117,7 @@ P3; P2 remains open. Existing detailed acceptance requirements below still apply
 - **Evidence and open defects:** [restart review](docs/REVIEW-2026-10-20-RESTART.md)
 - **Repositories:** [inventory](docs/REPOSITORIES.md)
 - **Previous work:** [delivery history through 0.10.30](docs/history/ROADMAP-0.10.30.md)
-- **Current checkpoint evidence:** [0.10.47 P2 live acceptance](docs/history/CHECKPOINT-0.10.47.md)
+- **Current checkpoint evidence:** [0.10.48 P3 visual scale](docs/history/CHECKPOINT-0.10.48.md)
 - **S04 runtime audit:** [package and normal-user results](docs/history/AUDIT-S04-0.10.35.md)
 - **R01 performance baseline:** [idle and startup measurements](docs/history/AUDIT-R01-BASELINE.md)
 - **H01 partial fresh-VM evidence:** [Debian/Arch VMs and gaps](docs/history/AUDIT-H01-PARTIAL.md)
@@ -144,12 +145,12 @@ drivers/firmware must be documented separately from suite provisioning.
 
 | Repository | Pinned release | Responsibility |
 |---|---|---|
-| nirux | 0.10.47 | Packages, generations, target-owned apply, managed Helium, wallpapers, kitty/fish |
-| niruwm | 0.16.44 | WM, session, niructl, niruidle, theme wallpapers, terminal hook |
+| nirux | 0.10.48 | Packages, generations, target-owned apply, managed Helium, wallpapers, kitty/fish |
+| niruwm | 0.16.45 | WM, session, niructl, niruidle, theme wallpapers, terminal hook |
 | nirubar | 0.18.19 | Per-output bar, tray, panels, weather |
 | niruscreensaver | 0.8.3 | Unlocked idle surface |
 | nirulock | 0.16.10 | PAM lock, input grabs and readiness |
-| nirulauncher | 0.2.3 | Apps, actions, windows, local recency/favourites |
+| nirulauncher | 0.2.4 | Apps, actions, windows, local recency/favourites |
 | nirunotify | 0.3.7 | Native notifications, actions, DND, history/OSD |
 
 All listed releases/assets were found on GitHub. Previous sessions reported
