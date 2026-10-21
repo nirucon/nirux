@@ -1,24 +1,51 @@
-# NIRUX
+# NIRUX - A minimal X11 desktop by Nicklas Rudolfsson
 
-Install, update and remove the NIRU X11 desktop on **Arch Linux, Debian and
-Void Linux (glibc, x86_64)**.
+**Early beta.** A small, keyboard-first X11 desktop for **Arch Linux, Debian and
+Void Linux (glibc, x86_64)**. The suite is crafted in Rust; the installer is a
+compact POSIX shell program. The result is fast, quiet and intentionally
+minimal: no desktop-environment stack and no unnecessary background services.
 
-NIRUX provides the complete suite, its X11 session, themes, wallpapers,
-terminal integration and the OS packages the components need. Niru Noir is the
-default theme; Nord, Satie and Carl Larsson are also included.
+NIRUX installs, updates and removes the complete NIRU desktop, including the
+window manager, bar, launcher, notifications, lock screen, idle screen,
+screenshots, themes, wallpapers, terminal integration and the OS packages the
+components need.
+
+## What it can do
+
+- **Window management:** tiling with seven layouts, per-monitor workspaces,
+  scratchpad, floating windows, fullscreen, gap control and session restore.
+- **Bar:** per-monitor workspaces, clock/calendar, network, battery, audio,
+  microphone, brightness, media, weather, updates, CPU/memory, uptime, power
+  profile, Bluetooth and a system tray.
+- **Keyboard-first desktop:** application search, open-window switching,
+  grouped actions, workspace recipes and focus/presentation modes.
+- **Notifications:** native notification service and hardware OSD, DND,
+  history, actions and live theme changes.
+- **Session:** startx, SDDM or LightDM, PAM lock, idle screen, Polkit power
+  actions and a managed session bus.
+- **Hardware controls:** PipeWire/WirePlumber audio and microphone, BlueZ
+  Bluetooth, RandR display profiles, power-profiles-daemon, backlight and
+  night light.
+- **Screenshots:** region, window or full-screen capture with a floating review
+  dialog, crop, rectangle, arrow, mask, zoom and pan.
+- **Appearance:** Niru Noir, Nord, Satie and Carl Larsson themes, shared semantic
+  colours, font metrics, wallpapers and terminal colours.
+- **Safe maintenance:** checksummed releases, pinned components, atomic
+  generations, rollback, configuration migration, diagnostics and owned
+  uninstall.
 
 ## Suite
 
 | Component | Role |
 |---|---|
-| [NIRUX](https://github.com/nirucon/nirux) | Installer, update, rollback, dependencies and system integration |
+| [NIRUX](https://github.com/nirucon/nirux) | Installer, updates, dependencies and system integration |
 | [NIRUWM](https://github.com/nirucon/niruwm) | Window manager, session, `niructl` and `niruidle` |
 | [NIRUBAR](https://github.com/nirucon/nirubar) | Per-monitor status bar and panels |
 | [NIRUSCREENSAVER](https://github.com/nirucon/niruscreensaver) | Unlocked idle screen |
 | [NIRULOCK](https://github.com/nirucon/nirulock) | PAM-based lock screen |
 | [NIRULAUNCHER](https://github.com/nirucon/nirulauncher) | Keyboard-first application and action launcher |
 | [NIRUNOTIFY](https://github.com/nirucon/nirunotify) | Native notifications and hardware OSD |
-| [NIRUSHOT](https://github.com/nirucon/nirushot) | Screenshot capture, review, crop and annotation |
+| [NIRUSHOT](https://github.com/nirucon/nirushot) | Screenshot capture, review and annotation |
 
 ## Requirements
 
@@ -38,10 +65,9 @@ cd nirux
 ./nirux install
 ```
 
-The installer provisions OS packages and the complete NIRU session. An existing
-display manager is preserved; otherwise choose startx (default), SDDM or
-LightDM. A fresh install offers the managed Helium browser and installs the
-theme wallpapers, kitty/fish integration and terminal colours. User
+An existing display manager is preserved; otherwise choose startx (default),
+SDDM or LightDM. A fresh install offers the managed Helium browser and installs
+the theme wallpapers, kitty/fish integration and terminal colours. User
 configuration and NIRUPI are not overwritten.
 
 Use `./nirux install --no-packages` only when all runtime dependencies already
@@ -58,9 +84,10 @@ nirux uninstall
 nirux uninstall --purge
 ```
 
-Releases are checksummed and pinned. Updates switch program generations
-atomically and keep the previous generation for rollback. Log out and in after
-updates that change the session, window manager or idle daemon.
+Updates verify checksums and component versions, install missing runtime
+packages, then switch one program generation atomically. The previous generation
+remains available for rollback. Log out and in after updates that change the
+session, window manager or idle daemon.
 
 Default prefix: `~/.local`. Shared configuration:
 `~/.config/niruwm/config.toml`. XDG paths are respected.
