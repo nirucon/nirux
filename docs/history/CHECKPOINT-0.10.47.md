@@ -64,6 +64,8 @@ These require the owner present and were **not** executed:
 
 ## Release and deployment evidence
 
-NIRUWM 0.16.44 and NIRUX 0.10.47 fix the DND newline and add the live
-acceptance check. CI, release and deployment results are added after
-publication.
+NIRUWM v0.16.44 and NIRUX v0.10.47 fix the DND newline and add the live
+acceptance check. NIRUX CI run 39546818136 passed check, Arch, Debian and Void.
+Both hosts now run NIRUX 0.10.47 / NIRUWM 0.16.44 / NIRUNOTIFY 0.3.7, and the
+live-acceptance rerun reports 0 failures and the same two owner-present warnings
+on each host. DND status now prints a complete line.
