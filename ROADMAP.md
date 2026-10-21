@@ -1,10 +1,10 @@
 # NIRU desktop — current roadmap and restart handoff
 
-Priority order updated **2026-10-21**. Published baseline: **NIRUX 0.10.52**.
+Priority order updated **2026-10-21**. Published baseline: **NIRUX 0.10.53**.
 
 ## Start here — the active work queue
 
-**P1 is done. P2 non-disruptive checks pass; owner-present hardware tests remain open. P3 is in progress: the shared scale, launcher rows, welcome setting and audio controls are done. Continue with display/battery/network states and rendered-value checks.**
+**P1 is done. P2 non-disruptive checks pass; owner-present hardware tests remain open. P3 is in progress: the shared scale, launcher rows, welcome setting, audio controls and multi-display status are done. Continue with rendered-value checks and the small-screen/hotplug matrix.**
 Work in order P3 → P4 → P5 → P6, keeping P2 open for the remaining hardware checks.
 These six points supersede the previous H01-first ordering. The older task
 IDs below are supporting requirements and evidence, not a competing queue.
@@ -13,7 +13,7 @@ IDs below are supporting requirements and evidence, not a competing queue.
 |---|---|---|
 | 1 / P1 | DONE in 0.10.46 | Reliable notification stacking and one working native DND path |
 | 2 / P2 | PARTIAL — owner-present tests open | Real power, login, suspend/resume and display acceptance |
-| 3 / P3 | IN PROGRESS — scale, launcher, welcome and audio controls done | Consistent typography, spacing, scaling and controls across the suite |
+| 3 / P3 | IN PROGRESS — scale, launcher, welcome, audio and display status done | Consistent typography, spacing, scaling and controls across the suite |
 | 4 / P4 | TODO | Reliable workspace autostart for slow applications |
 | 5 / P5 | TODO | “Why is this unavailable?” diagnostics in the launcher |
 | 6 / P6 | TODO | Work modes and reusable workspace recipes |
@@ -117,7 +117,7 @@ P3; P2 remains open. Existing detailed acceptance requirements below still apply
 - **Evidence and open defects:** [restart review](docs/REVIEW-2026-10-20-RESTART.md)
 - **Repositories:** [inventory](docs/REPOSITORIES.md)
 - **Previous work:** [delivery history through 0.10.30](docs/history/ROADMAP-0.10.30.md)
-- **Current checkpoint evidence:** [0.10.50 P3 audio controls](docs/history/CHECKPOINT-0.10.49.md)
+- **Current checkpoint evidence:** [0.10.53 P3 display status](docs/history/CHECKPOINT-0.10.53.md)
 - **S04 runtime audit:** [package and normal-user results](docs/history/AUDIT-S04-0.10.35.md)
 - **R01 performance baseline:** [idle and startup measurements](docs/history/AUDIT-R01-BASELINE.md)
 - **H01 partial fresh-VM evidence:** [Debian/Arch VMs and gaps](docs/history/AUDIT-H01-PARTIAL.md)
@@ -145,9 +145,9 @@ drivers/firmware must be documented separately from suite provisioning.
 
 | Repository | Pinned release | Responsibility |
 |---|---|---|
-| nirux | 0.10.52 | Packages, generations, target-owned apply, managed Helium, wallpapers, kitty/fish |
+| nirux | 0.10.53 | Packages, generations, target-owned apply, managed Helium, wallpapers, kitty/fish |
 | niruwm | 0.16.50 | WM, session, niructl, niruidle, theme wallpapers, terminal hook |
-| nirubar | 0.18.19 | Per-output bar, tray, panels, weather |
+| nirubar | 0.18.21 | Per-output bar, tray, panels, weather |
 | niruscreensaver | 0.8.3 | Unlocked idle surface |
 | nirulock | 0.16.10 | PAM lock, input grabs and readiness |
 | nirulauncher | 0.2.5 | Apps, actions, windows, local recency/favourites |

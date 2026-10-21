@@ -70,6 +70,6 @@ hitboxes away from the visible control.
 
 Implemented: theme-role palettes across the suite, font-aware notification and
 launcher geometry, launcher accent selection, configurable session welcome and
-audio output/source/mute controls through `niructl audio`. Still open in P3:
-display/battery/network controls, rendered-value checks for every component and
-the small-screen/hotplug matrix.
+audio output/source/mute controls through `niructl audio` and a multi-display
+count/popup. Still open in P3: rendered-value checks for every component and the
+small-screen/hotplug matrix.

@@ -7,7 +7,7 @@ This brief is independent of local session memory. **P3 is in progress.**
 The shared scale, font-aware launcher rows and configurable welcome are done.
 Continue P3 with controls and rendered-value checks; finish P2 when the owner
 is present. The active order is **P3 → P4 → P5 → P6**, with P2 kept open.
-S01/S02, S03, S04, theme/extra wallpapers, kitty/fish, the wallpaper launcher, mouse move/resize, workspace autostart, live notification themes, the power menu, greeter themes and the session welcome are done in 0.10.52.
+S01/S02, S03, S04, theme/extra wallpapers, kitty/fish, the wallpaper launcher, mouse move/resize, workspace autostart, live notification themes, the power menu, greeter themes and the session welcome are done in 0.10.53.
 H01 is partially complete: Debian and Arch passed fresh VMs. A fresh Void VM and physical audio/lock/suspend checks remain.
 
 ## Copy-ready prompt
@@ -15,11 +15,11 @@ H01 is partially complete: Debian and Arch passed fresh VMs. A fresh Void VM and
 ```text
 Fortsätt utvecklingen av NIRU-sviten. Läs först aktuella GitHub-filer:
 - https://raw.githubusercontent.com/nirucon/nirux/main/ROADMAP.md
-- https://raw.githubusercontent.com/nirucon/nirux/main/docs/history/CHECKPOINT-0.10.49.md
+- https://raw.githubusercontent.com/nirucon/nirux/main/docs/history/CHECKPOINT-0.10.53.md
 - https://raw.githubusercontent.com/nirucon/nirux/main/docs/REPOSITORIES.md
 
-Utgå från NIRUX 0.10.52:
-niruwm 0.16.50, nirubar 0.18.19, niruscreensaver 0.8.3,
+Utgå från NIRUX 0.10.53:
+niruwm 0.16.50, nirubar 0.18.21, niruscreensaver 0.8.3,
 nirulock 0.16.10, nirulauncher 0.2.5, nirunotify 0.3.7.
 Kontrollera manifest, git-status, GitHub main och senaste fulla CI på nytt.
 Versionslistan är en startpunkt, inte ett skäl att skriva över nyare arbete.
@@ -36,10 +36,10 @@ DND, ljudnoder, display, inhibit och processöversikt. Kvar för P2 är att äga
 är närvarande för lock/unlock, suspend/resume, hörbart ljud, faktisk poweroff
 och extern skärm. Lämna P2 öppen.
 
-P3 är påbörjad i 0.10.52: docs/STYLE.md, fontanpassade launcher-rader med
-accentmarkering, WELCOME_NOTIFICATION=always|once|off samt niructl audio för
-utgång/mikrofon/mute och volym. Fortsätt P3 med tydligare skärm-/batteri-/
-nätverksstatus, rendered-value-tester och småskärms-/hotplug-matris.
+P3 är påbörjad i 0.10.53: docs/STYLE.md, fontanpassade launcher-rader med
+accentmarkering, WELCOME_NOTIFICATION=always|once|off, niructl audio för
+utgång/mikrofon/mute/volym samt NIRUBARs displaymodul för flera skärmar.
+Fortsätt P3 med rendered-value-tester och småskärms-/hotplug-matris.
 P4: tillförlitlig workspace-autostart även för långsamma appar.
 P5: förklara saknade funktioner och fel i launchern via doctor/niructl.
 P6: arbetslägen och workspace-recept ovanpå P4/P5.
