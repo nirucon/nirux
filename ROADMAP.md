@@ -14,8 +14,8 @@ on-demand `nirushot` tool.
 |---|---|---|
 | 1 / N1 | DONE in 0.10.57 | Microphone state, mute, input selection and level |
 | 2 / N2 | DONE in 0.10.58 | Bluetooth state and controls for paired devices |
-| 3 / N3 | IN PROGRESS — release/deploy verification | Built-in display profiles with preview and automatic revert |
-| 4 / N4 | TODO — **START HERE after N3** | Capability-aware power-profile selection |
+| 3 / N3 | DONE in 0.10.59 | Built-in display profiles with preview and automatic revert |
+| 4 / N4 | TODO — **START HERE** | Capability-aware power-profile selection |
 | 5 / N5 | TODO | nirushot: capture, copy/save and small annotation workflow |
 
 ### N1 — Microphone module

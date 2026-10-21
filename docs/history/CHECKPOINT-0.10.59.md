@@ -48,6 +48,12 @@ installed `xrandr`; it introduces no daemon or new package.
 
 ## Release and deployment evidence
 
-NIRUWM v0.16.56, NIRUBAR v0.18.25 and NIRULAUNCHER v0.2.10 are published;
-NIRUX 0.10.59 pins them. CI, release and host deployment results are added after
-publication.
+NIRUX 0.10.59 passed CI and was deployed to ThinkPad and Void. Both run
+NIRUX 0.10.59 / NIRUWM 0.16.56 / NIRUBAR 0.18.25 / NIRULAUNCHER 0.2.10.
+Real-host read-only validation saved a one-output test profile in a temporary
+config on each host: eDP-1, 1920x1080, 0x0, normal, primary. `display list` and
+`display status` work; no display layout was changed. The Bluetooth service
+remained active/linked. Owner-present multi-output preview/revert and hotplug
+remain hardware tests. Existing user configs and module lists were preserved;
+display profiles are opt-in through `~/.config/niruwm/displays.toml`. No session
+was forced to log out.
