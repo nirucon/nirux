@@ -10,6 +10,9 @@ mkdir -p "$HOME"
 . "$SOURCE/nirux"
 unset NIRUX_LIBRARY
 fail() { printf 'FAIL: %s\n' "$*" >&2; exit 1; }
+same_file() {
+  [ "$(sha256sum "$1" | cut -d ' ' -f1)" = "$(sha256sum "$2" | cut -d ' ' -f1)" ]
+}
 as_root() { "$@"; }
 export OS=debian
 mkdir -p "$ROOT/usr/sbin"
@@ -48,9 +51,9 @@ disable_service_starts
 expect_status 101 "$policy" lightdm.service start
 expect_status 104 "$policy" --quiet dbus reload 2
 printf '%s\n' --quiet dbus reload 2 > "$TEST/policy-expected"
-cmp "$POLICY_LOG" "$TEST/policy-expected" || fail 'original policy arguments changed'
+same_file "$POLICY_LOG" "$TEST/policy-expected" || fail 'original policy arguments changed'
 restore_policy
-cmp "$policy" "$TEST/original-policy" || fail 'original policy not restored'
+same_file "$policy" "$TEST/original-policy" || fail 'original policy not restored'
 [ "$(stat -c %a "$policy")" = 750 ] || fail 'policy mode not restored'
 unset TMPDIR
 
@@ -58,7 +61,7 @@ unset TMPDIR
 # reaches live runtime refresh, after the original policy is back in place.
 (
   refresh_runtime_state() {
-    cmp "$policy" "$TEST/original-policy" || fail 'runtime refresh precedes policy restoration'
+    same_file "$policy" "$TEST/original-policy" || fail 'runtime refresh precedes policy restoration'
     : > "$TEST/refreshed"
   }
   as_root() {
@@ -79,7 +82,7 @@ unset TMPDIR
   export APT_RESULT
   expect_status 17 install_packages kitty
   [ ! -e "$TEST/refreshed" ] || fail 'failed apt refreshed runtime'
-  cmp "$policy" "$TEST/original-policy" || fail 'failed apt left temporary policy'
+  same_file "$policy" "$TEST/original-policy" || fail 'failed apt left temporary policy'
 )
 
 # Make optional tool discovery deterministic, independently of the host.
@@ -111,7 +114,7 @@ udevadm control --reload-rules
 udevadm trigger --action=change --subsystem-match=input
 udevadm settle --timeout=10
 EOF
-  cmp "$TEST/runtime.log" "$TEST/runtime-expected" || fail "$OS refresh sequence changed"
+  same_file "$TEST/runtime.log" "$TEST/runtime-expected" || fail "$OS refresh sequence changed"
 
   # Containers/early Void boots need no reload when daemons have not started.
   : > "$TEST/runtime.log"
