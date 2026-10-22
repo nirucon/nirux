@@ -2,7 +2,7 @@
 # NIRUX: install a complete X11 desktop, or maintain an existing installation.
 set -eu
 
-VERSION=0.10.87
+VERSION=0.10.88
 PREFIX=${NIRUX_PREFIX:-$HOME/.local}
 BIN=$PREFIX/bin
 STATE=$PREFIX/share/nirux
@@ -1414,6 +1414,8 @@ localsend_install() {
   [ "${NIRUX_TEST_AS_ROOT:-0}" = 1 ] && return 0
   [ -x "$STATE/localsend/current/localsend_app" ] &&
     [ "$(localsend_installed_version)" = "$LOCALSEND_VERSION" ] && {
+      mkdir -p "$BIN" || die 'could not create the command directory'
+      ln -sfn "$STATE/localsend/current/localsend_app" "$BIN/localsend" || die 'could not link LocalSend'
       localsend_write_desktop
       say "Managed LocalSend $LOCALSEND_VERSION is already installed"
       return 0
