@@ -2,7 +2,7 @@
 # NIRUX: install a complete X11 desktop, or maintain an existing installation.
 set -eu
 
-VERSION=0.10.85
+VERSION=0.10.86
 PREFIX=${NIRUX_PREFIX:-$HOME/.local}
 BIN=$PREFIX/bin
 STATE=$PREFIX/share/nirux
@@ -1411,7 +1411,6 @@ EOF
 localsend_install() {
   # LocalSend is a large external application, like Helium. It is installed
   # from the official verified tarball, not Flatpak or AppImage.
-  [ -z "$ROOT" ] || return 0
   [ "${NIRUX_TEST_AS_ROOT:-0}" = 1 ] && return 0
   [ -x "$STATE/localsend/current/localsend_app" ] &&
     [ "$(localsend_installed_version)" = "$LOCALSEND_VERSION" ] && {
