@@ -2,7 +2,7 @@
 # NIRUX: install a complete X11 desktop, or maintain an existing installation.
 set -eu
 
-VERSION=0.10.75
+VERSION=0.10.76
 PREFIX=${NIRUX_PREFIX:-$HOME/.local}
 BIN=$PREFIX/bin
 STATE=$PREFIX/share/nirux
@@ -105,9 +105,9 @@ _debian_t64() {
 }
 packages_for() {
   case "$1" in
-    arch) say "xorg-server xorg-xinit xorg-xauth xorg-xrandr xorg-xset xorg-xprop xorg-xdpyinfo xorg-xwininfo xorg-xrdb xorg-xsetroot xorg-setxkbmap xf86-input-libinput xkeyboard-config dbus pam pipewire pipewire-audio pipewire-pulse pipewire-alsa wireplumber alsa-utils alsa-ucm-conf rtkit fontconfig ttf-dejavu ttf-jetbrains-mono-nerd kitty fish polkit-gnome bluez bluez-utils power-profiles-daemon rofi dunst picom feh maim slop xclip pcmanfm playerctl libnotify brightnessctl gammastep iproute2 iw xdg-utils procps-ng util-linux" ;;
-    debian) say "xserver-xorg xserver-xorg-input-libinput xinit xauth x11-xserver-utils x11-utils x11-xkb-utils xkb-data dbus-x11 dbus-user-session libpam0g pipewire pipewire-pulse pipewire-alsa wireplumber alsa-utils alsa-ucm-conf rtkit fontconfig fonts-dejavu-core fonts-font-awesome fonts-jetbrains-mono kitty fish lxpolkit bluez power-profiles-daemon rofi dunst picom feh maim slop xclip pcmanfm playerctl libnotify-bin brightnessctl gammastep iproute2 iw xdg-utils procps util-linux" ;;
-    void) say "xorg-minimal xinit xauth xrandr xset xprop xdpyinfo xwininfo xrdb xsetroot setxkbmap xkeyboard-config dbus elogind pam pam-base pipewire wireplumber alsa-utils alsa-ucm-conf rtkit fontconfig dejavu-fonts-ttf nerd-fonts-symbols-ttf kitty fish-shell polkit-gnome bluez power-profiles-daemon rofi dunst picom feh maim slop xclip pcmanfm playerctl libnotify brightnessctl gammastep iproute2 iw xdg-utils procps-ng util-linux" ;;
+    arch) say "xorg-server xorg-xinit xorg-xauth xorg-xrandr xorg-xset xorg-xprop xorg-xdpyinfo xorg-xwininfo xorg-xrdb xorg-xsetroot xorg-setxkbmap xf86-input-libinput xkeyboard-config noto-fonts-emoji dbus pam pipewire pipewire-audio pipewire-pulse pipewire-alsa wireplumber alsa-utils alsa-ucm-conf rtkit fontconfig ttf-dejavu ttf-jetbrains-mono-nerd kitty fish polkit-gnome bluez bluez-utils power-profiles-daemon rofi dunst picom feh maim slop xclip pcmanfm playerctl libnotify brightnessctl gammastep iproute2 iw xdg-utils procps-ng util-linux" ;;
+    debian) say "xserver-xorg xserver-xorg-input-libinput xinit xauth x11-xserver-utils x11-utils x11-xkb-utils xkb-data dbus-x11 dbus-user-session libpam0g pipewire pipewire-pulse pipewire-alsa wireplumber alsa-utils alsa-ucm-conf rtkit fontconfig fonts-dejavu-core fonts-font-awesome fonts-jetbrains-mono fonts-noto-color-emoji kitty fish lxpolkit bluez power-profiles-daemon rofi dunst picom feh maim slop xclip pcmanfm playerctl libnotify-bin brightnessctl gammastep iproute2 iw xdg-utils procps util-linux" ;;
+    void) say "xorg-minimal xinit xauth xrandr xset xprop xdpyinfo xwininfo xrdb xsetroot setxkbmap xkeyboard-config dbus elogind pam pam-base pipewire wireplumber alsa-utils alsa-ucm-conf rtkit fontconfig dejavu-fonts-ttf nerd-fonts-symbols-ttf noto-fonts-emoji kitty fish-shell polkit-gnome bluez power-profiles-daemon rofi dunst picom feh maim slop xclip pcmanfm playerctl libnotify brightnessctl gammastep iproute2 iw xdg-utils procps-ng util-linux" ;;
   esac
 }
 # Runtime libraries and extraction tools for the pinned Helium archive. These
@@ -765,6 +765,27 @@ upgrade_obsolete_default_browser() {
     die "could not update the default browser in $1; original kept"
   fi
 }
+upgrade_default_workspaces() {
+  # Older NIRUX examples used nine workspaces and nine tags. Expand only the
+  # exact old defaults; custom counts, names and monitor profiles are kept.
+  grep -qx 'workspaces = 9' "$1" || return 0
+  grep -q '^\[\[monitors\.profiles\]\]' "$1" && return 0
+  mig_mode=$(stat -c %a "$1") || die "could not read permissions for $1"
+  mig_tmp=$(mktemp "$1.nirux-workspaces.XXXXXX") || die "could not stage $1"
+  if awk '
+    $0 == "workspaces = 9" {print "workspaces = 10"; next}
+    $0 == "tags = [\"1\", \"2\", \"3\", \"4\", \"5\", \"6\", \"7\", \"8\", \"9\"]" {
+      print "tags = [\"1\", \"2\", \"3\", \"4\", \"5\", \"6\", \"7\", \"8\", \"9\", \"10\"]"; next
+    }
+    {print}
+  ' "$1" > "$mig_tmp" && chmod "$mig_mode" "$mig_tmp" && mv -f "$mig_tmp" "$1"; then
+    say 'Expanded the default workspace set from nine to ten; custom profiles are unchanged.'
+  else
+    rm -f "$mig_tmp"
+    die "could not update the default workspace set in $1; original kept"
+  fi
+}
+
 pictures_directory() {
   if [ -n "${XDG_PICTURES_DIR:-}" ]; then
     say "$XDG_PICTURES_DIR"; return 0
@@ -1045,7 +1066,8 @@ install_config() {
   add_missing_key "$cfg_candidate" wallpaper shuffle_on_start true
   add_missing_key "$cfg_candidate" wallpaper follow_theme true
   add_missing_key "$cfg_candidate" wallpaper theme_dir '"~/Pictures/Wallpapers/NIRU"'
-  add_missing_key "$cfg_candidate" monitors workspaces 9
+  add_missing_key "$cfg_candidate" monitors workspaces 10
+  upgrade_default_workspaces "$cfg_candidate"
   upgrade_obsolete_default_browser "$cfg_candidate"
   cfg_after=$(sha256sum "$cfg_candidate" | cut -d ' ' -f1)
   if [ "$cfg_before" = "$cfg_after" ]; then
@@ -1810,6 +1832,22 @@ start_selected_dm() {
   fi
 }
 
+ensure_video_group() {
+  # brightnessctl's udev rule grants the video group write access to the
+  # backlight. The install user already has sudo, so this does not add a new
+  # privilege boundary. Never touch host groups in isolated tests or chroots.
+  [ -z "$ROOT" ] || return 0
+  [ "${NIRUX_TEST_AS_ROOT:-0}" = 1 ] && return 0
+  getent group video >/dev/null 2>&1 || return 0
+  command -v usermod >/dev/null 2>&1 || return 0
+  target_user=${SUDO_USER:-$(id -un)}
+  [ -n "$target_user" ] && [ "$target_user" != root ] || return 0
+  if id -nG "$target_user" 2>/dev/null | tr ' ' '\n' | grep -qx video; then return 0; fi
+  as_root usermod -aG video "$target_user" || return 0
+  as_root udevadm trigger --subsystem-match=backlight --action=change >/dev/null 2>&1 || :
+  say "Added $target_user to the video group for brightness; log out/in to activate it."
+}
+
 enable_services() {
   if [ "$OS" = void ]; then
     for service in dbus elogind; do
@@ -1832,6 +1870,7 @@ enable_services() {
       fi
     done
   fi
+  ensure_video_group
 }
 check_pam() {
   [ -f "$ROOT/etc/pam.d/nirulock" ] || { say 'missing PAM service'; return 1; }

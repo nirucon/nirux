@@ -98,7 +98,7 @@ browser outside NIRUX is left untouched.
 
 ## Desktop integration
 
-NIRUX installs the four NIRU theme wallpaper sets and three extra wallpapers in
+NIRUX installs Noto Color Emoji, the four NIRU theme wallpaper sets and three extra wallpapers in
 `~/Pictures/Wallpapers/NIRU`. Existing files are kept; edited wallpapers are
 never overwritten. The directory can be changed with `XDG_PICTURES_DIR` or
 `[wallpaper] theme_dir`.
@@ -227,7 +227,25 @@ niructl brightness up|down
 ```
 
 `[brightness] device` selects the brightnessctl device and `step` sets the
-increment. `nirux doctor` reports a backlight that brightnessctl cannot read.
+increment. NIRUX adds the installing account to the `video` group when it
+exists, because brightnessctl's udev rule grants that group access to the
+backlight. Log out and in after the first install before using the brightness
+keys. `nirux doctor` reports a backlight that brightnessctl cannot read.
+
+### Compositor and transparency
+
+The session starts picom when installed. `niructl compositor status|on|off|toggle`
+controls it and Super+Shift+P exposes the same toggle under Appearance. Inactive
+window transparency and shadows live in `~/.config/picom.conf`; NIRUX does not
+rewrite an existing file. A conservative starting point is:
+
+```ini
+inactive-opacity = 0.94;
+active-opacity = 1.0;
+shadow = true;
+shadow-radius = 12;
+shadow-opacity = 0.35;
+```
 
 ### Screenshots
 

@@ -268,19 +268,19 @@ add_missing_top_key "$config" enabled true
 add_missing_key "$config" bar scale '"bar-only"'
 add_missing_key "$config" wallpaper scale '"fill"'
 add_missing_sections "$config" "$SOURCE/config.example.toml"
-add_missing_key "$config" monitors workspaces 9
+add_missing_key "$config" monitors workspaces 10
 cp "$config" "$TEST/once.toml"
 add_missing_top_key "$config" enabled true
 add_missing_key "$config" bar scale '"bar-only"'
 add_missing_sections "$config" "$SOURCE/config.example.toml"
-add_missing_key "$config" monitors workspaces 9
+add_missing_key "$config" monitors workspaces 10
 [ "$(sha256sum "$config" | cut -d' ' -f1)" = "$(sha256sum "$TEST/once.toml" | cut -d' ' -f1)" ] || fail 'config migration is not idempotent'
 [ "$(stat -c %a "$config")" = 600 ] || fail 'config migration changed permissions'
 grep -qx 'enabled = true' "$config" || fail 'nested key suppressed root default'
 grep -qx 'scale = "bar-only"' "$config" || fail 'other table suppressed missing key'
 grep -qx 'scale = "fit"' "$config" || fail 'existing setting overwritten'
 [ "$(grep -c '^[[:space:]]*\[bar\]' "$config")" = 1 ] || fail 'duplicate commented table'
-grep -qx 'workspaces = 9' "$config" || fail 'profile suppressed monitor default'
+grep -qx 'workspaces = 10' "$config" || fail 'profile suppressed monitor default'
 
 # I06: quoted keys and multiline values are scanned, and a staged candidate is
 # validated by both components before it can replace the user file.
@@ -327,7 +327,7 @@ chmod 640 "$i06/config/niruwm/config.toml"
 [ "$(grep -c 'weather_latitude' "$i06/config/niruwm/config.toml")" = 1 ] || fail 'quoted key was duplicated'
 grep -qx 'enabled = false' "$i06/config/niruwm/config.toml" || fail 'existing bar value was overwritten'
 grep -qx 'scale = "fit"' "$i06/config/niruwm/config.toml" || fail 'existing wallpaper value was overwritten'
-grep -qx 'workspaces = 9' "$i06/config/niruwm/config.toml" || fail 'missing monitor default was not added'
+grep -qx 'workspaces = 10' "$i06/config/niruwm/config.toml" || fail 'missing monitor default was not added'
 grep -qx 'title_delay_seconds = 0' "$i06/config/niruwm/config.toml" || fail 'bar key was not added to the real table'
 grep -qx 'follow_theme = true' "$i06/config/niruwm/config.toml" || fail 'wallpaper follow_theme default was not added'
 grep -q '^\[autostart\]' "$i06/config/niruwm/config.toml" || fail 'autostart section was not added'
@@ -348,7 +348,7 @@ ln -s "$i06/symlink/real/config.toml" "$i06/symlink/niruwm/config.toml"
   install_config
 ) > "$i06/symlink.out" 2>&1 || fail 'symlinked config migration failed'
 [ -L "$i06/symlink/niruwm/config.toml" ] || fail 'migration replaced the config symlink'
-grep -qx 'workspaces = 9' "$i06/symlink/real/config.toml" || fail 'migration did not update the symlink target'
+grep -qx 'workspaces = 10' "$i06/symlink/real/config.toml" || fail 'migration did not update the symlink target'
 [ "$(stat -c %a "$i06/symlink/real/config.toml")" = 640 ] || fail 'symlink target permissions changed'
 
 # Unsupported or invalid input stops before the original file changes.

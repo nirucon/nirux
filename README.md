@@ -14,7 +14,7 @@ components need.
 
 - **Window management:** tiling with seven layouts, per-monitor workspaces,
   scratchpad, floating windows, fullscreen, gap control and session restore.
-- **Bar:** per-monitor workspaces, clock/calendar, network, battery, audio,
+- **Bar:** ten per-monitor workspaces with occupancy markers, clock/calendar, network, battery, audio,
   microphone, brightness, media, weather, updates, CPU/memory, uptime, power
   profile, Bluetooth and a system tray.
 - **Keyboard-first desktop:** application search, open-window switching,
@@ -29,7 +29,8 @@ components need.
 - **Screenshots:** region, window or full-screen capture with a floating review
   dialog, crop, rectangle, arrow, mask, zoom and pan.
 - **Appearance:** Niru Noir, Nord, Satie and Carl Larsson themes, shared semantic
-  colours, font metrics, wallpapers and terminal colours.
+  colours, font metrics, emoji, wallpapers, terminal colours and optional picom
+  transparency.
 - **Safe maintenance:** checksummed releases, pinned components, atomic
   generations, rollback, configuration migration, diagnostics and owned
   uninstall.
