@@ -57,12 +57,20 @@ if command -v pkcheck >/dev/null 2>&1; then
 else
   warn 'pkcheck is unavailable; power authorisation not checked'
 fi
-if command -v loginctl >/dev/null 2>&1; then
-  pass 'loginctl backend is available'
-elif command -v systemctl >/dev/null 2>&1; then
-  pass 'systemctl backend is available'
+if command -v dbus-send >/dev/null 2>&1; then
+  for method in CanPowerOff CanReboot CanSuspend; do
+    capability=$(dbus-send --system --print-reply --dest=org.freedesktop.login1 \
+      /org/freedesktop/login1 "org.freedesktop.login1.Manager.$method" 2>/dev/null |
+      sed -n 's/.*string "\(.*\)"/\1/p' || true)
+    case "$capability" in
+      yes) pass "login1 $method: available and authorised" ;;
+      challenge) warn "login1 $method: available, caller needs authentication (normal over SSH)" ;;
+      no|na) warn "login1 $method: unavailable for this caller/hardware ($capability)" ;;
+      *) fail "login1 $method did not return a capability" ;;
+    esac
+  done
 else
-  fail 'no logind/elogind or systemd power backend'
+  warn 'dbus-send is unavailable; shared logind/elogind power API not checked'
 fi
 
 if command -v niructl >/dev/null 2>&1; then

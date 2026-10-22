@@ -65,6 +65,13 @@ not NIRUWM; the greeter remembers the corrected choice. The suite is installed
 as release programs under `~/.local/bin` and `~/.local/share/nirux`, not as
 component source repositories under `~/Git`.
 
+Power actions use the shared systemd-logind/elogind login1 D-Bus API with
+normal Polkit authorisation and inhibitor checks. Systemd's `loginctl` is a
+session-control tool, not a shutdown/reboot command; elogind's extra power
+verbs must not be assumed on Debian or Arch. NIRUWM 0.16.60 corrects that
+backend choice. NIRULAUNCHER 0.2.12 also waits for the WM to map its window
+before grabbing input/focus, avoiding startup `SetInputFocus`/`BadMatch` errors.
+
 From a local TTY:
 
 ```sh
