@@ -2,7 +2,7 @@
 # NIRUX: install a complete X11 desktop, or maintain an existing installation.
 set -eu
 
-VERSION=0.10.88
+VERSION=0.10.89
 PREFIX=${NIRUX_PREFIX:-$HOME/.local}
 BIN=$PREFIX/bin
 STATE=$PREFIX/share/nirux
@@ -1662,6 +1662,7 @@ apply_target_release() {
   enable_services
   say 'Activating the new program generation...'
   activate
+  [ -x "$BIN/localsend" ] || localsend_install
   start_selected_dm
   APPLY_OK=1
   trap - EXIT INT TERM HUP
