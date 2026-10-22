@@ -46,7 +46,7 @@ jobs:
           OS=$(distro); DM=startx; BROWSER_EFFECTIVE=helium
           export BROWSER_EFFECTIVE
           install_packages
-          for command in startx Xorg xauth dbus-run-session kitty rofi; do command -v "$command"; done
+          for command in startx Xorg xauth dbus-run-session kitty; do command -v "$command"; done
       - name: Optional display managers exist
         shell: sh
         run: |

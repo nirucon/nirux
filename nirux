@@ -2,7 +2,7 @@
 # NIRUX: install a complete X11 desktop, or maintain an existing installation.
 set -eu
 
-VERSION=0.10.78
+VERSION=0.10.79
 PREFIX=${NIRUX_PREFIX:-$HOME/.local}
 BIN=$PREFIX/bin
 STATE=$PREFIX/share/nirux
@@ -105,9 +105,9 @@ _debian_t64() {
 }
 packages_for() {
   case "$1" in
-    arch) say "xorg-server xorg-xinit xorg-xauth xorg-xrandr xorg-xset xorg-xprop xorg-xdpyinfo xorg-xwininfo xorg-xrdb xorg-xsetroot xorg-setxkbmap xf86-input-libinput xkeyboard-config noto-fonts-emoji dbus pam pipewire pipewire-audio pipewire-pulse pipewire-alsa wireplumber alsa-utils alsa-ucm-conf rtkit fontconfig ttf-dejavu ttf-jetbrains-mono-nerd kitty fish polkit-gnome bluez bluez-utils power-profiles-daemon rofi dunst picom feh maim slop xclip pcmanfm playerctl libnotify brightnessctl gammastep iproute2 iw xdg-utils procps-ng util-linux" ;;
-    debian) say "xserver-xorg xserver-xorg-input-libinput xinit xauth x11-xserver-utils x11-utils x11-xkb-utils xkb-data dbus-x11 dbus-user-session libpam0g pipewire pipewire-pulse pipewire-alsa wireplumber alsa-utils alsa-ucm-conf rtkit fontconfig fonts-dejavu-core fonts-font-awesome fonts-jetbrains-mono fonts-noto-color-emoji kitty fish lxpolkit bluez power-profiles-daemon rofi dunst picom feh maim slop xclip pcmanfm playerctl libnotify-bin brightnessctl gammastep iproute2 iw xdg-utils procps util-linux" ;;
-    void) say "xorg-minimal xinit xauth xrandr xset xprop xdpyinfo xwininfo xrdb xsetroot setxkbmap xkeyboard-config dbus elogind pam pam-base pipewire wireplumber alsa-utils alsa-ucm-conf rtkit fontconfig dejavu-fonts-ttf nerd-fonts-symbols-ttf noto-fonts-emoji kitty fish-shell polkit-gnome bluez power-profiles-daemon rofi dunst picom feh maim slop xclip pcmanfm playerctl libnotify brightnessctl gammastep iproute2 iw xdg-utils procps-ng util-linux" ;;
+    arch) say "xorg-server xorg-xinit xorg-xauth xorg-xrandr xorg-xset xorg-xprop xorg-xdpyinfo xorg-xwininfo xorg-xrdb xorg-xsetroot xorg-setxkbmap xf86-input-libinput xkeyboard-config noto-fonts-emoji dbus pam pipewire pipewire-audio pipewire-pulse pipewire-alsa wireplumber alsa-utils alsa-ucm-conf rtkit fontconfig ttf-dejavu ttf-jetbrains-mono-nerd kitty fish polkit-gnome bluez bluez-utils power-profiles-daemon dunst picom feh maim slop xclip pcmanfm playerctl libnotify brightnessctl gammastep iproute2 iw xdg-utils procps-ng util-linux" ;;
+    debian) say "xserver-xorg xserver-xorg-input-libinput xinit xauth x11-xserver-utils x11-utils x11-xkb-utils xkb-data dbus-x11 dbus-user-session libpam0g pipewire pipewire-pulse pipewire-alsa wireplumber alsa-utils alsa-ucm-conf rtkit fontconfig fonts-dejavu-core fonts-font-awesome fonts-jetbrains-mono fonts-noto-color-emoji kitty fish lxpolkit bluez power-profiles-daemon dunst picom feh maim slop xclip pcmanfm playerctl libnotify-bin brightnessctl gammastep iproute2 iw xdg-utils procps util-linux" ;;
+    void) say "xorg-minimal xinit xauth xrandr xset xprop xdpyinfo xwininfo xrdb xsetroot setxkbmap xkeyboard-config dbus elogind pam pam-base pipewire wireplumber alsa-utils alsa-ucm-conf rtkit fontconfig dejavu-fonts-ttf nerd-fonts-symbols-ttf noto-fonts-emoji kitty fish-shell polkit-gnome bluez power-profiles-daemon dunst picom feh maim slop xclip pcmanfm playerctl libnotify brightnessctl gammastep iproute2 iw xdg-utils procps-ng util-linux" ;;
   esac
 }
 # Runtime libraries and extraction tools for the pinned Helium archive. These
@@ -767,7 +767,8 @@ upgrade_obsolete_default_browser() {
 }
 upgrade_default_launcher() {
   # The owner direction is the native launcher for new/default configurations.
-  # Preserve every explicit custom command and keep rofi installed as fallback.
+  # Preserve every explicit custom command. Rofi is not installed by default,
+  # but remains a supported fallback for users who install it themselves.
   grep -qx 'launcher = \["rofi", "-show", "drun"\]' "$1" || return 0
   mig_mode=$(stat -c %a "$1") || die "could not read permissions for $1"
   mig_tmp=$(mktemp "$1.nirux-launcher.XXXXXX") || die "could not stage $1"
