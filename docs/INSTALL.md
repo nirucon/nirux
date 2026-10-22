@@ -98,6 +98,15 @@ The browser profile is never rewritten.
 An update keeps the recorded policy when no browser flag is given. An existing
 browser outside NIRUX is left untouched.
 
+## Standard folders
+
+A normal install includes `xdg-user-dirs`. On a fresh home it creates the
+locale-appropriate Desktop, Documents, Downloads, Music, Pictures and Videos
+folders. Existing `~/.config/user-dirs.dirs` choices, localized names, symlinks
+and custom paths are preserved; NIRUX does not add English aliases or move
+files. Missing configured folders are created, while a conflicting regular file
+is reported and left untouched.
+
 ## Desktop integration
 
 NIRUX installs Noto Color Emoji, the four NIRU theme wallpaper sets and three extra wallpapers in

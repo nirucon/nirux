@@ -2,7 +2,7 @@
 # NIRUX: install a complete X11 desktop, or maintain an existing installation.
 set -eu
 
-VERSION=0.10.79
+VERSION=0.10.80
 PREFIX=${NIRUX_PREFIX:-$HOME/.local}
 BIN=$PREFIX/bin
 STATE=$PREFIX/share/nirux
@@ -105,9 +105,9 @@ _debian_t64() {
 }
 packages_for() {
   case "$1" in
-    arch) say "xorg-server xorg-xinit xorg-xauth xorg-xrandr xorg-xset xorg-xprop xorg-xdpyinfo xorg-xwininfo xorg-xrdb xorg-xsetroot xorg-setxkbmap xf86-input-libinput xkeyboard-config noto-fonts-emoji dbus pam pipewire pipewire-audio pipewire-pulse pipewire-alsa wireplumber alsa-utils alsa-ucm-conf rtkit fontconfig ttf-dejavu ttf-jetbrains-mono-nerd kitty fish polkit-gnome bluez bluez-utils power-profiles-daemon dunst picom feh maim slop xclip pcmanfm playerctl libnotify brightnessctl gammastep iproute2 iw xdg-utils procps-ng util-linux" ;;
-    debian) say "xserver-xorg xserver-xorg-input-libinput xinit xauth x11-xserver-utils x11-utils x11-xkb-utils xkb-data dbus-x11 dbus-user-session libpam0g pipewire pipewire-pulse pipewire-alsa wireplumber alsa-utils alsa-ucm-conf rtkit fontconfig fonts-dejavu-core fonts-font-awesome fonts-jetbrains-mono fonts-noto-color-emoji kitty fish lxpolkit bluez power-profiles-daemon dunst picom feh maim slop xclip pcmanfm playerctl libnotify-bin brightnessctl gammastep iproute2 iw xdg-utils procps util-linux" ;;
-    void) say "xorg-minimal xinit xauth xrandr xset xprop xdpyinfo xwininfo xrdb xsetroot setxkbmap xkeyboard-config dbus elogind pam pam-base pipewire wireplumber alsa-utils alsa-ucm-conf rtkit fontconfig dejavu-fonts-ttf nerd-fonts-symbols-ttf noto-fonts-emoji kitty fish-shell polkit-gnome bluez power-profiles-daemon dunst picom feh maim slop xclip pcmanfm playerctl libnotify brightnessctl gammastep iproute2 iw xdg-utils procps-ng util-linux" ;;
+    arch) say "xorg-server xorg-xinit xorg-xauth xorg-xrandr xorg-xset xorg-xprop xorg-xdpyinfo xorg-xwininfo xorg-xrdb xorg-xsetroot xorg-setxkbmap xf86-input-libinput xkeyboard-config noto-fonts-emoji dbus pam pipewire pipewire-audio pipewire-pulse pipewire-alsa wireplumber alsa-utils alsa-ucm-conf rtkit fontconfig ttf-dejavu ttf-jetbrains-mono-nerd kitty fish polkit-gnome bluez bluez-utils power-profiles-daemon dunst picom feh maim slop xclip pcmanfm playerctl libnotify brightnessctl gammastep iproute2 iw xdg-utils xdg-user-dirs procps-ng util-linux" ;;
+    debian) say "xserver-xorg xserver-xorg-input-libinput xinit xauth x11-xserver-utils x11-utils x11-xkb-utils xkb-data dbus-x11 dbus-user-session libpam0g pipewire pipewire-pulse pipewire-alsa wireplumber alsa-utils alsa-ucm-conf rtkit fontconfig fonts-dejavu-core fonts-font-awesome fonts-jetbrains-mono fonts-noto-color-emoji kitty fish lxpolkit bluez power-profiles-daemon dunst picom feh maim slop xclip pcmanfm playerctl libnotify-bin brightnessctl gammastep iproute2 iw xdg-utils xdg-user-dirs procps util-linux" ;;
+    void) say "xorg-minimal xinit xauth xrandr xset xprop xdpyinfo xwininfo xrdb xsetroot setxkbmap xkeyboard-config dbus elogind pam pam-base pipewire wireplumber alsa-utils alsa-ucm-conf rtkit fontconfig dejavu-fonts-ttf nerd-fonts-symbols-ttf noto-fonts-emoji kitty fish-shell polkit-gnome bluez power-profiles-daemon dunst picom feh maim slop xclip pcmanfm playerctl libnotify brightnessctl gammastep iproute2 iw xdg-utils xdg-user-dirs procps-ng util-linux" ;;
   esac
 }
 # Runtime libraries and extraction tools for the pinned Helium archive. These
@@ -1530,6 +1530,7 @@ apply_target_release() {
   APPLY_OK=0
   trap 'apply_restore_config' EXIT INT TERM HUP
   browser_install
+  ensure_user_dirs
   install_config
   install_wallpapers
   install_terminal
@@ -1849,6 +1850,27 @@ start_selected_dm() {
   fi
 }
 
+ensure_user_dirs() {
+  # Use the user's existing XDG choices. On a fresh home, let xdg-user-dirs
+  # create the locale-appropriate standard folders; never invent English aliases.
+  [ -z "$ROOT" ] || return 0
+  [ "${NIRUX_TEST_AS_ROOT:-0}" = 1 ] && return 0
+  [ "$(id -u)" = 0 ] && return 0
+  command -v xdg-user-dirs-update >/dev/null 2>&1 || return 0
+  config_home=${XDG_CONFIG_HOME:-$HOME/.config}
+  if [ ! -f "$config_home/user-dirs.dirs" ]; then
+    xdg-user-dirs-update >/dev/null 2>&1 || {
+      say 'xdg-user-dirs-update failed; standard folders were not created'
+      return 0
+    }
+  fi
+  for role in DESKTOP DOCUMENTS DOWNLOAD MUSIC PICTURES VIDEOS; do
+    dir=$(xdg-user-dir "$role" 2>/dev/null || :)
+    [ -n "$dir" ] && [ "$dir" != "$HOME" ] || continue
+    [ -d "$dir" ] || mkdir -p "$dir" 2>/dev/null || say "Could not create $dir"
+  done
+}
+
 ensure_video_group() {
   # brightnessctl's udev rule grants the video group write access to the
   # backlight. The install user already has sudo, so this does not add a new
@@ -2136,6 +2158,7 @@ install_or_update() {
     return 0
   fi
   browser_install
+  ensure_user_dirs
   # Configuration and system integration must succeed before switching the
   # active programs. A rejected configuration leaves the old generation intact.
   install_config

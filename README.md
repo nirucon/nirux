@@ -17,6 +17,7 @@ components need.
 - **Bar:** ten per-monitor workspaces with occupancy markers, clock/calendar, network, battery, audio,
   microphone, brightness, media, weather, updates, CPU/memory, uptime, power
   profile, Bluetooth and a system tray.
+- **Standard folders:** locale-aware XDG Desktop, Documents, Downloads, Music, Pictures and Videos.
 - **Keyboard-first desktop:** application search, open-window switching,
   grouped actions, workspace recipes and focus/presentation modes.
 - **Notifications:** native notification service and hardware OSD, DND,
