@@ -2,7 +2,7 @@
 # NIRUX: install a complete X11 desktop, or maintain an existing installation.
 set -eu
 
-VERSION=0.10.77
+VERSION=0.10.78
 PREFIX=${NIRUX_PREFIX:-$HOME/.local}
 BIN=$PREFIX/bin
 STATE=$PREFIX/share/nirux
@@ -765,6 +765,21 @@ upgrade_obsolete_default_browser() {
     die "could not update the default browser in $1; original kept"
   fi
 }
+upgrade_default_launcher() {
+  # The owner direction is the native launcher for new/default configurations.
+  # Preserve every explicit custom command and keep rofi installed as fallback.
+  grep -qx 'launcher = \["rofi", "-show", "drun"\]' "$1" || return 0
+  mig_mode=$(stat -c %a "$1") || die "could not read permissions for $1"
+  mig_tmp=$(mktemp "$1.nirux-launcher.XXXXXX") || die "could not stage $1"
+  if awk '$0 == "launcher = [\"rofi\", \"-show\", \"drun\"]" {print "launcher = [\"nirulauncher\", \"--apps\"]"; next} {print}' "$1" > "$mig_tmp" &&
+     chmod "$mig_mode" "$mig_tmp" && mv -f "$mig_tmp" "$1"; then
+    say 'Switched the default launcher from rofi to nirulauncher; custom commands are unchanged.'
+  else
+    rm -f "$mig_tmp"
+    die "could not update the default launcher in $1; original kept"
+  fi
+}
+
 upgrade_default_workspaces() {
   # Older NIRUX examples used nine workspaces and nine tags. Expand only the
   # exact old defaults; custom counts, names and monitor profiles are kept.
@@ -1068,6 +1083,7 @@ install_config() {
   add_missing_key "$cfg_candidate" wallpaper theme_dir '"~/Pictures/Wallpapers/NIRU"'
   add_missing_key "$cfg_candidate" monitors workspaces 10
   upgrade_default_workspaces "$cfg_candidate"
+  upgrade_default_launcher "$cfg_candidate"
   upgrade_obsolete_default_browser "$cfg_candidate"
   cfg_after=$(sha256sum "$cfg_candidate" | cut -d ' ' -f1)
   if [ "$cfg_before" = "$cfg_after" ]; then

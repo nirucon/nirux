@@ -63,7 +63,7 @@ terminal_alt = []
 # NIRUPI override requires nirupi_compat.
 browser = ["helium"]
 # Super+P.
-launcher = ["rofi", "-show", "drun"]
+launcher = ["nirulauncher", "--apps"]
 
 # ── Font ────────────────────────────────────────────────────────────────────
 font_size = 15.0

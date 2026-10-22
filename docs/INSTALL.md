@@ -19,8 +19,9 @@ cd nirux
 ```
 
 A normal install provisions Xorg/startx, D-Bus, PAM, Polkit, fonts, kitty, fish,
-rofi, pcmanfm, audio, notifications, screenshots, Bluetooth, power profiles and
-the other runtime tools. Use `--no-packages` only when those dependencies are
+pcmanfm, audio, notifications, screenshots, Bluetooth, power profiles and the
+other runtime tools. Super+P opens the native NIRU launcher; rofi remains
+installed as a fallback for explicit custom launcher commands. Use `--no-packages` only when those dependencies are
 already installed; `--minimal` is an alias for the same behaviour, not a partial
 suite.
 
