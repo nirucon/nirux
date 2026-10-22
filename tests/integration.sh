@@ -891,4 +891,5 @@ grep -qx 'background = "101010"' "$appearance_test/custom.toml" || fail 'custom 
 )
 
 sh "$SOURCE/tests/display-manager.sh"
+sh "$SOURCE/tests/runtime-state.sh"
 say 'PASS: install/update/rollback/purge on all three distro mappings, status purity, checksum failure, PAM includes, power rule, greeter themes, managed Helium policy, obsolete browser migration, target-owned apply'

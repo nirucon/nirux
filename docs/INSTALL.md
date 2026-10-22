@@ -47,6 +47,18 @@ from the theme directory rather than the shared SDDM component directory.
 Display managers selected by NIRUX start only after the program generation is
 active, including Void's immediately-starting runit service links.
 
+Package installation refreshes a running system D-Bus configuration and input
+device rules before the first desktop starts. This lets newly created service
+accounts (such as `polkitd`) use their bus policies, and lets the greeter use
+the system's configured X11 keyboard layout without requiring a reboot. No
+Swedish layout is forced on the greeter: Debian's `/etc/default/keyboard` and
+the equivalent distribution configuration remain authoritative. On Arch and
+Void, a console-only keymap is not a substitute for configuring the X11 layout.
+The system bus is reloaded,
+never restarted; on Void a bus that is not yet running reads fresh policies
+when its service starts. Debian's temporary package policy defers only LightDM
+and SDDM, while delegating other services to any existing administrator policy.
+
 If an earlier LightDM installation opens only a terminal, choose **NIRUWM** in
 the greeter's session menu before logging in. Debian's **Default Xsession** is
 not NIRUWM; the greeter remembers the corrected choice. The suite is installed

@@ -2,7 +2,7 @@
 # NIRUX: install a complete X11 desktop, or maintain an existing installation.
 set -eu
 
-VERSION=0.10.73
+VERSION=0.10.74
 PREFIX=${NIRUX_PREFIX:-$HOME/.local}
 BIN=$PREFIX/bin
 STATE=$PREFIX/share/nirux
@@ -126,8 +126,9 @@ browser_packages() {
 }
 # Debian package post-install scripts start display managers immediately. NIRUX
 # has not installed the session yet at that point, so a newly started LightDM
-# or SDDM can take over the console before NIRUWM exists. Deny service starts
-# during package installation and restore the previous policy afterwards.
+# or SDDM can take over the console before NIRUWM exists. Defer only display
+# managers: blocking D-Bus reloads leaves new polkitd identities unknown to the
+# running bus. All other services retain the administrator's previous policy.
 restore_policy() {
   [ -n "$POLICY_TARGET" ] || return 0
   if [ "$POLICY_HAD" = 1 ] && [ -f "$POLICY_BACKUP" ]; then
@@ -152,9 +153,41 @@ disable_service_starts() {
     as_root cp -p "$POLICY_TARGET" "$POLICY_BACKUP" || die 'could not preserve policy-rc.d'
     POLICY_HAD=1
   fi
-  printf '#!/bin/sh\nexit 101\n' > "$POLICY_TMP/policy-rc.d"
+  cat > "$POLICY_TMP/policy-rc.d" <<'EOF'
+#!/bin/sh
+case "${1:-}" in --quiet) service=${2:-} ;; *) service=${1:-} ;; esac
+service=${service##*/}
+case "$service" in
+  lightdm|lightdm.service|sddm|sddm.service|display-manager|display-manager.service) exit 101 ;;
+esac
+EOF
+  if [ "$POLICY_HAD" = 1 ]; then
+    # Quote the generated pathname even when TMPDIR contains shell characters.
+    policy_quoted=$(printf '%s' "$POLICY_BACKUP" | sed "s/'/'\\\\''/g")
+    printf "exec '%s' \"\$@\"\n" "$policy_quoted" >> "$POLICY_TMP/policy-rc.d"
+  else
+    printf 'exit 0\n' >> "$POLICY_TMP/policy-rc.d"
+  fi
   as_root install -d -m 755 "$ROOT/usr/sbin"
   as_root install -m 755 "$POLICY_TMP/policy-rc.d" "$POLICY_TARGET" || die 'could not disable package service starts'
+}
+
+# Packages add D-Bus policies/users and X11 input rules after the machine has
+# already booted. Refresh live state before a first greeter/session starts.
+# Never restart the system bus, change the configured layout, or touch a test
+# system root. Void may not have started D-Bus yet; its first start is fresh.
+refresh_runtime_state() {
+  [ -z "$ROOT" ] || return 0
+  if command -v dbus-send >/dev/null 2>&1 && as_root test -S /run/dbus/system_bus_socket; then
+    as_root dbus-send --system --type=method_call --print-reply --reply-timeout=5000 \
+      --dest=org.freedesktop.DBus /org/freedesktop/DBus org.freedesktop.DBus.ReloadConfig >/dev/null ||
+      die 'could not reload system D-Bus configuration; reboot before starting the desktop'
+  fi
+  if command -v udevadm >/dev/null 2>&1 && as_root test -S /run/udev/control; then
+    as_root udevadm control --reload-rules || die 'could not reload input device rules'
+    as_root udevadm trigger --action=change --subsystem-match=input || die 'could not refresh input device properties'
+    as_root udevadm settle --timeout=10 || die 'input device refresh did not finish'
+  fi
 }
 
 install_packages() {
@@ -219,6 +252,7 @@ install_packages() {
       fi
       ;;
   esac
+  refresh_runtime_state
 }
 
 # Is this distribution package installed? Queries are deliberately local: an
