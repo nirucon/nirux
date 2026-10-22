@@ -49,6 +49,7 @@ components need.
 | [NIRULAUNCHER](https://github.com/nirucon/nirulauncher) | Keyboard-first application and action launcher |
 | [NIRUNOTIFY](https://github.com/nirucon/nirunotify) | Native notifications and hardware OSD |
 | [NIRUSHOT](https://github.com/nirucon/nirushot) | Screenshot capture, review and annotation |
+| [NIRUFETCH](https://github.com/nirucon/nirufetch) | NIRU-themed terminal system fetch |
 
 ## Requirements
 

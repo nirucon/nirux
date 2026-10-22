@@ -243,6 +243,17 @@ exists, because brightnessctl's udev rule grants that group access to the
 backlight. Log out and in after the first install before using the brightness
 keys. `nirux doctor` reports a backlight that brightnessctl cannot read.
 
+### nirufetch
+
+`nirufetch` prints a local NIRU-styled system summary: OS, kernel, uptime,
+shell, WM, terminal, CPU, memory, disk and active theme. It reads local files
+only and has no network or daemon.
+
+```sh
+nirufetch
+nirufetch --plain
+```
+
 ### LocalSend
 
 A normal install downloads the official LocalSend Linux tarball, verifies its
