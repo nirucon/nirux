@@ -6,7 +6,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: sh -n nirux && sh -n terminal/nirux-theme-hook && for script in tests/*.sh; do sh -n "$script"; done
-      - run: docker run --rm -v "$PWD":/src:ro koalaman/shellcheck:stable -S warning -s sh /src/nirux /src/tests/integration.sh /src/tests/config-smoke.sh /src/tests/startx-smoke.sh /src/tests/release-smoke.sh /src/tests/browser-smoke.sh /src/terminal/nirux-theme-hook
+      - run: docker run --rm -v "$PWD":/src:ro koalaman/shellcheck:stable -S warning -s sh /src/nirux /src/tests/integration.sh /src/tests/display-manager.sh /src/tests/config-smoke.sh /src/tests/startx-smoke.sh /src/tests/release-smoke.sh /src/tests/browser-smoke.sh /src/terminal/nirux-theme-hook
       - run: sh tests/integration.sh
       - run: python3 tests/terminal-theme.py
   distros:

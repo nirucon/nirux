@@ -2,7 +2,7 @@
 # NIRUX: install a complete X11 desktop, or maintain an existing installation.
 set -eu
 
-VERSION=0.10.72
+VERSION=0.10.73
 PREFIX=${NIRUX_PREFIX:-$HOME/.local}
 BIN=$PREFIX/bin
 STATE=$PREFIX/share/nirux
@@ -1463,6 +1463,7 @@ apply_target_release() {
   prepare_pam
   install_greeters "$DM"
   register_session
+  setup_dm_session
   setup_startx
   enable_services
   activate
@@ -1594,6 +1595,9 @@ prepare_pam() {
   { say "# NIRUX owner: $PREFIX"; cat "$pam_source"; } > "$WORK/pam"
   write_system "$ROOT/etc/pam.d/nirulock" "$WORK/pam"
 }
+sddm_qt_version() {
+  if command -v sddm-greeter-qt6 >/dev/null 2>&1; then say 6; else say 5; fi
+}
 install_greeters() {
   greeter_dm=${1:-keep}
   case "$greeter_dm" in
@@ -1628,10 +1632,15 @@ install_greeters() {
 
   case "$greeter_dm" in
     sddm)
-      for file in theme.conf metadata.desktop arrow.png; do
+      for file in theme.conf arrow.png; do
         [ -f "$unpack/sddm/$file" ] || die "integration archive is missing sddm/$file"
         write_system "$ROOT/usr/share/sddm/themes/nirux/$file" "$unpack/sddm/$file"
       done
+      [ -f "$unpack/sddm/metadata.desktop" ] || die 'integration archive is missing sddm/metadata.desktop'
+      # Trixie supplies only sddm-greeter-qt6. Without QtVersion, SDDM
+      # assumes Qt5 and silently replaces the NIRUX theme with its fallback.
+      { say "# NIRUX owner: $PREFIX"; sed '/^QtVersion=/d' "$unpack/sddm/metadata.desktop"; say "QtVersion=$(sddm_qt_version)"; } > "$WORK/sddm-metadata.desktop"
+      write_system "$ROOT/usr/share/sddm/themes/nirux/metadata.desktop" "$WORK/sddm-metadata.desktop"
       [ -f "$unpack/background.png" ] || die 'integration archive is missing background.png'
       write_system "$ROOT/usr/share/sddm/themes/nirux/background.png" "$unpack/background.png"
       [ -f "$unpack/sddm/Main.qml" ] || die 'integration archive is missing sddm/Main.qml'
@@ -1663,6 +1672,7 @@ install_greeters() {
 remove_greeters() {
   remove_system "$ROOT/etc/polkit-1/rules.d/49-nirux-power.rules"
   remove_system "$ROOT/etc/sddm.conf.d/50-nirux.conf"
+  remove_system "$ROOT/etc/lightdm/lightdm.conf.d/50-nirux-session.conf"
   if [ -f "$ROOT/usr/share/sddm/themes/nirux/Main.qml" ] &&
      owned "$ROOT/usr/share/sddm/themes/nirux/Main.qml"; then
     as_root rm -rf "$ROOT/usr/share/sddm/themes/nirux"
@@ -1682,6 +1692,59 @@ register_session() {
   { say "# NIRUX owner: $PREFIX"; say '[Desktop Entry]'; say 'Name=NIRUWM'; say 'Type=Application'; say "Exec=$BIN/niruwm-session"; say 'DesktopNames=NIRUWM'; } > "$WORK/session.desktop"
   write_system "$ROOT/usr/share/xsessions/niruwm.desktop" "$WORK/session.desktop"
 }
+# Registration only makes NIRUWM available. Debian's Default Xsession (and
+# other desktops on Arch/Void) can otherwise win the first-login selection.
+# Only an explicit install selects defaults; keep/update never change them.
+setup_dm_session() {
+  [ "$operation" = install ] || return 0
+  case "$DM" in
+    lightdm)
+      { say "# NIRUX owner: $PREFIX"; say '[Seat:*]'; say 'user-session=niruwm'; } > "$WORK/lightdm-session.conf"
+      write_system "$ROOT/etc/lightdm/lightdm.conf.d/50-nirux-session.conf" "$WORK/lightdm-session.conf"
+      ;;
+    sddm)
+      # lastIndex is ambiguous in QML: zero means either a remembered first
+      # session or no saved selection. Seed the real SDDM state only when it
+      # has no remembered session, rather than overriding lastIndex in a theme.
+      sddm_state=$ROOT/var/lib/sddm/state.conf
+      sddm_mode=644
+      sddm_owner=
+      if as_root test -f "$sddm_state"; then
+        as_root cat "$sddm_state" > "$WORK/sddm-state.original"
+        sddm_mode=$(as_root stat -c %a "$sddm_state")
+        sddm_owner=$(as_root stat -c %u:%g "$sddm_state")
+      else
+        : > "$WORK/sddm-state.original"
+      fi
+      if awk '
+        /^[[:space:]]*\[/ { last = ($0 ~ /^[[:space:]]*\[Last\][[:space:]]*$/) }
+        last && /^[[:space:]]*Session[[:space:]]*=/ {
+          sub(/^[^=]*=[[:space:]]*/, ""); sub(/[[:space:]]*$/, "")
+          if (length) found = 1
+        }
+        END { exit !found }
+      ' "$WORK/sddm-state.original"; then
+        say 'Keeping remembered SDDM session'
+        return 0
+      fi
+      awk '
+        function select_session() { print "Session=/usr/share/xsessions/niruwm.desktop"; written = 1 }
+        /^[[:space:]]*\[/ {
+          if (last && !written) select_session()
+          last = ($0 ~ /^[[:space:]]*\[Last\][[:space:]]*$/)
+          if (last) section = 1
+        }
+        last && /^[[:space:]]*Session[[:space:]]*=/ { if (!written) select_session(); next }
+        { print }
+        END { if (!section) print "[Last]"; if (!written) select_session() }
+      ' "$WORK/sddm-state.original" > "$WORK/sddm-state"
+      as_root test -d "$(dirname "$sddm_state")" ||
+        as_root install -d -m 755 "$(dirname "$sddm_state")"
+      as_root install -m "$sddm_mode" "$WORK/sddm-state" "$sddm_state"
+      [ -z "$sddm_owner" ] || as_root chown "$sddm_owner" "$sddm_state"
+      ;;
+  esac
+}
 setup_startx() {
   # Never replace an existing user's xinitrc, including a symlink. Refresh the
   # NIRUX-owned file so an update keeps the current session path.
@@ -1698,6 +1761,14 @@ setup_startx() {
 start_selected_dm() {
   [ "$operation" = install ] || return 0
   case "$DM" in sddm|lightdm) ;; *) return 0 ;; esac
+  if [ "$OS" = void ]; then
+    # Linking into runsvdir starts the service immediately, unlike systemctl
+    # enable. Do this after activate, never while the generation is staged.
+    [ -d "$ROOT/etc/sv/$DM" ] || die "missing runit service for $DM"
+    [ -e "$ROOT/var/service/$DM" ] || [ -L "$ROOT/var/service/$DM" ] ||
+      as_root ln -s "/etc/sv/$DM" "$ROOT/var/service/$DM"
+    return 0
+  fi
   case "$OS" in arch|debian) ;; *) return 0 ;; esac
   if ! as_root systemctl is-active --quiet "$DM.service" 2>/dev/null; then
     as_root systemctl start "$DM.service" >/dev/null 2>&1 ||
@@ -1712,10 +1783,6 @@ enable_services() {
         as_root ln -s "/etc/sv/$service" "$ROOT/var/service/$service"
       fi
     done
-    case "$DM" in sddm|lightdm)
-      [ -d "$ROOT/etc/sv/$DM" ] || die "missing runit service for $DM"
-      [ -e "$ROOT/var/service/$DM" ] || as_root ln -s "/etc/sv/$DM" "$ROOT/var/service/$DM"
-      ;; esac
     for service in bluetoothd power-profiles-daemon; do
       if [ -d "$ROOT/etc/sv/$service" ] && [ ! -e "$ROOT/var/service/$service" ]; then
         as_root ln -s "/etc/sv/$service" "$ROOT/var/service/$service"
@@ -1987,6 +2054,7 @@ install_or_update() {
   prepare_pam
   install_greeters "$DM"
   register_session
+  setup_dm_session
   setup_startx
   enable_services
   activate

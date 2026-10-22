@@ -35,7 +35,25 @@ suite.
 An existing display manager is preserved. If none exists, the interactive
 default is startx; SDDM and LightDM can be selected explicitly. NIRUX-owned
 greeters use the Niru Noir palette and the Rooted in Less wallpaper. An existing
-`~/.xinitrc` is preserved. From a local TTY:
+`~/.xinitrc` is preserved.
+
+When LightDM or SDDM is explicitly selected during installation, NIRUWM is the
+first-login default on Debian, Arch and Void. LightDM uses a managed seat
+default and GTK greeter default; SDDM is seeded only if it has no remembered
+session. Existing remembered sessions are preserved. Keeping an existing
+display manager or running an update does not reset its session selection.
+The SDDM theme selects the installed Qt5/Qt6 greeter and resolves its images
+from the theme directory rather than the shared SDDM component directory.
+Display managers selected by NIRUX start only after the program generation is
+active, including Void's immediately-starting runit service links.
+
+If an earlier LightDM installation opens only a terminal, choose **NIRUWM** in
+the greeter's session menu before logging in. Debian's **Default Xsession** is
+not NIRUWM; the greeter remembers the corrected choice. The suite is installed
+as release programs under `~/.local/bin` and `~/.local/share/nirux`, not as
+component source repositories under `~/Git`.
+
+From a local TTY:
 
 ```sh
 startx "$HOME/.local/bin/niruwm-session"

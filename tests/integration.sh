@@ -5,7 +5,7 @@ SOURCE=$(CDPATH='' cd -- "$(dirname "$0")/.." && pwd)
 TEST=$(mktemp -d)
 trap 'rm -rf "$TEST"' EXIT
 export HOME=$TEST/home NIRUX_PREFIX=$TEST/prefix NIRUX_SYSTEM_ROOT=$TEST/system
-export XDG_CONFIG_HOME=$HOME/.config XDG_STATE_HOME=$HOME/.local/state
+export XDG_CONFIG_HOME=$HOME/.config XDG_STATE_HOME=$HOME/.local/state XDG_CACHE_HOME=$HOME/.cache
 export NIRUX_LIBRARY=1 NIRUX_TEST_AS_ROOT=1
 mkdir -p "$HOME" "$NIRUX_SYSTEM_ROOT/etc/pam.d" "$NIRUX_SYSTEM_ROOT/usr/share/xsessions"
 . "$SOURCE/nirux"
@@ -866,7 +866,12 @@ grep -qx 'background = "101010"' "$appearance_test/custom.toml" || fail 'custom 
   rm -rf "$ROOT" "$WORK"
   mkdir -p "$WORK/download/nirux"
   cp "$FIXTURE/nirux/$VERSION/nirux-integration.tar.xz" "$WORK/download/nirux/"
+  sddm_qt_version() { say 5; }
   install_greeters sddm
+  grep -qx 'QtVersion=5' "$ROOT/usr/share/sddm/themes/nirux/metadata.desktop" || fail 'Qt5 SDDM metadata missing'
+  sddm_qt_version() { say 6; }
+  install_greeters sddm
+  grep -qx 'QtVersion=6' "$ROOT/usr/share/sddm/themes/nirux/metadata.desktop" || fail 'Qt6 SDDM metadata missing'
   [ -f "$ROOT/usr/share/sddm/themes/nirux/Main.qml" ] || fail 'missing SDDM QML theme'
   grep -q '^// NIRUX owner: ' "$ROOT/usr/share/sddm/themes/nirux/Main.qml" || fail 'SDDM theme is not owned'
   grep -qx 'Current=nirux' "$ROOT/etc/sddm.conf.d/50-nirux.conf" || fail 'SDDM theme was not selected'
@@ -885,4 +890,5 @@ grep -qx 'background = "101010"' "$appearance_test/custom.toml" || fail 'custom 
   WORK=$saved_work
 )
 
+sh "$SOURCE/tests/display-manager.sh"
 say 'PASS: install/update/rollback/purge on all three distro mappings, status purity, checksum failure, PAM includes, power rule, greeter themes, managed Helium policy, obsolete browser migration, target-owned apply'

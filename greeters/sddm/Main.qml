@@ -41,7 +41,7 @@ Rectangle {
 
     Background {
         anchors.fill: parent
-        source: config.background
+        source: Qt.resolvedUrl(config.background)
         fillMode: Image.PreserveAspectCrop
     }
 
@@ -147,7 +147,7 @@ Rectangle {
                 menuColor: root.surface
                 textColor: root.foreground
                 arrowColor: root.surface
-                arrowIcon: "arrow.png"
+                arrowIcon: Qt.resolvedUrl("arrow.png")
                 font.pixelSize: 13
                 KeyNavigation.tab: loginButton
             }
