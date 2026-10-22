@@ -27,6 +27,7 @@ components need.
 - **Hardware controls:** PipeWire/WirePlumber audio and microphone, BlueZ
   Bluetooth, RandR display profiles, power-profiles-daemon, backlight and
   night light.
+- **LocalSend:** verified official Linux tarball, floating centered window, no Flatpak.
 - **Screenshots:** region, window or full-screen capture with a floating review
   dialog, crop, rectangle, arrow, mask, zoom and pan.
 - **Appearance:** Niru Noir, Nord, Satie and Carl Larsson themes, shared semantic

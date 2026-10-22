@@ -2,7 +2,7 @@
 # NIRUX: install a complete X11 desktop, or maintain an existing installation.
 set -eu
 
-VERSION=0.10.80
+VERSION=0.10.81
 PREFIX=${NIRUX_PREFIX:-$HOME/.local}
 BIN=$PREFIX/bin
 STATE=$PREFIX/share/nirux
@@ -23,6 +23,8 @@ APPLY_OK=0
 # extracted browser is still checked for shared libraries and its reported
 # version before the stable link is switched.
 HELIUM_VERSION=0.19.4.1
+LOCALSEND_VERSION=1.18.2
+LOCALSEND_SHA256=287690a9a8eb6da9c83cc97b3e3030ac67daf32a7331fcf307d0939300658d16
 HELIUM_SHA256=6ca6e4a00fef5916821fb1af8a9607cc6b386f678a7eb422e55f19116ba30469
 BROWSER_CHOICE=
 BROWSER_EFFECTIVE=keep
@@ -105,9 +107,9 @@ _debian_t64() {
 }
 packages_for() {
   case "$1" in
-    arch) say "xorg-server xorg-xinit xorg-xauth xorg-xrandr xorg-xset xorg-xprop xorg-xdpyinfo xorg-xwininfo xorg-xrdb xorg-xsetroot xorg-setxkbmap xf86-input-libinput xkeyboard-config noto-fonts-emoji dbus pam pipewire pipewire-audio pipewire-pulse pipewire-alsa wireplumber alsa-utils alsa-ucm-conf rtkit fontconfig ttf-dejavu ttf-jetbrains-mono-nerd kitty fish polkit-gnome bluez bluez-utils power-profiles-daemon dunst picom feh maim slop xclip pcmanfm playerctl libnotify brightnessctl gammastep iproute2 iw xdg-utils xdg-user-dirs procps-ng util-linux" ;;
-    debian) say "xserver-xorg xserver-xorg-input-libinput xinit xauth x11-xserver-utils x11-utils x11-xkb-utils xkb-data dbus-x11 dbus-user-session libpam0g pipewire pipewire-pulse pipewire-alsa wireplumber alsa-utils alsa-ucm-conf rtkit fontconfig fonts-dejavu-core fonts-font-awesome fonts-jetbrains-mono fonts-noto-color-emoji kitty fish lxpolkit bluez power-profiles-daemon dunst picom feh maim slop xclip pcmanfm playerctl libnotify-bin brightnessctl gammastep iproute2 iw xdg-utils xdg-user-dirs procps util-linux" ;;
-    void) say "xorg-minimal xinit xauth xrandr xset xprop xdpyinfo xwininfo xrdb xsetroot setxkbmap xkeyboard-config dbus elogind pam pam-base pipewire wireplumber alsa-utils alsa-ucm-conf rtkit fontconfig dejavu-fonts-ttf nerd-fonts-symbols-ttf noto-fonts-emoji kitty fish-shell polkit-gnome bluez power-profiles-daemon dunst picom feh maim slop xclip pcmanfm playerctl libnotify brightnessctl gammastep iproute2 iw xdg-utils xdg-user-dirs procps-ng util-linux" ;;
+    arch) say "xorg-server xorg-xinit xorg-xauth xorg-xrandr xorg-xset xorg-xprop xorg-xdpyinfo xorg-xwininfo xorg-xrdb xorg-xsetroot xorg-setxkbmap xf86-input-libinput xkeyboard-config noto-fonts-emoji dbus pam pipewire pipewire-audio pipewire-pulse pipewire-alsa wireplumber alsa-utils alsa-ucm-conf rtkit fontconfig ttf-dejavu ttf-jetbrains-mono-nerd kitty fish polkit-gnome libayatana-appindicator bluez bluez-utils power-profiles-daemon dunst picom feh maim slop xclip pcmanfm playerctl libnotify brightnessctl gammastep iproute2 iw xdg-utils xdg-user-dirs procps-ng util-linux" ;;
+    debian) say "xserver-xorg xserver-xorg-input-libinput xinit xauth x11-xserver-utils x11-utils x11-xkb-utils xkb-data dbus-x11 dbus-user-session libpam0g pipewire pipewire-pulse pipewire-alsa wireplumber alsa-utils alsa-ucm-conf rtkit fontconfig fonts-dejavu-core fonts-font-awesome fonts-jetbrains-mono fonts-noto-color-emoji kitty fish lxpolkit libayatana-appindicator3-1 bluez power-profiles-daemon dunst picom feh maim slop xclip pcmanfm playerctl libnotify-bin brightnessctl gammastep iproute2 iw xdg-utils xdg-user-dirs procps util-linux" ;;
+    void) say "xorg-minimal xinit xauth xrandr xset xprop xdpyinfo xwininfo xrdb xsetroot setxkbmap xkeyboard-config dbus elogind pam pam-base pipewire wireplumber alsa-utils alsa-ucm-conf rtkit fontconfig dejavu-fonts-ttf nerd-fonts-symbols-ttf noto-fonts-emoji kitty fish-shell polkit-gnome libayatana-appindicator bluez power-profiles-daemon dunst picom feh maim slop xclip pcmanfm playerctl libnotify brightnessctl gammastep iproute2 iw xdg-utils xdg-user-dirs procps-ng util-linux" ;;
   esac
 }
 # Runtime libraries and extraction tools for the pinned Helium archive. These
@@ -765,6 +767,12 @@ upgrade_obsolete_default_browser() {
     die "could not update the default browser in $1; original kept"
   fi
 }
+add_localsend_rule() {
+  grep -q '^class = "localsend"' "$1" && return 0
+  printf '\n[[rules]]\nclass = "localsend"\nfloating = true\ncenter = true\n' >> "$1"
+  say 'Added the default LocalSend floating/centered rule.'
+}
+
 upgrade_default_launcher() {
   # The owner direction is the native launcher for new/default configurations.
   # Preserve every explicit custom command. Rofi is not installed by default,
@@ -1085,6 +1093,7 @@ install_config() {
   add_missing_key "$cfg_candidate" monitors workspaces 10
   upgrade_default_workspaces "$cfg_candidate"
   upgrade_default_launcher "$cfg_candidate"
+  add_localsend_rule "$cfg_candidate"
   upgrade_obsolete_default_browser "$cfg_candidate"
   cfg_after=$(sha256sum "$cfg_candidate" | cut -d ' ' -f1)
   if [ "$cfg_before" = "$cfg_after" ]; then
@@ -1349,6 +1358,83 @@ browser_install() {
   fetch "https://github.com/imputnet/helium-linux/releases/download/$HELIUM_VERSION/helium-$HELIUM_VERSION-x86_64_linux.tar.xz" "$archive"
   browser_install_archive "$archive"
 }
+localsend_installed_version() {
+  [ -f "$STATE/localsend-version" ] && cat "$STATE/localsend-version"
+}
+
+localsend_write_desktop() {
+  mkdir -p "$PREFIX/share/applications" || die 'could not create the application directory'
+  cat > "$WORK/localsend.desktop" <<EOF
+[Desktop Entry]
+Type=Application
+Name=LocalSend
+Comment=Share files with nearby devices
+Exec=$BIN/localsend
+Icon=$PREFIX/share/icons/hicolor/256x256/apps/localsend.png
+Terminal=false
+Categories=Network;FileTransfer;
+StartupWMClass=localsend_app
+EOF
+  install -m 644 "$WORK/localsend.desktop" "$PREFIX/share/applications/localsend.desktop" || \
+    die 'could not install the LocalSend desktop entry'
+}
+
+localsend_install() {
+  # LocalSend is a large external application, like Helium. It is installed
+  # from the official verified tarball, not Flatpak or AppImage.
+  [ -z "$ROOT" ] || return 0
+  [ "${NIRUX_TEST_AS_ROOT:-0}" = 1 ] && return 0
+  [ -x "$STATE/localsend/current/localsend_app" ] &&
+    [ "$(localsend_installed_version)" = "$LOCALSEND_VERSION" ] && {
+      localsend_write_desktop
+      say "Managed LocalSend $LOCALSEND_VERSION is already installed"
+      return 0
+    }
+  [ -n "${WORK:-}" ] || die 'LocalSend installation requires a working directory'
+  archive=$WORK/download/localsend/LocalSend-$LOCALSEND_VERSION-linux-x86-64.tar.gz
+  mkdir -p "$WORK/download/localsend" || die 'could not create the LocalSend download directory'
+  say "Downloading LocalSend $LOCALSEND_VERSION"
+  fetch "https://github.com/localsend/localsend/releases/download/v$LOCALSEND_VERSION/LocalSend-$LOCALSEND_VERSION-linux-x86-64.tar.gz" "$archive"
+  actual=$(sha256sum "$archive" | cut -d ' ' -f1)
+  [ "$actual" = "$LOCALSEND_SHA256" ] || die 'LocalSend checksum mismatch; current installation kept'
+  unpack=$WORK/localsend-unpack
+  rm -rf "$unpack"
+  mkdir -p "$unpack" || die 'could not create the LocalSend extraction directory'
+  tar -xzf "$archive" -C "$unpack" || die 'could not extract the LocalSend archive'
+  [ -x "$unpack/localsend_app" ] || die 'LocalSend archive is missing the executable'
+  load_output=$(LD_TRACE_LOADED_OBJECTS=1 "$unpack/localsend_app" 2>&1 || :)
+  missing_libs=$(printf '%s\n' "$load_output" | awk '/not found/ {print $1}' | sort -u)
+  [ -z "$missing_libs" ] || die "LocalSend needs missing shared libraries: $(printf '%s' "$missing_libs" | tr '\n' ' ')"
+  destination=$STATE/localsend/$LOCALSEND_VERSION
+  staging=$STATE/localsend/.$LOCALSEND_VERSION.$$
+  mkdir -p "$STATE/localsend" || die 'could not create the LocalSend directory'
+  rm -rf "$staging"
+  mv "$unpack" "$staging" || die 'could not stage the LocalSend files'
+  rm -rf "$destination"
+  mv "$staging" "$destination" || die 'could not install the LocalSend files'
+  rm -f "$STATE/localsend/current"
+  ln -s "$destination" "$STATE/localsend/current" || die 'could not activate LocalSend'
+  mkdir -p "$BIN" || die 'could not create the command directory'
+  ln -sfn "$STATE/localsend/current/localsend_app" "$BIN/localsend" || die 'could not link LocalSend'
+  mkdir -p "$PREFIX/share/icons/hicolor/256x256/apps" || die 'could not create the icon directory'
+  icon=$destination/data/flutter_assets/assets/img/logo-256.png
+  if [ -f "$icon" ]; then
+    install -m 644 "$icon" "$PREFIX/share/icons/hicolor/256x256/apps/localsend.png" || :
+  fi
+  printf '%s\n' "$LOCALSEND_VERSION" > "$STATE/localsend-version"
+  for old in "$STATE/localsend"/*; do
+    [ ! -d "$old" ] || [ "$old" = "$destination" ] || rm -rf "$old"
+  done
+  localsend_write_desktop
+  say "Installed managed LocalSend $LOCALSEND_VERSION"
+}
+
+localsend_remove_managed() {
+  rm -f "$BIN/localsend" "$PREFIX/share/applications/localsend.desktop" \
+    "$PREFIX/share/icons/hicolor/256x256/apps/localsend.png" "$STATE/localsend-version"
+  rm -rf "$STATE/localsend"
+}
+
 choose_browser() {
   operation=$1
   persisted=$(browser_policy)
@@ -1530,6 +1616,7 @@ apply_target_release() {
   APPLY_OK=0
   trap 'apply_restore_config' EXIT INT TERM HUP
   browser_install
+  localsend_install
   ensure_user_dirs
   install_config
   install_wallpapers
@@ -2085,6 +2172,7 @@ uninstall() {
     if [ -L "$BIN/$program" ] && [ "$(readlink "$BIN/$program")" = "$STATE/current/bin/$program" ]; then rm -f "$BIN/$program"; fi
   done
   if [ -f "$HOME/.xinitrc" ] && owned "$HOME/.xinitrc"; then rm -f "$HOME/.xinitrc"; fi
+  localsend_remove_managed
   browser_remove_managed
   browser_remove_policy
   remove_terminal
@@ -2158,6 +2246,7 @@ install_or_update() {
     return 0
   fi
   browser_install
+  localsend_install
   ensure_user_dirs
   # Configuration and system integration must succeed before switching the
   # active programs. A rejected configuration leaves the old generation intact.

@@ -243,6 +243,15 @@ exists, because brightnessctl's udev rule grants that group access to the
 backlight. Log out and in after the first install before using the brightness
 keys. `nirux doctor` reports a backlight that brightnessctl cannot read.
 
+### LocalSend
+
+A normal install downloads the official LocalSend Linux tarball, verifies its
+SHA-256, and installs it under the NIRUX prefix with a desktop entry. Flatpak is
+not used. The default NIRUWM rule opens the main window floating and centered;
+child dialogs remain separate. LocalSend uses the local network directly and
+does not require a NIRUX-managed service or a firewall change. Discovery and
+transfers remain LocalSend's responsibility.
+
 ### Compositor and transparency
 
 The session starts picom when installed. `niructl compositor status|on|off|toggle`
