@@ -2,7 +2,7 @@
 # NIRUX: install a complete X11 desktop, or maintain an existing installation.
 set -eu
 
-VERSION=0.10.82
+VERSION=0.10.83
 PREFIX=${NIRUX_PREFIX:-$HOME/.local}
 BIN=$PREFIX/bin
 STATE=$PREFIX/share/nirux
@@ -1034,7 +1034,25 @@ fresh_config_source() {
     cat "$1"
   fi
 }
+install_picom_config() {
+  picom_conf=${XDG_CONFIG_HOME:-$HOME/.config}/picom.conf
+  [ -e "$picom_conf" ] && { say "Keeping existing $picom_conf"; return 0; }
+  command -v picom >/dev/null 2>&1 || return 0
+  mkdir -p "$(dirname "$picom_conf")"
+  cat > "$picom_conf" <<'EOF'
+# NIRUX default compositor. Edit or remove this file freely.
+backend = "xrender";
+inactive-opacity = 0.94;
+active-opacity = 1.0;
+shadow = true;
+shadow-radius = 12;
+shadow-opacity = 0.35;
+EOF
+  say "Created $picom_conf"
+}
+
 install_config() {
+  install_picom_config
   cfg_example="$WORK/download/nirux/config.example.toml"
   [ -f "$cfg_example" ] || { say 'config example missing; user configuration unchanged'; return 0; }
   mkdir -p "$CONFDIR"
@@ -1977,6 +1995,14 @@ ensure_user_dirs() {
   done
 }
 
+install_backlight_rule() {
+  rule=$ROOT/etc/udev/rules.d/70-nirux-backlight.rules
+  { say "# NIRUX owner: $PREFIX"; say 'SUBSYSTEM=="backlight", ACTION=="add|change", RUN+="/bin/chgrp video /sys/class/backlight/%k/brightness", RUN+="/bin/chmod 0660 /sys/class/backlight/%k/brightness"'; } > "$WORK/backlight.rules"
+  write_system "$rule" "$WORK/backlight.rules"
+  as_root udevadm control --reload-rules >/dev/null 2>&1 || :
+  as_root udevadm trigger --subsystem-match=backlight --action=change >/dev/null 2>&1 || :
+}
+
 ensure_video_group() {
   # brightnessctl's udev rule grants the video group write access to the
   # backlight. The install user already has sudo, so this does not add a new
@@ -2016,6 +2042,7 @@ enable_services() {
     done
   fi
   ensure_video_group
+  install_backlight_rule
 }
 check_pam() {
   [ -f "$ROOT/etc/pam.d/nirulock" ] || { say 'missing PAM service'; return 1; }
@@ -2186,6 +2213,7 @@ uninstall() {
   lock
   remove_system "$ROOT/usr/share/xsessions/niruwm.desktop"
   remove_system "$ROOT/etc/pam.d/nirulock"
+  remove_system "$ROOT/etc/udev/rules.d/70-nirux-backlight.rules"
   remove_greeters
   for program in $PROGRAMS; do
     if [ -L "$BIN/$program" ] && [ "$(readlink "$BIN/$program")" = "$STATE/current/bin/$program" ]; then rm -f "$BIN/$program"; fi

@@ -437,6 +437,7 @@ for TEST_OS in arch debian void; do
   session_desktop=$ROOT/usr/share/xsessions/niruwm.desktop
   grep -qxF "Exec=$BIN/niruwm-session" "$session_desktop" || fail 'display-manager session Exec must be an unquoted absolute path'
   ! grep -q '"' "$session_desktop" || fail 'display-manager session must not quote Exec'
+  [ -f "$ROOT/etc/udev/rules.d/70-nirux-backlight.rules" ] || fail 'missing backlight udev rule'
   first=$(readlink "$STATE/current")
   operation install_or_update update --no-packages --release 99.0.0
   second=$(readlink "$STATE/current")
