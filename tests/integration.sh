@@ -483,7 +483,7 @@ TEST_OS=arch; PREFIX=$TEST/newcomponent; BIN=$PREFIX/bin; STATE=$PREFIX/share/ni
 operation install_or_update install --no-packages --browser none --display-manager startx --release "$VERSION"
 operation install_or_update update --no-packages --release 99.2.0 > "$TEST/newcomponent.log" 2>&1 || \
   fail 'first update with a new component failed'
-grep -q 'Staged components through the target installer handoff' "$TEST/newcomponent.log" || fail 'target installer handoff was not used'
+grep -q 'Staged components. Validating generation' "$TEST/newcomponent.log" || fail 'target installer handoff was not used'
 [ -x "$BIN/nirufoo" ] || fail 'new component was not linked on the first update'
 [ -x "$STATE/current/bin/nirufoo" ] || fail 'new component was not staged'
 [ "$(readlink "$BIN/nirufoo")" = "$STATE/current/bin/nirufoo" ] || fail 'new component link is not generation-owned'
@@ -582,7 +582,7 @@ unset LIB_MARKER
 [ "$rc" = 0 ] || { cat "$TEST/libdep.log" >&2; fail 'missing-library update failed'; }
 [ -f "$TEST/lib-marker" ] || fail 'new package dependency was not provisioned'
 [ -x "$BIN/nirulib" ] || fail 'shared-library-dependent component was not linked'
-grep -q 'Staged components through the target installer handoff' "$TEST/libdep.log" || fail 'target installer handoff was not used for the dependency case'
+grep -q 'Staged components. Validating generation' "$TEST/libdep.log" || fail 'target installer handoff was not used for the dependency case'
 grep -q 'Installing missing debian packages: fake-lib' "$TEST/libdep.log" || fail 'missing dependency was not provisioned before staging'
 operation uninstall --purge >/dev/null 2>&1 || :
 rm -rf "$PREFIX"

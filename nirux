@@ -2,7 +2,7 @@
 # NIRUX: install a complete X11 desktop, or maintain an existing installation.
 set -eu
 
-VERSION=0.10.81
+VERSION=0.10.82
 PREFIX=${NIRUX_PREFIX:-$HOME/.local}
 BIN=$PREFIX/bin
 STATE=$PREFIX/share/nirux
@@ -1150,9 +1150,19 @@ choose_dm() {
 }
 fetch() {
   if command -v curl >/dev/null 2>&1; then
-    curl -fsSL --connect-timeout 20 --max-time 300 --retry 3 -o "$2" "$1"
+    case "$1" in
+      *api.github.com*|*/SHA256SUMS) curl -fsSL --connect-timeout 20 --max-time 300 --retry 3 -o "$2" "$1" ;;
+      *)
+        if [ -t 2 ]; then
+          curl -fL --progress-bar --connect-timeout 20 --max-time 300 --retry 3 -o "$2" "$1"
+        else
+          curl -fsSL --connect-timeout 20 --max-time 300 --retry 3 -o "$2" "$1"
+        fi
+        ;;
+    esac
   elif command -v wget >/dev/null 2>&1; then
-    wget -q -T 60 -t 3 -O "$2" "$1"
+    if [ -t 2 ]; then wget --show-progress -T 60 -t 3 -O "$2" "$1"
+    else wget -q -T 60 -t 3 -O "$2" "$1"; fi
   else die "install curl or wget and ca-certificates first"
   fi
 }
@@ -1172,6 +1182,7 @@ release_files() {
   download_dir=$WORK/download/$download_repo
   mkdir -p "$download_dir"
   download_base=https://github.com/nirucon/$download_repo/releases/download/v$download_version
+  say "Downloading $download_repo $download_version..."
   fetch "$download_base/SHA256SUMS" "$download_dir/SHA256SUMS"
   for download_file in "$@"; do
     fetch "$download_base/$download_file" "$download_dir/$download_file"
@@ -1612,12 +1623,14 @@ apply_target_release() {
   release_optional_file nirux "$RELEASE" nirux-wallpapers.tar.xz
   release_optional_file nirux "$RELEASE" nirux-terminal.tar.xz
   release_optional_file nirux "$RELEASE" nirux-integration.tar.xz
+  say "Applying NIRUX $RELEASE..."
   apply_prepare_backup
   APPLY_OK=0
   trap 'apply_restore_config' EXIT INT TERM HUP
   browser_install
   localsend_install
   ensure_user_dirs
+  say 'Installing configuration and desktop assets...'
   install_config
   install_wallpapers
   install_terminal
@@ -1626,7 +1639,9 @@ apply_target_release() {
   register_session
   setup_dm_session
   setup_startx
+  say 'Enabling session services...'
   enable_services
+  say 'Activating the new program generation...'
   activate
   start_selected_dm
   APPLY_OK=1
@@ -1639,15 +1654,18 @@ apply_target_release() {
 }
 stage_release() {
   if [ -z "$RELEASE" ]; then
+    say 'Checking the latest NIRUX release...'
     fetch https://api.github.com/repos/nirucon/nirux/releases/latest "$WORK/latest.json"
     RELEASE=$(sed -n 's/.*"tag_name": *"v\([0-9.]*\)".*/\1/p' "$WORK/latest.json" | head -n 1)
   fi
+  say "Preparing NIRUX $RELEASE..."
   release_files nirux "$RELEASE" nirux manifest config.example.toml appearance.example.toml
   release_optional_file nirux "$RELEASE" nirux-wallpapers.tar.xz
   release_optional_file nirux "$RELEASE" nirux-terminal.tar.xz
   release_optional_file nirux "$RELEASE" nirux-integration.tar.xz
   [ "$(manifest_version schema)" = 1 ] || die "unsupported manifest schema"
   [ "$(manifest_version suite)" = "$RELEASE" ] || die "suite/manifest version mismatch"
+  say 'Verifying the downloaded installer and checksums...'
   sh -n "$WORK/download/nirux/nirux"
   reported=$(sh "$WORK/download/nirux/nirux" --version | awk '{print $2}')
   [ "$reported" = "$RELEASE" ] || die 'installer/manifest version mismatch'
@@ -1658,6 +1676,7 @@ stage_release() {
   # any staged binary is executed. This lets a new shared-library dependency be
   # present when the new component is first started and version-checked.
   if [ "$packages" = 1 ]; then
+    say 'Checking required OS packages...'
     NIRUX_SYSTEM_ROOT=$ROOT NIRUX_PROVISION_OS=$OS NIRUX_PROVISION_DM=$DM NIRUX_PROVISION_BROWSER=$BROWSER_EFFECTIVE \
       sh "$WORK/download/nirux/nirux" _provision missing
   fi
@@ -1669,7 +1688,7 @@ stage_release() {
       sh "$WORK/download/nirux/nirux" _stage 1; then
       die 'target installer staging failed; current installation kept'
     fi
-    say 'Staged components through the target installer handoff.'
+    say 'Staged components. Validating generation...'
   else
     stage_components
   fi
