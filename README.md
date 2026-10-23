@@ -1,7 +1,9 @@
 # NIRUX - A minimal X11 desktop by Nicklas Rudolfsson
 
 **Early beta.** A small, keyboard-first X11 desktop for **Arch Linux, Debian and
-Void Linux (glibc, x86_64)**. The suite is crafted in Rust; the installer is a
+Void Linux (glibc, x86_64)**. Its interaction model is inspired by suckless
+dwm: a keyboard-first tiling desktop with a tiny, readable configuration and no
+desktop-environment stack. The suite is crafted in Rust; the installer is a
 compact POSIX shell program. The result is fast, quiet and intentionally
 minimal: no desktop-environment stack and no unnecessary background services.
 

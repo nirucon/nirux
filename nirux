@@ -2,7 +2,7 @@
 # NIRUX: install a complete X11 desktop, or maintain an existing installation.
 set -eu
 
-VERSION=0.10.112
+VERSION=0.10.113
 PREFIX=${NIRUX_PREFIX:-$HOME/.local}
 BIN=$PREFIX/bin
 STATE=$PREFIX/share/nirux
@@ -31,6 +31,12 @@ HELIUM_SHA256=6ca6e4a00fef5916821fb1af8a9607cc6b386f678a7eb422e55f19116ba30469
 BROWSER_CHOICE=
 BROWSER_EFFECTIVE=keep
 BROWSER_EXPLICIT=0
+LOCALSEND_CHOICE=
+LOCALSEND_EFFECTIVE=yes
+LOCALSEND_EXPLICIT=0
+OPENCODE_CHOICE=
+OPENCODE_EFFECTIVE=yes
+OPENCODE_EXPLICIT=0
 
 say() { printf '%s\n' "$*"; }
 die() { say "nirux: $*" >&2; exit 1; }
@@ -45,6 +51,7 @@ usage() {
   say "Default: keep an existing display manager; otherwise offer startx (default), SDDM or LightDM."
   say "Browser: a fresh install offers Helium (default Helium) and remembers the choice."
   say "         --browser none is a persistent opt-out; --browser keep preserves the current policy."
+  say "         --localsend/--opencode choose optional apps; without a flag an install prompts and an update preserves the current choice."
   say "--minimal/--no-packages: binaries and integration only; required OS packages must already exist."
   say "Updates check and install missing runtime packages from the downloaded release unless --no-packages is given."
 }
@@ -1399,6 +1406,7 @@ localsend_installed_version() {
 localsend_write_desktop() {
   mkdir -p "$PREFIX/share/applications" || die 'could not create the application directory'
   cat > "$WORK/localsend.desktop" <<EOF
+# NIRUX owner: $PREFIX
 [Desktop Entry]
 Type=Application
 Name=LocalSend
@@ -1468,8 +1476,17 @@ localsend_install() {
 }
 
 localsend_remove_managed() {
-  rm -f "$BIN/localsend" "$PREFIX/share/applications/localsend.desktop" \
-    "$PREFIX/share/icons/hicolor/256x256/apps/localsend.png" "$STATE/localsend-version"
+  managed=0
+  if [ -L "$BIN/localsend" ]; then
+    case "$(readlink "$BIN/localsend")" in
+      "$STATE/localsend/current/localsend_app"|"$STATE/localsend"/*) managed=1; rm -f "$BIN/localsend" ;;
+    esac
+  fi
+  if [ "$managed" = 1 ] || [ -f "$STATE/localsend-version" ]; then
+    rm -f "$PREFIX/share/applications/localsend.desktop" \
+      "$PREFIX/share/icons/hicolor/256x256/apps/localsend.png"
+  fi
+  rm -f "$STATE/localsend-version"
   rm -rf "$STATE/localsend"
 }
 
@@ -1542,6 +1559,57 @@ opencode_remove_managed() {
   if opencode_managed; then rm -f "$BIN/opencode"; fi
   rm -f "$STATE/opencode-version"
   rm -rf "$STATE/opencode"
+}
+
+app_policy() {
+  app=$1
+  file=$STATE/$app-policy
+  [ -f "$file" ] || { say keep; return 0; }
+  value=$(awk -v a="$app" '$1 == a && ($2 == "yes" || $2 == "no") {print $2; exit}' "$file")
+  [ -n "$value" ] || value=keep
+  say "$value"
+}
+
+app_policy_set() {
+  app=$1; value=$2
+  mkdir -p "$STATE"
+  printf '# NIRUX owner: %s\n%s %s\n' "$PREFIX" "$app" "$value" > "$STATE/.$app-policy.$$" || \
+    die "could not stage the $app policy"
+  mv -f "$STATE/.$app-policy.$$" "$STATE/$app-policy" || \
+    die "could not persist the $app policy"
+}
+
+choose_one_app() {
+  app=$1; label=$2; operation=$3; explicit=$4; choice=$5
+  persisted=$(app_policy "$app")
+  if [ "$explicit" = 1 ]; then
+    effective=$choice
+  elif [ "$operation" = install ] && [ "$persisted" = keep ]; then
+    if [ -t 0 ]; then
+      say "Install $label? This is optional and can be removed later with: nirux remove $app"
+      printf 'Install %s [Y/n]: ' "$label"
+      IFS= read -r answer || answer=yes
+      case "$answer" in [nN]*) effective=no ;; *) effective=yes ;; esac
+    else
+      effective=yes
+    fi
+  elif [ "$persisted" = keep ]; then
+    effective=yes
+  else
+    effective=$persisted
+  fi
+  case "$effective" in yes|no) ;; *) die "$app choice must be yes or no" ;; esac
+  if [ "$explicit" = 1 ] || [ "$operation" = install ]; then
+    app_policy_set "$app" "$effective"
+  fi
+}
+
+choose_optional_apps() {
+  operation=$1
+  choose_one_app localsend LocalSend "$operation" "$LOCALSEND_EXPLICIT" "$LOCALSEND_CHOICE"
+  LOCALSEND_EFFECTIVE=$effective
+  choose_one_app opencode OpenCode "$operation" "$OPENCODE_EXPLICIT" "$OPENCODE_CHOICE"
+  OPENCODE_EFFECTIVE=$effective
 }
 
 choose_browser() {
@@ -1707,6 +1775,8 @@ apply_target_release() {
   OS=${NIRUX_APPLY_OS:-$(distro)}
   DM=${NIRUX_APPLY_DM:-keep}
   BROWSER_EFFECTIVE=${NIRUX_APPLY_BROWSER:-keep}
+  LOCALSEND_EFFECTIVE=${NIRUX_APPLY_LOCALSEND:-yes}
+  OPENCODE_EFFECTIVE=${NIRUX_APPLY_OPENCODE:-yes}
   operation=${NIRUX_APPLY_OPERATION:-update}
   RELEASE=${NIRUX_APPLY_RELEASE:-$(manifest_version suite)}
   [ "$(manifest_version schema)" = 1 ] || die 'unsupported manifest schema'
@@ -1726,8 +1796,8 @@ apply_target_release() {
   APPLY_OK=0
   trap 'apply_restore_config' EXIT INT TERM HUP
   browser_install
-  localsend_install
-  opencode_install
+  if [ "$LOCALSEND_EFFECTIVE" = yes ]; then localsend_install; else localsend_remove_managed; fi
+  if [ "$OPENCODE_EFFECTIVE" = yes ]; then opencode_install; else opencode_remove_managed; fi
   ensure_user_dirs
   say 'Installing configuration and desktop assets...'
   install_config
@@ -2408,6 +2478,29 @@ remove_system() {
     fi
   fi
 }
+remove_app() {
+  app=${1:-}
+  [ "$#" = 1 ] || die 'remove needs helium, localsend or opencode'
+  case "$app" in
+    helium)
+      browser_remove_managed
+      browser_policy_set none
+      say 'Removed managed Helium. External Helium installations were not touched.'
+      ;;
+    localsend)
+      localsend_remove_managed
+      app_policy_set localsend no
+      say 'Removed managed LocalSend. External installations were not touched.'
+      ;;
+    opencode)
+      opencode_remove_managed
+      app_policy_set opencode no
+      say 'Removed managed OpenCode. External installations were not touched.'
+      ;;
+    *) die 'remove needs helium, localsend or opencode' ;;
+  esac
+}
+
 uninstall() {
   purge=0
   for option in "$@"; do case "$option" in --purge) purge=1 ;; *) die "unknown option: $option" ;; esac; done
@@ -2424,6 +2517,7 @@ uninstall() {
   opencode_remove_managed
   browser_remove_managed
   browser_remove_policy
+  rm -f "$STATE/localsend-policy" "$STATE/opencode-policy"
   remove_terminal
   if [ "$purge" = 1 ]; then
     remove_owned_wallpapers
@@ -2494,6 +2588,8 @@ install_or_update() {
       --full) packages=1 ;;
       --display-manager) shift; [ "$#" -gt 0 ] || die 'missing display-manager value'; DM=$1 ;;
       --browser) shift; [ "$#" -gt 0 ] || die 'missing browser value'; BROWSER_CHOICE=$1; BROWSER_EXPLICIT=1 ;;
+      --localsend) shift; [ "$#" -gt 0 ] || die 'missing localsend value'; LOCALSEND_CHOICE=$1; LOCALSEND_EXPLICIT=1 ;;
+      --opencode) shift; [ "$#" -gt 0 ] || die 'missing opencode value'; OPENCODE_CHOICE=$1; OPENCODE_EXPLICIT=1 ;;
       --release) shift; [ "$#" -gt 0 ] || die 'missing release version'; RELEASE=${1#v} ;;
       *) die "unknown option: $1" ;;
     esac
@@ -2507,6 +2603,7 @@ install_or_update() {
   platform
   if [ "$operation" = install ]; then choose_dm; else DM=keep; fi
   choose_browser "$operation"
+  choose_optional_apps "$operation"
   lock
   case "$BROWSER_EFFECTIVE" in
     helium|none)
@@ -2518,6 +2615,12 @@ install_or_update() {
   if [ "$BROWSER_EXPLICIT" = 1 ] && [ "$BROWSER_EFFECTIVE" = none ]; then
     browser_remove_managed
   fi
+  if [ "$LOCALSEND_EXPLICIT" = 1 ] && [ "$LOCALSEND_EFFECTIVE" = no ]; then
+    localsend_remove_managed
+  fi
+  if [ "$OPENCODE_EXPLICIT" = 1 ] && [ "$OPENCODE_EFFECTIVE" = no ]; then
+    opencode_remove_managed
+  fi
   # The bootstrap install has to include curl before any release can be
   # downloaded. Updates skip this and let the newly verified release provision
   # its own package list below.
@@ -2527,6 +2630,7 @@ install_or_update() {
     if ! NIRUX_PREFIX=$PREFIX NIRUX_SYSTEM_ROOT=$ROOT NIRUX_STAGE_WORK=$WORK \
       NIRUX_APPLY_RELEASE=$RELEASE NIRUX_APPLY_OS=$OS \
       NIRUX_APPLY_DM=$DM NIRUX_APPLY_BROWSER=$BROWSER_EFFECTIVE \
+      NIRUX_APPLY_LOCALSEND=$LOCALSEND_EFFECTIVE NIRUX_APPLY_OPENCODE=$OPENCODE_EFFECTIVE \
       NIRUX_APPLY_OPERATION=$operation \
       sh "$WORK/download/nirux/nirux" _apply 2; then
       die 'target installer apply failed; current installation kept'
@@ -2534,8 +2638,8 @@ install_or_update() {
     return 0
   fi
   browser_install
-  localsend_install
-  opencode_install
+  if [ "$LOCALSEND_EFFECTIVE" = yes ]; then localsend_install; else localsend_remove_managed; fi
+  if [ "$OPENCODE_EFFECTIVE" = yes ]; then opencode_install; else opencode_remove_managed; fi
   ensure_user_dirs
   # Configuration and system integration must succeed before switching the
   # active programs. A rejected configuration leaves the old generation intact.
@@ -2563,6 +2667,7 @@ main() {
     _apply-version) say 2 ;;
     _apply) shift; [ "$#" = 1 ] || die 'apply takes one protocol version'; apply_target_release "$1" ;;
     _stage) shift; [ "$#" = 1 ] || die 'staging takes one protocol version'; stage_target_release "$1" ;;
+    remove) shift; [ "$#" = 1 ] || die 'remove needs helium, localsend or opencode'; lock; remove_app "$1" ;;
     uninstall) shift; uninstall "$@" ;;
     rollback) [ "$#" = 1 ] || die 'rollback takes no arguments'; rollback ;;
     login-wallpaper) shift; login_wallpaper "$@" ;;

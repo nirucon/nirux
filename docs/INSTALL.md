@@ -30,7 +30,23 @@ is an alias for the same behaviour, not a partial suite.
 ./nirux install --display-manager startx
 ./nirux install --display-manager sddm
 ./nirux install --display-manager lightdm
+./nirux install --browser none --localsend no --opencode no
 ```
+
+Helium, LocalSend and OpenCode are optional. A fresh interactive install asks
+about each; noninteractive installs default to enabled. Use `--browser`,
+`--localsend yes|no` and `--opencode yes|no` to decide explicitly. The choice is
+persisted and respected by `nirux update`.
+
+Remove one managed app without removing the desktop:
+
+```sh
+nirux remove helium
+nirux remove localsend
+nirux remove opencode
+```
+
+External installations and user files are never removed.
 
 An existing display manager is preserved. If none exists, the interactive
 default is startx; SDDM and LightDM can be selected explicitly. NIRUX-owned
@@ -434,9 +450,10 @@ nirux uninstall
 nirux uninstall --purge
 ```
 
-A normal uninstall removes NIRUX-owned links, managed browser files, generated
-session files and owned system integration, and restores backed-up system files.
-Browser profiles and wallpaper pictures are kept.
+A normal uninstall removes NIRUX-owned links, managed Helium, LocalSend and
+OpenCode files, generated session files and owned system integration, and
+restores backed-up system files. Browser profiles, app settings and wallpaper
+pictures are kept.
 
 `--purge` additionally removes unmodified NIRUX wallpapers and these documented
 suite-owned configuration directories:
