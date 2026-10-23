@@ -410,6 +410,21 @@ This intentionally discards local overrides such as theme, browser, key
 bindings and bar layout. NIRUBAR's narrower `--reset-config` only resets the
 `[bar]` table.
 
+## Upgrading from NIRUPI/dwm
+
+Old installs may keep a `~/.xinitrc` or SDDM session selection that points to
+a NIRUPI/dwm session this suite no longer provides. NIRUX backs up and repairs
+only those known legacy choices; a custom session file is left untouched.
+`nirux update` does this automatically. To run the repair explicitly:
+
+```sh
+nirux repair-session
+```
+
+The backup is `~/.xinitrc.nirux-backup` or
+`/var/lib/sddm/state.conf.nirux-backup`. If the session still fails, inspect
+`~/.local/state/niruwm/session.log` and `~/.xsession-errors`.
+
 ## Update and rollback
 
 ```sh

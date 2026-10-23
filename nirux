@@ -2,7 +2,7 @@
 # NIRUX: install a complete X11 desktop, or maintain an existing installation.
 set -eu
 
-VERSION=0.10.115
+VERSION=0.10.116
 PREFIX=${NIRUX_PREFIX:-$HOME/.local}
 BIN=$PREFIX/bin
 STATE=$PREFIX/share/nirux
@@ -48,6 +48,7 @@ usage() {
   say "                    [--localsend yes|no] [--opencode yes|no]"
   say "       nirux login-wallpaper [list|set FILE|reset]"
   say "       nirux reset-config"
+  say "       nirux repair-session"
   say "       nirux remove helium|localsend|opencode"
   say "       nirux rollback | status | doctor | uninstall [--purge] | --version | --help"
   say "Default: keep an existing display manager; otherwise offer startx (default), SDDM or LightDM."
@@ -1810,11 +1811,11 @@ apply_target_release() {
   register_session
   setup_dm_session
   setup_startx
+  repair_legacy_sddm_session
   say 'Enabling session services...'
   enable_services
   say 'Activating the new program generation...'
   activate
-  [ -x "$BIN/localsend" ] || localsend_install
   start_selected_dm
   APPLY_OK=1
   trap - EXIT INT TERM HUP
@@ -2218,15 +2219,56 @@ setup_dm_session() {
   esac
 }
 setup_startx() {
-  # Never replace an existing user's xinitrc, including a symlink. Refresh the
-  # NIRUX-owned file so an update keeps the current session path.
+  # Never replace a valid user's xinitrc. A legacy NIRUPI/dwm file is known to
+  # point at a session that this suite no longer installs, so it is backed up
+  # and replaced; an arbitrary custom xinitrc is still preserved.
+  legacy=0
+  if [ -f "$HOME/.xinitrc" ] && ! owned "$HOME/.xinitrc"; then
+    if grep -Eqi 'nirupi|dwm-session|dwm-status|exec[^#]*/dwm' "$HOME/.xinitrc"; then
+      legacy=1
+    fi
+  fi
   if { [ ! -e "$HOME/.xinitrc" ] && [ ! -L "$HOME/.xinitrc" ]; } ||
-     { [ -f "$HOME/.xinitrc" ] && owned "$HOME/.xinitrc"; }; then
+     { [ -f "$HOME/.xinitrc" ] && owned "$HOME/.xinitrc"; } ||
+     [ "$legacy" = 1 ]; then
+    if [ "$legacy" = 1 ]; then
+      [ -e "$HOME/.xinitrc.nirux-backup" ] || cp -p "$HOME/.xinitrc" "$HOME/.xinitrc.nirux-backup"
+      say "Replaced legacy NIRUPI/dwm ~/.xinitrc; backup: $HOME/.xinitrc.nirux-backup"
+    fi
     { say '#!/bin/sh'; say "# NIRUX owner: $PREFIX"; say "exec \"$BIN/niruwm-session\""; } > "$WORK/xinitrc"
     install -m 755 "$WORK/xinitrc" "$HOME/.xinitrc"
   fi
   say "From a local TTY: startx $BIN/niruwm-session"
-  say "If ~/.xinitrc selects NIRU, plain startx works too. Existing ~/.xinitrc is preserved."
+  say "If ~/.xinitrc selects NIRU, plain startx works too. Existing custom ~/.xinitrc files are preserved."
+}
+
+repair_legacy_sddm_session() {
+  state=$ROOT/var/lib/sddm/state.conf
+  [ -f "$state" ] || return 0
+  current=$(as_root awk '
+    /^[[:space:]]*\[/ { last = ($0 ~ /^[[:space:]]*\[Last\][[:space:]]*$/) }
+    last && /^[[:space:]]*Session[[:space:]]*=/ {
+      sub(/^[^=]*=[[:space:]]*/, ""); sub(/[[:space:]]*$/, ""); print; exit
+    }
+  ' "$state" 2>/dev/null || :)
+  [ -n "$current" ] || return 0
+  broken=0
+  case "$current" in
+    *nirupi*|*dwm*) broken=1 ;;
+    *) [ -e "$ROOT$current" ] || broken=1 ;;
+  esac
+  [ "$broken" = 1 ] || return 0
+  mode=$(as_root stat -c %a "$state" 2>/dev/null || printf 644)
+  as_root cp -p "$state" "$state.nirux-backup" 2>/dev/null || :
+  as_root awk '
+    /^[[:space:]]*\[/ { last = ($0 ~ /^[[:space:]]*\[Last\][[:space:]]*$/) }
+    last && /^[[:space:]]*Session[[:space:]]*=/ {
+      print "Session=/usr/share/xsessions/niruwm.desktop"; next
+    }
+    { print }
+  ' "$state" > "$WORK/sddm-state.repaired" || die 'could not prepare SDDM session repair'
+  as_root install -m "$mode" "$WORK/sddm-state.repaired" "$state" || die 'could not repair the SDDM session'
+  say "Repaired legacy SDDM session selection; backup: $state.nirux-backup"
 }
 # Start a selected display manager only after the session entry and the active
 # generation exist. Package installation must never start it early.
@@ -2534,6 +2576,13 @@ uninstall() {
   rm -f "$STATE/current" "$STATE/previous"
   say 'NIRU removed. OS packages retained. An already running session exits normally on logout.'
 }
+repair_session() {
+  lock
+  setup_startx
+  repair_legacy_sddm_session
+  say 'Session repair complete. Log out/in, or run startx from a TTY.'
+}
+
 reset_config() {
   source=$STATE/config.example.toml
   if [ ! -f "$source" ] && [ -f "$(dirname "$0")/config.example.toml" ]; then
@@ -2653,6 +2702,7 @@ install_or_update() {
   register_session
   setup_dm_session
   setup_startx
+  repair_legacy_sddm_session
   enable_services
   activate
   start_selected_dm
@@ -2674,6 +2724,7 @@ main() {
     rollback) [ "$#" = 1 ] || die 'rollback takes no arguments'; rollback ;;
     login-wallpaper) shift; login_wallpaper "$@" ;;
     reset-config) [ "$#" = 1 ] || die 'reset-config takes no arguments'; reset_config ;;
+    repair-session) [ "$#" = 1 ] || die 'repair-session takes no arguments'; repair_session ;;
     status|doctor) [ "$#" = 1 ] || die "$1 takes no arguments"; "$1" ;;
     --version) say "NIRUX $VERSION" ;;
     --help|help) usage ;;
