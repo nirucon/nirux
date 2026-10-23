@@ -264,8 +264,12 @@ dedicated profile. No Electron, WebView runtime or browser is installed.
 niruwebapp create "YouTube Music" https://music.youtube.com
 niruwebapp list
 niruwebapp launch "YouTube Music"
+niruwebapp icon youtube-music ~/Pictures/yt.png
 niruwebapp remove youtube-music --delete-profile
 ```
+
+`--icon` and `icon` accept PNG, SVG, XPM or JPEG; owned icons are removed
+with the launcher.
 
 Removing a launcher keeps its profile unless `--delete-profile` is explicit.
 

@@ -29,7 +29,7 @@ components need.
   night light.
 - **LocalSend:** verified official Linux tarball, floating centered window, no Flatpak.
 - **OpenCode:** managed V2 native CLI, installed without npm, services or agent startup.
-- **Webapps:** `niruwebapp` creates browser-backed desktop apps with dedicated profiles.
+- **Webapps:** `niruwebapp` creates browser-backed desktop apps with dedicated profiles and optional local icons.
 - **Screenshots:** region, window or full-screen capture with a floating review
   dialog, crop, rectangle, arrow, mask, zoom and pan.
 - **Appearance:** Niru Noir, Nord, Satie and Carl Larsson themes, shared semantic
