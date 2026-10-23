@@ -54,7 +54,11 @@ Rectangle {
         id: panel
         width: Math.min(root.width - 48, 420)
         height: content.implicitHeight + 56
-        anchors.centerIn: parent
+        anchors.horizontalCenter: parent.horizontalCenter
+        anchors.verticalCenter: parent.verticalCenter
+        // Keep the prompt in the lower middle: clear of the bottom edge, but
+        // not floating in the exact centre of a tall screen.
+        anchors.verticalCenterOffset: Math.round(root.height * 0.16)
         color: "#e6161618"
         radius: 12
         border.color: root.border

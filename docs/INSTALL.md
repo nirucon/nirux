@@ -34,7 +34,8 @@ is an alias for the same behaviour, not a partial suite.
 
 An existing display manager is preserved. If none exists, the interactive
 default is startx; SDDM and LightDM can be selected explicitly. NIRUX-owned
-greeters use the selected theme palette and its matching wallpaper. An existing
+greeters use the selected theme palette and its matching wallpaper, with the
+login panel centred in the lower part of the screen. An existing
 `~/.xinitrc` is preserved.
 
 When LightDM or SDDM is explicitly selected during installation, NIRUWM is the
