@@ -20,11 +20,9 @@ cd nirux
 
 A normal install provisions Xorg/startx, D-Bus, PAM, Polkit, fonts, kitty, fish,
 pcmanfm, audio, notifications, screenshots, Bluetooth, power profiles and the
-other runtime tools. Super+P opens the native NIRU launcher. Rofi is not
-installed by default; an explicit custom launcher command can still use it if
-the user installs it. Use `--no-packages` only when those dependencies are
-already installed; `--minimal` is an alias for the same behaviour, not a partial
-suite.
+other runtime tools. Super+P opens the native NIRU launcher. Use
+`--no-packages` only when those dependencies are already installed; `--minimal`
+is an alias for the same behaviour, not a partial suite.
 
 ```sh
 ./nirux install --browser helium
@@ -374,6 +372,25 @@ account, plus local active users in `wheel` or `sudo`, power off, reboot or
 suspend without a password. Remote sessions and other identities still
 authenticate normally.
 
+## Reset configuration
+
+To restore the complete shared NIRUWM/NIRUBAR configuration to the current
+NIRUX example, including the numbered/icon/text workspace presets:
+
+```sh
+nirux reset-config
+```
+
+A `.nirux-backup` copy is kept next to the file. The standalone equivalent is:
+
+```sh
+niruwm --reset-config
+```
+
+This intentionally discards local overrides such as theme, browser, key
+bindings and bar layout. NIRUBAR's narrower `--reset-config` only resets the
+`[bar]` table.
+
 ## Update and rollback
 
 ```sh
@@ -427,7 +444,7 @@ suite-owned configuration directories:
   `~/.local/state/niruscreensaver`
 - `~/.cache/nirubar`
 
-XDG paths are respected. OS packages, the chosen display manager, NIRUPI and
+XDG paths are respected. OS packages, the chosen display manager and
 unrelated files are retained.
 
 `NIRUX_PREFIX` changes the install prefix (default `$HOME/.local`). Use the same

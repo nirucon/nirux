@@ -10,7 +10,7 @@ mkdir -p "$CFG/niruwm/themes"
 cat > "$CFG/niruwm/config.toml" <<'CONFIG'
 theme = "niru-noir"
 terminal = ["kitty"]
-launcher = ["rofi"]
+launcher = ["nirulauncher", "--apps"]
 CONFIG
 cat > "$CFG/niruwm/appearance.toml" <<'APPEARANCE'
 schema = 1

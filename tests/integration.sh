@@ -416,11 +416,6 @@ set -e
 grep -q 'could not activate' "$i06/interrupt.log" || fail 'failed activation write was not diagnosed'
 no_config_candidates "$i06/interrupt/niruwm" || fail 'failed activation write left a candidate'
 
-# Fresh-install key overrides must not bypass the explicit compatibility profile.
-if grep -Eq '^action = ".*(nirupi|clip-menu|flameshot)' "$SOURCE/config.example.toml"; then
-  fail 'canonical config overrides native defaults with absent helper scripts'
-fi
-
 for TEST_OS in arch debian void; do
   # Separate installations exercise each distribution's integration and cleanup.
   PREFIX=$TEST/$TEST_OS; BIN=$PREFIX/bin; STATE=$PREFIX/share/nirux

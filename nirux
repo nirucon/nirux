@@ -40,6 +40,7 @@ usage() {
   say "                    [--browser helium|none|keep]"
   say "       nirux update [--no-packages] [--release VERSION] [--browser helium|none|keep]"
   say "       nirux login-wallpaper [list|set FILE|reset]"
+  say "       nirux reset-config"
   say "       nirux rollback | status | doctor | uninstall [--purge] | --version | --help"
   say "Default: keep an existing display manager; otherwise offer startx (default), SDDM or LightDM."
   say "Browser: a fresh install offers Helium (default Helium) and remembers the choice."
@@ -776,22 +777,6 @@ add_localsend_rule() {
   say 'Added the default LocalSend floating/centered rule.'
 }
 
-upgrade_default_launcher() {
-  # The owner direction is the native launcher for new/default configurations.
-  # Preserve every explicit custom command. Rofi is not installed by default,
-  # but remains a supported fallback for users who install it themselves.
-  grep -qx 'launcher = \["rofi", "-show", "drun"\]' "$1" || return 0
-  mig_mode=$(stat -c %a "$1") || die "could not read permissions for $1"
-  mig_tmp=$(mktemp "$1.nirux-launcher.XXXXXX") || die "could not stage $1"
-  if awk '$0 == "launcher = [\"rofi\", \"-show\", \"drun\"]" {print "launcher = [\"nirulauncher\", \"--apps\"]"; next} {print}' "$1" > "$mig_tmp" &&
-     chmod "$mig_mode" "$mig_tmp" && mv -f "$mig_tmp" "$1"; then
-    say 'Switched the default launcher from rofi to nirulauncher; custom commands are unchanged.'
-  else
-    rm -f "$mig_tmp"
-    die "could not update the default launcher in $1; original kept"
-  fi
-}
-
 upgrade_default_workspaces() {
   # Older NIRUX examples used nine workspaces and nine tags. Expand only the
   # exact old defaults; custom counts, names and monitor profiles are kept.
@@ -1075,6 +1060,8 @@ install_config() {
   install_picom_config
   cfg_example="$WORK/download/nirux/config.example.toml"
   [ -f "$cfg_example" ] || { say 'config example missing; user configuration unchanged'; return 0; }
+  mkdir -p "$STATE"
+  install -m 644 "$cfg_example" "$STATE/config.example.toml"
   mkdir -p "$CONFDIR"
   install_appearance || :
   cfg_file="$CONFDIR/config.toml"
@@ -1110,7 +1097,6 @@ install_config() {
   fi
   cfg_before=$(sha256sum "$cfg_candidate" | cut -d ' ' -f1)
   add_missing_sections "$cfg_candidate" "$cfg_example"
-  add_missing_top_key "$cfg_candidate" nirupi_compat false
   add_missing_top_key "$cfg_candidate" restore_session false
   add_missing_top_key "$cfg_candidate" weather_latitude 58.22
   add_missing_top_key "$cfg_candidate" weather_longitude 11.93
@@ -1130,7 +1116,6 @@ install_config() {
   add_missing_key "$cfg_candidate" wallpaper theme_dir '"~/Pictures/Wallpapers/NIRU"'
   add_missing_key "$cfg_candidate" monitors workspaces 10
   upgrade_default_workspaces "$cfg_candidate"
-  upgrade_default_launcher "$cfg_candidate"
   add_localsend_rule "$cfg_candidate"
   upgrade_obsolete_default_browser "$cfg_candidate"
   cfg_after=$(sha256sum "$cfg_candidate" | cut -d ' ' -f1)
@@ -2325,7 +2310,6 @@ status() {
   else say 'missing local power polkit rule'; result=1; fi
   browser_status || result=1
   if [ -L "$STATE/current" ]; then say "generation: $(readlink "$STATE/current")"; fi
-  if [ -x "$HOME/.local/bin/nirupi-session" ] || [ -f "$ROOT/usr/share/xsessions/nirupi-dwm.desktop" ]; then say 'NIRUPI present (separate session)'; fi
   return "$result"
 }
 # The programs the user actually selected in the shared configuration.
@@ -2452,8 +2436,43 @@ uninstall() {
   fi
   rm -rf "$STATE/generations"
   rm -f "$STATE/current" "$STATE/previous"
-  say 'NIRU removed. OS packages and NIRUPI retained. An already running session exits normally on logout.'
+  say 'NIRU removed. OS packages retained. An already running session exits normally on logout.'
 }
+reset_config() {
+  source=$STATE/config.example.toml
+  if [ ! -f "$source" ] && [ -f "$(dirname "$0")/config.example.toml" ]; then
+    source=$(dirname "$0")/config.example.toml
+  fi
+  [ -f "$source" ] || die "config example not found: $source (run nirux update)"
+  target=$CONFDIR/config.toml
+  if [ -L "$target" ]; then
+    resolved=$(readlink -f "$target" 2>/dev/null || :)
+    [ -n "$resolved" ] && [ -f "$resolved" ] || die "$target is a broken symlink"
+    target=$resolved
+  fi
+  mkdir -p "$(dirname "$target")"
+  if [ -f "$target" ]; then
+    backup=$target.nirux-backup
+    cp -p "$target" "$backup" || die "could not back up $target"
+    mode=$(stat -c %a "$target") || die "could not read permissions for $target"
+  else
+    backup=
+    mode=644
+  fi
+  temp=$(mktemp "$(dirname "$target")/.config.toml.nirux.XXXXXX") || die 'could not stage configuration'
+  cp "$source" "$temp" && chmod "$mode" "$temp" && mv -f "$temp" "$target" || {
+    rm -f "$temp"
+    die "could not reset $target; original kept"
+  }
+  [ -z "$backup" ] || say "Backup: $backup"
+  say "Reset $target to the NIRUX example."
+  if [ -n "${DISPLAY:-}" ] && "$BIN/niructl" reload; then
+    say 'Configuration reloaded.'
+  else
+    say 'Log out/in or run: niructl reload'
+  fi
+}
+
 rollback() {
   lock
   [ -L "$STATE/previous" ] || die 'no previous generation'
@@ -2547,6 +2566,7 @@ main() {
     uninstall) shift; uninstall "$@" ;;
     rollback) [ "$#" = 1 ] || die 'rollback takes no arguments'; rollback ;;
     login-wallpaper) shift; login_wallpaper "$@" ;;
+    reset-config) [ "$#" = 1 ] || die 'reset-config takes no arguments'; reset_config ;;
     status|doctor) [ "$#" = 1 ] || die "$1 takes no arguments"; "$1" ;;
     --version) say "NIRUX $VERSION" ;;
     --help|help) usage ;;

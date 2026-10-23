@@ -75,7 +75,7 @@ cd nirux
 An existing display manager is preserved; otherwise choose startx (default),
 SDDM or LightDM. A fresh install offers the managed Helium browser and installs
 the theme wallpapers, kitty/fish integration and terminal colours. User
-configuration and NIRUPI are not overwritten.
+configuration is not overwritten.
 
 Use `./nirux install --no-packages` only when all runtime dependencies already
 exist.
