@@ -2,7 +2,7 @@
 # NIRUX: install a complete X11 desktop, or maintain an existing installation.
 set -eu
 
-VERSION=0.10.118
+VERSION=0.10.119
 PREFIX=${NIRUX_PREFIX:-$HOME/.local}
 BIN=$PREFIX/bin
 STATE=$PREFIX/share/nirux
@@ -48,7 +48,7 @@ usage() {
   say "                    [--localsend yes|no] [--opencode yes|no]"
   say "       nirux login-wallpaper [list|set FILE|reset]"
   say "       nirux reset-config"
-  say "       nirux repair-session"
+  say "       nirux repair-session | repair-wallpaper"
   say "       nirux remove helium|localsend|opencode"
   say "       nirux rollback | status | doctor | uninstall [--purge] | --version | --help"
   say "Default: keep an existing display manager; otherwise offer startx (default), SDDM or LightDM."
@@ -264,8 +264,13 @@ install_packages() {
         as_root xbps-install -Sy $pkgs
       else
         # Install the requested runtime packages without forcing a full kernel
-        # and system upgrade as a side effect of a clean desktop install.
-        as_root xbps-install -Sy $pkgs
+        # and system upgrade as a side effect of a clean desktop install. If
+        # the configured mirror is inconsistent, retry from the official one.
+        if ! as_root xbps-install -Sy $pkgs; then
+          say 'Void mirror failed; retrying with the official repository.'
+          as_root xbps-install -Sy --ignore-conf-repos \
+            -R https://repo-default.voidlinux.org/current $pkgs
+        fi
       fi
       ;;
   esac
@@ -2646,6 +2651,40 @@ repair_session() {
   say 'Session repair complete. Log out/in, or run startx from a TTY.'
 }
 
+repair_wallpaper() {
+  source=$STATE/config.example.toml
+  [ -f "$source" ] || source=$(dirname "$0")/config.example.toml
+  [ -f "$source" ] || die "config example not found: $source (run nirux update)"
+  target=$CONFDIR/config.toml
+  [ -f "$target" ] || die "config not found: $target"
+  wallpaper_dir=$(config_picture_paths | sed -n '1p')
+  theme_dir=$(config_picture_paths | sed -n '2p')
+  # shellcheck disable=SC2088 # compare the literal TOML default
+  case "$theme_dir" in
+    "~/"*) theme_path=$HOME/${theme_dir#~/} ;;
+    *) theme_path=$theme_dir ;;
+  esac
+  backup=$target.nirux-wallpaper-backup
+  cp -p "$target" "$backup" || die "could not back up $target"
+  tmp=$(mktemp "$(dirname "$target")/.config.toml.wallpaper.XXXXXX") || die 'could not stage config'
+  awk -v dir="$wallpaper_dir" -v theme="$theme_dir" '
+    /^\[/ { in_wallpaper = ($0 == "[wallpaper]") }
+    in_wallpaper && /^dir[[:space:]]*=/ { printf "dir = \"%s\"\n", dir; next }
+    in_wallpaper && /^theme_dir[[:space:]]*=/ { printf "theme_dir = \"%s\"\n", theme; next }
+    { print }
+  ' "$target" > "$tmp" || { rm -f "$tmp"; die 'could not update wallpaper paths'; }
+  if ! cmp -s "$target" "$tmp"; then
+    mode=$(stat -c %a "$target") || mode=644
+    chmod "$mode" "$tmp" && mv -f "$tmp" "$target" || { rm -f "$tmp"; die 'could not activate wallpaper paths'; }
+    say "Updated wallpaper paths for the XDG Pictures directory."
+  else
+    rm -f "$tmp"
+    say 'Wallpaper paths already match the XDG Pictures directory.'
+  fi
+  find "$theme_path" -maxdepth 1 -name 'nirux-wallpaper-*.png' -print 2>/dev/null | head -3 || :
+  say "Backup: $backup"
+}
+
 reset_config() {
   source=$STATE/config.example.toml
   if [ ! -f "$source" ] && [ -f "$(dirname "$0")/config.example.toml" ]; then
@@ -2788,6 +2827,7 @@ main() {
     login-wallpaper) shift; login_wallpaper "$@" ;;
     reset-config) [ "$#" = 1 ] || die 'reset-config takes no arguments'; reset_config ;;
     repair-session) [ "$#" = 1 ] || die 'repair-session takes no arguments'; repair_session ;;
+    repair-wallpaper) [ "$#" = 1 ] || die 'repair-wallpaper takes no arguments'; repair_wallpaper ;;
     status|doctor) [ "$#" = 1 ] || die "$1 takes no arguments"; "$1" ;;
     --version) say "NIRUX $VERSION" ;;
     --help|help) usage ;;
