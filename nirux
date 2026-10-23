@@ -2,7 +2,7 @@
 # NIRUX: install a complete X11 desktop, or maintain an existing installation.
 set -eu
 
-VERSION=0.10.116
+VERSION=0.10.117
 PREFIX=${NIRUX_PREFIX:-$HOME/.local}
 BIN=$PREFIX/bin
 STATE=$PREFIX/share/nirux
@@ -263,7 +263,8 @@ install_packages() {
       if [ "$install_only" = 1 ]; then
         as_root xbps-install -Sy $pkgs
       else
-        as_root xbps-install -Suy
+        # Install the requested runtime packages without forcing a full kernel
+        # and system upgrade as a side effect of a clean desktop install.
         as_root xbps-install -Sy $pkgs
       fi
       ;;
@@ -1042,12 +1043,54 @@ remove_terminal() {
   fi
   rm -rf "$STATE/terminal"
 }
+config_picture_paths() {
+  pictures=$(pictures_directory)
+  case "$pictures" in
+    "$HOME/Pictures") base='~/Pictures' ;;
+    *) base=$pictures ;;
+  esac
+  printf '%s\n%s\n' "$base/Wallpapers" "$base/Wallpapers/NIRU"
+}
+
 fresh_config_source() {
+  set -- "$1" $(config_picture_paths)
+  wallpaper_dir=$2
+  theme_dir=$3
   if [ "${BROWSER_EFFECTIVE:-keep}" = none ]; then
-    awk '$0 == "browser = [\"helium\"]" {print "browser = []"; next} {print}' "$1"
+    awk -v dir="$wallpaper_dir" -v theme="$theme_dir" '
+      $0 == "browser = [\"helium\"]" {print "browser = []"; next}
+      $0 ~ /^dir = / {print "dir = \"" dir "\""; next}
+      $0 ~ /^theme_dir = / {print "theme_dir = \"" theme "\""; next}
+      {print}
+    ' "$1"
   else
-    cat "$1"
+    awk -v dir="$wallpaper_dir" -v theme="$theme_dir" '
+      $0 ~ /^dir = / {print "dir = \"" dir "\""; next}
+      $0 ~ /^theme_dir = / {print "theme_dir = \"" theme "\""; next}
+      {print}
+    ' "$1"
   fi
+}
+
+upgrade_default_wallpaper_paths() {
+  file=$1
+  set -- $(config_picture_paths)
+  wallpaper_dir=$1
+  theme_dir=$2
+  [ "$wallpaper_dir" != '~/Pictures/Wallpapers' ] || return 0
+  grep -qx 'dir = "~/Pictures/Wallpapers"' "$file" || return 0
+  grep -qx 'theme_dir = "~/Pictures/Wallpapers/NIRU"' "$file" || return 0
+  mig_mode=$(stat -c %a "$file") || die "could not read permissions for $file"
+  mig_tmp=$(mktemp "$file.nirux-wallpaper.XXXXXX") || die "could not stage $file"
+  awk -v dir="$wallpaper_dir" -v theme="$theme_dir" '
+    $0 == "dir = \"~/Pictures/Wallpapers\"" {print "dir = \"" dir "\""; next}
+    $0 == "theme_dir = \"~/Pictures/Wallpapers/NIRU\"" {print "theme_dir = \"" theme "\""; next}
+    {print}
+  ' "$file" > "$mig_tmp" && chmod "$mig_mode" "$mig_tmp" && mv -f "$mig_tmp" "$file" || {
+    rm -f "$mig_tmp"
+    die "could not update wallpaper paths in $file; original kept"
+  }
+  say "Updated default wallpaper paths for the XDG Pictures directory."
 }
 install_picom_config() {
   picom_conf=${XDG_CONFIG_HOME:-$HOME/.config}/picom.conf
@@ -1123,9 +1166,11 @@ install_config() {
   add_missing_key "$cfg_candidate" wallpaper files "[]"
   add_missing_key "$cfg_candidate" wallpaper shuffle_on_start true
   add_missing_key "$cfg_candidate" wallpaper follow_theme true
-  add_missing_key "$cfg_candidate" wallpaper theme_dir '"~/Pictures/Wallpapers/NIRU"'
+  set -- $(config_picture_paths)
+  add_missing_key "$cfg_candidate" wallpaper theme_dir "\"$2\""
   add_missing_key "$cfg_candidate" monitors workspaces 10
   upgrade_default_workspaces "$cfg_candidate"
+  upgrade_default_wallpaper_paths "$cfg_candidate"
   add_localsend_rule "$cfg_candidate"
   upgrade_obsolete_default_browser "$cfg_candidate"
   cfg_after=$(sha256sum "$cfg_candidate" | cut -d ' ' -f1)
@@ -2307,7 +2352,25 @@ ensure_user_dirs() {
   for role in DESKTOP DOCUMENTS DOWNLOAD MUSIC PICTURES VIDEOS; do
     dir=$(xdg-user-dir "$role" 2>/dev/null || :)
     [ -n "$dir" ] && [ "$dir" != "$HOME" ] || continue
+    case "$role" in DESKTOP|TEMPLATES|PUBLICSHARE) continue ;; esac
     [ -d "$dir" ] || mkdir -p "$dir" 2>/dev/null || say "Could not create $dir"
+  done
+  # The NIRU desktop does not use a desktop folder, templates or a public
+  # share by default. Disable those only when they are still the XDG defaults;
+  # a custom path or a non-empty directory is left alone.
+  for role in DESKTOP TEMPLATES PUBLICSHARE; do
+    dir=$(xdg-user-dir "$role" 2>/dev/null || :)
+    [ -n "$dir" ] && [ "$dir" != "$HOME" ] || continue
+    case "$role:$dir" in
+      DESKTOP:"$HOME/Desktop"|TEMPLATES:"$HOME/Templates"|PUBLICSHARE:"$HOME/Public") ;;
+      *) continue ;;
+    esac
+    if xdg-user-dirs-update --set "$role" "$HOME" >/dev/null 2>&1; then
+      if [ -d "$dir" ] && [ -z "$(ls -A "$dir" 2>/dev/null || :)" ]; then
+        rmdir "$dir" 2>/dev/null || :
+      fi
+      say "Disabled unused XDG $role folder (set to \$HOME)."
+    fi
   done
 }
 

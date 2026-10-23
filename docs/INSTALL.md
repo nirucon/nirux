@@ -116,11 +116,12 @@ browser outside NIRUX is left untouched.
 ## Standard folders
 
 A normal install includes `xdg-user-dirs`. On a fresh home it creates the
-locale-appropriate Desktop, Documents, Downloads, Music, Pictures and Videos
-folders. Existing `~/.config/user-dirs.dirs` choices, localized names, symlinks
-and custom paths are preserved; NIRUX does not add English aliases or move
-files. Missing configured folders are created, while a conflicting regular file
-is reported and left untouched.
+locale-appropriate Documents, Downloads, Music, Pictures and Videos folders.
+Desktop, Templates and PublicShare are disabled by default; if they are still
+the empty XDG defaults they are removed. Existing custom paths, localized
+names, symlinks and non-empty directories are preserved. NIRUX does not add
+English aliases or move files. Missing configured folders are created, while a
+conflicting regular file is reported and left untouched.
 
 ## Desktop integration
 
