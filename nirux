@@ -2,7 +2,7 @@
 # NIRUX: install a complete X11 desktop, or maintain an existing installation.
 set -eu
 
-VERSION=0.10.113
+VERSION=0.10.114
 PREFIX=${NIRUX_PREFIX:-$HOME/.local}
 BIN=$PREFIX/bin
 STATE=$PREFIX/share/nirux
@@ -43,10 +43,12 @@ die() { say "nirux: $*" >&2; exit 1; }
 usage() {
   say "NIRUX $VERSION"
   say "Usage: nirux install [--minimal|--no-packages] [--display-manager auto|startx|sddm|lightdm]"
-  say "                    [--browser helium|none|keep]"
+  say "                    [--browser helium|none|keep] [--localsend yes|no] [--opencode yes|no]"
   say "       nirux update [--no-packages] [--release VERSION] [--browser helium|none|keep]"
+  say "                    [--localsend yes|no] [--opencode yes|no]"
   say "       nirux login-wallpaper [list|set FILE|reset]"
   say "       nirux reset-config"
+  say "       nirux remove helium|localsend|opencode"
   say "       nirux rollback | status | doctor | uninstall [--purge] | --version | --help"
   say "Default: keep an existing display manager; otherwise offer startx (default), SDDM or LightDM."
   say "Browser: a fresh install offers Helium (default Helium) and remembers the choice."

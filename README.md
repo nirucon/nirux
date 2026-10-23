@@ -88,6 +88,7 @@ exist.
 
 ```sh
 nirux update
+nirux remove helium|localsend|opencode
 nirux status
 nirux doctor
 nirux rollback
