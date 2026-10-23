@@ -2,7 +2,7 @@
 # NIRUX: install a complete X11 desktop, or maintain an existing installation.
 set -eu
 
-VERSION=0.10.105
+VERSION=0.10.106
 PREFIX=${NIRUX_PREFIX:-$HOME/.local}
 BIN=$PREFIX/bin
 STATE=$PREFIX/share/nirux
@@ -868,6 +868,23 @@ install_wallpapers() {
     printf '%s  %s\n' "$new_hash" "$name" >> "$next"
   done
   if [ "$found" = 1 ]; then
+    if [ -f "$previous" ]; then
+      while IFS= read -r line; do
+        old_hash=${line%%  *}
+        name=${line#*  }
+        [ -n "$old_hash" ] && [ -n "$name" ] || continue
+        grep -q "  $name$" "$next" && continue
+        target=$destination/$name
+        [ -f "$target" ] || continue
+        current_hash=$(sha256sum "$target" | cut -d ' ' -f1)
+        if [ "$current_hash" = "$old_hash" ]; then
+          rm -f "$target" || die "could not remove superseded wallpaper $target"
+          say "Removed superseded wallpaper $target"
+        else
+          say "Keeping modified wallpaper $target"
+        fi
+      done < "$previous"
+    fi
     chmod 644 "$next" 2>/dev/null || :
     mv -f "$next" "$manifest" || die 'could not record the installed wallpapers'
     say "Installed NIRUX theme wallpapers in $destination"
@@ -1877,8 +1894,32 @@ login_wallpaper_config() {
   say "${XDG_CONFIG_HOME:-$HOME/.config}/nirux/login-wallpaper"
 }
 
+configured_theme() {
+  theme_file=$CONFDIR/config.toml
+  theme=
+  [ ! -f "$theme_file" ] || theme=$(sed -n 's/^[[:space:]]*theme[[:space:]]*=[[:space:]]*"\([^"]*\)".*/\1/p' "$theme_file" | head -n 1)
+  [ -n "$theme" ] || theme=niru-noir
+  say "$theme"
+}
+
+theme_login_wallpaper() {
+  theme=$(configured_theme)
+  case "$theme" in
+    niru-*) name=${theme#niru-} ;;
+    *) name=$theme ;;
+  esac
+  base=$(pictures_directory)/Wallpapers/NIRU
+  for candidate in "$base/nirux-wallpaper-$name-4k.png" "$base/nirux-wallpaper-$name-8k.png" "$base/nirux-wallpaper-$name.png"; do
+    if [ -f "$candidate" ] && is_png "$candidate"; then say "$candidate"; return 0; fi
+  done
+  for candidate in "$base/nirux-wallpaper-noir-4k.png" "$base/nirux-wallpaper-noir-8k.png"; do
+    if [ -f "$candidate" ] && is_png "$candidate"; then say "$candidate"; return 0; fi
+  done
+  return 1
+}
+
 default_login_wallpaper() {
-  say "$(pictures_directory)/Wallpapers/NIRU/nirux-wallpaper-noir-rooted-in-less-4k.png"
+  theme_login_wallpaper
 }
 
 selected_login_wallpaper() {
@@ -1933,7 +1974,8 @@ login_wallpaper() {
         else printf '  %s\n' "${file##*/}"; fi
       done
       [ "$found" = 1 ] || die "no PNG wallpapers in $destination"
-      say "Current: ${selected:-$(default_login_wallpaper)}"
+      default_wallpaper=$(default_login_wallpaper || :)
+      say "Current: ${selected:-$default_wallpaper}"
       ;;
     set)
       [ "$#" = 2 ] || die 'login-wallpaper set needs one PNG filename or path'
@@ -1981,7 +2023,7 @@ install_greeters() {
   mkdir -p "$unpack" || die 'could not create the integration extraction directory'
   tar -xJf "$archive" -C "$unpack" || die 'could not extract the NIRUX integration assets'
   [ -f "$unpack/polkit/49-nirux-power.rules" ] || die 'integration archive is missing the power rule'
-  login_wallpaper_source=$(selected_login_wallpaper || :)
+  login_wallpaper_source=$(selected_login_wallpaper || theme_login_wallpaper || :)
   if [ -n "$login_wallpaper_source" ]; then
     is_png "$login_wallpaper_source" || die "selected login wallpaper is not a PNG: $login_wallpaper_source"
     say "Using selected login wallpaper: $login_wallpaper_source"

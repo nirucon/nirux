@@ -310,10 +310,15 @@ nirux login-wallpaper reset
 ```
 
 The choice applies to the installed SDDM and/or LightDM greeter, survives
-updates, and is stored under `~/.config/nirux/`. Every PNG in the release's
-wallpaper set is installed and listed automatically, so adding a wallpaper to
-the repository is enough for it to appear in the next release. `reset` returns
-to the bundled NIRUX login background.
+updates, and is stored under `~/.config/nirux/`. By default the login screen
+uses the wallpaper of the currently selected NIRUX theme (Noir, Nord, Satie or
+Carl Larsson). `reset` returns to that theme wallpaper.
+
+NIRUX ships only the four theme wallpaper sets. Additional wallpapers live in
+[niruwm-additionalwallpapers](https://github.com/nirucon/niruwm-additionalwallpapers);
+run its `install.sh` and they appear in both `nirux login-wallpaper list` and
+`niructl wallpaper list`. New PNGs added there are picked up without changing
+NIRUX.
 
 ### Fonts
 

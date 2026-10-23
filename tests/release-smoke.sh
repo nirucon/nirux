@@ -15,7 +15,7 @@ cp "$SOURCE/nirux" "$SOURCE/manifest" "$SOURCE/config.example.toml" "$SOURCE/app
 mkdir -p "$TEST/integration-build/polkit"
 cp -R "$SOURCE/greeters/." "$TEST/integration-build/"
 cp "$SOURCE/polkit/49-nirux-power.rules" "$TEST/integration-build/polkit/"
-cp "$SOURCE/wallpaper/nirux-wallpaper-noir-rooted-in-less-4k.png" "$TEST/integration-build/background.png"
+cp "$SOURCE/wallpaper/nirux-wallpaper-noir-4k.png" "$TEST/integration-build/background.png"
 tar -cJf "$TEST/release/nirux-integration.tar.xz" -C "$TEST/integration-build" .
 (cd "$TEST/release"; sha256sum nirux manifest config.example.toml appearance.example.toml nirux-wallpapers.tar.xz nirux-terminal.tar.xz nirux-integration.tar.xz > SHA256SUMS)
 for include in system-auth common-auth common-account; do

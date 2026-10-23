@@ -106,7 +106,8 @@ shuffle_on_start = true
 # own `mode = "single"` file is never overridden.
 follow_theme = true
 # NIRUX installs nirux-wallpaper-<theme>-4k.png and -8k.png here. A custom
-# theme `foo` can provide nirux-wallpaper-foo-4k.png.
+# theme `foo` can provide nirux-wallpaper-foo-4k.png. Extra wallpapers are
+# available from github.com/nirucon/niruwm-additionalwallpapers.
 theme_dir = "~/Pictures/Wallpapers/NIRU"
 
 # ── Autostart ──────────────────────────────────────────────────────────────

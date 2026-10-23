@@ -54,8 +54,8 @@ checksums() { (cd "$1"; sha256sum ./* | sed 's@  ./@  @' > SHA256SUMS); }
 wallpaper_archive() {
   build=$TEST/wallpaper-build
   mkdir -p "$build/wallpaper"
-  : > "$build/wallpaper/nirux-wallpaper-noir-4k.png"
-  : > "$build/wallpaper/nirux-wallpaper-nord-4k.png"
+  printf '\211PNG\r\n\032\n' > "$build/wallpaper/nirux-wallpaper-noir-4k.png"
+  printf '\211PNG\r\n\032\n' > "$build/wallpaper/nirux-wallpaper-nord-4k.png"
   tar -cJf "$1" -C "$build" wallpaper
 }
 terminal_archive() {
@@ -67,7 +67,7 @@ integration_archive() {
   mkdir -p "$build/polkit"
   cp -R "$SOURCE/greeters/." "$build/"
   cp "$SOURCE/polkit/49-nirux-power.rules" "$build/polkit/"
-  cp "$SOURCE/wallpaper/nirux-wallpaper-noir-rooted-in-less-4k.png" "$build/background.png"
+  cp "$SOURCE/wallpaper/nirux-wallpaper-noir-4k.png" "$build/background.png"
   tar -cJf "$1" -C "$build" .
 }
 # The target installer runs in a separate process. Give it the same offline
@@ -189,8 +189,8 @@ make_apply_target() {
   build=$TEST/apply-wallpaper-$release
   rm -rf "$build"
   mkdir -p "$build/wallpaper"
-  : > "$build/wallpaper/nirux-wallpaper-noir-4k.png"
-  : > "$build/wallpaper/nirux-wallpaper-test-4k.png"
+  printf '\211PNG\r\n\032\n' > "$build/wallpaper/nirux-wallpaper-noir-4k.png"
+  printf '\211PNG\r\n\032\n' > "$build/wallpaper/nirux-wallpaper-test-4k.png"
   tar -cJf "$dir/nirux-wallpapers.tar.xz" -C "$build" wallpaper
   terminal_archive "$dir/nirux-terminal.tar.xz"
   checksums "$dir"
@@ -767,19 +767,23 @@ XDG_PICTURES_DIR=$wallpaper_test/pictures
 WORK=$wallpaper_test/work
 STATE=$wallpaper_test/state
 mkdir -p "$HOME" "$XDG_PICTURES_DIR" "$WORK/download/nirux" "$STATE" "$wallpaper_test/build/wallpaper"
-printf 'first\n' > "$wallpaper_test/build/wallpaper/nirux-wallpaper-noir-4k.png"
-printf 'first\n' > "$wallpaper_test/build/wallpaper/nirux-wallpaper-nord-4k.png"
+printf '\211PNG\r\n\032\nfirst\n' > "$wallpaper_test/build/wallpaper/nirux-wallpaper-noir-4k.png"
+printf '\211PNG\r\n\032\nfirst\n' > "$wallpaper_test/build/wallpaper/nirux-wallpaper-nord-4k.png"
+printf '\211PNG\r\n\032\nold\n' > "$wallpaper_test/build/wallpaper/nirux-wallpaper-old-4k.png"
 tar -cJf "$WORK/download/nirux/nirux-wallpapers.tar.xz" -C "$wallpaper_test/build" wallpaper
 install_wallpapers >/dev/null
 wallpaper_dir=$XDG_PICTURES_DIR/Wallpapers/NIRU
-[ "$(cat "$wallpaper_dir/nirux-wallpaper-noir-4k.png")" = first ] || fail 'theme wallpaper was not installed'
+is_png "$wallpaper_dir/nirux-wallpaper-noir-4k.png" || fail 'theme wallpaper was not installed'
 printf 'mine\n' > "$wallpaper_dir/nirux-wallpaper-noir-4k.png"
-printf 'second\n' > "$wallpaper_test/build/wallpaper/nirux-wallpaper-noir-4k.png"
-printf 'second\n' > "$wallpaper_test/build/wallpaper/nirux-wallpaper-nord-4k.png"
+printf '\211PNG\r\n\032\nsecond\n' > "$wallpaper_test/build/wallpaper/nirux-wallpaper-noir-4k.png"
+printf '\211PNG\r\n\032\nsecond\n' > "$wallpaper_test/build/wallpaper/nirux-wallpaper-nord-4k.png"
+rm -f "$wallpaper_test/build/wallpaper/nirux-wallpaper-old-4k.png"
 tar -cJf "$WORK/download/nirux/nirux-wallpapers.tar.xz" -C "$wallpaper_test/build" wallpaper
 install_wallpapers >/dev/null
 [ "$(cat "$wallpaper_dir/nirux-wallpaper-noir-4k.png")" = mine ] || fail 'user-modified wallpaper was overwritten'
-[ "$(cat "$wallpaper_dir/nirux-wallpaper-nord-4k.png")" = second ] || fail 'unmodified owned wallpaper was not updated'
+is_png "$wallpaper_dir/nirux-wallpaper-nord-4k.png" || fail 'unmodified owned wallpaper was not updated'
+grep -q second "$wallpaper_dir/nirux-wallpaper-nord-4k.png" || fail 'unmodified owned wallpaper content was not updated'
+[ ! -e "$wallpaper_dir/nirux-wallpaper-old-4k.png" ] || fail 'superseded owned wallpaper was not removed'
 remove_owned_wallpapers
 [ "$(cat "$wallpaper_dir/nirux-wallpaper-noir-4k.png")" = mine ] || fail 'purge removed a user-modified wallpaper'
 [ ! -e "$wallpaper_dir/nirux-wallpaper-nord-4k.png" ] || fail 'purge kept an unmodified owned wallpaper'
