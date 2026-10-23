@@ -31,7 +31,7 @@
 
 # ── Appearance ──────────────────────────────────────────────────────────────
 # Theme name. Built in: niru-noir, niru-nord, niru-satie, niru-carl-larsson,
-# niru-forest-vigil, niru-blood-of-urdr.
+# niru-forest-vigil, niru-blood-of-urdr, niru-root-and-stone, niru-blue-horizon.
 # List them with: niructl themes. The bar, launcher, lock and notifications
 # follow this palette; niructl theme updates them live.
 theme = "niru-noir"
@@ -74,7 +74,7 @@ weather_longitude = 11.93
 
 # ── Wallpaper ───────────────────────────────────────────────────────────────
 # NIRUWM sets and rotates the wallpaper only when enabled = true. NIRUX
-# installs the six theme wallpaper sets under ~/Pictures/Wallpapers/NIRU.
+# installs the eight theme wallpaper sets under ~/Pictures/Wallpapers/NIRU.
 # Set this false when another program owns the background.
 [wallpaper]
 enabled = true
