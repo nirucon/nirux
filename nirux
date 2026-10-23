@@ -2,7 +2,7 @@
 # NIRUX: install a complete X11 desktop, or maintain an existing installation.
 set -eu
 
-VERSION=0.10.117
+VERSION=0.10.118
 PREFIX=${NIRUX_PREFIX:-$HOME/.local}
 BIN=$PREFIX/bin
 STATE=$PREFIX/share/nirux
@@ -1045,6 +1045,7 @@ remove_terminal() {
 }
 config_picture_paths() {
   pictures=$(pictures_directory)
+  # shellcheck disable=SC2088 # literal default written into TOML
   case "$pictures" in
     "$HOME/Pictures") base='~/Pictures' ;;
     *) base=$pictures ;;
@@ -1053,9 +1054,8 @@ config_picture_paths() {
 }
 
 fresh_config_source() {
-  set -- "$1" $(config_picture_paths)
-  wallpaper_dir=$2
-  theme_dir=$3
+  wallpaper_dir=$(config_picture_paths | sed -n '1p')
+  theme_dir=$(config_picture_paths | sed -n '2p')
   if [ "${BROWSER_EFFECTIVE:-keep}" = none ]; then
     awk -v dir="$wallpaper_dir" -v theme="$theme_dir" '
       $0 == "browser = [\"helium\"]" {print "browser = []"; next}
@@ -1074,9 +1074,9 @@ fresh_config_source() {
 
 upgrade_default_wallpaper_paths() {
   file=$1
-  set -- $(config_picture_paths)
-  wallpaper_dir=$1
-  theme_dir=$2
+  wallpaper_dir=$(config_picture_paths | sed -n '1p')
+  theme_dir=$(config_picture_paths | sed -n '2p')
+  # shellcheck disable=SC2088 # literal default in TOML
   [ "$wallpaper_dir" != '~/Pictures/Wallpapers' ] || return 0
   grep -qx 'dir = "~/Pictures/Wallpapers"' "$file" || return 0
   grep -qx 'theme_dir = "~/Pictures/Wallpapers/NIRU"' "$file" || return 0
@@ -1166,8 +1166,8 @@ install_config() {
   add_missing_key "$cfg_candidate" wallpaper files "[]"
   add_missing_key "$cfg_candidate" wallpaper shuffle_on_start true
   add_missing_key "$cfg_candidate" wallpaper follow_theme true
-  set -- $(config_picture_paths)
-  add_missing_key "$cfg_candidate" wallpaper theme_dir "\"$2\""
+  theme_dir=$(config_picture_paths | sed -n '2p')
+  add_missing_key "$cfg_candidate" wallpaper theme_dir "\"$theme_dir\""
   add_missing_key "$cfg_candidate" monitors workspaces 10
   upgrade_default_workspaces "$cfg_candidate"
   upgrade_default_wallpaper_paths "$cfg_candidate"
