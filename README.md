@@ -29,6 +29,7 @@ components need.
   night light.
 - **LocalSend:** verified official Linux tarball, floating centered window, no Flatpak.
 - **OpenCode:** managed V2 native CLI, installed without npm, services or agent startup.
+- **Webapps:** `niruwebapp` creates browser-backed desktop apps with dedicated profiles.
 - **Screenshots:** region, window or full-screen capture with a floating review
   dialog, crop, rectangle, arrow, mask, zoom and pan.
 - **Appearance:** Niru Noir, Nord, Satie and Carl Larsson themes, shared semantic
@@ -51,6 +52,7 @@ components need.
 | [NIRUNOTIFY](https://github.com/nirucon/nirunotify) | Native notifications and hardware OSD |
 | [NIRUSHOT](https://github.com/nirucon/nirushot) | Screenshot capture, review and annotation |
 | [NIRUFETCH](https://github.com/nirucon/nirufetch) | NIRU-themed terminal system fetch |
+| [NIRUWEBAPP](https://github.com/nirucon/niruwebapp) | Browser-backed webapp manager |
 
 ## Requirements
 

@@ -254,6 +254,21 @@ nirufetch
 nirufetch --plain
 ```
 
+### Webapps
+
+`niruwebapp` creates normal desktop applications backed by an already installed
+Helium/Chromium browser. Each app gets an owned desktop entry, a stable ID and a
+dedicated profile. No Electron, WebView runtime or browser is installed.
+
+```sh
+niruwebapp create "YouTube Music" https://music.youtube.com
+niruwebapp list
+niruwebapp launch "YouTube Music"
+niruwebapp remove youtube-music --delete-profile
+```
+
+Removing a launcher keeps its profile unless `--delete-profile` is explicit.
+
 ### OpenCode
 
 A normal install downloads the pinned official OpenCode V2 native CLI and
