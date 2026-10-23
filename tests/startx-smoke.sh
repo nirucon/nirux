@@ -126,16 +126,16 @@ if command -v maim >/dev/null 2>&1; then
   maim "$HOME/startx-screenshot.png"
   [ -s "$HOME/startx-screenshot.png" ] || { printf 'maim produced no screenshot\n' >&2; exit 1; }
 fi
-# Wallpaper choices and settings: the extra NIRUX images must be listed and
+# Wallpaper choices and settings: a theme wallpaper must be listed and
 # selectable, and the status must reflect each change.
 if [ -x "$BIN/niructl" ]; then
   wallpaper_list=$("$BIN/niructl" wallpaper list)
-  printf '%s\n' "$wallpaper_list" | grep -q 'Håvamål 19' || {
-    printf 'extra NIRUX wallpaper was not listed\n' >&2
+  printf '%s\n' "$wallpaper_list" | grep -q 'Niru Nord' || {
+    printf 'theme wallpaper was not listed\n' >&2
     exit 1
   }
-  extra=$(printf '%s\n' "$wallpaper_list" | awk -F '\t' '$1 == "Håvamål 19" {print $2; exit}')
-  [ -f "$extra" ] || { printf 'listed extra wallpaper is missing\n' >&2; exit 1; }
+  extra=$(printf '%s\n' "$wallpaper_list" | awk -F '\t' '$1 == "Niru Nord" {print $2; exit}')
+  [ -f "$extra" ] || { printf 'listed theme wallpaper is missing\n' >&2; exit 1; }
   before_pixmap=$(xprop -root _XROOTPMAP_ID 2>/dev/null || :)
   "$BIN/niructl" wallpaper set "$extra"
   sleep 0.3
