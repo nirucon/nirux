@@ -28,6 +28,7 @@ components need.
   Bluetooth, RandR display profiles, power-profiles-daemon, backlight and
   night light.
 - **LocalSend:** verified official Linux tarball, floating centered window, no Flatpak.
+- **OpenCode:** managed V2 native CLI, installed without npm, services or agent startup.
 - **Screenshots:** region, window or full-screen capture with a floating review
   dialog, crop, rectangle, arrow, mask, zoom and pan.
 - **Appearance:** Niru Noir, Nord, Satie and Carl Larsson themes, shared semantic

@@ -2,7 +2,7 @@
 # NIRUX: install a complete X11 desktop, or maintain an existing installation.
 set -eu
 
-VERSION=0.10.94
+VERSION=0.10.95
 PREFIX=${NIRUX_PREFIX:-$HOME/.local}
 BIN=$PREFIX/bin
 STATE=$PREFIX/share/nirux
@@ -25,6 +25,8 @@ APPLY_OK=0
 HELIUM_VERSION=0.19.4.1
 LOCALSEND_VERSION=1.18.2
 LOCALSEND_SHA256=287690a9a8eb6da9c83cc97b3e3030ac67daf32a7331fcf307d0939300658d16
+OPENCODE_VERSION=2.1.3
+OPENCODE_SHA256=f1561a5fa724b781d97e9bf86eb6aceb82b56ef91fa19c03a2cd7b24c36028ab
 HELIUM_SHA256=6ca6e4a00fef5916821fb1af8a9607cc6b386f678a7eb422e55f19116ba30469
 BROWSER_CHOICE=
 BROWSER_EFFECTIVE=keep
@@ -1468,6 +1470,77 @@ localsend_remove_managed() {
   rm -rf "$STATE/localsend"
 }
 
+opencode_installed_version() {
+  [ -f "$STATE/opencode-version" ] && cat "$STATE/opencode-version"
+}
+
+opencode_managed() {
+  [ -L "$BIN/opencode" ] &&
+    [ "$(readlink "$BIN/opencode")" = "$STATE/opencode/current/opencode" ]
+}
+
+opencode_install() {
+  # OpenCode is a managed external CLI, with no service, agent or auth setup.
+  [ "${NIRUX_TEST_AS_ROOT:-0}" = 1 ] && return 0
+  [ -z "$ROOT" ] || return 0
+  if command -v opencode >/dev/null 2>&1 && ! opencode_managed; then
+    say "Using the existing OpenCode at $(command -v opencode); NIRUX will not overwrite it."
+    return 0
+  fi
+  [ -x "$STATE/opencode/current/opencode" ] &&
+    [ "$(opencode_installed_version)" = "$OPENCODE_VERSION" ] && {
+      mkdir -p "$BIN" || die 'could not create the command directory'
+      ln -sfn "$STATE/opencode/current/opencode" "$BIN/opencode" || die 'could not link OpenCode'
+      say "Managed OpenCode $OPENCODE_VERSION is already installed"
+      return 0
+    }
+  [ -n "${WORK:-}" ] || die 'OpenCode installation requires a working directory'
+  archive=$WORK/download/opencode/opencode-linux-x64.tar.gz
+  mkdir -p "$WORK/download/opencode" || die 'could not create the OpenCode download directory'
+  say "Downloading OpenCode $OPENCODE_VERSION"
+  fetch "https://opencode.ai/files/bin/$OPENCODE_VERSION/opencode-linux-x64.tar.gz" "$archive"
+  actual=$(sha256sum "$archive" | cut -d ' ' -f1)
+  [ "$actual" = "$OPENCODE_SHA256" ] || die 'OpenCode checksum mismatch; current installation kept'
+  unpack=$WORK/opencode-unpack
+  rm -rf "$unpack"
+  mkdir -p "$unpack" || die 'could not create the OpenCode extraction directory'
+  tar -xzf "$archive" -C "$unpack" || die 'could not extract the OpenCode archive'
+  [ -x "$unpack/opencode" ] || die 'OpenCode archive is missing the executable'
+  load_output=$(LD_TRACE_LOADED_OBJECTS=1 "$unpack/opencode" 2>&1 || :)
+  missing_libs=$(printf '%s\n' "$load_output" | awk '/not found/ {print $1}' | sort -u)
+  [ -z "$missing_libs" ] || die "OpenCode needs missing shared libraries: $(printf '%s' "$missing_libs" | tr '\n' ' ')"
+  reported=$("$unpack/opencode" --version 2>&1) || die 'the extracted OpenCode executable cannot start'
+  case "$reported" in
+    *"$OPENCODE_VERSION"*) ;;
+    *) die "OpenCode reports an unexpected version: $reported" ;;
+  esac
+  destination=$STATE/opencode/$OPENCODE_VERSION
+  staging=$STATE/opencode/.$OPENCODE_VERSION.$$
+  mkdir -p "$STATE/opencode" || die 'could not create the OpenCode directory'
+  rm -rf "$staging"
+  mv "$unpack" "$staging" || die 'could not stage the OpenCode files'
+  rm -rf "$destination"
+  mv "$staging" "$destination" || die 'could not install the OpenCode files'
+  rm -f "$STATE/opencode/current"
+  ln -s "$destination" "$STATE/opencode/current" || die 'could not activate OpenCode'
+  mkdir -p "$BIN" || die 'could not create the command directory'
+  ln -sfn "$STATE/opencode/current/opencode" "$BIN/opencode" || die 'could not link OpenCode'
+  printf '%s\n' "$OPENCODE_VERSION" > "$STATE/opencode-version"
+  for old in "$STATE/opencode"/*; do
+    [ -d "$old" ] || continue
+    [ -L "$old" ] && continue
+    [ "$old" = "$destination" ] && continue
+    rm -rf "$old"
+  done
+  say "Installed managed OpenCode $OPENCODE_VERSION"
+}
+
+opencode_remove_managed() {
+  if opencode_managed; then rm -f "$BIN/opencode"; fi
+  rm -f "$STATE/opencode-version"
+  rm -rf "$STATE/opencode"
+}
+
 choose_browser() {
   operation=$1
   persisted=$(browser_policy)
@@ -1651,6 +1724,7 @@ apply_target_release() {
   trap 'apply_restore_config' EXIT INT TERM HUP
   browser_install
   localsend_install
+  opencode_install
   ensure_user_dirs
   say 'Installing configuration and desktop assets...'
   install_config
@@ -2225,6 +2299,7 @@ uninstall() {
   done
   if [ -f "$HOME/.xinitrc" ] && owned "$HOME/.xinitrc"; then rm -f "$HOME/.xinitrc"; fi
   localsend_remove_managed
+  opencode_remove_managed
   browser_remove_managed
   browser_remove_policy
   remove_terminal
@@ -2299,6 +2374,7 @@ install_or_update() {
   fi
   browser_install
   localsend_install
+  opencode_install
   ensure_user_dirs
   # Configuration and system integration must succeed before switching the
   # active programs. A rejected configuration leaves the old generation intact.

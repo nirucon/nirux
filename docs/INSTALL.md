@@ -254,6 +254,22 @@ nirufetch
 nirufetch --plain
 ```
 
+### OpenCode
+
+A normal install downloads the pinned official OpenCode V2 native CLI and
+installs `opencode` under the NIRUX prefix. It does not install npm, start a
+service, create a session, authenticate or modify existing OpenCode config.
+An existing unmanaged `opencode` command is left untouched.
+
+```sh
+opencode --version
+```
+
+The binary is an external managed app, like LocalSend, so `nirux rollback`
+does not roll it back. Updates replace it only when the NIRUX release pins a new
+version. Use `--no-packages` does not skip this download; it is controlled by
+the OpenCode pin in the release.
+
 ### LocalSend
 
 A normal install downloads the official LocalSend Linux tarball, verifies its
