@@ -19,7 +19,7 @@ components need.
 - **Bar:** ten per-monitor workspaces with occupancy markers, clock/calendar, network, battery, audio,
   microphone, brightness, media, weather, updates, CPU/memory, uptime, power
   profile, Bluetooth and a system tray.
-- **Standard folders:** locale-aware XDG Desktop, Documents, Downloads, Music, Pictures and Videos.
+- **Standard folders:** locale-aware XDG Documents, Downloads, Music, Pictures and Videos.
 - **Keyboard-first desktop:** application search, open-window switching,
   grouped actions, workspace recipes and focus/presentation modes.
 - **Notifications:** native notification service and hardware OSD, DND,
@@ -80,6 +80,11 @@ An existing display manager is preserved; otherwise choose startx (default),
 SDDM or LightDM. A fresh install offers the managed Helium browser and installs
 the theme wallpapers, kitty/fish integration and terminal colours. User
 configuration is not overwritten.
+
+All ten themes include both 4K and 8K wallpapers (20 images). The wallpaper
+archive is therefore about 183 MB, so the initial download is noticeably larger
+than the programs themselves. All assets are checksum-verified before
+installation.
 
 Use `./nirux install --no-packages` only when all runtime dependencies already
 exist.
