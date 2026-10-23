@@ -108,7 +108,7 @@ is reported and left untouched.
 
 ## Desktop integration
 
-NIRUX installs Noto Color Emoji and the eight NIRU theme wallpaper sets in
+NIRUX installs Noto Color Emoji and the ten NIRU theme wallpaper sets in
 `~/Pictures/Wallpapers/NIRU`. Existing files are kept; edited wallpapers are
 never overwritten. The directory can be changed with `XDG_PICTURES_DIR` or
 `[wallpaper] theme_dir`.
@@ -311,10 +311,11 @@ nirux login-wallpaper reset
 The choice applies to the installed SDDM and/or LightDM greeter, survives
 updates, and is stored under `~/.config/nirux/`. By default the login screen
 uses the wallpaper of the currently selected NIRUX theme (Noir, Nord, Satie,
-Carl Larsson, Forest Vigil, Blood of Urdr, Root and Stone or Blue Horizon).
+Carl Larsson, Forest Vigil, Blood of Urdr, Root and Stone, Blue Horizon,
+The Norns or Winter Nights).
 `reset` returns to that theme wallpaper.
 
-NIRUX ships only the eight theme wallpaper sets. Additional wallpapers live in
+NIRUX ships only the ten theme wallpaper sets. Additional wallpapers live in
 [niruwm-additionalwallpapers](https://github.com/nirucon/niruwm-additionalwallpapers);
 run its `install.sh` and they appear in both `nirux login-wallpaper list` and
 `niructl wallpaper list`. New PNGs added there are picked up without changing

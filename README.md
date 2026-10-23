@@ -33,8 +33,8 @@ components need.
 - **Screenshots:** region, window or full-screen capture with a floating review
   dialog, crop, rectangle, arrow, mask, zoom and pan.
 - **Appearance:** Niru Noir, Nord, Satie, Carl Larsson, Forest Vigil, Blood of
-  Urdr, Root and Stone and Blue Horizon themes, shared semantic colours,
-  configurable fonts, emoji,
+  Urdr, Root and Stone, Blue Horizon, The Norns and Winter Nights themes,
+  shared semantic colours, configurable fonts, emoji,
   theme-matched login wallpaper, optional extra wallpapers and optional picom
   transparency.
 - **Safe maintenance:** checksummed releases, pinned components, atomic
