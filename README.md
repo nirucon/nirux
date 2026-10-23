@@ -32,9 +32,10 @@ components need.
 - **Webapps:** `niruwebapp` creates browser-backed desktop apps with dedicated profiles and optional local icons.
 - **Screenshots:** region, window or full-screen capture with a floating review
   dialog, crop, rectangle, arrow, mask, zoom and pan.
-- **Appearance:** Niru Noir, Nord, Satie and Carl Larsson themes, shared semantic
-  colours, configurable fonts, emoji, theme-matched login wallpaper, optional extra wallpapers and
-  optional picom transparency.
+- **Appearance:** Niru Noir, Nord, Satie, Carl Larsson, Forest Vigil and Blood
+  of Urdr themes, shared semantic colours, configurable fonts, emoji,
+  theme-matched login wallpaper, optional extra wallpapers and optional picom
+  transparency.
 - **Safe maintenance:** checksummed releases, pinned components, atomic
   generations, rollback, configuration migration, diagnostics and owned
   uninstall.

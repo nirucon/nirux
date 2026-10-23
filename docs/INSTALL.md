@@ -34,7 +34,7 @@ is an alias for the same behaviour, not a partial suite.
 
 An existing display manager is preserved. If none exists, the interactive
 default is startx; SDDM and LightDM can be selected explicitly. NIRUX-owned
-greeters use the Niru Noir palette and the Rooted in Less wallpaper. An existing
+greeters use the selected theme palette and its matching wallpaper. An existing
 `~/.xinitrc` is preserved.
 
 When LightDM or SDDM is explicitly selected during installation, NIRUWM is the
@@ -309,10 +309,11 @@ nirux login-wallpaper reset
 
 The choice applies to the installed SDDM and/or LightDM greeter, survives
 updates, and is stored under `~/.config/nirux/`. By default the login screen
-uses the wallpaper of the currently selected NIRUX theme (Noir, Nord, Satie or
-Carl Larsson). `reset` returns to that theme wallpaper.
+uses the wallpaper of the currently selected NIRUX theme (Noir, Nord, Satie,
+Carl Larsson, Forest Vigil or Blood of Urdr). `reset` returns to that theme
+wallpaper.
 
-NIRUX ships only the four theme wallpaper sets. Additional wallpapers live in
+NIRUX ships only the six theme wallpaper sets. Additional wallpapers live in
 [niruwm-additionalwallpapers](https://github.com/nirucon/niruwm-additionalwallpapers);
 run its `install.sh` and they appear in both `nirux login-wallpaper list` and
 `niructl wallpaper list`. New PNGs added there are picked up without changing
