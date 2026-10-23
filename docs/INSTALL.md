@@ -298,6 +298,37 @@ child dialogs remain separate. LocalSend uses the local network directly and
 does not require a NIRUX-managed service or a firewall change. Discovery and
 transfers remain LocalSend's responsibility.
 
+### Login wallpaper
+
+The NIRUX login screen uses the same wallpaper set as the desktop. Choose any
+installed NIRUX wallpaper:
+
+```sh
+nirux login-wallpaper list
+nirux login-wallpaper set nirux-wallpaper-nord-8k.png
+nirux login-wallpaper reset
+```
+
+The choice applies to the installed SDDM and/or LightDM greeter, survives
+updates, and is stored under `~/.config/nirux/`. Every PNG in the release's
+wallpaper set is installed and listed automatically, so adding a wallpaper to
+the repository is enough for it to appear in the next release. `reset` returns
+to the bundled NIRUX login background.
+
+### Fonts
+
+The suite default font is configured in `~/.config/niruwm/appearance.toml`:
+
+```toml
+[font]
+size = 15.0
+path = "/usr/share/fonts/truetype/dejavu/DejaVuSansMono.ttf"
+```
+
+NIRUBAR and NIRULAUNCHER use this as their fallback when their own config does
+not set `font_size`/`font_path`. Per-component overrides remain in
+`~/.config/niruwm/config.toml` and `~/.config/nirulauncher/config.toml`.
+
 ### Compositor and transparency
 
 The session starts picom when installed. `niructl compositor status|on|off|toggle`

@@ -886,7 +886,8 @@ grep -qx 'background = "101010"' "$appearance_test/custom.toml" || fail 'custom 
   install_greeters lightdm
   [ -f "$ROOT/usr/share/lightdm/lightdm-gtk-greeter.conf.d/50-nirux.conf" ] || fail 'missing LightDM greeter config'
   [ -f "$ROOT/usr/share/themes/NIRU/gtk-3.0/gtk.css" ] || fail 'missing NIRU GTK theme'
-  [ -f "$ROOT/usr/share/nirux/greeter/rooted-in-less.png" ] || fail 'missing LightDM background'
+  [ -f "$ROOT/usr/share/nirux/greeter/login.png" ] || fail 'missing LightDM background'
+  grep -qx 'background=/usr/share/nirux/greeter/login.png' "$ROOT/usr/share/lightdm/lightdm-gtk-greeter.conf.d/50-nirux.conf" || fail 'LightDM background path is wrong'
   remove_greeters
   [ ! -e "$ROOT/usr/share/sddm/themes/nirux" ] || fail 'greeter removal left the SDDM theme'
   [ ! -e "$ROOT/usr/share/themes/NIRU" ] || fail 'greeter removal left the GTK theme'

@@ -33,8 +33,8 @@ components need.
 - **Screenshots:** region, window or full-screen capture with a floating review
   dialog, crop, rectangle, arrow, mask, zoom and pan.
 - **Appearance:** Niru Noir, Nord, Satie and Carl Larsson themes, shared semantic
-  colours, font metrics, emoji, wallpapers, terminal colours and optional picom
-  transparency.
+  colours, configurable fonts, emoji, login wallpaper, terminal colours and
+  optional picom transparency.
 - **Safe maintenance:** checksummed releases, pinned components, atomic
   generations, rollback, configuration migration, diagnostics and owned
   uninstall.

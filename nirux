@@ -2,7 +2,7 @@
 # NIRUX: install a complete X11 desktop, or maintain an existing installation.
 set -eu
 
-VERSION=0.10.103
+VERSION=0.10.104
 PREFIX=${NIRUX_PREFIX:-$HOME/.local}
 BIN=$PREFIX/bin
 STATE=$PREFIX/share/nirux
@@ -39,6 +39,7 @@ usage() {
   say "Usage: nirux install [--minimal|--no-packages] [--display-manager auto|startx|sddm|lightdm]"
   say "                    [--browser helium|none|keep]"
   say "       nirux update [--no-packages] [--release VERSION] [--browser helium|none|keep]"
+  say "       nirux login-wallpaper [list|set FILE|reset]"
   say "       nirux rollback | status | doctor | uninstall [--purge] | --version | --help"
   say "Default: keep an existing display manager; otherwise offer startx (default), SDDM or LightDM."
   say "Browser: a fresh install offers Helium (default Helium) and remembers the choice."
@@ -1872,6 +1873,91 @@ prepare_pam() {
   { say "# NIRUX owner: $PREFIX"; cat "$pam_source"; } > "$WORK/pam"
   write_system "$ROOT/etc/pam.d/nirulock" "$WORK/pam"
 }
+login_wallpaper_config() {
+  say "${XDG_CONFIG_HOME:-$HOME/.config}/nirux/login-wallpaper"
+}
+
+default_login_wallpaper() {
+  say "$(pictures_directory)/Wallpapers/NIRU/nirux-wallpaper-noir-rooted-in-less-4k.png"
+}
+
+selected_login_wallpaper() {
+  file=$(login_wallpaper_config)
+  [ -f "$file" ] || return 1
+  selected=$(sed -n '1p' "$file")
+  [ -n "$selected" ] && [ -f "$selected" ] || return 1
+  say "$selected"
+}
+
+is_png() {
+  [ "$(od -An -tx1 -N8 "$1" 2>/dev/null | tr -d ' \n')" = "89504e470d0a1a0a" ]
+}
+
+apply_login_wallpaper() {
+  login_source=$1
+  [ -f "$login_source" ] || die "login wallpaper not found: $login_source"
+  is_png "$login_source" || die "login wallpaper must be a PNG: $login_source"
+  applied=0
+  if [ -f "$ROOT/usr/share/sddm/themes/nirux/Main.qml" ] &&
+     owned "$ROOT/usr/share/sddm/themes/nirux/Main.qml"; then
+    as_root install -m 644 "$login_source" "$ROOT/usr/share/sddm/themes/nirux/background.png"
+    applied=1
+  fi
+  if [ -f "$ROOT/usr/share/lightdm/lightdm-gtk-greeter.conf.d/50-nirux.conf" ] &&
+     owned "$ROOT/usr/share/lightdm/lightdm-gtk-greeter.conf.d/50-nirux.conf"; then
+    as_root install -d -m 755 "$ROOT/usr/share/nirux/greeter"
+    as_root install -m 644 "$login_source" "$ROOT/usr/share/nirux/greeter/login.png"
+    tmp=$(mktemp)
+    sed 's|^background=.*|background=/usr/share/nirux/greeter/login.png|' \
+      "$ROOT/usr/share/lightdm/lightdm-gtk-greeter.conf.d/50-nirux.conf" > "$tmp"
+    write_system "$ROOT/usr/share/lightdm/lightdm-gtk-greeter.conf.d/50-nirux.conf" "$tmp"
+    rm -f "$tmp"
+    applied=1
+  fi
+  [ "$applied" = 1 ] || die 'no NIRUX SDDM or LightDM greeter is installed; run nirux install --display-manager sddm|lightdm'
+  say "Login wallpaper applied from $login_source. It appears at the next greeter start."
+}
+
+login_wallpaper() {
+  action=${1:-list}
+  destination=$(pictures_directory)/Wallpapers/NIRU
+  selected=$(selected_login_wallpaper || :)
+  case "$action" in
+    list)
+      [ -d "$destination" ] || die "wallpaper directory not found: $destination"
+      found=0
+      for file in "$destination"/*.png; do
+        [ -f "$file" ] || continue
+        found=1
+        if [ "$file" = "$selected" ]; then printf '* %s\n' "${file##*/}"
+        else printf '  %s\n' "${file##*/}"; fi
+      done
+      [ "$found" = 1 ] || die "no PNG wallpapers in $destination"
+      say "Current: ${selected:-$(default_login_wallpaper)}"
+      ;;
+    set)
+      [ "$#" = 2 ] || die 'login-wallpaper set needs one PNG filename or path'
+      login_source=$2
+      case "$login_source" in
+        */*) : ;;
+        *) login_source=$destination/$login_source ;;
+      esac
+      [ -f "$login_source" ] || die "login wallpaper not found: $login_source"
+      apply_login_wallpaper "$login_source"
+      mkdir -p "$(dirname "$(login_wallpaper_config)")"
+      printf '%s\n' "$login_source" > "$(login_wallpaper_config)"
+      ;;
+    reset)
+      [ "$#" = 1 ] || die 'login-wallpaper reset takes no arguments'
+      login_source=$(default_login_wallpaper)
+      [ -f "$login_source" ] || die "default login wallpaper not found: $login_source"
+      apply_login_wallpaper "$login_source"
+      rm -f "$(login_wallpaper_config)"
+      ;;
+    *) die 'login-wallpaper needs list, set FILE or reset' ;;
+  esac
+}
+
 sddm_qt_version() {
   if command -v sddm-greeter-qt6 >/dev/null 2>&1; then say 6; else say 5; fi
 }
@@ -1895,6 +1981,14 @@ install_greeters() {
   mkdir -p "$unpack" || die 'could not create the integration extraction directory'
   tar -xJf "$archive" -C "$unpack" || die 'could not extract the NIRUX integration assets'
   [ -f "$unpack/polkit/49-nirux-power.rules" ] || die 'integration archive is missing the power rule'
+  login_wallpaper_source=$(selected_login_wallpaper || :)
+  if [ -n "$login_wallpaper_source" ]; then
+    is_png "$login_wallpaper_source" || die "selected login wallpaper is not a PNG: $login_wallpaper_source"
+    say "Using selected login wallpaper: $login_wallpaper_source"
+  else
+    login_wallpaper_source=$unpack/background.png
+  fi
+  [ -f "$login_wallpaper_source" ] || die "login wallpaper not found: $login_wallpaper_source"
   # The installing account can already use sudo, so it is also trusted for the
   # local power menu even when sudo comes from a sudoers rule rather than a
   # wheel/sudo group membership. Remote sessions remain excluded.
@@ -1918,8 +2012,7 @@ install_greeters() {
       # assumes Qt5 and silently replaces the NIRUX theme with its fallback.
       { say "# NIRUX owner: $PREFIX"; sed '/^QtVersion=/d' "$unpack/sddm/metadata.desktop"; say "QtVersion=$(sddm_qt_version)"; } > "$WORK/sddm-metadata.desktop"
       write_system "$ROOT/usr/share/sddm/themes/nirux/metadata.desktop" "$WORK/sddm-metadata.desktop"
-      [ -f "$unpack/background.png" ] || die 'integration archive is missing background.png'
-      write_system "$ROOT/usr/share/sddm/themes/nirux/background.png" "$unpack/background.png"
+      write_system "$ROOT/usr/share/sddm/themes/nirux/background.png" "$login_wallpaper_source"
       [ -f "$unpack/sddm/Main.qml" ] || die 'integration archive is missing sddm/Main.qml'
       { say "// NIRUX owner: $PREFIX"; cat "$unpack/sddm/Main.qml"; } > "$WORK/sddm-Main.qml"
       write_system "$ROOT/usr/share/sddm/themes/nirux/Main.qml" "$WORK/sddm-Main.qml"
@@ -1932,8 +2025,9 @@ install_greeters() {
       [ -f "$unpack/gtk/index.theme" ] || die 'integration archive is missing the GTK theme'
       [ -f "$unpack/gtk/gtk-3.0/gtk.css" ] || die 'integration archive is missing the GTK stylesheet'
       as_root install -d -m 755 "$ROOT/usr/share/nirux/greeter"
-      write_system "$ROOT/usr/share/nirux/greeter/rooted-in-less.png" "$unpack/background.png"
-      { say "# NIRUX owner: $PREFIX"; cat "$unpack/lightdm/50-nirux.conf"; } > "$WORK/lightdm-nirux.conf"
+      write_system "$ROOT/usr/share/nirux/greeter/login.png" "$login_wallpaper_source"
+      [ ! -f "$ROOT/usr/share/nirux/greeter/rooted-in-less.png" ] || as_root rm -f "$ROOT/usr/share/nirux/greeter/rooted-in-less.png"
+      { say "# NIRUX owner: $PREFIX"; sed 's|^background=.*|background=/usr/share/nirux/greeter/login.png|' "$unpack/lightdm/50-nirux.conf"; } > "$WORK/lightdm-nirux.conf"
       write_system "$ROOT/usr/share/lightdm/lightdm-gtk-greeter.conf.d/50-nirux.conf" \
         "$WORK/lightdm-nirux.conf"
       { say "# NIRUX owner: $PREFIX"; cat "$unpack/gtk/index.theme"; } > "$WORK/gtk-index.theme"
@@ -1959,10 +2053,12 @@ remove_greeters() {
      owned "$ROOT/usr/share/themes/NIRU/index.theme"; then
     as_root rm -rf "$ROOT/usr/share/themes/NIRU"
   fi
-  if [ -f "$ROOT/usr/share/nirux/greeter/rooted-in-less.png" ]; then
-    as_root rm -f "$ROOT/usr/share/nirux/greeter/rooted-in-less.png"
-    as_root rmdir "$ROOT/usr/share/nirux/greeter" "$ROOT/usr/share/nirux" 2>/dev/null || :
-  fi
+  for file in rooted-in-less.png login.png; do
+    if [ -f "$ROOT/usr/share/nirux/greeter/$file" ]; then
+      as_root rm -f "$ROOT/usr/share/nirux/greeter/$file"
+    fi
+  done
+  as_root rmdir "$ROOT/usr/share/nirux/greeter" "$ROOT/usr/share/nirux" 2>/dev/null || :
 }
 
 register_session() {
@@ -2307,7 +2403,7 @@ uninstall() {
     remove_owned_wallpapers
     rm -rf "${XDG_CONFIG_HOME:-$HOME/.config}/niruwm" "${XDG_CONFIG_HOME:-$HOME/.config}/niruui" \
       "${XDG_CONFIG_HOME:-$HOME/.config}/nirubar" "${XDG_CONFIG_HOME:-$HOME/.config}/nirulauncher" \
-      "${XDG_CONFIG_HOME:-$HOME/.config}/nirunotify" \
+      "${XDG_CONFIG_HOME:-$HOME/.config}/nirunotify" "${XDG_CONFIG_HOME:-$HOME/.config}/nirux" \
       "${XDG_STATE_HOME:-$HOME/.local/state}/niruwm" "${XDG_STATE_HOME:-$HOME/.local/state}/nirulock" \
       "${XDG_STATE_HOME:-$HOME/.local/state}/niruscreensaver" \
       "${XDG_CACHE_HOME:-$HOME/.cache}/nirubar"
@@ -2408,6 +2504,7 @@ main() {
     _stage) shift; [ "$#" = 1 ] || die 'staging takes one protocol version'; stage_target_release "$1" ;;
     uninstall) shift; uninstall "$@" ;;
     rollback) [ "$#" = 1 ] || die 'rollback takes no arguments'; rollback ;;
+    login-wallpaper) shift; login_wallpaper "$@" ;;
     status|doctor) [ "$#" = 1 ] || die "$1 takes no arguments"; "$1" ;;
     --version) say "NIRUX $VERSION" ;;
     --help|help) usage ;;
