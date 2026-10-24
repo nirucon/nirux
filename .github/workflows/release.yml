@@ -30,7 +30,13 @@ jobs:
           done
       - name: Package wallpapers, terminal, greeters and power rule
         run: |
-          tar -cJf nirux-wallpapers.tar.xz wallpaper/*.png
+          # Only the default theme's wallpaper ships in the release. The other
+          # nine themes are a ~311 MB optional set served by the project's
+          # Nextcloud, so a release stays small and every update does not
+          # re-download wallpapers the user may already have.
+          tar -cJf nirux-wallpapers.tar.xz \
+            wallpaper/nirux-wallpaper-noir-4k.png \
+            wallpaper/nirux-wallpaper-noir-8k.png
           tar -cJf nirux-terminal.tar.xz terminal
           rm -rf integration-build
           mkdir -p integration-build/polkit

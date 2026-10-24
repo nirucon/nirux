@@ -2,7 +2,7 @@
 # NIRUX: install a complete X11 desktop, or maintain an existing installation.
 set -eu
 
-VERSION=0.11.2
+VERSION=0.11.5
 PREFIX=${NIRUX_PREFIX:-$HOME/.local}
 BIN=$PREFIX/bin
 STATE=$PREFIX/share/nirux
@@ -47,6 +47,7 @@ usage() {
   say "       nirux update [--no-packages] [--release VERSION] [--browser helium|none|keep]"
   say "                    [--localsend yes|no] [--opencode yes|no]"
   say "       nirux login-wallpaper [list|set FILE|reset]"
+  say "       nirux wallpapers [status|download|remove]"
   say "       nirux reset-config"
   say "       nirux repair-session | repair-wallpaper"
   say "       nirux remove helium|localsend|opencode"
@@ -121,9 +122,9 @@ _debian_t64() {
 }
 packages_for() {
   case "$1" in
-    arch) say "xorg-server xorg-xinit xorg-xauth xorg-xrandr xorg-xset xorg-xprop xorg-xdpyinfo xorg-xwininfo xorg-xrdb xorg-xsetroot xorg-setxkbmap xf86-input-libinput xkeyboard-config noto-fonts-emoji dbus pam pipewire pipewire-audio pipewire-pulse pipewire-alsa wireplumber alsa-utils alsa-ucm-conf rtkit fontconfig libglvnd ttf-dejavu ttf-jetbrains-mono-nerd kitty fish polkit-gnome libayatana-appindicator libayatana-indicator ayatana-ido bluez bluez-utils power-profiles-daemon dunst picom feh maim slop xclip pcmanfm playerctl libnotify brightnessctl gammastep iproute2 iw xdg-utils xdg-user-dirs procps-ng util-linux" ;;
-    debian) say "xserver-xorg xserver-xorg-input-libinput xinit xauth x11-xserver-utils x11-utils x11-xkb-utils xkb-data dbus-x11 dbus-user-session libpam0g pipewire pipewire-pulse pipewire-alsa wireplumber alsa-utils alsa-ucm-conf rtkit fontconfig libgles2 fonts-dejavu-core fonts-font-awesome fonts-jetbrains-mono fonts-noto-color-emoji kitty fish lxpolkit libayatana-appindicator3-1 libayatana-indicator3-7 libayatana-ido3-0.4-0 bluez power-profiles-daemon dunst picom feh maim slop xclip pcmanfm playerctl libnotify-bin brightnessctl gammastep iproute2 iw xdg-utils xdg-user-dirs procps util-linux" ;;
-    void) say "xorg-minimal xinit xauth xrandr xset xprop xdpyinfo xwininfo xrdb xsetroot setxkbmap xkeyboard-config dbus elogind pam pam-base pipewire wireplumber alsa-utils alsa-ucm-conf rtkit fontconfig libglvnd dejavu-fonts-ttf nerd-fonts-symbols-ttf noto-fonts-emoji kitty fish-shell polkit-gnome libayatana-appindicator libayatana-indicator ayatana-ido bluez power-profiles-daemon dunst picom feh maim slop xclip pcmanfm playerctl libnotify brightnessctl gammastep iproute2 iw xdg-utils xdg-user-dirs procps-ng util-linux" ;;
+    arch) say "xorg-server xorg-xinit xorg-xauth xorg-xrandr xorg-xset xorg-xprop xorg-xdpyinfo xorg-xwininfo xorg-xrdb xorg-xsetroot xorg-setxkbmap xf86-input-libinput xkeyboard-config noto-fonts-emoji dbus pam pipewire pipewire-audio pipewire-pulse pipewire-alsa wireplumber alsa-utils alsa-ucm-conf rtkit fontconfig libglvnd ttf-dejavu ttf-jetbrains-mono-nerd kitty fish polkit-gnome libayatana-appindicator libayatana-indicator ayatana-ido bluez bluez-utils power-profiles-daemon dunst picom feh maim slop xclip pcmanfm playerctl libnotify brightnessctl gammastep iproute2 iw xdg-utils xdg-user-dirs unzip procps-ng util-linux" ;;
+    debian) say "xserver-xorg xserver-xorg-input-libinput xinit xauth x11-xserver-utils x11-utils x11-xkb-utils xkb-data dbus-x11 dbus-user-session libpam0g pipewire pipewire-pulse pipewire-alsa wireplumber alsa-utils alsa-ucm-conf rtkit fontconfig libgles2 fonts-dejavu-core fonts-font-awesome fonts-jetbrains-mono fonts-noto-color-emoji kitty fish lxpolkit libayatana-appindicator3-1 libayatana-indicator3-7 libayatana-ido3-0.4-0 bluez power-profiles-daemon dunst picom feh maim slop xclip pcmanfm playerctl libnotify-bin brightnessctl gammastep iproute2 iw xdg-utils xdg-user-dirs unzip procps util-linux" ;;
+    void) say "xorg-minimal xinit xauth xrandr xset xprop xdpyinfo xwininfo xrdb xsetroot setxkbmap xkeyboard-config dbus elogind pam pam-base pipewire wireplumber alsa-utils alsa-ucm-conf rtkit fontconfig libglvnd dejavu-fonts-ttf nerd-fonts-symbols-ttf noto-fonts-emoji kitty fish-shell polkit-gnome libayatana-appindicator libayatana-indicator ayatana-ido bluez power-profiles-daemon dunst picom feh maim slop xclip pcmanfm playerctl libnotify brightnessctl gammastep iproute2 iw xdg-utils xdg-user-dirs unzip procps-ng util-linux" ;;
   esac
 }
 # Runtime libraries and extraction tools for the pinned Helium archive. These
@@ -1695,6 +1696,46 @@ choose_browser() {
   esac
   BROWSER_EFFECTIVE=$effective
 }
+
+# Ask once whether to fetch the optional theme wallpaper set.
+#
+# Only the default theme's wallpaper ships with a release; the other nine are a
+# 326 MB set from the project's server so a GitHub release stays small. The
+# question is asked at install only, remembered in a policy file, and defaults
+# to no so an unattended install never pulls hundreds of megabytes.
+WALLPAPER_BUNDLE_POLICY=keep
+select_wallpaper_bundle() {
+  wp_policy_file=$STATE/wallpaper-bundle-policy
+  wp_persisted=keep
+  if [ -f "$wp_policy_file" ]; then
+    wp_persisted=$(awk '$1 == "wallpapers" && ($2 == "all" || $2 == "default") {print $2; exit}' "$wp_policy_file")
+    [ -n "$wp_persisted" ] || wp_persisted=keep
+  fi
+  if [ "$operation" != install ]; then
+    WALLPAPER_BUNDLE_POLICY=$wp_persisted
+    return 0
+  fi
+  case "${NIRUX_WALLPAPERS:-}" in
+    all|default|none) wp_persisted=$([ "${NIRUX_WALLPAPERS:-}" = none ] && echo default || echo "$NIRUX_WALLPAPERS") ;;
+  esac
+  if [ "$wp_persisted" = keep ] && [ -t 0 ]; then
+    say ''
+    say 'Every theme has its own wallpaper. Only the default theme (noir) ships with NIRUX;'
+    say 'the other nine are about 311 MB (4k and 8k) from nextcloud.nirucon.se.'
+    say 'Without them a theme uses its own solid background colour, which still looks right.'
+    say 'You can add them later from the launcher under Wallpaper.'
+    printf 'Download all ten theme wallpapers now [y/N]: '
+    IFS= read -r wp_answer || wp_answer=no
+    case "$wp_answer" in
+      [yY]*) wp_persisted=all ;;
+      *) wp_persisted=default ;;
+    esac
+  fi
+  [ "$wp_persisted" = keep ] && wp_persisted=default
+  WALLPAPER_BUNDLE_POLICY=$wp_persisted
+  printf '# NIRUX owner: %s\nwallpapers %s\n' "$PREFIX" "$wp_persisted" > "$wp_policy_file" ||
+    die 'could not record the wallpaper policy'
+}
 manifest_version() {
   value=$(awk -v n="$1" '$1 == n {print $2}' "$WORK/download/nirux/manifest")
   valid_version "$value" || die "invalid manifest entry: $1"
@@ -1855,6 +1896,7 @@ apply_target_release() {
   say 'Installing configuration and desktop assets...'
   install_config
   install_wallpapers
+  select_wallpaper_bundle
   install_terminal
   prepare_pam
   install_greeters "$DM"
@@ -2107,6 +2149,190 @@ login_wallpaper() {
     *) die 'login-wallpaper needs list, set FILE or reset' ;;
   esac
 }
+
+# ── Optional theme wallpaper set ────────────────────────────────────────────
+# NIRUX ships only the default theme's wallpaper with its release. The other
+# nine themes are a 326 MB set served by the project's own Nextcloud, so a
+# routine GitHub release stays small and every update does not re-download it.
+# A theme without its image paints its own background colour, so nothing looks
+# broken while the set is absent.
+WALLPAPER_BUNDLE_URL=https://nextcloud.nirucon.se/s/2b9MX7GZKpLsyGx/download
+WALLPAPER_BUNDLE_SHA256=4dd71b0510b7aca125feb6b6fa111fea13239888cd51a3857609e300368098fc
+WALLPAPER_BUNDLE_BYTES=326176620
+WALLPAPER_THEMES='noir nord satie carl-larsson forest-vigil blood-of-urdr root-and-stone blue-horizon the-norns winter-nights'
+
+wallpaper_destination() {
+  printf '%s\n' "$(pictures_directory)/Wallpapers/NIRU"
+}
+
+wallpapers() {
+  sub=${1:-status}
+  case "$sub" in
+    status) wallpapers_status ;;
+    download)
+      # Self-contained command: it can run outside install/update, where WORK
+      # is never created. A private directory keeps the archive off /tmp and
+      # removes it again.
+      wp_work=$(mktemp -d "${TMPDIR:-/tmp}/nirux-wallpapers.XXXXXX") ||
+        die 'could not create a temporary directory'
+      trap 'rm -rf "$wp_work"' EXIT HUP INT TERM
+      WP_WORK=$wp_work wallpapers_download
+      ;;
+    remove) wallpapers_remove ;;
+    *) die 'wallpapers takes status, download or remove' ;;
+  esac
+}
+
+# How many of the ten themes have a 4k wallpaper installed.
+wallpaper_theme_count() {
+  wp_count=0
+  wp_dir=$(wallpaper_destination)
+  for wp_theme in $WALLPAPER_THEMES; do
+    [ -f "$wp_dir/nirux-wallpaper-$wp_theme-4k.png" ] && wp_count=$((wp_count + 1))
+  done
+  printf '%s\n' "$wp_count"
+}
+
+wallpapers_status() {
+  wp_dir=$(wallpaper_destination)
+  wp_have=$(wallpaper_theme_count)
+  say "Theme wallpapers: $wp_have of 10 installed in $wp_dir"
+  if [ "$wp_have" -eq 10 ]; then
+    say 'Every theme has its wallpaper; nothing to download.'
+    return 0
+  fi
+  say ''
+  say 'A theme without its wallpaper uses its own background colour, so the'
+  say 'desktop still matches the theme. Download all ten (4k and 8k, ~311 MB):'
+  say ''
+  say '    nirux wallpapers download'
+  say ''
+  say 'The same action is offered in the launcher under Wallpaper.'
+}
+
+fetch_wallpaper_bundle() {
+  wp_dir_work=${WP_WORK:-${WORK:?no work directory}}
+  wp_zip=$wp_dir_work/nirux-wallpapers.zip
+  rm -f "$wp_zip"
+  fetch "$WALLPAPER_BUNDLE_URL" "$wp_zip" ||
+    die 'could not download the wallpaper set; check the network connection'
+  wp_size=$(wc -c < "$wp_zip" | tr -d ' ')
+  [ "$wp_size" = "$WALLPAPER_BUNDLE_BYTES" ] ||
+    die "the download was incomplete ($wp_size of $WALLPAPER_BUNDLE_BYTES bytes); run the command again"
+  wp_sum=$(sha256sum "$wp_zip" | cut -d ' ' -f1)
+  [ "$wp_sum" = "$WALLPAPER_BUNDLE_SHA256" ] ||
+    die 'the download did not match its checksum; nothing was installed'
+  say 'Download verified.'
+}
+
+wallpapers_download() {
+  wp_dir=$(wallpaper_destination)
+  if [ "$(wallpaper_theme_count)" -eq 10 ]; then
+    say 'All ten theme wallpapers are already installed.'
+    return 0
+  fi
+  say 'Downloading the NIRUX theme wallpapers (~311 MB) from nextcloud.nirucon.se...'
+  fetch_wallpaper_bundle
+  command -v unzip >/dev/null 2>&1 ||
+    die 'unzip is needed to install the wallpaper set'
+  # Stage everything first: a truncated archive must never leave a half-written
+  # set that looks installed.
+  wp_stage=${WP_WORK:?no work directory}/wallpapers-stage
+  rm -rf "$wp_stage"
+  mkdir -p "$wp_stage" || die 'could not create the staging directory'
+  unzip -q -o "${WP_WORK:?no work directory}/nirux-wallpapers.zip" -d "$wp_stage" ||
+    die 'could not extract the wallpaper set'
+  [ -n "$(find "$wp_stage" -name 'nirux-wallpaper-*.png' -print -quit)" ] ||
+    die 'the wallpaper set contained no PNG files'
+
+  mkdir -p "$wp_dir" || die "could not create $wp_dir"
+  wp_manifest=$(wallpaper_manifest)
+  mkdir -p "${wp_manifest%/*}" || die 'could not create the NIRUX state directory'
+  : > "$wp_manifest.new"
+  wp_installed=0
+  for wp_src in "$wp_stage"/nirux-wallpaper-*.png; do
+    [ -f "$wp_src" ] || continue
+    wp_name=${wp_src##*/}
+    # The bundle names two sets with a `noir-` prefix; NIRUX's theme slugs have
+    # used the shorter names since 0.10.120. Accept both so the theme lookup
+    # finds the file whichever name the bundle was built with.
+    case "$wp_name" in
+      nirux-wallpaper-noir-the-norns-*.png)
+        wp_name=nirux-wallpaper-the-norns-${wp_name##*noir-the-norns-} ;;
+      nirux-wallpaper-noir-winter-nights-*.png)
+        wp_name=nirux-wallpaper-winter-nights-${wp_name##*noir-winter-nights-} ;;
+    esac
+    wp_target=$wp_dir/$wp_name
+    if [ -f "$wp_target" ]; then
+      wp_old=$(awk -v n="$wp_name" '$2 == n {print $1; exit}' "$wp_manifest" 2>/dev/null)
+      wp_cur=$(sha256sum "$wp_target" | cut -d ' ' -f1)
+      if [ -z "$wp_old" ] || [ "$wp_cur" != "$wp_old" ]; then
+        say "Keeping your own $wp_target"
+        printf '%s  %s\n' "$wp_cur" "$wp_name" >> "$wp_manifest.new"
+        continue
+      fi
+    fi
+    install -m 644 "$wp_src" "$wp_target" || die "could not install $wp_target"
+    printf '%s  %s\n' "$(sha256sum "$wp_target" | cut -d ' ' -f1)" "$wp_name" \
+      >> "$wp_manifest.new"
+    wp_installed=$((wp_installed + 1))
+  done
+  # Keep any previously recorded file this set did not mention.
+  if [ -f "$wp_manifest" ]; then
+    while IFS= read -r wp_line; do
+      wp_name=${wp_line#*  }
+      [ -n "$wp_name" ] || continue
+      grep -q "  $wp_name\$" "$wp_manifest.new" && continue
+      [ -f "$wp_dir/$wp_name" ] || continue
+      printf '%s\n' "$wp_line" >> "$wp_manifest.new"
+    done < "$wp_manifest"
+  fi
+  chmod 644 "$wp_manifest.new" 2>/dev/null || :
+  mv -f "$wp_manifest.new" "$wp_manifest" || die 'could not record the installed wallpapers'
+  rm -rf "$wp_stage" "${WP_WORK:?no work directory}/nirux-wallpapers.zip"
+  say "Installed $wp_installed wallpaper file(s) in $wp_dir"
+  say "Themes available now: $(wallpaper_theme_count) of 10"
+  say 'Switch theme to see them: niructl theme niru-nord'
+}
+
+wallpapers_remove() {
+  wp_dir=$(wallpaper_destination)
+  wp_manifest=$(wallpaper_manifest)
+  if [ ! -f "$wp_manifest" ]; then
+    say 'No NIRUX-installed wallpapers are recorded.'
+    return 0
+  fi
+  wp_removed=0
+  : > "$wp_manifest.new"
+  while IFS= read -r wp_line; do
+    wp_old=${wp_line%%  *}
+    wp_name=${wp_line#*  }
+    [ -n "$wp_old" ] && [ -n "$wp_name" ] || continue
+    # The default theme's wallpaper ships with every release; keep it so a
+    # fresh look still works with no network at all.
+    case "$wp_name" in
+      nirux-wallpaper-noir-4k.png|nirux-wallpaper-noir-8k.png)
+        printf '%s\n' "$wp_line" >> "$wp_manifest.new"
+        continue
+        ;;
+    esac
+    wp_target=$wp_dir/$wp_name
+    if [ ! -f "$wp_target" ]; then
+      continue
+    fi
+    wp_cur=$(sha256sum "$wp_target" | cut -d ' ' -f1)
+    if [ "$wp_cur" = "$wp_old" ]; then
+      rm -f "$wp_target" && wp_removed=$((wp_removed + 1))
+    else
+      say "Keeping $wp_target; it was modified"
+      printf '%s\n' "$wp_line" >> "$wp_manifest.new"
+    fi
+  done < "$wp_manifest"
+  mv -f "$wp_manifest.new" "$wp_manifest" 2>/dev/null || :
+  say "Removed $wp_removed downloaded wallpaper file(s)."
+  say 'The default theme keeps its wallpaper; other themes now use their background colour.'
+}
+
 
 sddm_qt_version() {
   if command -v sddm-greeter-qt6 >/dev/null 2>&1; then say 6; else say 5; fi
@@ -2798,6 +3024,7 @@ install_or_update() {
   # active programs. A rejected configuration leaves the old generation intact.
   install_config
   install_wallpapers
+  select_wallpaper_bundle
   install_terminal
   prepare_pam
   install_greeters "$DM"
@@ -2812,6 +3039,21 @@ install_or_update() {
     say 'Running bar restarted. Log out/in to activate the new WM, idle daemon and session.'
   else say 'Log out/in to activate all updated programs. In a new NIRU session: niructl restart-bar.'
   fi
+  # The wallpaper set is a large optional download, so it runs after the
+  # installation is already usable. A failure here never undoes the install.
+  if [ "$WALLPAPER_BUNDLE_POLICY" = all ]; then
+    wp_install_work=$(mktemp -d "${TMPDIR:-/tmp}/nirux-wallpapers.XXXXXX") || wp_install_work=
+    if [ -n "$wp_install_work" ] && WP_WORK=$wp_install_work wallpapers_download; then
+      rm -rf "$wp_install_work"
+      say 'Theme wallpapers installed.'
+    elif [ -n "$wp_install_work" ]; then
+      rm -rf "$wp_install_work"
+      say 'The theme wallpapers could not be downloaded; the themes keep their background colours.'
+      say 'Try again from the launcher under Wallpaper, or: nirux wallpapers download'
+    else
+      say 'Could not create a temporary directory for the wallpaper download.'
+    fi
+  fi
 }
 main() {
   case "${1:-}" in
@@ -2825,6 +3067,7 @@ main() {
     uninstall) shift; uninstall "$@" ;;
     rollback) [ "$#" = 1 ] || die 'rollback takes no arguments'; rollback ;;
     login-wallpaper) shift; login_wallpaper "$@" ;;
+    wallpapers) shift; wallpapers "$@" ;;
     reset-config) [ "$#" = 1 ] || die 'reset-config takes no arguments'; reset_config ;;
     repair-session) [ "$#" = 1 ] || die 'repair-session takes no arguments'; repair_session ;;
     repair-wallpaper) [ "$#" = 1 ] || die 'repair-wallpaper takes no arguments'; repair_wallpaper ;;
