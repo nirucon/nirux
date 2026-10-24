@@ -2,7 +2,7 @@
 # NIRUX: install a complete X11 desktop, or maintain an existing installation.
 set -eu
 
-VERSION=0.11.11
+VERSION=0.11.12
 PREFIX=${NIRUX_PREFIX:-$HOME/.local}
 BIN=$PREFIX/bin
 STATE=$PREFIX/share/nirux
@@ -928,16 +928,22 @@ install_wallpapers() {
         grep -q "  $name$" "$next" && continue
         target=$destination/$name
         [ -f "$target" ] || continue
-        # A release carries only the default theme. Every other theme may have
-        # been installed with `nirux wallpapers download`, and those files are
-        # still owned and still wanted: an update must not delete them.
-        case "$name" in
-          nirux-wallpaper-noir-4k.png|nirux-wallpaper-noir-8k.png) : ;;
-          *)
-            printf '%s  %s\n' "$old_hash" "$name" >> "$next"
-            continue
-            ;;
+        # A release carries only the default theme. The other nine may have
+        # been installed with `nirux wallpapers download`; those are still
+        # owned and still wanted, so an update keeps them and their hash.
+        # Only the ten known theme names are protected: a file a release really
+        # supersedes is still removed.
+        keep=0
+        case "${name#nirux-wallpaper-}" in
+          noir-[48]k.png|nord-[48]k.png|satie-[48]k.png) keep=1 ;;
+          carl-larsson-[48]k.png|forest-vigil-[48]k.png|blood-of-urdr-[48]k.png) keep=1 ;;
+          root-and-stone-[48]k.png|blue-horizon-[48]k.png) keep=1 ;;
+          the-norns-[48]k.png|winter-nights-[48]k.png) keep=1 ;;
         esac
+        if [ "$keep" = 1 ]; then
+          printf '%s  %s\n' "$old_hash" "$name" >> "$next"
+          continue
+        fi
         current_hash=$(sha256sum "$target" | cut -d ' ' -f1)
         if [ "$current_hash" = "$old_hash" ]; then
           rm -f "$target" || die "could not remove superseded wallpaper $target"
