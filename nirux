@@ -2,7 +2,7 @@
 # NIRUX: install a complete X11 desktop, or maintain an existing installation.
 set -eu
 
-VERSION=0.12.1
+VERSION=0.12.2
 PREFIX=${NIRUX_PREFIX:-$HOME/.local}
 BIN=$PREFIX/bin
 STATE=$PREFIX/share/nirux
@@ -688,7 +688,7 @@ upgrade_default_bar_modules() {
   ' "$mig_file")
   [ -n "$mig_modules" ] || return 0
   mig_add=""
-  for mig_module in layout display; do
+  for mig_module in layout display niruxupdate; do
     case "$mig_modules" in
       *"\"$mig_module\""*) continue ;;
     esac
@@ -697,8 +697,15 @@ upgrade_default_bar_modules() {
   done
   [ -n "$mig_add" ] || return 0
   mig_extra=$(printf '%s' "$mig_add" | sed 's/^ //; s/ /", "/g; s/^/"/; s/$/"/')
-  mig_new=$(printf '%s' "$mig_modules" |
-    sed "s/\(\"workspaces\"\)/\1, $mig_extra/")
+  # `niruxupdate` belongs with the status group on the right, so it goes before
+  # the clock rather than next to the workspaces.
+  if printf '%s' "$mig_modules" | grep -q '"clock"'; then
+    mig_new=$(printf '%s' "$mig_modules" |
+      sed "s/\"clock\"/$mig_extra, \"clock\"/")
+  else
+    mig_new=$(printf '%s' "$mig_modules" |
+      sed "s/\(\"workspaces\"\)/\1, $mig_extra/")
+  fi
   mig_mode=$(stat -c %a "$mig_file" 2>/dev/null) || mig_mode=644
   mig_tmp=$(mktemp "$mig_file.nirux-modules.XXXXXX") || return 0
   # Replace the whole list, however many lines it spans, with the new one.
