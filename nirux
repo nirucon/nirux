@@ -2,7 +2,7 @@
 # NIRUX: install a complete X11 desktop, or maintain an existing installation.
 set -eu
 
-VERSION=0.11.10
+VERSION=0.11.11
 PREFIX=${NIRUX_PREFIX:-$HOME/.local}
 BIN=$PREFIX/bin
 STATE=$PREFIX/share/nirux
@@ -928,6 +928,16 @@ install_wallpapers() {
         grep -q "  $name$" "$next" && continue
         target=$destination/$name
         [ -f "$target" ] || continue
+        # A release carries only the default theme. Every other theme may have
+        # been installed with `nirux wallpapers download`, and those files are
+        # still owned and still wanted: an update must not delete them.
+        case "$name" in
+          nirux-wallpaper-noir-4k.png|nirux-wallpaper-noir-8k.png) : ;;
+          *)
+            printf '%s  %s\n' "$old_hash" "$name" >> "$next"
+            continue
+            ;;
+        esac
         current_hash=$(sha256sum "$target" | cut -d ' ' -f1)
         if [ "$current_hash" = "$old_hash" ]; then
           rm -f "$target" || die "could not remove superseded wallpaper $target"

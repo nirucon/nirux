@@ -779,6 +779,16 @@ install_wallpapers >/dev/null
 is_png "$wallpaper_dir/nirux-wallpaper-nord-4k.png" || fail 'unmodified owned wallpaper was not updated'
 grep -q second "$wallpaper_dir/nirux-wallpaper-nord-4k.png" || fail 'unmodified owned wallpaper content was not updated'
 [ ! -e "$wallpaper_dir/nirux-wallpaper-old-4k.png" ] || fail 'superseded owned wallpaper was not removed'
+# A theme installed with `nirux wallpapers download` is still owned and still
+# wanted. An update ships only the default theme, so it must not delete the rest.
+printf '\211PNG\r\n\032\ndownloaded\n' > "$wallpaper_dir/nirux-wallpaper-satie-4k.png"
+printf '%s  %s\n' "$(sha256sum "$wallpaper_dir/nirux-wallpaper-satie-4k.png" | cut -d ' ' -f1)" \
+  nirux-wallpaper-satie-4k.png >> "$STATE/wallpapers.sha256"
+install_wallpapers >/dev/null
+[ -e "$wallpaper_dir/nirux-wallpaper-satie-4k.png" ] ||
+  fail 'an update removed a downloaded theme wallpaper'
+grep -q 'nirux-wallpaper-satie-4k.png' "$STATE/wallpapers.sha256" ||
+  fail 'an update dropped a downloaded theme from the manifest'
 remove_owned_wallpapers
 [ "$(cat "$wallpaper_dir/nirux-wallpaper-noir-4k.png")" = mine ] || fail 'purge removed a user-modified wallpaper'
 [ ! -e "$wallpaper_dir/nirux-wallpaper-nord-4k.png" ] || fail 'purge kept an unmodified owned wallpaper'
