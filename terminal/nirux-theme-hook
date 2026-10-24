@@ -141,10 +141,15 @@ fi
 # block a theme change on a password. When it cannot, the greeter keeps the
 # previous picture until the next `nirux update`.
 # `sudo -n true` is not the test: the sudoers rule allows one command, not
-# `true`, so that probe fails on a correctly configured machine. Try the
-# command itself and ignore a refusal, which is what happens without the rule.
-if command -v nirux >/dev/null 2>&1; then
-  sudo -n nirux login-wallpaper sync >/dev/null 2>&1 || :
-elif [ -x "$HOME/.local/bin/nirux" ]; then
-  sudo -n "$HOME/.local/bin/nirux" login-wallpaper sync >/dev/null 2>&1 || :
+# `true`, so that probe fails on a correctly configured machine.
+#
+# The rule names an absolute path, and sudo matches what it is asked to run.
+# `sudo nirux ...` resolves through PATH and does not match, which is why this
+# used to fall through silently. Pass the absolute path the rule names.
+sync_bin=
+for candidate in "$HOME/.local/bin/nirux" "$(command -v nirux 2>/dev/null)"; do
+  if [ -n "$candidate" ] && [ -x "$candidate" ]; then sync_bin=$candidate; break; fi
+done
+if [ -n "$sync_bin" ]; then
+  sudo -n "$sync_bin" login-wallpaper sync >/dev/null 2>&1 || :
 fi
