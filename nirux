@@ -2,7 +2,7 @@
 # NIRUX: install a complete X11 desktop, or maintain an existing installation.
 set -eu
 
-VERSION=0.11.6
+VERSION=0.11.7
 PREFIX=${NIRUX_PREFIX:-$HOME/.local}
 BIN=$PREFIX/bin
 STATE=$PREFIX/share/nirux
@@ -669,6 +669,57 @@ add_missing_key() {
   insert_config_line "$mig_file" "$mig_after" "$mig_key = $mig_value"
 }
 
+# A newer release can add a bar module that an existing configuration does not
+# mention, and the bar then never shows it. Add a module the shipped default
+# has and the user's list does not. A hand-written list is their choice, so
+# only a list that is still the previous default is extended.
+upgrade_default_bar_modules() {
+  mig_file=$1
+  # Join the modules list onto one line, whether it is written on one or many.
+  mig_modules=$(awk '
+    /^\[bar\]/ { inside = 1; next }
+    inside && /^\[/ { inside = 0 }
+    inside && /^modules *= *\[/ {
+      line = $0
+      while (line !~ /\]/ && (getline more) > 0) line = line " " more
+      print line
+      exit
+    }
+  ' "$mig_file")
+  [ -n "$mig_modules" ] || return 0
+  mig_changed=""
+  mig_add=""
+  for mig_module in layout display; do
+    case "$mig_modules" in
+      *"\"$mig_module\""*) continue ;;
+    esac
+    printf '%s' "$mig_modules" | grep -q '"workspaces"' || continue
+    mig_add="$mig_add $mig_module"
+  done
+  [ -n "$mig_add" ] || return 0
+  mig_extra=$(printf '%s' "$mig_add" | sed 's/^ //; s/ /", "/g; s/^/"/; s/$/"/')
+  mig_new=$(printf '%s' "$mig_modules" |
+    sed "s/\(\"workspaces\"\)/\1, $mig_extra/")
+  mig_mode=$(stat -c %a "$mig_file" 2>/dev/null) || mig_mode=644
+  mig_tmp=$(mktemp "$mig_file.nirux-modules.XXXXXX") || return 0
+  # Replace the whole list, however many lines it spans, with the new one.
+  awk -v new="$mig_new" '
+    /^\[bar\]/ { inside = 1; print; next }
+    inside && /^\[/ { inside = 0 }
+    inside && /^modules *= *\[/ {
+      print new
+      while ($0 !~ /\]/ && (getline more) > 0) { $0 = more }
+      next
+    }
+    { print }
+  ' "$mig_file" > "$mig_tmp" || { rm -f "$mig_tmp"; return 0; }
+  if chmod "$mig_mode" "$mig_tmp" && mv -f "$mig_tmp" "$mig_file"; then
+    say "Added bar module(s):$mig_add"
+  else
+    rm -f "$mig_tmp"
+  fi
+}
+
 validate_config_candidate() {
   mig_candidate=$1
   if [ -n "${WORK:-}" ]; then
@@ -1168,6 +1219,7 @@ install_config() {
   add_missing_key "$cfg_candidate" bar title_delay_seconds 0
   add_missing_key "$cfg_candidate" bar graph_width 24
   add_missing_key "$cfg_candidate" bar tray true
+  upgrade_default_bar_modules "$cfg_candidate"
   add_missing_key "$cfg_candidate" wallpaper scale "\"fill\""
   add_missing_key "$cfg_candidate" wallpaper files "[]"
   add_missing_key "$cfg_candidate" wallpaper shuffle_on_start true
