@@ -2,7 +2,7 @@
 # NIRUX: install a complete X11 desktop, or maintain an existing installation.
 set -eu
 
-VERSION=0.11.9
+VERSION=0.11.10
 PREFIX=${NIRUX_PREFIX:-$HOME/.local}
 BIN=$PREFIX/bin
 STATE=$PREFIX/share/nirux
@@ -2222,8 +2222,9 @@ wallpapers() {
     status) wallpapers_status ;;
     download)
       # Self-contained command: it can run outside install/update, where WORK
-      # is never created. A private directory keeps the archive off /tmp and
-      # removes it again.
+      # and OS are never set. A private directory keeps the archive off /tmp
+      # and removes it again. OS is needed only to install unzip when missing.
+      OS=${OS:-$(distro)}
       wp_work=$(mktemp -d "${TMPDIR:-/tmp}/nirux-wallpapers.XXXXXX") ||
         die 'could not create a temporary directory'
       trap 'rm -rf "$wp_work"' EXIT HUP INT TERM
@@ -2282,10 +2283,17 @@ wallpapers_download() {
     say 'All ten theme wallpapers are already installed.'
     return 0
   fi
+  # unzip is in the package list, but an install made with --no-packages may
+  # not have it, and the command is also useful on a machine where only the
+  # programs were installed. Install it rather than refusing a 311 MB download
+  # the user already asked for.
+  if ! command -v unzip >/dev/null 2>&1; then
+    say 'Installing unzip, which the wallpaper archive needs...'
+    install_packages unzip ||
+      die 'unzip is needed to install the wallpaper set; install it and run the command again'
+  fi
   say 'Downloading the NIRUX theme wallpapers (~311 MB) from nextcloud.nirucon.se...'
   fetch_wallpaper_bundle
-  command -v unzip >/dev/null 2>&1 ||
-    die 'unzip is needed to install the wallpaper set'
   # Stage everything first: a truncated archive must never leave a half-written
   # set that looks installed.
   wp_stage=${WP_WORK:?no work directory}/wallpapers-stage
