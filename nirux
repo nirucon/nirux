@@ -2,7 +2,7 @@
 # NIRUX: install a complete X11 desktop, or maintain an existing installation.
 set -eu
 
-VERSION=0.12.7
+VERSION=0.12.8
 PREFIX=${NIRUX_PREFIX:-$HOME/.local}
 BIN=$PREFIX/bin
 STATE=$PREFIX/share/nirux
@@ -2527,6 +2527,10 @@ install_greeters() {
       rm -f "$tmp_check"
     fi
     write_system "$ROOT/etc/sudoers.d/49-nirux-login-wallpaper" "$WORK/sudoers"
+    # sudo ignores a file in sudoers.d that is group- or world-writable, and
+    # does so silently. write_system installs 0644, which is correct for every
+    # other file it writes, so this one needs its mode set explicitly.
+    as_root chmod 0440 "$ROOT/etc/sudoers.d/49-nirux-login-wallpaper"
   fi
 
   case "$greeter_dm" in
