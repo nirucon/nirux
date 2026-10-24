@@ -769,6 +769,17 @@ tar -cJf "$WORK/download/nirux/nirux-wallpapers.tar.xz" -C "$wallpaper_test/buil
 install_wallpapers >/dev/null
 wallpaper_dir=$XDG_PICTURES_DIR/Wallpapers/NIRU
 is_png "$wallpaper_dir/nirux-wallpaper-noir-4k.png" || fail 'theme wallpaper was not installed'
+# A new default-theme image in a later release must replace the installed one:
+# that is how a redesigned noir wallpaper reaches a machine. Do this while the
+# file is still unmodified, before the edit below makes it the user's.
+printf '\211PNG\r\n\032\nredesigned\n' > "$wallpaper_test/build/wallpaper/nirux-wallpaper-noir-4k.png"
+tar -cJf "$WORK/download/nirux/nirux-wallpapers.tar.xz" -C "$wallpaper_test/build" wallpaper
+install_wallpapers >/dev/null
+grep -q redesigned "$wallpaper_dir/nirux-wallpaper-noir-4k.png" ||
+  fail 'a new default-theme wallpaper did not replace the owned one'
+printf '\211PNG\r\n\032\nfirst\n' > "$wallpaper_test/build/wallpaper/nirux-wallpaper-noir-4k.png"
+tar -cJf "$WORK/download/nirux/nirux-wallpapers.tar.xz" -C "$wallpaper_test/build" wallpaper
+install_wallpapers >/dev/null
 printf 'mine\n' > "$wallpaper_dir/nirux-wallpaper-noir-4k.png"
 printf '\211PNG\r\n\032\nsecond\n' > "$wallpaper_test/build/wallpaper/nirux-wallpaper-noir-4k.png"
 printf '\211PNG\r\n\032\nsecond\n' > "$wallpaper_test/build/wallpaper/nirux-wallpaper-nord-4k.png"

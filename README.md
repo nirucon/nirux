@@ -147,9 +147,15 @@ exist.
 ### Wallpapers
 
 Only the default theme's wallpaper ships with a release, in 4K and 8K. The
-other nine themes are an optional set of about 311 MB served from the project's
+other nine themes are an optional set of about 280 MB served from the project's
 own Nextcloud, so a routine release stays small and an update does not download
-wallpapers a machine already has:
+wallpapers a machine already has.
+
+**The default theme's wallpaper comes from the release, not the download.** It
+is installed before any optional set and is never taken from the Nextcloud
+archive, so the optional archive carries only the other nine themes. This means
+a new noir image reaches every machine through `nirux update`; nothing has to be
+re-downloaded.
 
 ```sh
 nirux wallpapers status     # how many of the ten themes have an image
