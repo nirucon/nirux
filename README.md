@@ -1,34 +1,83 @@
 # NIRUX - A minimal X11 desktop by Nicklas Rudolfsson
 
-**Beta.** A small, keyboard-first X11 desktop for **Arch Linux, Debian and
+**Early beta.** A small, keyboard-first X11 desktop for **Arch Linux, Debian and
 Void Linux (glibc, x86_64)**.
 
-NIRUX is built in the spirit of [suckless dwm](https://dwm.suckless.org/), which
-the author ran for many years before writing this
-suite. That inheritance is deliberate and visible: one flat text file for the
-whole configuration, a tiling window manager with tags instead of virtual
-desktops, keybindings as the primary interface, and no desktop-environment
-stack. The difference is scope. NIRUX adds what a modern machine needs to be
-usable every day (audio, network, notifications, a lock screen, screenshots,
-themes) while keeping the surface small enough to read in one sitting.
+NIRUX started with a simple idea: to build the desktop I actually want to use.
 
-The suite is crafted in Rust; the installer is a compact POSIX shell program.
-The result is fast, quiet and intentionally minimal: no desktop-environment
-stack and no unnecessary background services.
+For many years, my Linux desktop was based on
+[dwm](https://dwm.suckless.org/). Over time I built my own configuration around
+it, using a carefully selected set of patches and adapting the environment
+closely to the way I work. That experience has had a strong influence on NIRUX
+and is still very much part of its DNA.
 
-NIRUX installs, updates and removes the complete NIRU desktop, including the
+The influence of dwm and the suckless philosophy is intentional. NIRUX favors
+a keyboard-first workflow, tags rather than conventional virtual desktops,
+simple configuration, minimal interfaces and components that remain
+understandable. Some of its behavior and ideas are also inspired by dwm patches
+that became important parts of my daily workflow over the years.
+
+NIRUX is not dwm, however, nor is it intended to be a rewrite of it. The suite,
+including **NIRUWM**, **NIRUBAR** and the surrounding components, is built in
+**Rust** and developed as its own integrated X11 desktop. It shares some of the
+suckless ideas that I have always appreciated, while expanding the scope to
+include the things I want from a modern machine used every day: audio,
+networking, notifications, locking, idle handling, screenshots, themes,
+wallpapers and other desktop integration.
+
+Most importantly, NIRUX is built for me and my own workflow.
+
+It reflects how I want my desktop to behave, how I use the keyboard, how I
+organize windows and workspaces, and how I want the different parts of my Linux
+environment to work together. It is deliberately opinionated and is not an
+attempt to design a desktop that suits everyone.
+
+That said, NIRUX is **open source**. If the same ideas appeal to you, you are
+very welcome to try it, use it, modify it and adapt it to your own workflow.
+
+The suite is crafted in Rust, while the installer is a compact POSIX shell
+program. The goal is a fast, quiet and intentionally minimal desktop without a
+traditional desktop-environment stack or unnecessary background services.
+
+NIRUX installs, updates and removes the complete NIRUX desktop, including the
 window manager, bar, launcher, notifications, lock screen, idle screen,
 screenshots, themes, wallpapers, terminal integration and the OS packages the
 components need.
+
+## Project status
+
+At the time of writing, I consider NIRUX to be in **early beta**.
+
+There is already quite a lot of functionality despite its intentionally simple
+design, and I currently run NIRUX myself on two of my daily-driver machines.
+That does not mean everything is finished or that everything will work
+perfectly on every system.
+
+I fully expect to find bugs, rough edges and things that can be improved as I
+continue using it. I will fix issues as I encounter them, and more functionality
+may find its way into the suite over time when it makes sense. At the same time,
+I want to preserve the simplicity and focused nature of the project rather than
+adding features simply for the sake of having more features.
+
+There is no fixed roadmap or promise about what NIRUX will eventually become.
+It is first and foremost a personal project that I build because I enjoy
+developing it and because I want to use it myself. Time will tell where the
+project goes from here.
+
+NIRUX is provided **without warranty or guarantees of any kind**. Installation,
+updates and use are entirely at your own risk. If you decide to try it,
+especially on an existing system, make sure you understand what the installer
+does and have backups of anything you care about.
 
 ## What it can do
 
 - **Window management:** tiling with seven layouts, per-monitor workspaces,
   scratchpad, floating windows, fullscreen, gap control and session restore.
-- **Bar:** ten per-monitor workspaces with occupancy markers, clock/calendar, network, battery, audio,
-  microphone, brightness, media, weather, updates, CPU/memory, uptime, power
-  profile, Bluetooth and a system tray.
-- **Standard folders:** locale-aware XDG Documents, Downloads, Music, Pictures and Videos.
+- **Bar:** ten per-monitor workspaces with occupancy markers, clock/calendar,
+  network, battery, audio, microphone, brightness, media, weather, updates,
+  CPU/memory, uptime, power profile, Bluetooth and a system tray.
+- **Standard folders:** locale-aware XDG Documents, Downloads, Music, Pictures
+  and Videos.
 - **Keyboard-first desktop:** application search, open-window switching,
   grouped actions, workspace recipes and focus/presentation modes.
 - **Notifications:** native notification service and hardware OSD, DND,
@@ -38,16 +87,18 @@ components need.
 - **Hardware controls:** PipeWire/WirePlumber audio and microphone, BlueZ
   Bluetooth, RandR display profiles, power-profiles-daemon, backlight and
   night light.
-- **LocalSend:** verified official Linux tarball, floating centered window, no Flatpak.
-- **OpenCode:** managed V2 native CLI, installed without npm, services or agent startup.
-- **Webapps:** `niruwebapp` creates browser-backed desktop apps with dedicated profiles and optional local icons.
+- **LocalSend:** verified official Linux tarball, floating centered window,
+  no Flatpak.
+- **OpenCode:** managed V2 native CLI, installed without npm, services or
+  agent startup.
+- **Webapps:** `niruwebapp` creates browser-backed desktop apps with dedicated
+  profiles and optional local icons.
 - **Screenshots:** region, window or full-screen capture with a floating review
   dialog, crop, rectangle, arrow, mask, zoom and pan.
 - **Appearance:** Niru Noir, Nord, Satie, Carl Larsson, Forest Vigil, Blood of
   Urdr, Root and Stone, Blue Horizon, The Norns and Winter Nights themes,
-  shared semantic colours, configurable fonts, emoji,
-  theme-matched login wallpaper, optional extra wallpapers and optional picom
-  transparency.
+  shared semantic colours, configurable fonts, emoji, theme-matched login
+  wallpaper, optional extra wallpapers and optional picom transparency.
 - **Safe maintenance:** checksummed releases, pinned components, atomic
   generations, rollback, configuration migration, diagnostics and owned
   uninstall.
@@ -90,6 +141,9 @@ SDDM or LightDM. A fresh install offers the managed Helium browser and installs
 kitty/fish integration and terminal colours. User configuration is not
 overwritten.
 
+Use `./nirux install --no-packages` only when all runtime dependencies already
+exist.
+
 ### Wallpapers
 
 Only the default theme's wallpaper ships with a release, in 4K and 8K. The
@@ -113,9 +167,6 @@ A theme without its image paints its own background colour, taken from the
 theme file, so the desktop still matches the theme instead of showing the
 previous theme's picture. `remove` never deletes a file you modified.
 
-Use `./nirux install --no-packages` only when all runtime dependencies already
-exist.
-
 ## Maintain
 
 ```sh
@@ -129,17 +180,26 @@ nirux uninstall --purge
 ```
 
 Updates verify checksums and component versions, install missing runtime
-packages, then switch one program generation atomically. The previous generation
-remains available for rollback. Log out and in after updates that change the
-session, window manager or idle daemon.
+packages, then switch one program generation atomically. The previous
+generation remains available for rollback. Log out and in after updates that
+change the session, window manager or idle daemon.
 
-Default prefix: `~/.local`. Shared configuration:
-`~/.config/niruwm/config.toml`. XDG paths are respected.
+Default prefix: `~/.local`.
+
+Shared configuration:
+
+```text
+~/.config/niruwm/config.toml
+```
+
+XDG paths are respected.
 
 ## Documentation
 
-- [Installation and maintenance](docs/INSTALL.md)
-- [Visual language](docs/STYLE.md)
+- docs/INSTALL.md
+- docs/STYLE.md
 - [Example configuration](config.example.toml)
+
+## License
 
 MIT. Copyright 2026 Nicklas Rudolfsson.
