@@ -130,11 +130,11 @@ fi
 # selectable, and the status must reflect each change.
 if [ -x "$BIN/niructl" ]; then
   wallpaper_list=$("$BIN/niructl" wallpaper list)
-  printf '%s\n' "$wallpaper_list" | grep -q 'Niru Nord' || {
-    printf 'theme wallpaper was not listed\n' >&2
+  printf '%s\n' "$wallpaper_list" | grep -q 'Niru Noir' || {
+    printf 'the default theme wallpaper was not listed\n' >&2
     exit 1
   }
-  extra=$(printf '%s\n' "$wallpaper_list" | awk -F '\t' '$1 == "Niru Nord" {print $2; exit}')
+  extra=$(printf '%s\n' "$wallpaper_list" | awk -F '\t' '$1 == "Niru Noir" {print $2; exit}')
   [ -f "$extra" ] || { printf 'listed theme wallpaper is missing\n' >&2; exit 1; }
   before_pixmap=$(xprop -root _XROOTPMAP_ID 2>/dev/null || :)
   "$BIN/niructl" wallpaper set "$extra"
@@ -154,6 +154,19 @@ if [ -x "$BIN/niructl" ]; then
   printf '%s\n' "$wallpaper_status" | grep -qx 'scale=fit' || { printf 'wallpaper scale was not saved\n' >&2; exit 1; }
   printf '%s\n' "$wallpaper_status" | grep -qx 'follow_theme=false' || { printf 'wallpaper follow-theme was not saved\n' >&2; exit 1; }
   printf '%s\n' "$wallpaper_status" | grep -qx "file=$extra" || { printf 'wallpaper file was not saved\n' >&2; exit 1; }
+
+  # A theme with no wallpaper must paint its own background colour rather than
+  # leave the previous theme's picture on screen. Only the default theme ships
+  # with a release, so a second theme is normally absent here.
+  "$BIN/niructl" wallpaper follow-theme on >/dev/null 2>&1 || :
+  if "$BIN/niructl" theme niru-satie >/dev/null 2>&1; then
+    sleep 1
+    grep -q 'theme background colour' "$HOME/.local/state/niruwm/session.log" 2>/dev/null || {
+      printf 'a theme without a wallpaper did not fall back to its colour\n' >&2
+      exit 1
+    }
+  fi
+
 fi
 "$BIN/niructl" quit
 wait "$START"
