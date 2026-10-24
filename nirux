@@ -2,7 +2,7 @@
 # NIRUX: install a complete X11 desktop, or maintain an existing installation.
 set -eu
 
-VERSION=0.12.6
+VERSION=0.12.7
 PREFIX=${NIRUX_PREFIX:-$HOME/.local}
 BIN=$PREFIX/bin
 STATE=$PREFIX/share/nirux
@@ -46,7 +46,7 @@ usage() {
   say "                    [--browser helium|none|keep] [--localsend yes|no] [--opencode yes|no]"
   say "       nirux update [--no-packages] [--release VERSION] [--browser helium|none|keep]"
   say "                    [--localsend yes|no] [--opencode yes|no]"
-  say "       nirux login-wallpaper [list|set FILE|reset]"
+  say "       nirux login-wallpaper [list|set FILE|reset|sync]"
   say "       nirux wallpapers [status|download|remove]"
   say "       nirux reset-config"
   say "       nirux repair-session | repair-wallpaper"
@@ -2221,6 +2221,35 @@ login_wallpaper() {
       mkdir -p "$(dirname "$(login_wallpaper_config)")"
       printf '%s\n' "$login_source" > "$(login_wallpaper_config)"
       ;;
+    sync)
+      # Follow the theme that is now selected. Called by the theme hook so the
+      # greeter background changes with the desktop wallpaper instead of
+      # keeping the picture from the last `nirux update`. A wallpaper the user
+      # chose explicitly with `login-wallpaper set` is never overridden.
+      #
+      # It runs under sudo, where HOME is root's, so the desktop user's own
+      # configuration and Pictures directory are read through SUDO_USER.
+      [ "$#" = 1 ] || die 'login-wallpaper sync takes no arguments'
+      sync_user=${SUDO_USER:-}
+      if [ -n "$sync_user" ] && [ "$sync_user" != root ]; then
+        sync_home=$(getent passwd "$sync_user" 2>/dev/null | cut -d: -f6)
+        if [ -n "$sync_home" ] && [ -d "$sync_home" ]; then
+          HOME=$sync_home
+          export HOME
+          # PREFIX and CONFDIR are derived from HOME at startup; re-derive them
+          # so ownership checks recognise files the desktop user's install wrote.
+          PREFIX=${NIRUX_PREFIX:-$HOME/.local}
+          BIN=$PREFIX/bin
+          STATE=$PREFIX/share/nirux
+          CONFDIR=${XDG_CONFIG_HOME:-$HOME/.config}/niruwm
+        fi
+      fi
+      [ -f "$(login_wallpaper_config)" ] && return 0
+      login_source=$(theme_login_wallpaper || :)
+      [ -n "$login_source" ] || return 0
+      [ -f "$login_source" ] || return 0
+      apply_login_wallpaper "$login_source"
+      ;;
     reset)
       [ "$#" = 1 ] || die 'login-wallpaper reset takes no arguments'
       login_source=$(default_login_wallpaper)
@@ -2478,6 +2507,28 @@ install_greeters() {
   { say "// NIRUX owner: $PREFIX"; sed "s/__NIRUX_USER__/$rule_user/g" "$unpack/polkit/49-nirux-power.rules"; } > "$WORK/power.rules"
   write_system "$ROOT/etc/polkit-1/rules.d/49-nirux-power.rules" "$WORK/power.rules"
 
+  # The login screen follows the theme, which needs root to rewrite the
+  # greeter's background. Allow exactly that one command for this user, so a
+  # theme change does not stop at a password prompt. Nothing else is granted:
+  # the rule names one binary and one subcommand, and `sync` itself refuses to
+  # touch anything but the greeter image.
+  if [ -n "$rule_user" ] && [ -x "$BIN/nirux" ]; then
+    {
+      say "# NIRUX owner: $PREFIX"
+      say "# Lets a theme change update the login screen wallpaper without a password."
+      say "# It grants this one command and nothing else."
+      say "$rule_user ALL=(root) NOPASSWD: $BIN/nirux login-wallpaper sync"
+    } > "$WORK/sudoers"
+    if command -v visudo >/dev/null 2>&1; then
+      tmp_check="$WORK/sudoers.check"
+      cat "$WORK/sudoers" > "$tmp_check"
+      visudo -cf "$tmp_check" >/dev/null 2>&1 ||
+        die 'generated sudoers rule is invalid; nothing was installed'
+      rm -f "$tmp_check"
+    fi
+    write_system "$ROOT/etc/sudoers.d/49-nirux-login-wallpaper" "$WORK/sudoers"
+  fi
+
   case "$greeter_dm" in
     sddm)
       for file in theme.conf arrow.png; do
@@ -2519,6 +2570,7 @@ install_greeters() {
 
 remove_greeters() {
   remove_system "$ROOT/etc/polkit-1/rules.d/49-nirux-power.rules"
+  remove_system "$ROOT/etc/sudoers.d/49-nirux-login-wallpaper"
   remove_system "$ROOT/etc/sddm.conf.d/50-nirux.conf"
   remove_system "$ROOT/etc/lightdm/lightdm.conf.d/50-nirux-session.conf"
   if [ -f "$ROOT/usr/share/sddm/themes/nirux/Main.qml" ] &&

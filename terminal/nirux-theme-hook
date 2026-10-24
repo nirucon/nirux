@@ -134,3 +134,14 @@ trap - EXIT INT TERM HUP
 if command -v pkill >/dev/null 2>&1; then
   pkill -USR1 -x kitty 2>/dev/null || :
 fi
+
+# The login screen follows the theme too, so a theme change does not leave the
+# greeter showing the picture from the last update. This needs root, so it runs
+# through sudo only when sudo can answer without a prompt: a hook must never
+# block a theme change on a password. When it cannot, the greeter keeps the
+# previous picture until the next `nirux update`.
+if command -v nirux >/dev/null 2>&1 && sudo -n true 2>/dev/null; then
+  sudo -n nirux login-wallpaper sync >/dev/null 2>&1 || :
+elif [ -x "$HOME/.local/bin/nirux" ] && sudo -n true 2>/dev/null; then
+  sudo -n "$HOME/.local/bin/nirux" login-wallpaper sync >/dev/null 2>&1 || :
+fi
