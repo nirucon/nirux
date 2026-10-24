@@ -2,7 +2,7 @@
 # NIRUX: install a complete X11 desktop, or maintain an existing installation.
 set -eu
 
-VERSION=0.12.2
+VERSION=0.12.3
 PREFIX=${NIRUX_PREFIX:-$HOME/.local}
 BIN=$PREFIX/bin
 STATE=$PREFIX/share/nirux
@@ -2421,6 +2421,11 @@ sddm_qt_version() {
 }
 install_greeters() {
   greeter_dm=${1:-keep}
+  # `keep` must still install a themed greeter on the display manager the
+  # machine actually uses. Looking only for NIRUX's own files meant that a
+  # machine whose greeter was never installed stayed without a theme and
+  # without the theme wallpaper forever: every update asked for "keep", found
+  # nothing of its own, and did nothing.
   case "$greeter_dm" in
     keep)
       if [ -f "$ROOT/etc/sddm.conf.d/50-nirux.conf" ] && owned "$ROOT/etc/sddm.conf.d/50-nirux.conf"; then
@@ -2428,6 +2433,12 @@ install_greeters() {
       elif [ -f "$ROOT/usr/share/lightdm/lightdm-gtk-greeter.conf.d/50-nirux.conf" ] &&
            owned "$ROOT/usr/share/lightdm/lightdm-gtk-greeter.conf.d/50-nirux.conf"; then
         greeter_dm=lightdm
+      else
+        # No NIRUX greeter yet: adopt the display manager in use, never a
+        # different one. `existing_dm` reports what is installed.
+        case "$(existing_dm)" in
+          sddm|lightdm) greeter_dm=$(existing_dm) ;;
+        esac
       fi
       ;;
   esac
