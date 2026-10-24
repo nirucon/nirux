@@ -147,7 +147,7 @@ exist.
 ### Wallpapers
 
 Only the default theme's wallpaper ships with a release, in 4K and 8K. The
-other nine themes are an optional set of about 280 MB served from the project's
+other nine themes are an optional set of about 326 MB served from the project's
 own Nextcloud, so a routine release stays small and an update does not download
 wallpapers a machine already has.
 
@@ -164,10 +164,20 @@ nirux wallpapers remove     # delete the downloaded set, keep the default
 ```
 
 The same action is in the launcher under **Wallpaper**. NIRUX asks once during
-installation whether to fetch the set and remembers the answer; the default is
-no. The archive is verified against a SHA-256 pinned in this repository, staged
-in a temporary directory, and moved into place only when complete, so an
-interrupted download cannot leave a half-written set.
+installation whether to fetch the set and remembers the answer. The archive is
+verified against a SHA-256 pinned in this repository, staged in a temporary
+directory, and moved into place only when complete, so an interrupted download
+cannot leave a half-written set.
+
+**Recommended: say yes at install time.** NIRUX ships ten themes, and switching
+theme is the main way to change the look of the desktop. With the full set
+installed, every one of them arrives complete: wallpaper, bar palette, terminal
+colours and login screen all change together. Without it, the nine themes that
+are not the default fall back to their own background colour, which is tidy but
+plain, and the theme looks half finished until you download the images later.
+The set is a one-time download of about 326 MB; an update never fetches it
+again. If you decline now, `nirux wallpapers download` adds it at any time
+without reinstalling anything.
 
 A theme without its image paints its own background colour, taken from the
 theme file, so the desktop still matches the theme instead of showing the

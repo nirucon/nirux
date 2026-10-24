@@ -2,7 +2,7 @@
 # NIRUX: install a complete X11 desktop, or maintain an existing installation.
 set -eu
 
-VERSION=0.12.4
+VERSION=0.12.5
 PREFIX=${NIRUX_PREFIX:-$HOME/.local}
 BIN=$PREFIX/bin
 STATE=$PREFIX/share/nirux
@@ -1794,15 +1794,23 @@ select_wallpaper_bundle() {
   esac
   if [ "$wp_persisted" = keep ] && [ -t 0 ]; then
     say ''
-    say 'Every theme has its own wallpaper. Only the default theme (noir) ships with NIRUX;'
-    say 'the other nine are about 311 MB (4k and 8k) from nextcloud.nirucon.se.'
-    say 'Without them a theme uses its own solid background colour, which still looks right.'
-    say 'You can add them later from the launcher under Wallpaper.'
-    printf 'Download all ten theme wallpapers now [y/N]: '
-    IFS= read -r wp_answer || wp_answer=no
+    say 'NIRUX ships ten themes, and changing theme is the main way to change the look.'
+    say 'With every wallpaper installed, a theme change brings its wallpaper, bar palette,'
+    say 'terminal colours and login screen together. Without them the nine non-default'
+    say 'themes use their own background colour, which works but looks plain.'
+    say ''
+    say 'The full set is a one-time download of about 280 MB (4k and 8k) from'
+    say 'nextcloud.nirucon.se. An update never fetches it again, and you can add it'
+    say 'later from the launcher under Wallpaper or with: nirux wallpapers download'
+    say ''
+    printf 'Download the wallpapers for all ten themes now? [Y/n]: '
+    IFS= read -r wp_answer || wp_answer=yes
+    # The recommended answer is yes, so an empty line accepts the set. Only an
+    # explicit no declines; an unattended install still defaults to the small
+    # release because it never reaches this prompt.
     case "$wp_answer" in
-      [yY]*) wp_persisted=all ;;
-      *) wp_persisted=default ;;
+      [nN]*) wp_persisted=default ;;
+      *) wp_persisted=all ;;
     esac
   fi
   [ "$wp_persisted" = keep ] && wp_persisted=default
@@ -2278,7 +2286,7 @@ wallpapers_status() {
   fi
   say ''
   say 'A theme without its wallpaper uses its own background colour, so the'
-  say 'desktop still matches the theme. Download all ten (4k and 8k, ~311 MB):'
+  say 'desktop still matches the theme. Download all ten (4k and 8k, ~326 MB):'
   say ''
   say '    nirux wallpapers download'
   say ''
@@ -2308,14 +2316,14 @@ wallpapers_download() {
   fi
   # unzip is in the package list, but an install made with --no-packages may
   # not have it, and the command is also useful on a machine where only the
-  # programs were installed. Install it rather than refusing a 311 MB download
+  # programs were installed. Install it rather than refusing a 326 MB download
   # the user already asked for.
   if ! command -v unzip >/dev/null 2>&1; then
     say 'Installing unzip, which the wallpaper archive needs...'
     install_packages unzip ||
       die 'unzip is needed to install the wallpaper set; install it and run the command again'
   fi
-  say 'Downloading the NIRUX theme wallpapers (~311 MB) from nextcloud.nirucon.se...'
+  say 'Downloading the NIRUX theme wallpapers (~326 MB) from nextcloud.nirucon.se...'
   fetch_wallpaper_bundle
   # Stage everything first: a truncated archive must never leave a half-written
   # set that looks installed.
