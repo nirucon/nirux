@@ -332,10 +332,10 @@ Carl Larsson, Forest Vigil, Blood of Urdr, Root and Stone, Blue Horizon,
 The Norns or Winter Nights).
 `reset` returns to that theme wallpaper.
 
-NIRUX ships only the ten theme wallpaper sets. Additional wallpapers live in
-[niruwm-additionalwallpapers](https://github.com/nirucon/niruwm-additionalwallpapers);
-run its `install.sh` and they appear in both `nirux login-wallpaper list` and
-`niructl wallpaper list`. New PNGs added there are picked up without changing
+NIRUX installs the default theme's wallpaper and offers the other nine with
+`nirux wallpapers download`; see [Wallpapers](../README.md#wallpapers). Any
+other PNG in `~/Pictures/Wallpapers/NIRU` appears in both
+`nirux login-wallpaper list` and `niructl wallpaper list` without changing
 NIRUX.
 
 ### Fonts
