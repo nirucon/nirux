@@ -8,7 +8,7 @@ BIN=$PREFIX/bin
 STATE=$PREFIX/share/nirux
 CONFDIR=${XDG_CONFIG_HOME:-$HOME/.config}/niruwm
 ROOT=${NIRUX_SYSTEM_ROOT:-}
-PROGRAMS="niruwm niructl niruidle nirubar niruscreensaver nirulock nirulauncher nirunotify nirushot nirufetch niruwebapp niruwm-session nirux"
+PROGRAMS="niruwm niructl niruidle nirubar niruscreensaver nirulock nirulauncher nirunotify nirushot nirufetch niruwebapp niruwallpaper niruwm-session nirux"
 WORK=
 POLICY_TARGET=
 POLICY_BACKUP=
@@ -1967,6 +1967,8 @@ apply_target_release() {
   release_optional_file nirux "$RELEASE" nirux-wallpapers.tar.xz
   release_optional_file nirux "$RELEASE" nirux-terminal.tar.xz
   release_optional_file nirux "$RELEASE" nirux-integration.tar.xz
+  release_optional_file nirux "$RELEASE" niruwallpaper.desktop
+  release_optional_file nirux "$RELEASE" niruwallpaper.png
   say "Applying NIRUX $RELEASE..."
   apply_prepare_backup
   APPLY_OK=0
@@ -1982,6 +1984,7 @@ apply_target_release() {
   install_terminal
   prepare_pam
   install_greeters "$DM"
+  install_wallpaper_app
   register_session
   setup_dm_session
   setup_startx
@@ -2010,6 +2013,8 @@ stage_release() {
   release_optional_file nirux "$RELEASE" nirux-wallpapers.tar.xz
   release_optional_file nirux "$RELEASE" nirux-terminal.tar.xz
   release_optional_file nirux "$RELEASE" nirux-integration.tar.xz
+  release_optional_file nirux "$RELEASE" niruwallpaper.desktop
+  release_optional_file nirux "$RELEASE" niruwallpaper.png
   [ "$(manifest_version schema)" = 1 ] || die "unsupported manifest schema"
   [ "$(manifest_version suite)" = "$RELEASE" ] || die "suite/manifest version mismatch"
   say 'Verifying the downloaded installer and checksums...'
@@ -2598,6 +2603,26 @@ register_session() {
   { say "# NIRUX owner: $PREFIX"; say '[Desktop Entry]'; say 'Name=NIRUWM'; say 'Type=Application'; say "Exec=$BIN/niruwm-session"; say 'DesktopNames=NIRUWM'; } > "$WORK/session.desktop"
   write_system "$ROOT/usr/share/xsessions/niruwm.desktop" "$WORK/session.desktop"
 }
+# The wallpaper window is launched from NIRULAUNCHER and from the app menu. Its
+# entry and icon come from the release so they stay in step with the binary
+# that actually reports the version.
+install_wallpaper_app() {
+  [ -f "$WORK/download/nirux/niruwallpaper.desktop" ] || return 0
+  [ -f "$WORK/download/nirux/niruwallpaper.png" ] || return 0
+  { say "# NIRUX owner: $PREFIX"; sed "s|^Exec=niruwallpaper$|Exec=$BIN/niruwallpaper|" \
+      "$WORK/download/nirux/niruwallpaper.desktop"; } > "$WORK/niruwallpaper.desktop"
+  # write_system only removes what it recognises as NIRUX-owned, so the icon
+  # gets the same owner line the desktop entry has. PNG readers ignore it.
+  { say "# NIRUX owner: $PREFIX"; cat "$WORK/download/nirux/niruwallpaper.png"; } > "$WORK/niruwallpaper-icon.png"
+  write_system "$ROOT/usr/share/applications/niruwallpaper.desktop" "$WORK/niruwallpaper.desktop"
+  write_system "$ROOT/usr/share/icons/hicolor/256x256/apps/niruwallpaper.png" "$WORK/niruwallpaper-icon.png"
+}
+remove_wallpaper_app() {
+  remove_system "$ROOT/usr/share/applications/niruwallpaper.desktop"
+  remove_system "$ROOT/usr/share/icons/hicolor/256x256/apps/niruwallpaper.png"
+  as_root rmdir "$ROOT/usr/share/applications" "$ROOT/usr/share/icons/hicolor/256x256/apps" \
+    "$ROOT/usr/share/icons/hicolor/256x256" "$ROOT/usr/share/icons/hicolor" 2>/dev/null || :
+}
 # Registration only makes NIRUWM available. Debian's Default Xsession (and
 # other desktops on Arch/Void) can otherwise win the first-login selection.
 # Only an explicit install selects defaults; keep/update never change them.
@@ -3001,6 +3026,7 @@ uninstall() {
   for option in "$@"; do case "$option" in --purge) purge=1 ;; *) die "unknown option: $option" ;; esac; done
   lock
   remove_system "$ROOT/usr/share/xsessions/niruwm.desktop"
+  remove_wallpaper_app
   remove_system "$ROOT/etc/pam.d/nirulock"
   remove_system "$ROOT/etc/udev/rules.d/70-nirux-backlight.rules"
   remove_greeters
@@ -3185,6 +3211,7 @@ install_or_update() {
   install_terminal
   prepare_pam
   install_greeters "$DM"
+  install_wallpaper_app
   register_session
   setup_dm_session
   setup_startx

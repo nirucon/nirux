@@ -19,6 +19,7 @@ notifier_version=$(awk '$1 == "nirunotify" {print $2}' "$SOURCE/manifest")
 shot_version=$(awk '$1 == "nirushot" {print $2}' "$SOURCE/manifest")
 fetch_version=$(awk '$1 == "nirufetch" {print $2}' "$SOURCE/manifest")
 webapp_version=$(awk '$1 == "niruwebapp" {print $2}' "$SOURCE/manifest")
+wallpaper_app_version=$(awk '$1 == "niruwallpaper" {print $2}' "$SOURCE/manifest")
 FIXTURE=$TEST/releases
 fail() { printf 'FAIL: %s\n' "$*" >&2; exit 1; }
 no_config_candidates() {
@@ -51,6 +52,12 @@ fixture() {
   for asset in "$@"; do make_binary "$FIXTURE/$repo/$ver/$asset" "$asset" "$ver"; done
 }
 checksums() { (cd "$1"; sha256sum ./* | sed 's@  ./@  @' > SHA256SUMS); }
+# The desktop entry and icon are release assets like any other. The tests build
+# a placeholder so they never depend on a checkout of another repository.
+wallpaper_app_assets() {
+  printf '[Desktop Entry]\nType=Application\nName=NIRU Wallpaper\nExec=niruwallpaper\n' > "$1/niruwallpaper.desktop"
+  printf '\211PNG\r\n\032\n' > "$1/niruwallpaper.png"
+}
 wallpaper_archive() {
   build=$TEST/wallpaper-build
   mkdir -p "$build/wallpaper"
@@ -107,11 +114,14 @@ fixture nirunotify "$notifier_version" nirunotify
 fixture nirushot "$shot_version" nirushot
 fixture nirufetch "$fetch_version" nirufetch
 fixture niruwebapp "$webapp_version" niruwebapp
+fixture niruwallpaper "$wallpaper_app_version" niruwallpaper niruwallpaper.desktop
+# The icon is not a program, so it is not part of the fixture binary.
+printf '\211PNG\r\n\032\n' > "$FIXTURE/niruwallpaper/$wallpaper_app_version/niruwallpaper.png"
 for os in arch void; do
   printf 'auth include system-auth\naccount include system-auth\n' > "$FIXTURE/nirulock/$lock_version/pam-$os"
 done
 printf 'auth include common-auth\naccount include common-account\n' > "$FIXTURE/nirulock/$lock_version/pam-debian"
-for item in "niruwm/$wm_version" "nirubar/$bar_version" "niruscreensaver/$saver_version" "nirulock/$lock_version" "nirulauncher/$launcher_version" "nirunotify/$notifier_version" "nirushot/$shot_version" "nirufetch/$fetch_version" "niruwebapp/$webapp_version"; do checksums "$FIXTURE/$item"; done
+for item in "niruwm/$wm_version" "nirubar/$bar_version" "niruscreensaver/$saver_version" "nirulock/$lock_version" "nirulauncher/$launcher_version" "nirunotify/$notifier_version" "nirushot/$shot_version" "nirufetch/$fetch_version" "niruwebapp/$webapp_version" "niruwallpaper/$wallpaper_app_version"; do checksums "$FIXTURE/$item"; done
 # 99.0.0 is a synthetic second release, never a real network dependency.
 for release in "$VERSION" 99.0.0; do
   mkdir -p "$FIXTURE/nirux/$release"
@@ -120,6 +130,7 @@ for release in "$VERSION" 99.0.0; do
   sed "s/suite $VERSION/suite $release/" "$SOURCE/manifest" > "$FIXTURE/nirux/$release/manifest"
   cp "$SOURCE/config.example.toml" "$FIXTURE/nirux/$release/config.example.toml"
   cp "$SOURCE/appearance.example.toml" "$FIXTURE/nirux/$release/appearance.example.toml"
+  wallpaper_app_assets "$FIXTURE/nirux/$release"
   wallpaper_archive "$FIXTURE/nirux/$release/nirux-wallpapers.tar.xz"
   terminal_archive "$FIXTURE/nirux/$release/nirux-terminal.tar.xz"
   integration_archive "$FIXTURE/nirux/$release/nirux-integration.tar.xz"
@@ -136,6 +147,7 @@ sed "s/suite $VERSION/suite 99.2.0/" "$SOURCE/manifest" > "$FIXTURE/nirux/99.2.0
 say 'nirufoo 1.0.0' >> "$FIXTURE/nirux/99.2.0/manifest"
 cp "$SOURCE/config.example.toml" "$FIXTURE/nirux/99.2.0/config.example.toml"
 cp "$SOURCE/appearance.example.toml" "$FIXTURE/nirux/99.2.0/appearance.example.toml"
+wallpaper_app_assets "$FIXTURE/nirux/99.2.0"
 wallpaper_archive "$FIXTURE/nirux/99.2.0/nirux-wallpapers.tar.xz"
 terminal_archive "$FIXTURE/nirux/99.2.0/nirux-terminal.tar.xz"
 make_binary "$FIXTURE/nirufoo/1.0.0/nirufoo" nirufoo 1.0.0
@@ -153,6 +165,7 @@ sed "s/suite $VERSION/suite 99.3.0/" "$SOURCE/manifest" > "$FIXTURE/nirux/99.3.0
 say 'nirulib 1.0.0' >> "$FIXTURE/nirux/99.3.0/manifest"
 cp "$SOURCE/config.example.toml" "$FIXTURE/nirux/99.3.0/config.example.toml"
 cp "$SOURCE/appearance.example.toml" "$FIXTURE/nirux/99.3.0/appearance.example.toml"
+wallpaper_app_assets "$FIXTURE/nirux/99.3.0"
 wallpaper_archive "$FIXTURE/nirux/99.3.0/nirux-wallpapers.tar.xz"
 terminal_archive "$FIXTURE/nirux/99.3.0/nirux-terminal.tar.xz"
 cat > "$FIXTURE/nirulib/1.0.0/nirulib" <<'EOF'
@@ -186,6 +199,7 @@ make_apply_target() {
   cp "$SOURCE/config.example.toml" "$dir/config.example.toml"
   sed -i '/^theme = "niru-noir"$/a newfeature = true' "$dir/config.example.toml"
   cp "$SOURCE/appearance.example.toml" "$dir/appearance.example.toml"
+  wallpaper_app_assets "$dir"
   build=$TEST/apply-wallpaper-$release
   rm -rf "$build"
   mkdir -p "$build/wallpaper"
@@ -208,6 +222,7 @@ chmod +x "$FIXTURE/nirux/99.5.0/nirux"
 sed "s/suite $VERSION/suite 99.5.0/" "$SOURCE/manifest" > "$FIXTURE/nirux/99.5.0/manifest"
 cp "$SOURCE/config.example.toml" "$FIXTURE/nirux/99.5.0/config.example.toml"
 cp "$SOURCE/appearance.example.toml" "$FIXTURE/nirux/99.5.0/appearance.example.toml"
+wallpaper_app_assets "$FIXTURE/nirux/99.5.0"
 wallpaper_archive "$FIXTURE/nirux/99.5.0/nirux-wallpapers.tar.xz"
 terminal_archive "$FIXTURE/nirux/99.5.0/nirux-terminal.tar.xz"
 printf 'target-owned asset\n' > "$TEST/asset-build/nirux-target-asset-marker"
@@ -437,6 +452,11 @@ for TEST_OS in arch debian void; do
   grep -qxF "Exec=$BIN/niruwm-session" "$session_desktop" || fail 'display-manager session Exec must be an unquoted absolute path'
   ! grep -q '"' "$session_desktop" || fail 'display-manager session must not quote Exec'
   [ -f "$ROOT/etc/udev/rules.d/70-nirux-backlight.rules" ] || fail 'missing backlight udev rule'
+  # The launcher entry must point at the generation link, not at a path the
+  # user could replace, and the icon must come from the release.
+  app_desktop=$ROOT/usr/share/applications/niruwallpaper.desktop
+  grep -qxF "Exec=$BIN/niruwallpaper" "$app_desktop" || fail 'wallpaper app entry does not use the managed binary'
+  [ -f "$ROOT/usr/share/icons/hicolor/256x256/apps/niruwallpaper.png" ] || fail 'wallpaper app icon was not installed'
   first=$(readlink "$STATE/current")
   operation install_or_update update --no-packages --release 99.0.0
   second=$(readlink "$STATE/current")
@@ -457,6 +477,8 @@ for TEST_OS in arch debian void; do
   operation uninstall
   [ ! -e "$BIN/niruwm" ] || fail 'program still installed'
   [ ! -e "$ROOT/etc/pam.d/nirulock" ] || fail 'owned PAM service remained'
+  [ ! -e "$ROOT/usr/share/applications/niruwallpaper.desktop" ] || fail 'wallpaper app entry remained after uninstall'
+  [ ! -e "$ROOT/usr/share/icons/hicolor/256x256/apps/niruwallpaper.png" ] || fail 'wallpaper app icon remained after uninstall'
   for dir in niruwm niruui nirubar nirulauncher nirunotify; do
     [ -d "$XDG_CONFIG_HOME/$dir" ] || fail "normal uninstall removed $dir config"
   done

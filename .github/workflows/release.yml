@@ -18,7 +18,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          for repo in niruwm nirubar niruscreensaver nirulock nirulauncher nirunotify nirushot; do
+          for repo in niruwm nirubar niruscreensaver nirulock nirulauncher nirunotify nirushot niruwallpaper; do
             version=$(awk -v repo="$repo" '$1 == repo {print $2}' manifest)
             gh release view "v$version" -R "nirucon/$repo" --json assets --jq '.assets[].name' > /tmp/assets
             grep -qx "$repo" /tmp/assets
@@ -26,6 +26,14 @@ jobs:
             case "$repo" in
               niruwm) grep -qx niruwm-session /tmp/assets ;;
               nirulock) for distro in arch debian void; do grep -qx "pam-$distro" /tmp/assets; done ;;
+              # The launcher entry and its icon travel with the suite so they
+              # cannot drift from the binary's version.
+              niruwallpaper)
+                grep -qx niruwallpaper.desktop /tmp/assets
+                gh release download "v$version" -R "nirucon/niruwallpaper" -p niruwallpaper.desktop -O /tmp/niruwallpaper.desktop
+                version=$(awk '$1 == "niruwallpaper" {print $2}' manifest)
+                gh release download "v$version" -R "nirucon/niruwallpaper" -p niruwallpaper.png -O /tmp/niruwallpaper.png
+                ;;
             esac
           done
       - name: Package wallpapers, terminal, greeters and power rule
@@ -44,7 +52,9 @@ jobs:
           cp polkit/49-nirux-power.rules integration-build/polkit/
           cp wallpaper/nirux-wallpaper-noir-4k.png integration-build/background.png
           tar -cJf nirux-integration.tar.xz -C integration-build .
-      - run: sha256sum nirux manifest config.example.toml appearance.example.toml nirux-wallpapers.tar.xz nirux-terminal.tar.xz nirux-integration.tar.xz > SHA256SUMS
+      - run: |
+          cp /tmp/niruwallpaper.desktop /tmp/niruwallpaper.png .
+          sha256sum nirux manifest config.example.toml appearance.example.toml nirux-wallpapers.tar.xz nirux-terminal.tar.xz nirux-integration.tar.xz niruwallpaper.desktop niruwallpaper.png > SHA256SUMS
       - uses: softprops/action-gh-release@v2
         with:
           files: |
@@ -55,6 +65,8 @@ jobs:
             nirux-wallpapers.tar.xz
             nirux-terminal.tar.xz
             nirux-integration.tar.xz
+            niruwallpaper.desktop
+            niruwallpaper.png
             SHA256SUMS
           make_latest: true
           generate_release_notes: true

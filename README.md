@@ -115,6 +115,7 @@ does and have backups of anything you care about.
 | [NIRULAUNCHER](https://github.com/nirucon/nirulauncher) | Keyboard-first application and action launcher |
 | [NIRUNOTIFY](https://github.com/nirucon/nirunotify) | Native notifications and hardware OSD |
 | [NIRUSHOT](https://github.com/nirucon/nirushot) | Screenshot capture, review and annotation |
+| [NIRUWALLPAPER](https://github.com/nirucon/niruwallpaper) | Wallpaper settings with previews, opened from the launcher |
 | [NIRUFETCH](https://github.com/nirucon/nirufetch) | NIRU-themed terminal system fetch |
 | [NIRUWEBAPP](https://github.com/nirucon/niruwebapp) | Browser-backed webapp manager |
 
@@ -163,7 +164,13 @@ nirux wallpapers download   # install all ten (checksum verified)
 nirux wallpapers remove     # delete the downloaded set, keep the default
 ```
 
-The same action is in the launcher under **Wallpaper**. NIRUX asks once during
+The same action is in the launcher under **Wallpaper**. To pick a wallpaper with
+preview thumbnails, open **NIRU Wallpaper** from the launcher (search for
+`wallpaper`, `background` or `appearance`) or run `niruwallpaper`. It is a front
+end for `niructl wallpaper`, so it changes nothing NIRUWM does not already
+control, and choosing an image there does not change the desktop theme.
+
+NIRUX asks once during
 installation whether to fetch the set and remembers the answer. The archive is
 verified against a SHA-256 pinned in this repository, staged in a temporary
 directory, and moved into place only when complete, so an interrupted download
