@@ -140,8 +140,11 @@ fi
 # through sudo only when sudo can answer without a prompt: a hook must never
 # block a theme change on a password. When it cannot, the greeter keeps the
 # previous picture until the next `nirux update`.
-if command -v nirux >/dev/null 2>&1 && sudo -n true 2>/dev/null; then
+# `sudo -n true` is not the test: the sudoers rule allows one command, not
+# `true`, so that probe fails on a correctly configured machine. Try the
+# command itself and ignore a refusal, which is what happens without the rule.
+if command -v nirux >/dev/null 2>&1; then
   sudo -n nirux login-wallpaper sync >/dev/null 2>&1 || :
-elif [ -x "$HOME/.local/bin/nirux" ] && sudo -n true 2>/dev/null; then
+elif [ -x "$HOME/.local/bin/nirux" ]; then
   sudo -n "$HOME/.local/bin/nirux" login-wallpaper sync >/dev/null 2>&1 || :
 fi
