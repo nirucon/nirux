@@ -1,11 +1,20 @@
 # NIRUX - A minimal X11 desktop by Nicklas Rudolfsson
 
-**Early beta.** A small, keyboard-first X11 desktop for **Arch Linux, Debian and
-Void Linux (glibc, x86_64)**. Its interaction model is inspired by suckless
-dwm: a keyboard-first tiling desktop with a tiny, readable configuration and no
-desktop-environment stack. The suite is crafted in Rust; the installer is a
-compact POSIX shell program. The result is fast, quiet and intentionally
-minimal: no desktop-environment stack and no unnecessary background services.
+**Beta.** A small, keyboard-first X11 desktop for **Arch Linux, Debian and
+Void Linux (glibc, x86_64)**.
+
+NIRUX is built in the spirit of [suckless dwm](https://dwm.suckless.org/), which
+the author ran for many years before writing this
+suite. That inheritance is deliberate and visible: one flat text file for the
+whole configuration, a tiling window manager with tags instead of virtual
+desktops, keybindings as the primary interface, and no desktop-environment
+stack. The difference is scope. NIRUX adds what a modern machine needs to be
+usable every day (audio, network, notifications, a lock screen, screenshots,
+themes) while keeping the surface small enough to read in one sitting.
+
+The suite is crafted in Rust; the installer is a compact POSIX shell program.
+The result is fast, quiet and intentionally minimal: no desktop-environment
+stack and no unnecessary background services.
 
 NIRUX installs, updates and removes the complete NIRU desktop, including the
 window manager, bar, launcher, notifications, lock screen, idle screen,
@@ -78,13 +87,31 @@ cd nirux
 
 An existing display manager is preserved; otherwise choose startx (default),
 SDDM or LightDM. A fresh install offers the managed Helium browser and installs
-the theme wallpapers, kitty/fish integration and terminal colours. User
-configuration is not overwritten.
+kitty/fish integration and terminal colours. User configuration is not
+overwritten.
 
-All ten themes include both 4K and 8K wallpapers (20 images). The wallpaper
-archive is therefore about 183 MB, so the initial download is noticeably larger
-than the programs themselves. All assets are checksum-verified before
-installation.
+### Wallpapers
+
+Only the default theme's wallpaper ships with a release, in 4K and 8K. The
+other nine themes are an optional set of about 311 MB served from the project's
+own Nextcloud, so a routine release stays small and an update does not download
+wallpapers a machine already has:
+
+```sh
+nirux wallpapers status     # how many of the ten themes have an image
+nirux wallpapers download   # install all ten (checksum verified)
+nirux wallpapers remove     # delete the downloaded set, keep the default
+```
+
+The same action is in the launcher under **Wallpaper**. NIRUX asks once during
+installation whether to fetch the set and remembers the answer; the default is
+no. The archive is verified against a SHA-256 pinned in this repository, staged
+in a temporary directory, and moved into place only when complete, so an
+interrupted download cannot leave a half-written set.
+
+A theme without its image paints its own background colour, taken from the
+theme file, so the desktop still matches the theme instead of showing the
+previous theme's picture. `remove` never deletes a file you modified.
 
 Use `./nirux install --no-packages` only when all runtime dependencies already
 exist.
