@@ -87,7 +87,7 @@ terminal = ["kitty"]
 # Bound to Super+Shift+Enter. Empty means the terminal above.
 terminal_alt = []
 # Super+B starts this. Install/select a browser.
-browser = ["brave"]
+browser = ["helium"]
 # Super+P and the native action launcher.
 launcher = ["nirulauncher", "--apps"]
 
