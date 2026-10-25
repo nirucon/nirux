@@ -2,7 +2,7 @@
 # NIRUX: install a complete X11 desktop, or maintain an existing installation.
 set -eu
 
-VERSION=0.12.26
+VERSION=0.12.27
 PREFIX=${NIRUX_PREFIX:-$HOME/.local}
 BIN=$PREFIX/bin
 STATE=$PREFIX/share/nirux
@@ -26,9 +26,6 @@ APPLY_OK=0
 SUDO_SECRET=
 SUDO_ASK_LATER=0
 TRAPS_ARMED=0
-# Package names this run resolved from the distribution's own database,
-# written as `name<TAB>package` lines for the staged target's package check.
-PACKAGE_MAP=
 # Pinned upstream release. The archive is verified before extraction, and the
 # extracted browser is still checked for shared libraries and its reported
 # version before the stable link is switched.
@@ -420,11 +417,6 @@ resolved_missing_packages() {
   return 0
 }
 
-# The names the staged target installs. The running installer resolves the
-# renames from its own package database and passes them with
-# NIRUX_PACKAGE_MAP (`name<TAB>installed-name`), because the mapped name is
-# what this machine actually has.
-
 # Install or check this release's runtime dependencies. Called from the newly
 # downloaded script after verification, so updates use the new package list
 # instead of the old installed one.
@@ -440,6 +432,9 @@ provision_packages() {
       install_packages
       ;;
     missing)
+      # Renames (Debian trixie's *t64 libraries) come from this machine's own
+      # package database; the staged target uses them for every name it asks.
+      NIRUX_PACKAGE_MAP=$(required_package_map)
       missing=$(resolved_missing_packages)
       if [ -z "$missing" ]; then say 'OS runtime packages are present'; return; fi
       if [ "${NIRUX_PACKAGES_DRY_RUN:-0}" = 1 ]; then say "would install missing: $missing"; return; fi
@@ -2205,7 +2200,9 @@ stage_release() {
   if [ "$apply_version" = 2 ]; then APPLY_PROTOCOL=2; fi
   # Packages come from the verified target installer and are provisioned before
   # any staged binary is executed. This lets a new shared-library dependency be
-  # present when the new component is first started and version-checked.
+  # present when the new component is first started and version-checked. The
+  # staged target resolves renames (Debian trixie's *t64 libraries) from this
+  # machine's own package database, so its list is the one installed.
   if [ "$packages" = 1 ]; then
     say 'Checking required OS packages...'
     NIRUX_SYSTEM_ROOT=$ROOT NIRUX_PROVISION_OS=$OS NIRUX_PROVISION_DM=$DM NIRUX_PROVISION_BROWSER=$BROWSER_EFFECTIVE \
@@ -3450,11 +3447,6 @@ install_or_update() {
   OS=$(distro)
   platform
   if [ "$operation" = install ]; then choose_dm; else DM=keep; fi
-  # Debian trixie renamed several library packages (libgtk-3-0 became
-  # libgtk-3-0t64). Resolving the names here, from this machine's own package
-  # database, keeps one source working for both naming schemes without the
-  # staged target guessing.
-  PACKAGE_MAP=$(required_package_map)
   choose_browser "$operation"
   choose_optional_apps "$operation"
   lock
@@ -3493,7 +3485,6 @@ install_or_update() {
       NIRUX_APPLY_DM=$DM NIRUX_APPLY_BROWSER=$BROWSER_EFFECTIVE \
       NIRUX_APPLY_LOCALSEND=$LOCALSEND_EFFECTIVE NIRUX_APPLY_OPENCODE=$OPENCODE_EFFECTIVE \
       NIRUX_APPLY_OPERATION=$operation NIRUX_APPLY_WALLPAPERS="${wallpaper_decision:-}" \
-      NIRUX_PACKAGE_MAP="$PACKAGE_MAP" \
       NIRUX_SUDO_PASSWORD=${SUDO_SECRET:-} \
       sh "$WORK/download/nirux/nirux" _apply 2; then
       die 'target installer apply failed; current installation kept'
