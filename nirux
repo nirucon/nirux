@@ -2,7 +2,7 @@
 # NIRUX: install a complete X11 desktop, or maintain an existing installation.
 set -eu
 
-VERSION=0.12.27
+VERSION=0.12.28
 PREFIX=${NIRUX_PREFIX:-$HOME/.local}
 BIN=$PREFIX/bin
 STATE=$PREFIX/share/nirux
@@ -389,12 +389,12 @@ distribution_package_present() {
 # The list comes from the script doing the update, so an older installed NIRUX
 # can provision a dependency introduced by the release it is installing.
 required_missing_packages() {
-  # A fixed list: it must not depend on a per-distribution list that a caller
-  # changed. resolved_missing_packages asks the package database to rename a
-  # Debian library whose 64-bit time_t successor replaced it.
-  for required_pkg in curl ca-certificates libgtk-3-0 bluez kitty fish; do
+  # The distribution's own list, in the order packages_for gives it. A caller
+  # may replace that list in tests, and the staged target has its own copy.
+  for required_pkg in $(packages_for "$OS"); do
     distribution_package_present "$required_pkg" || say "$required_pkg"
   done
+  return 0
 }
 
 # The same list with the names this machine's package database uses. The

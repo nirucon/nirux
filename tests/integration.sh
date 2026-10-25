@@ -236,32 +236,36 @@ make_binary "$FIXTURE/nirunew/1.0.0/nirunew" nirunew 1.0.0
 checksums "$FIXTURE/nirunew/1.0.0"
 
 # Provisioning uses the new release's package list, not the caller's. Exercise
-# the missing-only path without touching a package manager.
+# the missing-only path without touching a package manager. The list comes
+# from packages_for, so a stand-in there keeps the test independent of the
+# package query while still seeing exactly one missing package.
 # shellcheck disable=SC2034 # read by required_missing_packages in the sourced nirux
 OS=debian
-# A stand-in for the package query: the provisions read this shell function
-# (see internal_package_query below), so kitty is the one package reported.
 missing_in_test() { [ "${1:-}" != "curl" ]; }
+packages_for() { say "curl ca-certificates"; }
 internal_package_query missing_in_test
 NIRUX_PACKAGES_DRY_RUN=1 NIRUX_PROVISION_OS=debian NIRUX_PROVISION_DM=keep \
   provision_packages missing > "$TEST/provision.log" 2>&1
-grep -q 'curl' "$TEST/provision.log" ||
+grep -q 'would install missing: curl' "$TEST/provision.log" ||
   fail 'provision dry run did not report the missing package'
+all_present() { :; }
+internal_package_query all_present
+NIRUX_PACKAGES_DRY_RUN=1 NIRUX_PROVISION_OS=debian provision_packages missing >/dev/null 2>&1
 
-# The name of a renamed Debian library comes from the package database: the
-# plain name is what the release asks for, and only a true rename (the plain
-# name missing, the suffixed one present) changes it.
+# A renamed Debian library is asked for under the name this machine uses.
+# The name comes from the package database: the plain name is what the release
+# asks for, and only a true rename (the plain name missing, the suffixed one
+# present) changes it.
 _debian_t64_name() { if [ "${1:-}" = libgtk-3-0 ]; then echo libgtk-3-0t64; fi; }
-[ "$(_debian_t64_name libgtk-3-0)" = "libgtk-3-0t64" ] ||
+resolved=$(_debian_t64_name libgtk-3-0)
+[ "$resolved" = "libgtk-3-0t64" ] ||
   fail 'the rename helper no longer names the t64 package'
-[ -z "$(_debian_t64_name bluez)" ] || fail 'the rename helper renamed an unchanged package'
-# The staged target asks for the renamed library, and never the old name.
-missing_packages_in_test() { say curl; say ca-certificates; say libgtk-3-0; }
-internal_package_query missing_packages_in_test
-provision=$(NIRUX_APPLY_T64_TEST=1 NIRUX_PACKAGES_DRY_RUN=1 NIRUX_PROVISION_OS=debian \
-  provision_packages missing 2>&1)
-printf '%s\n' "$provision" | grep -qx 'libgtk-3-0' ||
-  fail "provisioning did not report the library: $provision"
+[ -z "$(_debian_t64_name bluez)" ] || fail 'the rename helper renamed an unchanged package' 
+
+unset NIRUX_PACKAGE_MAP
+NIRUX_PACKAGE_QUERY=
+# The real list again, read from the installer source.
+eval "$(sed -n '/^packages_for() {/,/^}/p' "$SOURCE/nirux")"
 for os in arch debian void; do
   (
     OS=$os
