@@ -852,6 +852,14 @@ if [ -t 0 ]; then
   wallpaper_bundle_decision < "$TEST/answer" | grep -qx all ||
     fail 'an incomplete update did not offer the wallpaper set'
 fi
+# An unattended run states its answer instead of being asked.
+NIRUX_WALLPAPERS=all
+[ "$(wallpaper_bundle_decision < /dev/null)" = all ] ||
+  fail 'an explicit wallpaper choice was not carried'
+NIRUX_WALLPAPERS=none
+[ "$(wallpaper_bundle_decision < /dev/null)" = default ] ||
+  fail 'an explicit opt-out did not record the default set'
+unset NIRUX_WALLPAPERS
 for wp_theme in $WALLPAPER_THEMES; do
   printf '\211PNG\r\n\032\n%s\n' "$wp_theme" > "$wallpaper_dir/nirux-wallpaper-$wp_theme-4k.png"
 done

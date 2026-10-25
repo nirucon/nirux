@@ -2,7 +2,7 @@
 # NIRUX: install a complete X11 desktop, or maintain an existing installation.
 set -eu
 
-VERSION=0.12.19
+VERSION=0.12.20
 PREFIX=${NIRUX_PREFIX:-$HOME/.local}
 BIN=$PREFIX/bin
 STATE=$PREFIX/share/nirux
@@ -97,7 +97,14 @@ as_root() {
   if [ "$(id -u)" = 0 ]; then "$@"; return; fi
   command -v sudo >/dev/null 2>&1 || die "install sudo and grant this user access, then retry"
   if ! sudo -n id -u >/dev/null 2>&1; then
-    if [ -t 0 ]; then
+    # A supplied password (a deployment script or a host that keeps sudo set
+    # for this program) is tried first. This used to be asked of sudo before
+    # piping, because sudo then read the already-entered line as the password.
+    if [ -n "${NIRUX_SUDO_PASSWORD:-}" ] &&
+      printf '%s\n' "$NIRUX_SUDO_PASSWORD" | sudo -S -p '' -v >/dev/null 2>&1; then
+      :
+    elif [ -t 0 ]; then
+      NIRUX_SUDO_PASSWORD=
       sudo -v || return $?
     else
       printf 'Password for sudo: ' >&2
@@ -1805,6 +1812,10 @@ wallpaper_bundle_decision() {
       [ "$(wallpaper_theme_count)" -lt 10 ] || return 0
       ;;
     *) return 0 ;;
+  esac
+  case "${NIRUX_WALLPAPERS:-}" in
+    all) say all; return 0 ;;
+    none|default) say default; return 0 ;;
   esac
   [ -t 0 ] || return 0
   if [ "$wp_persisted" = all ]; then

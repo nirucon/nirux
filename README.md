@@ -149,6 +149,18 @@ overwritten.
 Use `./nirux install --no-packages` only when all runtime dependencies already
 exist.
 
+An unattended run over SSH has no terminal for sudo or for the questions the
+installer asks. Pass the answers in the environment instead:
+
+```sh
+NIRUX_SUDO_PASSWORD="$(cat ~/.config/nirux-sudo)" NIRUX_WALLPAPERS=all ./nirux update
+```
+
+`NIRUX_WALLPAPERS` takes `all`, `default` (only the default theme's image) or
+`none`; without it, an unattended install fetches only the default theme's
+wallpaper. The password is handed to the staged target and never written to
+disk.
+
 ### Wallpapers
 
 Only the default theme's wallpaper ships with a release, in 4K and 8K. The
