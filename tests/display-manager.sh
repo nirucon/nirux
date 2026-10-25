@@ -52,50 +52,48 @@ for OS in debian arch void; do
   [ ! -e "$lightdm_conf.nirux-backup" ] || fail 'owned config backed up again'
 
   DM=sddm
-  mkdir -p "$ROOT/var/lib/sddm"
+  mkdir -p "$ROOT/var/lib/sddm" "$ROOT/usr/share/xsessions"
   chmod 750 "$ROOT/var/lib/sddm"
+  # A fresh SDDM starts with an empty state and shows its session list.
+  : > "$ROOT/var/lib/sddm/state.conf"
   setup_dm_session
   state=$ROOT/var/lib/sddm/state.conf
-  grep -qx 'Session=/usr/share/xsessions/niruwm.desktop' "$state" || fail "$OS SDDM has no default"
+  [ "$(wc -c < "$state")" = 0 ] || fail "$OS SDDM empty state changed"
   [ "$(stat -c %a "$ROOT/var/lib/sddm")" = 750 ] || fail 'SDDM home permissions changed'
   first_sum=$(sha256sum "$state")
   setup_dm_session
   [ "$(sha256sum "$state")" = "$first_sum" ] || fail 'SDDM seeding is not idempotent'
 
-  printf '[Other]\nSession=keep\n' > "$state"
+  printf '[Other]\nSetting=keep\n' > "$state"
   setup_dm_session
-  grep -qx '\[Last\]' "$state" || fail 'missing Last section not added'
-  grep -qx 'Session=keep' "$state" || fail 'unrelated session overwritten'
+  grep -qx 'Setting=keep' "$state" || fail 'unrelated setting overwritten'
 
-  # Empty sessions are filled without losing users, unrelated sections or mode.
-  cat > "$state" <<'EOF'
-[Last]
-User=alice
-Session=
-[Other]
-Session=not-the-login-session
-Value=keep
-EOF
-  chmod 600 "$state"
-  setup_dm_session
-  grep -qx 'User=alice' "$state" || fail 'SDDM user lost'
-  grep -qx 'Session=not-the-login-session' "$state" || fail 'unrelated section changed'
-  grep -qx 'Value=keep' "$state" || fail 'unrelated value lost'
-  [ "$(stat -c %a "$state")" = 600 ] || fail 'SDDM state mode changed'
-  grep -qx 'Session=/usr/share/xsessions/niruwm.desktop' "$state" || fail 'empty session was not seeded'
 
-  # A remembered NIRUPI session is replaced: this suite does not provide it,
-  # and leaving it preselected sends the login screen to another desktop.
+  # A remembered session is forgotten on install so SDDM offers its list.
+  # SDDM writes a trailing space after the path on some machines.
   printf '[Last]\nUser=alice\nSession=/usr/share/xsessions/nirupi-dwm.desktop \n' > "$state"
   setup_dm_session
-  grep -qx 'Session=/usr/share/xsessions/niruwm.desktop' "$state" || fail 'legacy NIRUPI session was not replaced'
-  grep -qx 'User=alice' "$state" || fail 'SDDM user lost while replacing a legacy session'
+  ! grep -q '^Session=' "$state" || fail 'remembered session was not cleared'
+  grep -qx 'User=alice' "$state" || fail 'SDDM user lost while clearing the session'
 
-  # A genuine remembered session is never replaced, including the first entry.
-  printf '[Last]\nUser=alice\nSession=/usr/share/xsessions/xfce.desktop\n' > "$state"
-  remembered_sum=$(sha256sum "$state")
+  # Autologin keeps its remembered session: clearing it would not change which
+  # session starts, and the user's setup stays exactly as it was. SDDM keeps
+  # the autologin choice in its own main configuration, not in state.conf.
+  printf '[Last]\nUser=alice\nSession=/usr/share/xsessions/nirupi-dwm.desktop\n' > "$state"
+  mkdir -p "$ROOT/etc/sddm.conf.d"
+  printf '[Autologin]\nUser=alice\nSession=nirupi-dwm.desktop\n' > "$ROOT/etc/sddm.conf.d/autologin.conf"
+  autologin_sum=$(sha256sum "$state")
   setup_dm_session
-  [ "$(sha256sum "$state")" = "$remembered_sum" ] || fail 'remembered session overwritten'
+  [ "$(sha256sum "$state")" = "$autologin_sum" ] || fail 'autologin state was changed'
+  rm -f "$ROOT/etc/sddm.conf.d/autologin.conf"
+
+  # Every other remembered session is cleared too: the login screen then
+  # offers its list with NIRUWM first. Nothing else in the file changes.
+  printf '[Last]\nUser=alice\nSession=/usr/share/xsessions/xfce.desktop\n[Other]\nKeep=1\n' > "$state"
+  setup_dm_session
+  ! grep -q '^Session=' "$state" || fail 'remembered session was not cleared'
+  grep -qx 'Keep=1' "$state" || fail 'unrelated setting lost while clearing the session'
+  remembered_sum=$(sha256sum "$state")
 
   # An existing manager kept through auto, startx, and updates remain untouched.
   for DM in keep startx; do

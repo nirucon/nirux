@@ -83,7 +83,11 @@ does and have backups of anything you care about.
 - **Notifications:** native notification service and hardware OSD, DND,
   history, actions and live theme changes.
 - **Session:** startx, SDDM or LightDM, PAM lock, idle screen, Polkit power
-  actions and a managed session bus.
+  actions and a managed session bus. On a fresh SDDM, NIRUWM is the first
+  session in the list; an existing SDDM keeps its configuration, and a
+  remembered session from another desktop is cleared on install, so the login
+  screen offers every installed session with NIRUWM first. Autologin is never
+  changed.
 - **Hardware controls:** PipeWire/WirePlumber audio and microphone, BlueZ
   Bluetooth, RandR display profiles, power-profiles-daemon, backlight and
   night light.

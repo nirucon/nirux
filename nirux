@@ -2,7 +2,7 @@
 # NIRUX: install a complete X11 desktop, or maintain an existing installation.
 set -eu
 
-VERSION=0.12.14
+VERSION=0.12.17
 PREFIX=${NIRUX_PREFIX:-$HOME/.local}
 BIN=$PREFIX/bin
 STATE=$PREFIX/share/nirux
@@ -1992,7 +1992,6 @@ apply_target_release() {
   register_session
   setup_dm_session
   setup_startx
-  repair_legacy_sddm_session
   say 'Enabling session services...'
   enable_services
   say 'Activating the new program generation...'
@@ -2682,65 +2681,75 @@ setup_dm_session() {
       { say "# NIRUX owner: $PREFIX"; say '[Seat:*]'; say 'user-session=niruwm'; } > "$WORK/lightdm-session.conf"
       write_system "$ROOT/etc/lightdm/lightdm.conf.d/50-nirux-session.conf" "$WORK/lightdm-session.conf"
       ;;
-    sddm)
-      # lastIndex is ambiguous in QML: zero means either a remembered first
-      # session or no saved selection. Seed the real SDDM state only when it
-      # has no remembered session, rather than overriding lastIndex in a theme.
-      sddm_state=$ROOT/var/lib/sddm/state.conf
-      sddm_mode=644
-      sddm_owner=
-      if as_root test -f "$sddm_state"; then
-        as_root cat "$sddm_state" > "$WORK/sddm-state.original"
-        sddm_mode=$(as_root stat -c %a "$sddm_state")
-        sddm_owner=$(as_root stat -c %u:%g "$sddm_state")
-      else
-        : > "$WORK/sddm-state.original"
-      fi
-      # A remembered session this suite does not own (NIRUPI, dwm) is replaced
-      # below; any other remembered choice, or autologin, is kept.
-      sddm_remembered=$(awk '
-        /^[[:space:]]*\[/ { last = ($0 ~ /^[[:space:]]*\[Last\][[:space:]]*$/) }
-        last && /^[[:space:]]*Session[[:space:]]*=/ {
-          sub(/^[^=]*=[[:space:]]*/, ""); sub(/[[:space:]]*$/, ""); print; exit
-        }
-      ' "$WORK/sddm-state.original")
-      case "$sddm_remembered" in
-        /usr/share/xsessions/niruwm.desktop|"")
-          if [ -n "$sddm_remembered" ]; then
-            say 'Keeping remembered SDDM session'
-            return 0
-          fi
-          ;;
-        *nirupi*|*dwm*)
-          say "Replacing remembered SDDM session ${sddm_remembered##*/} with NIRUWM"
-          ;;
-        *)
-          say 'Keeping remembered SDDM session'
-          return 0
-          ;;
-      esac
-      if as_root grep -q '^[[:space:]]*Autologin[[:space:]]*=' "$WORK/sddm-state.original" 2>/dev/null; then
-        say 'Keeping SDDM autologin'
-        return 0
-      fi
-      awk '
-        function select_session() { print "Session=/usr/share/xsessions/niruwm.desktop"; written = 1 }
-        /^[[:space:]]*\[/ {
-          if (last && !written) select_session()
-          last = ($0 ~ /^[[:space:]]*\[Last\][[:space:]]*$/)
-          if (last) section = 1
-        }
-        last && /^[[:space:]]*Session[[:space:]]*=/ { if (!written) select_session(); next }
-        { print }
-        END { if (!section) print "[Last]"; if (!written) select_session() }
-      ' "$WORK/sddm-state.original" > "$WORK/sddm-state"
-      as_root test -d "$(dirname "$sddm_state")" ||
-        as_root install -d -m 755 "$(dirname "$sddm_state")"
-      as_root install -m "$sddm_mode" "$WORK/sddm-state" "$sddm_state"
-      [ -z "$sddm_owner" ] || as_root chown "$sddm_owner" "$sddm_state"
+    sddm|keep)
+      # `keep` means an existing display manager, which may be SDDM.
+      [ "$DM" = sddm ] || [ -d "$ROOT/var/lib/sddm" ] || [ -f "$ROOT/usr/bin/sddm" ] || return 0
+      forget_sddm_session
       ;;
   esac
 }
+
+# SDDM keeps the last chosen session in its own state file, so a machine that
+# used another desktop keeps preselecting it after NIRUX is installed. The
+# simple, predictable rule: on install NIRUX forgets that remembered session
+# and lets SDDM fall back to its own default, which lists every installed
+# session with NIRUWM first. Autologin, the remembered user, the theme and
+# every other setting are left exactly as they are.
+#
+# The file lives in /var/lib/sddm, which is not world readable. When it cannot
+# be read the choice is simply not changed; that is never an error, and the
+# session list offered by SDDM is unaffected either way.
+forget_sddm_session() {
+  sddm_state=$ROOT/var/lib/sddm/state.conf
+  as_root test -f "$sddm_state" || return 0
+  if ! sddm_text=$(as_root cat "$sddm_state" 2>/dev/null) || [ -z "$sddm_text" ]; then
+    say 'SDDM state is not readable; its session choice was left unchanged'
+    return 0
+  fi
+  printf '%s\n' "$sddm_text" > "$WORK/sddm-state.original"
+  sddm_remembered=$(awk '
+    /^[[:space:]]*\[/ { last = ($0 ~ /^[[:space:]]*\[Last\][[:space:]]*$/) }
+    last && /^[[:space:]]*Session[[:space:]]*=/ {
+      sub(/^[^=]*=[[:space:]]*/, ""); print; exit
+    }
+  ' "$WORK/sddm-state.original")
+  # SDDM writes a trailing space after the path.
+  while [ "${sddm_remembered% }" != "$sddm_remembered" ]; do sddm_remembered=${sddm_remembered% }; done
+  if [ -z "$sddm_remembered" ]; then
+    say 'SDDM already offers its session list'
+    return 0
+  fi
+  # Autologin is configured in SDDM's own main configuration, not in the
+  # state file. When it is on, a remembered session is not what starts the
+  # machine, and the user's setup is left exactly as it is.
+  sddm_autologin=0
+  for sddm_conf in "$ROOT/etc/sddm.conf" "$ROOT"/etc/sddm.conf.d/*.conf; do
+    [ -f "$sddm_conf" ] || continue
+    if as_root grep -q '^[[:space:]]*User[[:space:]]*=[[:space:]]*[^[:space:]]' \
+        "$sddm_conf" 2>/dev/null; then
+      sddm_autologin=1
+    fi
+  done
+  if [ "$sddm_autologin" = 1 ]; then
+    say 'SDDM autologin is configured; its remembered session was left unchanged'
+    return 0
+  fi
+  # The file is in /var/lib/sddm, which is not readable by the user; the
+  # install is only ever meant to clear the session, so the mode is set to the
+  # one SDDM itself uses rather than copied from an unreadable file.
+  sddm_mode=644
+  sddm_owner=$(as_root stat -c %u:%g "$sddm_state" 2>/dev/null || :)
+  awk '
+    /^[[:space:]]*\[/ { last = ($0 ~ /^[[:space:]]*\[Last\][[:space:]]*$/) }
+    last && /^[[:space:]]*Session[[:space:]]*=/ { next }
+    { print }
+  ' "$WORK/sddm-state.original" > "$WORK/sddm-state" || return 0
+  as_root cp -p "$sddm_state" "$sddm_state.nirux-backup" 2>/dev/null || :
+  as_root install -m "$sddm_mode" "$WORK/sddm-state" "$sddm_state" || return 0
+  [ -z "$sddm_owner" ] || as_root chown "$sddm_owner" "$sddm_state" 2>/dev/null || :
+  say "Cleared remembered SDDM session ${sddm_remembered##*/}; SDDM now offers every installed session, NIRUWM first"
+}
+
 setup_startx() {
   # Never replace a valid user's xinitrc. A legacy NIRUPI/dwm file is known to
   # point at a session that this suite no longer installs, so it is backed up
@@ -2765,34 +2774,6 @@ setup_startx() {
   say "If ~/.xinitrc selects NIRU, plain startx works too. Existing custom ~/.xinitrc files are preserved."
 }
 
-repair_legacy_sddm_session() {
-  state=$ROOT/var/lib/sddm/state.conf
-  [ -f "$state" ] || return 0
-  current=$(as_root awk '
-    /^[[:space:]]*\[/ { last = ($0 ~ /^[[:space:]]*\[Last\][[:space:]]*$/) }
-    last && /^[[:space:]]*Session[[:space:]]*=/ {
-      sub(/^[^=]*=[[:space:]]*/, ""); sub(/[[:space:]]*$/, ""); print; exit
-    }
-  ' "$state" 2>/dev/null || :)
-  [ -n "$current" ] || return 0
-  broken=0
-  case "$current" in
-    *nirupi*|*dwm*) broken=1 ;;
-    *) [ -e "$ROOT$current" ] || broken=1 ;;
-  esac
-  [ "$broken" = 1 ] || return 0
-  mode=$(as_root stat -c %a "$state" 2>/dev/null || printf 644)
-  as_root cp -p "$state" "$state.nirux-backup" 2>/dev/null || :
-  as_root awk '
-    /^[[:space:]]*\[/ { last = ($0 ~ /^[[:space:]]*\[Last\][[:space:]]*$/) }
-    last && /^[[:space:]]*Session[[:space:]]*=/ {
-      print "Session=/usr/share/xsessions/niruwm.desktop"; next
-    }
-    { print }
-  ' "$state" > "$WORK/sddm-state.repaired" || die 'could not prepare SDDM session repair'
-  as_root install -m "$mode" "$WORK/sddm-state.repaired" "$state" || die 'could not repair the SDDM session'
-  say "Repaired legacy SDDM session selection; backup: $state.nirux-backup"
-}
 # Start a selected display manager only after the session entry and the active
 # generation exist. Package installation must never start it early.
 start_selected_dm() {
@@ -3121,7 +3102,7 @@ uninstall() {
 repair_session() {
   lock
   setup_startx
-  repair_legacy_sddm_session
+  forget_sddm_session
   say 'Session repair complete. Log out/in, or run startx from a TTY.'
 }
 
@@ -3281,7 +3262,6 @@ install_or_update() {
   register_session
   setup_dm_session
   setup_startx
-  repair_legacy_sddm_session
   enable_services
   activate
   start_selected_dm
@@ -3311,6 +3291,8 @@ main() {
      ! sudo -n id -u >/dev/null 2>&1; then
     printf '%s\n' "$NIRUX_SUDO_PASSWORD" | sudo -S -p "" -v >/dev/null 2>&1 || :
   fi
+  unset NIRUX_SUDO_PASSWORD
+  # An inherited password is not wanted by anything this process starts.
   unset NIRUX_SUDO_PASSWORD
   case "${1:-}" in
     install|update) install_or_update "$@" ;;

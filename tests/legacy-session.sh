@@ -15,9 +15,9 @@ printf '[Last]\nSession=/usr/share/xsessions/nirupi-dwm.desktop\n' > "$T/root/va
 . "$SOURCE/nirux"
 WORK=$(mktemp -d)
 setup_startx
-repair_legacy_sddm_session
+forget_sddm_session
 grep -q 'niruwm-session' "$HOME/.xinitrc" || { echo 'legacy xinitrc was not repaired' >&2; exit 1; }
 [ -f "$HOME/.xinitrc.nirux-backup" ] || { echo 'xinitrc backup missing' >&2; exit 1; }
-grep -q 'Session=/usr/share/xsessions/niruwm.desktop' "$T/root/var/lib/sddm/state.conf" || { echo 'SDDM session was not repaired' >&2; exit 1; }
+! grep -q '^Session=' "$T/root/var/lib/sddm/state.conf" || { echo 'SDDM remembered session was not cleared' >&2; exit 1; }
 [ -f "$T/root/var/lib/sddm/state.conf.nirux-backup" ] || { echo 'SDDM backup missing' >&2; exit 1; }
 echo 'PASS: legacy xinitrc and SDDM session repair'
