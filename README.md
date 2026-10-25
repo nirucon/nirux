@@ -279,6 +279,22 @@ nirux layout auto                            # side by side
 nirux layout save Stacked                    # then apply it after a re-plug
 ```
 
+### Layouts on each workspace
+
+Every workspace keeps its own layout, on every screen, and every workspace is
+tiled until you change it. Change the focused one with `Super+T/Y/M/C/U/F`
+(cycle with `Super+Ctrl+period`); the choice is saved the moment you make it
+and comes back after the next login.
+
+```sh
+niructl layout show     # what is stored for each workspace
+niructl layout save     # write the current layouts to config.toml
+```
+
+The file holds them as `layouts = [...]` under `[monitors]`, in workspace
+order, and a screen can keep its own list in its `[[monitors.profiles]]`
+entry.
+
 ## Maintain
 
 ```sh
