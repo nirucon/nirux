@@ -2,7 +2,7 @@
 # NIRUX: install a complete X11 desktop, or maintain an existing installation.
 set -eu
 
-VERSION=0.12.21
+VERSION=0.12.22
 PREFIX=${NIRUX_PREFIX:-$HOME/.local}
 BIN=$PREFIX/bin
 STATE=$PREFIX/share/nirux
@@ -19,6 +19,7 @@ CONFIG_TMP=
 CONFIG_CANDIDATE=
 APPLY_PROTOCOL=0
 APPLY_OK=0
+TRAPS_ARMED=0
 # Pinned upstream release. The archive is verified before extraction, and the
 # extracted browser is still checked for shared libraries and its reported
 # version before the stable link is switched.
@@ -78,6 +79,7 @@ lock() {
   trap cleanup EXIT
   trap 'exit 130' INT
   trap 'exit 143' TERM HUP
+  TRAPS_ARMED=1
 }
 distro() {
   if [ -r /etc/os-release ]; then
@@ -96,8 +98,14 @@ platform() {
 }
 # Refresh sudo's timestamp until cleanup. The loop is a child of this shell and
 # is killed by cleanup, so it never outlives the command.
+#
+# The loop is started only once lock() has armed the cleanup trap. Started any
+# earlier, it would outlive the installer, because a shell exits without running
+# EXIT traps when no trap is set. It also closes stdin so a credential helper
+# waiting there cannot block it.
 start_sudo_keepalive() {
   [ -z "${SUDO_KEEPALIVE_PID:-}" ] || return 0
+  [ "${TRAPS_ARMED:-0}" = 1 ] || return 0
   (
     while sleep 45; do sudo -n -v >/dev/null 2>&1 || exit 0; done
   ) </dev/null >/dev/null 2>&1 &
