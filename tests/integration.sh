@@ -837,6 +837,34 @@ remove_owned_wallpapers
 [ "$(cat "$wallpaper_dir/nirux-wallpaper-noir-4k.png")" = mine ] || fail 'purge removed a user-modified wallpaper'
 [ ! -e "$wallpaper_dir/nirux-wallpaper-nord-4k.png" ] || fail 'purge kept an unmodified owned wallpaper'
 
+# The theme wallpaper question belongs to the terminal that started the
+# command. It is asked when the set is incomplete and never when it is there.
+rm -rf "$wallpaper_dir"
+mkdir -p "$wallpaper_dir"
+rm -f "$STATE/wallpaper-bundle-policy"
+operation=update
+unset NIRUX_WALLPAPERS
+# stdin is not a terminal in the test run, so nothing is asked.
+[ -z "$(wallpaper_bundle_decision)" ] || fail 'an update asked about wallpapers without a terminal'
+# A terminal is only asked when a theme is missing its wallpaper.
+printf 'y\n' > "$TEST/answer"
+if [ -t 0 ]; then
+  wallpaper_bundle_decision < "$TEST/answer" | grep -qx all ||
+    fail 'an incomplete update did not offer the wallpaper set'
+fi
+for wp_theme in $WALLPAPER_THEMES; do
+  printf '\211PNG\r\n\032\n%s\n' "$wp_theme" > "$wallpaper_dir/nirux-wallpaper-$wp_theme-4k.png"
+done
+[ -z "$(wallpaper_bundle_decision < "$TEST/answer" 2>/dev/null)" ] ||
+  fail 'a complete set was offered again on update'
+# The target records the answer the running installer worked out.
+( PREFIX=$STATE wp_persisted=all && wallpapers_policy_write )
+grep -qx 'wallpapers all' "$STATE/wallpaper-bundle-policy" || fail 'wallpaper answer was not recorded'
+[ "$(wallpapers_policy_read)" = all ] || fail 'the recorded answer was not read back'
+# Without a policy file nothing is remembered, so the next install asks.
+rm -f "$STATE/wallpaper-bundle-policy"
+[ -z "$(wallpapers_policy_read)" ] || fail 'a missing policy file was read as an answer'
+
 # Terminal integration preserves existing kitty/fish config: one managed block,
 # idempotent updates, and block-only removal on uninstall.
 terminal_test=$TEST/terminal-home

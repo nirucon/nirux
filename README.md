@@ -188,7 +188,9 @@ are not the default fall back to their own background colour, which is tidy but
 plain, and the theme looks half finished until you download the images later.
 The set is a one-time download of about 326 MB; an update never fetches it
 again. If you decline now, `nirux wallpapers download` adds it at any time
-without reinstalling anything.
+without reinstalling anything. An update from a terminal asks the same question
+once more if the set is still incomplete, so an install made without a terminal
+can be completed later with `nirux update`.
 
 A theme without its image paints its own background colour, taken from the
 theme file, so the desktop still matches the theme instead of showing the

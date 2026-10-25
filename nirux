@@ -2,7 +2,7 @@
 # NIRUX: install a complete X11 desktop, or maintain an existing installation.
 set -eu
 
-VERSION=0.12.18
+VERSION=0.12.19
 PREFIX=${NIRUX_PREFIX:-$HOME/.local}
 BIN=$PREFIX/bin
 STATE=$PREFIX/share/nirux
@@ -1781,22 +1781,38 @@ choose_browser() {
 # 326 MB set from the project's server so a GitHub release stays small. The
 # question is asked at install only, remembered in a policy file, and defaults
 # to no so an unattended install never pulls hundreds of megabytes.
-WALLPAPER_BUNDLE_POLICY=keep
-select_wallpaper_bundle() {
+#
+# The same set is offered once more when an update finds the other nine themes
+# without their wallpapers, so an earlier "no" can still be answered with a
+# terminal. `nirux wallpapers download` always stays available.
+WALLPAPER_BUNDLE_POLICY=
+wallpapers_policy_read() {
   wp_policy_file=$STATE/wallpaper-bundle-policy
-  wp_persisted=keep
-  if [ -f "$wp_policy_file" ]; then
-    wp_persisted=$(awk '$1 == "wallpapers" && ($2 == "all" || $2 == "default") {print $2; exit}' "$wp_policy_file")
-    [ -n "$wp_persisted" ] || wp_persisted=keep
-  fi
-  if [ "$operation" != install ]; then
-    WALLPAPER_BUNDLE_POLICY=$wp_persisted
+  wp_persisted=$(awk '$1 == "wallpapers" && ($2 == "all" || $2 == "default") {print $2; exit}' \
+    "$wp_policy_file" 2>/dev/null) || :
+  say "$wp_persisted"
+}
+# The running installer decides whether to fetch the set. The question belongs
+# to the terminal that started the install: the staged target runs with stdin
+# closed, so it never sees one, and its answer file is carried over instead.
+wallpaper_bundle_decision() {
+  wp_persisted=$(wallpapers_policy_read)
+  case "$operation" in
+    install) ;;
+    update)
+      # Only when the ten themes are known to be incomplete, so a machine that
+      # already has the set never asks again.
+      [ "$(wallpaper_theme_count)" -lt 10 ] || return 0
+      ;;
+    *) return 0 ;;
+  esac
+  [ -t 0 ] || return 0
+  if [ "$wp_persisted" = all ]; then
+    # Asked for once and never delivered, for example because the download
+    # failed. Fetch it again when the release ships the files.
+    [ -f "${WORK}/download/nirux/nirux-wallpapers.tar.xz" ] && say all
     return 0
   fi
-  case "${NIRUX_WALLPAPERS:-}" in
-    all|default|none) wp_persisted=$([ "${NIRUX_WALLPAPERS:-}" = none ] && echo default || echo "$NIRUX_WALLPAPERS") ;;
-  esac
-  if [ "$wp_persisted" = keep ] && [ -t 0 ]; then
     say ''
     say 'NIRUX ships ten themes, and changing theme is the main way to change the look.'
     say 'With every wallpaper installed, a theme change brings its wallpaper, bar palette,'
@@ -1813,12 +1829,12 @@ select_wallpaper_bundle() {
     # explicit no declines; an unattended install still defaults to the small
     # release because it never reaches this prompt.
     case "$wp_answer" in
-      [nN]*) wp_persisted=default ;;
-      *) wp_persisted=all ;;
+      [nN]*) say default ;;
+      *) say all ;;
     esac
-  fi
-  [ "$wp_persisted" = keep ] && wp_persisted=default
-  WALLPAPER_BUNDLE_POLICY=$wp_persisted
+}
+wallpapers_policy_write() {
+  [ -n "${wp_policy_file:-}" ] || wp_policy_file=$STATE/wallpaper-bundle-policy
   printf '# NIRUX owner: %s\nwallpapers %s\n' "$PREFIX" "$wp_persisted" > "$wp_policy_file" ||
     die 'could not record the wallpaper policy'
 }
@@ -1973,6 +1989,18 @@ apply_target_release() {
   release_optional_file nirux "$RELEASE" nirux-integration.tar.xz
   release_optional_file nirux "$RELEASE" niruwallpaper.desktop
   release_optional_file nirux "$RELEASE" niruwallpaper.png
+  # The wallpaper policy is the running installer's answer. It is validated
+  # here before any file changes, even when the target ships no wallpaper
+  # files of its own.
+  case "${NIRUX_APPLY_WALLPAPERS:-}" in
+    ''|default|all) ;;
+    *) die "invalid wallpaper choice: $NIRUX_APPLY_WALLPAPERS" ;;
+  esac
+  # A release without wallpaper files still accepts the policy, so the answer
+  # outlives an update that lands between two releases carrying the set.
+  wallpapers_policy=${NIRUX_APPLY_WALLPAPERS:-}
+  [ -n "$wallpapers_policy" ] || wallpapers_policy=$(wallpaper_bundle_policy) || :
+  [ -n "$wallpapers_policy" ] || wallpapers_policy=keep
   say "Applying NIRUX $RELEASE..."
   apply_prepare_backup
   APPLY_OK=0
@@ -1984,7 +2012,12 @@ apply_target_release() {
   say 'Installing configuration and desktop assets...'
   install_config
   install_wallpapers
-  select_wallpaper_bundle
+  # Recorded once the assets are in place: a failure before this point leaves
+  # the policy file untouched, and the running installer keeps its answer.
+  if [ "$wallpapers_policy" != keep ]; then
+    wp_persisted=$wallpapers_policy
+    wallpapers_policy_write
+  fi
   install_terminal
   prepare_pam
   install_greeters "$DM"
@@ -2003,6 +2036,23 @@ apply_target_release() {
   if [ -n "${DISPLAY:-}" ] && "$BIN/niructl" restart-bar; then
     say 'Applied through the target installer. Running bar restarted; log out/in to activate the new WM, idle daemon and session.'
   else say 'Applied through the target installer. Log out/in to activate all updated programs. In a new NIRU session: niructl restart-bar.'
+  fi
+  wallpapers_install_bundle
+}
+# The optional theme wallpaper set is a large download, so it runs after the
+# installation is already usable. A failure here never undoes the install.
+wallpapers_install_bundle() {
+  [ "$wallpapers_policy" = all ] || return 0
+  wp_install_work=$(mktemp -d "${TMPDIR:-/tmp}/nirux-wallpapers.XXXXXX") || wp_install_work=
+  if [ -n "$wp_install_work" ] && WP_WORK=$wp_install_work wallpapers_download; then
+    rm -rf "$wp_install_work"
+    say 'Theme wallpapers installed.'
+  elif [ -n "$wp_install_work" ]; then
+    rm -rf "$wp_install_work"
+    say 'The theme wallpapers could not be downloaded; the themes keep their background colours.'
+    say 'Try again from the launcher under Wallpaper, or: nirux wallpapers download'
+  else
+    say 'Could not create a temporary directory for the wallpaper download.'
   fi
 }
 stage_release() {
@@ -2044,8 +2094,10 @@ stage_release() {
       die 'target installer staging failed; current installation kept'
     fi
     say 'Staged components. Validating generation...'
+    NIRUX_STAGE_COMPONENTS=1
   else
     stage_components
+    NIRUX_STAGE_COMPONENTS=0
   fi
   [ -f "$WORK/generation/manifest" ] || die 'target installer produced no staged generation'
   [ "$(awk '$1 == "suite" {print $2}' "$WORK/generation/manifest")" = "$RELEASE" ] || \
@@ -3234,12 +3286,20 @@ install_or_update() {
   # its own package list below.
   if [ "$operation" = install ] && [ "$packages" = 1 ]; then install_packages; fi
   stage_release
+  # The wallpaper set is a question for this terminal, so the running
+  # installer asks it and the staged target carries out the answer. It is asked
+  # when the target can read the staged wallpaper files (an install or a
+  # rollback to a release that ships them) and the ten themes are incomplete.
+  wallpaper_decision=
+  if [ "$APPLY_PROTOCOL" = 0 ] || [ "$NIRUX_STAGE_COMPONENTS" = 1 ]; then
+    wallpaper_decision=$(wallpaper_bundle_decision)
+  fi
   if [ "$APPLY_PROTOCOL" = 2 ]; then
     if ! NIRUX_PREFIX=$PREFIX NIRUX_SYSTEM_ROOT=$ROOT NIRUX_STAGE_WORK=$WORK \
       NIRUX_APPLY_RELEASE=$RELEASE NIRUX_APPLY_OS=$OS \
       NIRUX_APPLY_DM=$DM NIRUX_APPLY_BROWSER=$BROWSER_EFFECTIVE \
       NIRUX_APPLY_LOCALSEND=$LOCALSEND_EFFECTIVE NIRUX_APPLY_OPENCODE=$OPENCODE_EFFECTIVE \
-      NIRUX_APPLY_OPERATION=$operation \
+      NIRUX_APPLY_OPERATION=$operation NIRUX_APPLY_WALLPAPERS="${wallpaper_decision:-}" \
       NIRUX_SUDO_PASSWORD=${NIRUX_SUDO_PASSWORD:-} \
       sh "$WORK/download/nirux/nirux" _apply 2; then
       die 'target installer apply failed; current installation kept'
@@ -3271,19 +3331,9 @@ install_or_update() {
   fi
   # The wallpaper set is a large optional download, so it runs after the
   # installation is already usable. A failure here never undoes the install.
-  if [ "$WALLPAPER_BUNDLE_POLICY" = all ]; then
-    wp_install_work=$(mktemp -d "${TMPDIR:-/tmp}/nirux-wallpapers.XXXXXX") || wp_install_work=
-    if [ -n "$wp_install_work" ] && WP_WORK=$wp_install_work wallpapers_download; then
-      rm -rf "$wp_install_work"
-      say 'Theme wallpapers installed.'
-    elif [ -n "$wp_install_work" ]; then
-      rm -rf "$wp_install_work"
-      say 'The theme wallpapers could not be downloaded; the themes keep their background colours.'
-      say 'Try again from the launcher under Wallpaper, or: nirux wallpapers download'
-    else
-      say 'Could not create a temporary directory for the wallpaper download.'
-    fi
-  fi
+  wallpapers_policy=${NIRUX_WALLPAPERS:-}
+  [ -n "$wallpapers_policy" ] || wallpapers_policy=$(wallpapers_policy_read) || :
+  wallpapers_install_bundle
 }
 main() {
   # A staged target installer receives the bootstrap's one sudo password here.
