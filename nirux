@@ -2,7 +2,7 @@
 # NIRUX: install a complete X11 desktop, or maintain an existing installation.
 set -eu
 
-VERSION=0.12.22
+VERSION=0.12.23
 PREFIX=${NIRUX_PREFIX:-$HOME/.local}
 BIN=$PREFIX/bin
 STATE=$PREFIX/share/nirux
@@ -19,6 +19,12 @@ CONFIG_TMP=
 CONFIG_CANDIDATE=
 APPLY_PROTOCOL=0
 APPLY_OK=0
+# The sudo password never lives in the environment: a program NIRUX starts can
+# read its own environment, and a build or a plugin listing processes would
+# then see it. SUDO_SECRET is a shell variable, exported only to the staged
+# target that needs it.
+SUDO_SECRET=
+SUDO_ASK_LATER=0
 TRAPS_ARMED=0
 # Pinned upstream release. The archive is verified before extraction, and the
 # extracted browser is still checked for shared libraries and its reported
@@ -121,13 +127,15 @@ as_root() {
     # A supplied password (a deployment script or a host that keeps sudo set
     # for this program) is tried first. This used to be asked of sudo before
     # piping, because sudo then read the already-entered line as the password.
-    if [ -n "${NIRUX_SUDO_PASSWORD:-}" ] &&
-      printf '%s\n' "$NIRUX_SUDO_PASSWORD" | sudo -S -p '' -v >/dev/null 2>&1; then
-      # A long download or package install can outlive sudo's default
-      # timestamp. Keeping it fresh in the background costs one tiny sleep
-      # loop and removes a failure that depends on download speed.
+    if [ -n "${NIRUX_SUDO_PASSWORD:-}" ]; then SUDO_SECRET=$NIRUX_SUDO_PASSWORD; unset NIRUX_SUDO_PASSWORD; fi
+    if [ -n "$SUDO_SECRET" ] &&
+      printf '%s\n' "$SUDO_SECRET" | sudo -S -p '' -v >/dev/null 2>&1; then
+      # A deployment script has no terminal: sudo will not keep a timestamp
+      # for it, so later calls pass the password again. The keepalive keeps
+      # the timestamp fresh where sudo does use one.
+      SUDO_ASK_LATER=1
+      # A long download or package install can outlive sudo's timestamp.
       start_sudo_keepalive
-      :
     elif [ -t 0 ]; then
       NIRUX_SUDO_PASSWORD=
       sudo -v || return $?
@@ -137,8 +145,7 @@ as_root() {
       if printf '%s\n' "$password" | sudo -S -p "" -v; then
         # The staged target installer is a separate process with its own sudo
         # context, so hand the password to that one child only.
-        NIRUX_SUDO_PASSWORD=$password
-        export NIRUX_SUDO_PASSWORD
+        SUDO_SECRET=$password
         unset password
       else
         result=$?
@@ -147,7 +154,14 @@ as_root() {
       fi
     fi
   fi
-  sudo -n "$@"
+  # `-S` reads a password only when sudo asks for one; a cached timestamp
+  # means it never reads, so the line stays in the pipe unread. `-p ''`
+  # keeps the prompt out of the log.
+  if [ "${SUDO_ASK_LATER:-0}" = 1 ] && [ -n "${SUDO_SECRET:-}" ]; then
+    printf '%s\n' "$SUDO_SECRET" | sudo -S -p '' "$@"
+  else
+    sudo -n "$@"
+  fi
 }
 # Bookworm ships libcups2/libgtk-3-0/libasound2; trixie renamed them to *t64.
 # Pick whichever name this apt knows about so one source supports both.
@@ -1828,6 +1842,10 @@ wallpapers_policy_read() {
 # to the terminal that started the install: the staged target runs with stdin
 # closed, so it never sees one, and its answer file is carried over instead.
 wallpaper_bundle_decision() {
+  case "${NIRUX_WALLPAPERS:-}" in
+    all) say all; return 0 ;;
+    none|default) say default; return 0 ;;
+  esac
   wp_persisted=$(wallpapers_policy_read)
   case "$operation" in
     install) ;;
@@ -1837,10 +1855,6 @@ wallpaper_bundle_decision() {
       [ "$(wallpaper_theme_count)" -lt 10 ] || return 0
       ;;
     *) return 0 ;;
-  esac
-  case "${NIRUX_WALLPAPERS:-}" in
-    all) say all; return 0 ;;
-    none|default) say default; return 0 ;;
   esac
   [ -t 0 ] || return 0
   if [ "$wp_persisted" = all ]; then
@@ -3336,7 +3350,7 @@ install_or_update() {
       NIRUX_APPLY_DM=$DM NIRUX_APPLY_BROWSER=$BROWSER_EFFECTIVE \
       NIRUX_APPLY_LOCALSEND=$LOCALSEND_EFFECTIVE NIRUX_APPLY_OPENCODE=$OPENCODE_EFFECTIVE \
       NIRUX_APPLY_OPERATION=$operation NIRUX_APPLY_WALLPAPERS="${wallpaper_decision:-}" \
-      NIRUX_SUDO_PASSWORD=${NIRUX_SUDO_PASSWORD:-} \
+      NIRUX_SUDO_PASSWORD=${SUDO_SECRET:-} \
       sh "$WORK/download/nirux/nirux" _apply 2; then
       die 'target installer apply failed; current installation kept'
     fi
@@ -3372,16 +3386,18 @@ install_or_update() {
   wallpapers_install_bundle
 }
 main() {
-  # A staged target installer receives the bootstrap's one sudo password here.
-  if [ -n "${NIRUX_SUDO_PASSWORD:-}" ] && [ "$(id -u)" != 0 ] &&
+  # A staged target installer receives the bootstrap's one sudo password here,
+  # as a shell variable. It is never exported: a program NIRUX starts can read
+  # its own environment and a process listing would show an exported secret.
+  if [ -n "${NIRUX_SUDO_PASSWORD:-}" ]; then SUDO_SECRET=$NIRUX_SUDO_PASSWORD; fi
+  unset NIRUX_SUDO_PASSWORD
+  if [ -n "$SUDO_SECRET" ] && [ "$(id -u)" != 0 ] &&
      ! sudo -n id -u >/dev/null 2>&1; then
-    if printf '%s\n' "$NIRUX_SUDO_PASSWORD" | sudo -S -p "" -v >/dev/null 2>&1; then
+    if printf '%s\n' "$SUDO_SECRET" | sudo -S -p "" -v >/dev/null 2>&1; then
+      SUDO_ASK_LATER=1
       start_sudo_keepalive
     fi
   fi
-  unset NIRUX_SUDO_PASSWORD
-  # An inherited password is not wanted by anything this process starts.
-  unset NIRUX_SUDO_PASSWORD
   case "${1:-}" in
     install|update) install_or_update "$@" ;;
     _provision) shift; provision_packages "$@" ;;
