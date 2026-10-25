@@ -833,6 +833,37 @@ install_wallpapers >/dev/null
   fail 'an update removed a downloaded theme wallpaper'
 grep -q 'nirux-wallpaper-satie-4k.png' "$STATE/wallpapers.sha256" ||
   fail 'an update dropped a downloaded theme from the manifest'
+# `nirux layout` reaches NIRUWM's display profiles and refuses a partial call.
+# Run in a subshell so a `die` inside the sourced installer ends only this
+# call, not the test run.
+expect_layout_failure() {
+  actual=0
+  ( layout "$@" >/dev/null 2>&1 ) || actual=$?
+  [ "$actual" = 1 ] || fail "expected layout to refuse '$*', got $actual"
+}
+layout_test=$TEST/layout
+mkdir -p "$layout_test"
+cat > "$layout_test/niructl" <<EOF
+#!/bin/sh
+printf '%s\\n' "\$*" >> "$layout_test/log"
+EOF
+chmod 755 "$layout_test/niructl"
+BIN=$layout_test
+expect_layout_failure save
+expect_layout_failure apply
+expect_layout_failure rotate HDMI-1
+expect_layout_failure turns
+layout save Desk >/dev/null
+layout rotate DisplayPort-5 inverted >/dev/null
+layout apply Desk >/dev/null
+layout auto >/dev/null
+printf '%s\n' 'display save Desk' 'display rotate DisplayPort-5 inverted' \
+  'display apply Desk' 'display auto' > "$layout_test/expected"
+if ! cmp -s "$layout_test/log" "$layout_test/expected"; then
+  cat "$layout_test/log" >&2
+  fail 'nirux layout did not pass the call through'
+fi
+
 remove_owned_wallpapers
 [ "$(cat "$wallpaper_dir/nirux-wallpaper-noir-4k.png")" = mine ] || fail 'purge removed a user-modified wallpaper'
 [ ! -e "$wallpaper_dir/nirux-wallpaper-nord-4k.png" ] || fail 'purge kept an unmodified owned wallpaper'

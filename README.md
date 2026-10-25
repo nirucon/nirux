@@ -240,6 +240,24 @@ niructl wallpaper output set DP-1 mode theme
 niructl wallpaper output reset DP-1              # inherit the shared settings
 ```
 
+Layout is separate from wallpaper: it is the position, mode and rotation of
+each screen. A screen mounted upside down or on its side is turned on its own,
+and the arrangement is saved as a profile:
+
+```sh
+niructl monitors                                    # the output names to use
+nirux layout rotate DisplayPort-5 inverted           # normal, left, right, inverted
+nirux layout save Desk                               # save the layout as it is now
+nirux layout list                                    # saved profiles
+nirux layout apply Desk                              # switch in one command
+nirux layout auto                                    # side by side, preferred modes
+niructl display preview Desk 15                      # try it, keep or revert
+```
+
+Profiles live in `~/.config/niruwm/displays.toml`. The launcher's Displays
+group offers the same actions, including a turn entry for every rotation of
+every connected screen.
+
 ## Maintain
 
 ```sh

@@ -2,7 +2,7 @@
 # NIRUX: install a complete X11 desktop, or maintain an existing installation.
 set -eu
 
-VERSION=0.12.23
+VERSION=0.12.24
 PREFIX=${NIRUX_PREFIX:-$HOME/.local}
 BIN=$PREFIX/bin
 STATE=$PREFIX/share/nirux
@@ -55,6 +55,7 @@ usage() {
   say "                    [--localsend yes|no] [--opencode yes|no]"
   say "       nirux login-wallpaper [list|set FILE|reset|sync]"
   say "       nirux wallpapers [status|download|remove]"
+  say "       nirux layout list|save NAME|apply NAME|rotate OUTPUT normal|left|right|inverted|auto"
   say "       nirux reset-config"
   say "       nirux repair-session | repair-wallpaper"
   say "       nirux remove helium|localsend|opencode"
@@ -2427,6 +2428,36 @@ wallpaper_destination() {
   printf '%s\n' "$(pictures_directory)/Wallpapers/NIRU"
 }
 
+# Display layouts are NIRUWM's `displays.toml` profiles, reached from one place
+# so a user does not need to remember which program owns them.
+layout() {
+  sub=${1:-list}
+  [ -x "$BIN/niructl" ] || die 'niructl is missing; run nirux update'
+  case "$sub" in
+    list)
+      "$BIN/niructl" display list || die 'could not read the display profiles'
+      ;;
+    save)
+      [ -n "${2:-}" ] || die 'layout save needs a name, for example: nirux layout save Desk'
+      "$BIN/niructl" display save "$2" || die "could not save the layout $2"
+      say "Layout $2 saved. Apply it with: nirux layout apply $2"
+      ;;
+    apply)
+      [ -n "${2:-}" ] || die 'layout apply needs a name; see nirux layout list'
+      "$BIN/niructl" display apply "$2" || die "could not apply the layout $2"
+      ;;
+    rotate)
+      [ -n "${2:-}" ] && [ -n "${3:-}" ] ||
+        die 'layout rotate needs an output and normal|left|right|inverted; niructl monitors lists the outputs'
+      "$BIN/niructl" display rotate "$2" "$3" || die "could not turn $2 to $3"
+      ;;
+    auto)
+      "$BIN/niructl" display auto || die 'could not arrange the screens'
+      ;;
+    *) die 'layout takes list, save NAME, apply NAME, rotate OUTPUT ROTATION or auto' ;;
+  esac
+}
+
 wallpapers() {
   sub=${1:-status}
   case "$sub" in
@@ -3410,6 +3441,7 @@ main() {
     rollback) [ "$#" = 1 ] || die 'rollback takes no arguments'; rollback ;;
     login-wallpaper) shift; login_wallpaper "$@" ;;
     wallpapers) shift; wallpapers "$@" ;;
+    layout) shift; layout "$@" ;;
     reset-config) [ "$#" = 1 ] || die 'reset-config takes no arguments'; reset_config ;;
     repair-session) [ "$#" = 1 ] || die 'repair-session takes no arguments'; repair_session ;;
     repair-wallpaper) [ "$#" = 1 ] || die 'repair-wallpaper takes no arguments'; repair_wallpaper ;;
