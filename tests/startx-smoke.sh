@@ -36,21 +36,22 @@ EOF
 
 startx -- "$(command -v Xvfb)" :97 -screen 0 1280x800x24 -nolisten tcp > "$HOME/startx-test.log" 2>&1 &
 START=$!
-i=0
-while [ "$i" -lt 100 ]; do
-  if xwininfo -root -tree 2>/dev/null | grep -q NIRUBAR; then break; fi
-  i=$((i + 1)); sleep 0.1
-done
-if [ "$i" = 100 ]; then cat "$HOME/startx-test.log"; exit 1; fi
-if [ -x "$BIN/nirunotify" ]; then
-  i=0
-  while [ "$i" -lt 100 ]; do
-    "$BIN/nirunotify" --history 2>/dev/null | grep -q 'Welcome to NIRUX' && break
-    i=$((i + 1)); sleep 0.1
+# Wait for the bar and the session log to settle. Every loop below reads what
+# a program that may still be starting has written, so each one gets time to
+# answer instead of failing on the first empty read.
+wait_for() {
+  n=0
+  while [ "$n" -lt 100 ]; do
+    if eval "$1"; then return 0; fi
+    n=$((n + 1)); sleep 0.1
   done
-  [ "$i" -lt 100 ] || {
+  return 1
+}
+wait_for 'xwininfo -root -tree 2>/dev/null | grep -q NIRUBAR' || { cat "$HOME/startx-test.log"; exit 1; }
+if [ -x "$BIN/nirunotify" ]; then
+  BIN=$BIN wait_for 'BIN=$BIN "$BIN/nirunotify" --history 2>/dev/null | grep -q "Welcome to NIRUX"' || {
     printf 'startx welcome notification did not appear\n' >&2
-    "$BIN/nirunotify" --count 2>&1 >&2 || :
+    "$BIN/nirunotify" --count >&2 2>&1 || :
     pgrep -a nirunotify >&2 || :
     [ ! -f "$HOME/.local/state/niruwm/session.log" ] || tail -30 "$HOME/.local/state/niruwm/session.log" >&2
     exit 1
@@ -157,12 +158,30 @@ if [ -x "$BIN/niructl" ]; then
 
   # A theme with no wallpaper must paint its own background colour rather than
   # leave the previous theme's picture on screen. Only the default theme ships
-  # with a release, so a second theme is normally absent here.
+  # with a release, so the picture of a second theme is removed here: a missing
+  # file is what a theme without a wallpaper looks like, and it is the case
+  # that must fall back.
   "$BIN/niructl" wallpaper follow-theme on >/dev/null 2>&1 || :
+  pictures=$HOME/Pictures/Wallpapers/NIRU
+  satie=
+  for candidate in "$pictures"/nirux-wallpaper-satie-*.png; do
+    [ -f "$candidate" ] || continue
+    satie=$candidate
+    break
+  done
   if "$BIN/niructl" theme niru-satie >/dev/null 2>&1; then
+    [ -z "$satie" ] || rm -f "$satie"
+    # Ask again with the picture gone, so the change under test is the one that
+    # has nothing to show, whether or not the picture was installed.
+    "$BIN/niructl" theme niru-noir >/dev/null 2>&1 || :
+    "$BIN/niructl" theme niru-satie >/dev/null 2>&1 || :
     sleep 1
+    # The manager says so on its own stderr, which the session writes to the
+    # session log.
     grep -q 'theme background colour' "$HOME/.local/state/niruwm/session.log" 2>/dev/null || {
       printf 'a theme without a wallpaper did not fall back to its colour\n' >&2
+      [ ! -f "$HOME/.local/state/niruwm/session.log" ] ||
+        tail -20 "$HOME/.local/state/niruwm/session.log" >&2
       exit 1
     }
   fi

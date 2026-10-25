@@ -2,7 +2,7 @@
 # NIRUX: install a complete X11 desktop, or maintain an existing installation.
 set -eu
 
-VERSION=0.12.33
+VERSION=0.12.34
 PREFIX=${NIRUX_PREFIX:-$HOME/.local}
 BIN=$PREFIX/bin
 STATE=$PREFIX/share/nirux
@@ -21,9 +21,38 @@ APPLY_PROTOCOL=0
 APPLY_OK=0
 # The sudo password never lives in the environment: a program NIRUX starts can
 # read its own environment, and a build or a plugin listing processes would
-# then see it. SUDO_SECRET is a shell variable, exported only to the staged
-# target that needs it.
+# then see it. It is kept in a private file that only a subshell handed the
+# location can read, which is the case that matters: parts of an install run in
+# a subshell, and a shell variable would be lost there.
 SUDO_SECRET=
+sudo_secret_file() {
+  [ -n "${SUDO_SECRET_FILE:-}" ] && [ -f "$SUDO_SECRET_FILE" ] || return 1
+  sudo_secret_read=$(cat "$SUDO_SECRET_FILE" 2>/dev/null) || return 1
+  [ -n "$sudo_secret_read" ] || return 1
+  SUDO_SECRET=$sudo_secret_read
+  unset sudo_secret_read
+}
+# Store the password NIRUX is allowed to reuse, then forget the original.
+sudo_secret_keep() {
+  secret_value=$1
+  [ -n "$secret_value" ] || return 1
+  if [ -z "${SUDO_SECRET_FILE:-}" ] || [ ! -f "$SUDO_SECRET_FILE" ]; then
+    SUDO_SECRET_FILE=$(mktemp "${TMPDIR:-/tmp}/.nirux-secret.XXXXXX") || return 1
+    chmod 600 "$SUDO_SECRET_FILE" 2>/dev/null || :
+  fi
+  ( umask 077; printf '%s\n' "$secret_value" > "$SUDO_SECRET_FILE" ) || return 1
+  export SUDO_SECRET_FILE
+  SUDO_SECRET=$secret_value
+  unset secret_value
+}
+# Remove the file on every normal and failing exit path.
+sudo_secret_forget() {
+  if [ "${SUDO_SECRET_BORROWED:-0}" != 1 ] && [ -n "${SUDO_SECRET_FILE:-}" ]; then
+    rm -f "$SUDO_SECRET_FILE"
+  fi
+  SUDO_SECRET_FILE=
+  SUDO_SECRET=
+}
 SUDO_ASK_LATER=0
 TRAPS_ARMED=0
 # Pinned upstream release. The archive is verified before extraction, and the
@@ -46,7 +75,7 @@ OPENCODE_EFFECTIVE=yes
 OPENCODE_EXPLICIT=0
 
 say() { printf '%s\n' "$*"; }
-die() { say "nirux: $*" >&2; exit 1; }
+die() { say "nirux: $*" >&2; sudo_secret_forget; exit 1; }
 usage() {
   say "NIRUX $VERSION"
   say "Usage: nirux install [--minimal|--no-packages] [--display-manager auto|startx|sddm|lightdm]"
@@ -73,6 +102,8 @@ cleanup() {
     SUDO_KEEPALIVE_PID=
   fi
   restore_policy
+  # The password file never outlives the command, whether it succeeded or not.
+  sudo_secret_forget
   [ -z "$CONFIG_TMP" ] || rm -f "$CONFIG_TMP"
   [ -z "$CONFIG_CANDIDATE" ] || rm -f "$CONFIG_CANDIDATE"
   [ -z "$WORK" ] || rm -rf "$WORK"
@@ -118,6 +149,25 @@ start_sudo_keepalive() {
   ) </dev/null >/dev/null 2>&1 &
   SUDO_KEEPALIVE_PID=$!
 }
+# Refresh the sudo timestamp with the password NIRUX holds.
+#
+# sudo keeps one timestamp per terminal, and when there is no terminal it keys
+# the timestamp on how its password came in: a pipe and a file are two
+# different keys, so a password piped once does not unlock a later `sudo -n`.
+# A deployment script or a CI step has no terminal at all. The password
+# therefore always arrives the same way, through a temporary file, so the
+# timestamp every later call checks is the one that was just written. With a
+# terminal the loop below keeps that timestamp fresh instead.
+sudo_refresh() {
+  [ -n "${SUDO_SECRET:-}" ] || return 1
+  ticket=$(mktemp "${TMPDIR:-/tmp}/.nirux-sudo.XXXXXX") || return 1
+  chmod 600 "$ticket" 2>/dev/null || :
+  printf '%s\n' "$SUDO_SECRET" > "$ticket"
+  sudo -S -p '' -v < "$ticket" >/dev/null 2>&1
+  result=$?
+  rm -f "$ticket"
+  return "$result"
+}
 as_root() {
   # Integration tests exercise the target-apply subprocess against a temporary
   # system root. Production never sets this variable.
@@ -128,9 +178,12 @@ as_root() {
     # A supplied password (a deployment script or a host that keeps sudo set
     # for this program) is tried first. This used to be asked of sudo before
     # piping, because sudo then read the already-entered line as the password.
-    if [ -n "${NIRUX_SUDO_PASSWORD:-}" ]; then SUDO_SECRET=$NIRUX_SUDO_PASSWORD; unset NIRUX_SUDO_PASSWORD; fi
-    if [ -n "$SUDO_SECRET" ] &&
-      printf '%s\n' "$SUDO_SECRET" | sudo -S -p '' -v >/dev/null 2>&1; then
+    if [ -n "${NIRUX_SUDO_PASSWORD:-}" ]; then
+      sudo_secret_keep "$NIRUX_SUDO_PASSWORD"
+      unset NIRUX_SUDO_PASSWORD
+    fi
+    [ -n "$SUDO_SECRET" ] || sudo_secret_file || :
+    if [ -n "$SUDO_SECRET" ] && sudo_refresh; then
       # A deployment script has no terminal: sudo will not keep a timestamp
       # for it, so later calls pass the password again. The keepalive keeps
       # the timestamp fresh where sudo does use one.
@@ -146,7 +199,7 @@ as_root() {
       if printf '%s\n' "$password" | sudo -S -p "" -v; then
         # The staged target installer is a separate process with its own sudo
         # context, so hand the password to that one child only.
-        SUDO_SECRET=$password
+        sudo_secret_keep "$password"
         unset password
       else
         result=$?
@@ -159,7 +212,8 @@ as_root() {
   # means it never reads, so the line stays in the pipe unread. `-p ''`
   # keeps the prompt out of the log.
   if [ "${SUDO_ASK_LATER:-0}" = 1 ] && [ -n "${SUDO_SECRET:-}" ]; then
-    printf '%s\n' "$SUDO_SECRET" | sudo -S -p '' "$@"
+    sudo_refresh
+    sudo -n "$@"
   else
     sudo -n "$@"
   fi
@@ -2144,6 +2198,10 @@ apply_target_release() {
   install_terminal
   prepare_pam
   install_greeters "$DM"
+  # A session with no NIRUX greeter still must not keep a grant from a release
+  # that installed one; the helper writes nothing when no greeter is present.
+  [ -n "${rule_user:-}" ] || rule_user=${SUDO_USER:-$(id -un)}
+  install_login_wallpaper_rule
   install_wallpaper_app
   register_session
   setup_dm_session
@@ -2399,13 +2457,14 @@ apply_login_wallpaper() {
   applied=0
   if [ -f "$ROOT/usr/share/sddm/themes/nirux/Main.qml" ] &&
      owned "$ROOT/usr/share/sddm/themes/nirux/Main.qml"; then
-    as_root install -m 644 "$login_source" "$ROOT/usr/share/sddm/themes/nirux/background.png"
+    install_login_picture "$login_source" "$ROOT/usr/share/sddm/themes/nirux/background.png" || \
+      die 'could not copy the login picture; is the NIRUX login rule installed?' 
     applied=1
   fi
   if [ -f "$ROOT/usr/share/lightdm/lightdm-gtk-greeter.conf.d/50-nirux.conf" ] &&
      owned "$ROOT/usr/share/lightdm/lightdm-gtk-greeter.conf.d/50-nirux.conf"; then
-    as_root install -d -m 755 "$ROOT/usr/share/nirux/greeter"
-    as_root install -m 644 "$login_source" "$ROOT/usr/share/nirux/greeter/login.png"
+    install_login_picture "$login_source" "$ROOT/usr/share/nirux/greeter/login.png" || \
+      die 'could not copy the login picture; is the NIRUX login rule installed?' 
     tmp=$(mktemp)
     sed 's|^background=.*|background=/usr/share/nirux/greeter/login.png|' \
       "$ROOT/usr/share/lightdm/lightdm-gtk-greeter.conf.d/50-nirux.conf" > "$tmp"
@@ -2712,6 +2771,91 @@ wallpapers_remove() {
 sddm_qt_version() {
   if command -v sddm-greeter-qt6 >/dev/null 2>&1; then say 6; else say 5; fi
 }
+# Allow exactly one thing without a password: replacing the greeter's own
+# background picture, which NIRUX owns and this user may write anyway.
+#
+# Earlier releases granted `NOPASSWD: $HOME/.local/bin/nirux ...`. That path is
+# in the user's own installation, so the user could replace the program and have
+# root run it: the argument restriction was no protection at all. The rule now
+# names the fixed system path the gallery writes, so the grant can never reach
+# a user-controlled executable.
+install_login_wallpaper_rule() {
+  legacy_file=$ROOT/etc/sudoers.d/49-nirux-login-wallpaper
+  # The unsafe rule from earlier releases goes first, whatever happens next: it
+  # must not stay merely because writing its replacement failed.
+  if as_root test -f "$legacy_file" && as_root grep -q 'login-wallpaper sync' "$legacy_file" 2>/dev/null; then
+    say 'Withdrawing the previous passwordless login-wallpaper rule'
+    as_root rm -f "$legacy_file"
+  fi
+  # One grant per greeter picture this release installed, and nothing else.
+  # sudo matches a command by its exact arguments, and those name /usr/bin/install
+  # with one staged file and one greeter path. No program from the user's own
+  # prefix can ever match, which is what made the old rule unsafe.
+  sddm_picture=$ROOT/usr/share/sddm/themes/nirux/background.png
+  lightdm_picture=$ROOT/usr/share/nirux/greeter/login.png
+  targets=
+  [ ! -f "$sddm_picture" ] || targets="$targets /usr/share/sddm/themes/nirux/background.png:/usr/share/sddm/themes/nirux"
+  [ ! -f "$lightdm_picture" ] || targets="$targets /usr/share/nirux/greeter/login.png:/usr/share/nirux/greeter"
+  if [ -z "$targets" ] || [ -z "${rule_user:-}" ]; then
+    # No greeter was installed here, or no desktop user could be named: keep no
+    # grant that nothing needs.
+    if as_root test -f "$legacy_file"; then as_root rm -f "$legacy_file"; fi
+    return 0
+  fi
+  {
+    say "# NIRUX owner: $PREFIX"
+    say "# Lets a theme change copy the login screen picture without a password."
+    say "# Each rule names /usr/bin/install, the staged picture and one greeter"
+    say "# file, so nothing else can be run as root through it."
+    for entry in $targets; do
+      picture=${entry%%:*}
+      directory=${entry#*:}
+      say "$rule_user ALL=(root) NOPASSWD: /usr/bin/install -d -m 755 $directory"
+      say "$rule_user ALL=(root) NOPASSWD: /usr/bin/install -m 644 -o root -g root /tmp/nirux-login-background.png $picture"
+    done
+  } > "$WORK/sudoers"
+  if command -v visudo >/dev/null 2>&1; then
+    tmp_check="$WORK/sudoers.check"
+    cat "$WORK/sudoers" > "$tmp_check"
+    visudo -cf "$tmp_check" >/dev/null 2>&1 ||
+      die 'generated sudoers rule is invalid; nothing was installed'
+    rm -f "$tmp_check"
+  fi
+  sudoers_file=$ROOT/etc/sudoers.d/49-nirux-login-wallpaper
+  # write_system compares the file by reading it, and sudoers.d is closed to
+  # this user, so an unchanged rule is compared by root and left alone.
+  if as_root test -f "$sudoers_file" && as_root cmp -s "$WORK/sudoers" "$sudoers_file"; then
+    :
+  else
+    write_system "$sudoers_file" "$WORK/sudoers"
+  fi
+  # sudo ignores a writable file in sudoers.d, and does so silently.
+  # write_system installs 0644, so this one needs its mode set explicitly.
+  if [ "$(as_root stat -c %a "$sudoers_file" 2>/dev/null || :)" != 440 ]; then
+    as_root chmod 0440 "$sudoers_file"
+  fi
+}
+
+# Copy the login picture as root through the named grant. The picture is staged
+# at the fixed path the rule names and removed again; nothing else is passed to
+# root, so the grant cannot become "run this program as root".
+install_login_picture() {
+  source=$1
+  target=$2
+  if [ "$(id -u)" = 0 ]; then
+    install -d -m 755 "$(dirname "$target")" && install -m 644 -o root -g root "$source" "$target"
+    return
+  fi
+  stage=/tmp/nirux-login-background.png
+  ( umask 022; install -m 644 "$source" "$stage" ) || return 1
+  if sudo -n install -m 644 -o root -g root "$stage" "$target" 2>/dev/null; then
+    rm -f "$stage"
+    return 0
+  fi
+  rm -f "$stage"
+  return 1
+}
+
 install_greeters() {
   greeter_dm=${1:-keep}
   # `keep` must still install a themed greeter on the display manager the
@@ -2763,41 +2907,6 @@ install_greeters() {
   { say "// NIRUX owner: $PREFIX"; sed "s/__NIRUX_USER__/$rule_user/g" "$unpack/polkit/49-nirux-power.rules"; } > "$WORK/power.rules"
   write_system "$ROOT/etc/polkit-1/rules.d/49-nirux-power.rules" "$WORK/power.rules"
 
-  # The login screen follows the theme, which needs root to rewrite the
-  # greeter's background. Allow exactly that one command for this user, so a
-  # theme change does not stop at a password prompt. Nothing else is granted:
-  # the rule names one binary and one subcommand, and `sync` itself refuses to
-  # touch anything but the greeter image.
-  if [ -n "$rule_user" ] && [ -x "$BIN/nirux" ]; then
-    {
-      say "# NIRUX owner: $PREFIX"
-      say "# Lets a theme change update the login screen wallpaper without a password."
-      say "# It grants this one command and nothing else."
-      say "$rule_user ALL=(root) NOPASSWD: $BIN/nirux login-wallpaper sync"
-    } > "$WORK/sudoers"
-    if command -v visudo >/dev/null 2>&1; then
-      tmp_check="$WORK/sudoers.check"
-      cat "$WORK/sudoers" > "$tmp_check"
-      visudo -cf "$tmp_check" >/dev/null 2>&1 ||
-        die 'generated sudoers rule is invalid; nothing was installed'
-      rm -f "$tmp_check"
-    fi
-    sudoers_file=$ROOT/etc/sudoers.d/49-nirux-login-wallpaper
-    # write_system compares the file by reading it, and sudoers.d is closed to
-    # this user, so an unchanged rule is skipped once it is the only one left.
-    if as_root test -f "$sudoers_file" && as_root cmp -s "$WORK/sudoers" "$sudoers_file"; then
-      :
-    else
-      write_system "$sudoers_file" "$WORK/sudoers"
-    fi
-    # sudo ignores a file in sudoers.d that is group- or world-writable, and
-    # does so silently. write_system installs 0644, which is correct for every
-    # other file it writes, so this one needs its mode set explicitly.
-    if [ "$(as_root stat -c %a "$sudoers_file" 2>/dev/null || :)" != 440 ]; then
-      as_root chmod 0440 "$sudoers_file"
-    fi
-  fi
-
   case "$greeter_dm" in
     sddm)
       for file in theme.conf arrow.png; do
@@ -2834,6 +2943,9 @@ install_greeters() {
       say 'Installed NIRUX LightDM GTK greeter'
       ;;
   esac
+  # The login screen follows the theme without a password: the grant names the
+  # picture file the greeter above actually installed.
+  install_login_wallpaper_rule
   rm -rf "$unpack"
 }
 
@@ -3496,7 +3608,7 @@ install_or_update() {
       NIRUX_APPLY_DM=$DM NIRUX_APPLY_BROWSER=$BROWSER_EFFECTIVE \
       NIRUX_APPLY_LOCALSEND=$LOCALSEND_EFFECTIVE NIRUX_APPLY_OPENCODE=$OPENCODE_EFFECTIVE \
       NIRUX_APPLY_OPERATION=$operation NIRUX_APPLY_WALLPAPERS="${wallpaper_decision:-}" \
-      NIRUX_SUDO_PASSWORD=${SUDO_SECRET:-} \
+      NIRUX_SUDO_SECRET_FILE=${SUDO_SECRET_FILE:-} \
       sh "$WORK/download/nirux/nirux" _apply 2; then
       die 'target installer apply failed; current installation kept'
     fi
@@ -3514,6 +3626,10 @@ install_or_update() {
   install_terminal
   prepare_pam
   install_greeters "$DM"
+  # A session with no NIRUX greeter still must not keep a grant from a release
+  # that installed one; the helper writes nothing when no greeter is present.
+  [ -n "${rule_user:-}" ] || rule_user=${SUDO_USER:-$(id -un)}
+  install_login_wallpaper_rule
   install_wallpaper_app
   register_session
   setup_dm_session
@@ -3532,14 +3648,26 @@ install_or_update() {
   wallpapers_install_bundle
 }
 main() {
-  # A staged target installer receives the bootstrap's one sudo password here,
-  # as a shell variable. It is never exported: a program NIRUX starts can read
-  # its own environment and a process listing would show an exported secret.
-  if [ -n "${NIRUX_SUDO_PASSWORD:-}" ]; then SUDO_SECRET=$NIRUX_SUDO_PASSWORD; fi
+  # The bootstrap keeps the one sudo password in a private file, never in the
+  # environment: a program NIRUX starts can read its own environment, and a
+  # process listing would show an exported secret. The target installer is
+  # passed only the file's location, and any part of an install that runs in a
+  # subshell reads the same file, so the password is not lost between steps.
+  #
+  # The copy is per process: a subshell must not delete the file its caller is
+  # still using, so only the process that created it removes it.
+  if [ -n "${NIRUX_SUDO_SECRET_FILE:-}" ]; then
+    SUDO_SECRET_FILE=$NIRUX_SUDO_SECRET_FILE
+    SUDO_SECRET_BORROWED=1
+  fi
+  if [ -n "${NIRUX_SUDO_PASSWORD:-}" ]; then sudo_secret_keep "$NIRUX_SUDO_PASSWORD"; fi
   unset NIRUX_SUDO_PASSWORD
+  # A subshell of an install (or a function inside one) inherits the location,
+  # not the password.
+  [ -n "$SUDO_SECRET" ] || sudo_secret_file || :
   if [ -n "$SUDO_SECRET" ] && [ "$(id -u)" != 0 ] &&
      ! sudo -n id -u >/dev/null 2>&1; then
-    if printf '%s\n' "$SUDO_SECRET" | sudo -S -p "" -v >/dev/null 2>&1; then
+    if sudo_refresh; then
       SUDO_ASK_LATER=1
       start_sudo_keepalive
     fi

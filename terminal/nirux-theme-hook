@@ -136,20 +136,40 @@ if command -v pkill >/dev/null 2>&1; then
 fi
 
 # The login screen follows the theme too, so a theme change does not leave the
-# greeter showing the picture from the last update. This needs root, so it runs
-# through sudo only when sudo can answer without a prompt: a hook must never
-# block a theme change on a password. When it cannot, the greeter keeps the
-# previous picture until the next `nirux update`.
-# `sudo -n true` is not the test: the sudoers rule allows one command, not
-# `true`, so that probe fails on a correctly configured machine.
+# greeter showing the picture from the last update.
 #
-# The rule names an absolute path, and sudo matches what it is asked to run.
-# `sudo nirux ...` resolves through PATH and does not match, which is why this
-# used to fall through silently. Pass the absolute path the rule names.
-sync_bin=
-for candidate in "$HOME/.local/bin/nirux" "$(command -v nirux 2>/dev/null)"; do
-  if [ -n "$candidate" ] && [ -x "$candidate" ]; then sync_bin=$candidate; break; fi
-done
-if [ -n "$sync_bin" ]; then
-  sudo -n "$sync_bin" login-wallpaper sync >/dev/null 2>&1 || :
-fi
+# It needs no privilege: the grant NIRUX installs lets this user install one
+# named picture at one greeter path with /usr/bin/install. The picture is staged
+# at a fixed temporary name first, then copied through the grant. Nothing here
+# asks sudo to run a program from this installation.
+# If the grant is absent the copy fails quietly; the greeter keeps the previous
+# picture, which is a cosmetic delay, never a blocked theme change.
+login_sync() {
+  base=${XDG_PICTURES_DIR:-$(xdg-user-dir PICTURES 2>/dev/null || :) }
+  case "$base" in ''|"$HOME") base=$HOME/Pictures ;; esac
+  dir=$base/Wallpapers/NIRU
+  name=${THEME#niru-}
+  picture=
+  for candidate in "$dir/nirux-wallpaper-$name-4k.png" "$dir/nirux-wallpaper-$name-8k.png" \
+                   "$dir/nirux-wallpaper-$name.png" "$dir/nirux-wallpaper-noir-4k.png"; do
+    if [ -f "$candidate" ]; then picture=$candidate; break; fi
+  done
+  [ -n "$picture" ] || return 0
+  # A chosen picture is never overridden.
+  [ -f "$CONFIG_HOME/nirux/login-wallpaper" ] && return 0
+  command -v sudo >/dev/null 2>&1 || return 0
+  case "$THEME" in *[!A-Za-z0-9_-]*) return 0 ;; esac
+  stage=/tmp/nirux-login-background.png
+  ( umask 022; install -m 644 "$picture" "$stage" ) || return 0
+  if ! sudo -n /usr/bin/install -d -m 755 /usr/share/sddm/themes/nirux 2>/dev/null; then
+    rm -f "$stage"
+    return 0
+  fi
+  sudo -n /usr/bin/install -d -m 755 /usr/share/nirux/greeter 2>/dev/null || :
+  sudo -n /usr/bin/install -m 644 -o root -g root "$stage" \
+    /usr/share/sddm/themes/nirux/background.png 2>/dev/null || :
+  sudo -n /usr/bin/install -m 644 -o root -g root "$stage" \
+    /usr/share/nirux/greeter/login.png 2>/dev/null || :
+  rm -f "$stage"
+}
+login_sync

@@ -4,7 +4,21 @@
 set -eu
 SOURCE=$(CDPATH='' cd -- "$(dirname "$0")/.." && pwd)
 TEST=$(mktemp -d)
-trap 'rm -rf "$TEST"' EXIT
+# The installed system files belong to root, so removing the test directory
+# needs the same privilege the test already has for writing them.
+cleanup_test() {
+  # The test writes a few system files as root (a PAM service, a greeter set),
+  # so the tree can only be emptied by root. The session keeps it for a moment
+  # after the checks, so this runs when the script really exits.
+  sudo -n rm -rf "$TEST" 2>/dev/null || rm -rf "$TEST"
+}
+trap cleanup_test EXIT HUP INT TERM
+# The work goes into a temporary root, but the target installer still runs as
+# the user and needs sudo for the steps that are root's by nature. A test has
+# no terminal to answer a password prompt with, and must not inherit whatever
+# root the test runner has by accident. When a password is supplied, the child
+# gets it through the variable the installer already supports; with cached sudo
+# (a CI container running as root) nothing is asked at all.
 export HOME=$TEST/home NIRUX_PREFIX=$TEST/prefix NIRUX_SYSTEM_ROOT=$TEST/system
 export XDG_CONFIG_HOME=$HOME/.config XDG_STATE_HOME=$HOME/.local/state NIRUX_LIBRARY=1
 mkdir -p "$HOME" "$NIRUX_SYSTEM_ROOT/etc/pam.d" "$TEST/release"

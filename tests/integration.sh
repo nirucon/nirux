@@ -1034,11 +1034,26 @@ grep -qx 'background = "101010"' "$appearance_test/custom.toml" || fail 'custom 
   # sudoers.d is closed to the user: an unchanged rule is compared by root,
   # so a second install does not print a permission error.
   sudoers=$ROOT/etc/sudoers.d/49-nirux-login-wallpaper
-  if [ -f "$sudoers" ]; then
-    chmod 0440 "$sudoers"
-    grep -qx '.*login-wallpaper sync' "$sudoers" ||
-      fail 'SDDM login wallpaper rule missing'
+  [ -f "$sudoers" ] || fail 'login wallpaper rule missing'
+  chmod 0440 "$sudoers"
+  # The rule may only name a program root can trust. Earlier releases granted
+  # `NOPASSWD: <prefix>/nirux ...`, and that prefix belongs to the user, so the
+  # user could replace the program and have root run it. The grant must name
+  # /usr/bin/install with exact arguments instead.
+  if grep -q 'login-wallpaper sync' "$sudoers"; then
+    fail 'the unsafe login-wallpaper grant from an earlier release is still installed'
   fi
+  grep -v '^#' "$sudoers" | grep -q 'login-wallpaper' &&
+    fail 'rule mentions the removed subcommand'
+  grep -v '^#' "$sudoers" | grep -v '^[[:space:]]*$' |
+    grep -qv "/usr/bin/install" &&
+    fail 'login wallpaper rule names something other than /usr/bin/install'
+  grep -q "/usr/bin/install -m 644 -o root -g root /tmp/nirux-login-background.png /usr/share/sddm/themes/nirux/background.png" "$sudoers" ||
+    fail 'login wallpaper rule does not name the SDDM picture exactly'
+  # Nothing in the rule may point into the user's own installation.
+  [ "$(grep -v '^#' "$sudoers" | grep -c "$BIN")" = 0 ] ||
+    fail 'login wallpaper rule names the user installation'
+  [ "$(stat -c %a "$sudoers")" = 440 ] || fail 'login wallpaper rule must be mode 0440'
   grep -qx 'Current=nirux' "$ROOT/etc/sddm.conf.d/50-nirux.conf" || fail 'SDDM theme was not selected'
   grep -q 'subject.isInGroup("wheel")' "$ROOT/etc/polkit-1/rules.d/49-nirux-power.rules" || fail 'missing power polkit rule'
   grep -Fq "subject.user == \"$(id -un)\"" "$ROOT/etc/polkit-1/rules.d/49-nirux-power.rules" || fail 'power rule does not trust the installing account'
