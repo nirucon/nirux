@@ -2,7 +2,7 @@
 # NIRUX: install a complete X11 desktop, or maintain an existing installation.
 set -eu
 
-VERSION=0.12.20
+VERSION=0.12.21
 PREFIX=${NIRUX_PREFIX:-$HOME/.local}
 BIN=$PREFIX/bin
 STATE=$PREFIX/share/nirux
@@ -60,6 +60,10 @@ usage() {
   say "Updates check and install missing runtime packages from the downloaded release unless --no-packages is given."
 }
 cleanup() {
+  if [ -n "${SUDO_KEEPALIVE_PID:-}" ]; then
+    kill "$SUDO_KEEPALIVE_PID" 2>/dev/null || :
+    SUDO_KEEPALIVE_PID=
+  fi
   restore_policy
   [ -z "$CONFIG_TMP" ] || rm -f "$CONFIG_TMP"
   [ -z "$CONFIG_CANDIDATE" ] || rm -f "$CONFIG_CANDIDATE"
@@ -90,6 +94,15 @@ platform() {
   [ "$(uname -m)" = x86_64 ] || die "release binaries currently support x86_64 only"
   getconf GNU_LIBC_VERSION >/dev/null 2>&1 || die "release binaries require glibc; Void musl is not supported yet"
 }
+# Refresh sudo's timestamp until cleanup. The loop is a child of this shell and
+# is killed by cleanup, so it never outlives the command.
+start_sudo_keepalive() {
+  [ -z "${SUDO_KEEPALIVE_PID:-}" ] || return 0
+  (
+    while sleep 45; do sudo -n -v >/dev/null 2>&1 || exit 0; done
+  ) </dev/null >/dev/null 2>&1 &
+  SUDO_KEEPALIVE_PID=$!
+}
 as_root() {
   # Integration tests exercise the target-apply subprocess against a temporary
   # system root. Production never sets this variable.
@@ -102,6 +115,10 @@ as_root() {
     # piping, because sudo then read the already-entered line as the password.
     if [ -n "${NIRUX_SUDO_PASSWORD:-}" ] &&
       printf '%s\n' "$NIRUX_SUDO_PASSWORD" | sudo -S -p '' -v >/dev/null 2>&1; then
+      # A long download or package install can outlive sudo's default
+      # timestamp. Keeping it fresh in the background costs one tiny sleep
+      # loop and removes a failure that depends on download speed.
+      start_sudo_keepalive
       :
     elif [ -t 0 ]; then
       NIRUX_SUDO_PASSWORD=
@@ -3350,7 +3367,9 @@ main() {
   # A staged target installer receives the bootstrap's one sudo password here.
   if [ -n "${NIRUX_SUDO_PASSWORD:-}" ] && [ "$(id -u)" != 0 ] &&
      ! sudo -n id -u >/dev/null 2>&1; then
-    printf '%s\n' "$NIRUX_SUDO_PASSWORD" | sudo -S -p "" -v >/dev/null 2>&1 || :
+    if printf '%s\n' "$NIRUX_SUDO_PASSWORD" | sudo -S -p "" -v >/dev/null 2>&1; then
+      start_sudo_keepalive
+    fi
   fi
   unset NIRUX_SUDO_PASSWORD
   # An inherited password is not wanted by anything this process starts.
