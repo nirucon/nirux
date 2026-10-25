@@ -1031,6 +1031,14 @@ grep -qx 'background = "101010"' "$appearance_test/custom.toml" || fail 'custom 
   # The login screen shows the session NIRUX preselects, not an older one.
   grep -q 'var preferred = "NIRUWM"' "$ROOT/usr/share/sddm/themes/nirux/Main.qml" ||
     fail 'SDDM theme does not preselect NIRUWM'
+  # sudoers.d is closed to the user: an unchanged rule is compared by root,
+  # so a second install does not print a permission error.
+  sudoers=$ROOT/etc/sudoers.d/49-nirux-login-wallpaper
+  if [ -f "$sudoers" ]; then
+    chmod 0440 "$sudoers"
+    grep -qx '.*login-wallpaper sync' "$sudoers" ||
+      fail 'SDDM login wallpaper rule missing'
+  fi
   grep -qx 'Current=nirux' "$ROOT/etc/sddm.conf.d/50-nirux.conf" || fail 'SDDM theme was not selected'
   grep -q 'subject.isInGroup("wheel")' "$ROOT/etc/polkit-1/rules.d/49-nirux-power.rules" || fail 'missing power polkit rule'
   grep -Fq "subject.user == \"$(id -un)\"" "$ROOT/etc/polkit-1/rules.d/49-nirux-power.rules" || fail 'power rule does not trust the installing account'

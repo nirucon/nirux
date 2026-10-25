@@ -2,7 +2,7 @@
 # NIRUX: install a complete X11 desktop, or maintain an existing installation.
 set -eu
 
-VERSION=0.12.30
+VERSION=0.12.31
 PREFIX=${NIRUX_PREFIX:-$HOME/.local}
 BIN=$PREFIX/bin
 STATE=$PREFIX/share/nirux
@@ -2782,11 +2782,20 @@ install_greeters() {
         die 'generated sudoers rule is invalid; nothing was installed'
       rm -f "$tmp_check"
     fi
-    write_system "$ROOT/etc/sudoers.d/49-nirux-login-wallpaper" "$WORK/sudoers"
+    sudoers_file=$ROOT/etc/sudoers.d/49-nirux-login-wallpaper
+    # write_system compares the file by reading it, and sudoers.d is closed to
+    # this user, so an unchanged rule is skipped once it is the only one left.
+    if as_root test -f "$sudoers_file" && as_root cmp -s "$WORK/sudoers" "$sudoers_file"; then
+      :
+    else
+      write_system "$sudoers_file" "$WORK/sudoers"
+    fi
     # sudo ignores a file in sudoers.d that is group- or world-writable, and
     # does so silently. write_system installs 0644, which is correct for every
     # other file it writes, so this one needs its mode set explicitly.
-    as_root chmod 0440 "$ROOT/etc/sudoers.d/49-nirux-login-wallpaper"
+    if [ "$(as_root stat -c %a "$sudoers_file" 2>/dev/null || :)" != 440 ]; then
+      as_root chmod 0440 "$sudoers_file"
+    fi
   fi
 
   case "$greeter_dm" in
