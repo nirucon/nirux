@@ -143,7 +143,23 @@ Rectangle {
                 width: parent.width
                 height: 32
                 model: sessionModel
-                index: sessionModel.lastIndex
+                // NIRUX preselects NIRUWM in SDDM's own state; show that
+                // choice rather than SDDM's older lastIndex, which points at
+                // whichever session the user last logged into.
+                index: {
+                    var preferred = "NIRUWM"
+                    if (sessionModel.lastIndex >= 0
+                            && sessionModel.lastIndex < sessionModel.rowCount
+                            && sessionModel.data(sessionModel.index(sessionModel.lastIndex, 0)) === preferred) {
+                        return sessionModel.lastIndex
+                    }
+                    for (var i = 0; i < sessionModel.rowCount; ++i) {
+                        if (sessionModel.data(sessionModel.index(i, 0)) === preferred) {
+                            return i
+                        }
+                    }
+                    return sessionModel.lastIndex
+                }
                 color: root.surface
                 borderColor: root.border
                 focusColor: root.accent

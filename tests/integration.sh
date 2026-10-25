@@ -999,6 +999,9 @@ grep -qx 'background = "101010"' "$appearance_test/custom.toml" || fail 'custom 
   grep -qx 'QtVersion=6' "$ROOT/usr/share/sddm/themes/nirux/metadata.desktop" || fail 'Qt6 SDDM metadata missing'
   [ -f "$ROOT/usr/share/sddm/themes/nirux/Main.qml" ] || fail 'missing SDDM QML theme'
   grep -q '^// NIRUX owner: ' "$ROOT/usr/share/sddm/themes/nirux/Main.qml" || fail 'SDDM theme is not owned'
+  # The login screen shows the session NIRUX preselects, not an older one.
+  grep -q 'var preferred = "NIRUWM"' "$ROOT/usr/share/sddm/themes/nirux/Main.qml" ||
+    fail 'SDDM theme does not preselect NIRUWM'
   grep -qx 'Current=nirux' "$ROOT/etc/sddm.conf.d/50-nirux.conf" || fail 'SDDM theme was not selected'
   grep -q 'subject.isInGroup("wheel")' "$ROOT/etc/polkit-1/rules.d/49-nirux-power.rules" || fail 'missing power polkit rule'
   grep -Fq "subject.user == \"$(id -un)\"" "$ROOT/etc/polkit-1/rules.d/49-nirux-power.rules" || fail 'power rule does not trust the installing account'

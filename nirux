@@ -2,7 +2,7 @@
 # NIRUX: install a complete X11 desktop, or maintain an existing installation.
 set -eu
 
-VERSION=0.12.24
+VERSION=0.12.25
 PREFIX=${NIRUX_PREFIX:-$HOME/.local}
 BIN=$PREFIX/bin
 STATE=$PREFIX/share/nirux
@@ -2823,19 +2823,34 @@ setup_dm_session() {
 }
 
 # SDDM keeps the last chosen session in its own state file, so a machine that
-# used another desktop keeps preselecting it after NIRUX is installed. The
-# simple, predictable rule: on install NIRUX forgets that remembered session
-# and lets SDDM fall back to its own default, which lists every installed
-# session with NIRUWM first. Autologin, the remembered user, the theme and
-# every other setting are left exactly as they are.
+# used another desktop keeps preselecting it after NIRUX is installed, and a
+# machine that has used NIRUX can be left on an old NIRUPI entry. On install
+# NIRUX therefore names the NIRUWM session as the remembered one: the login
+# screen preselects it, every installed session stays in its list, and a
+# session chosen later at the login screen is remembered as usual.
 #
-# The file lives in /var/lib/sddm, which is not world readable. When it cannot
-# be read the choice is simply not changed; that is never an error, and the
+# Autologin, the remembered user, the theme and every other setting are left
+# exactly as they are. The file lives in /var/lib/sddm, which is not world
+# readable; when it cannot be read the choice is simply not changed, and the
 # session list offered by SDDM is unaffected either way.
+sddm_session_entry() {
+  # SDDM finds a session by its path under /usr/share (the root prefix is a
+  # test-only redirect), and a plain file name works too.
+  if [ -f "$ROOT/usr/share/xsessions/niruwm.desktop" ]; then
+    say /usr/share/xsessions/niruwm.desktop
+  else
+    say niruwm.desktop
+  fi
+}
 forget_sddm_session() {
   sddm_state=$ROOT/var/lib/sddm/state.conf
   as_root test -f "$sddm_state" || return 0
-  if ! sddm_text=$(as_root cat "$sddm_state" 2>/dev/null) || [ -z "$sddm_text" ]; then
+  sddm_wanted=$(sddm_session_entry)
+  sddm_text=
+  if as_root test -s "$sddm_state"; then
+    sddm_text=$(as_root cat "$sddm_state" 2>/dev/null) || sddm_text=read-failed
+  fi
+  if [ "$sddm_text" = read-failed ]; then
     say 'SDDM state is not readable; its session choice was left unchanged'
     return 0
   fi
@@ -2848,8 +2863,10 @@ forget_sddm_session() {
   ' "$WORK/sddm-state.original")
   # SDDM writes a trailing space after the path.
   while [ "${sddm_remembered% }" != "$sddm_remembered" ]; do sddm_remembered=${sddm_remembered% }; done
-  if [ -z "$sddm_remembered" ]; then
-    say 'SDDM already offers its session list'
+  # An unreadable file was skipped above; an empty one carries no text, so it
+  # still gets the [Last] section below.
+  if [ "$sddm_text" != read-failed ] && [ "${sddm_remembered##*/}" = "${sddm_wanted##*/}" ]; then
+    say 'SDDM already preselects NIRUWM'
     return 0
   fi
   # Autologin is configured in SDDM's own main configuration, not in the
@@ -2867,20 +2884,35 @@ forget_sddm_session() {
     say 'SDDM autologin is configured; its remembered session was left unchanged'
     return 0
   fi
-  # The file is in /var/lib/sddm, which is not readable by the user; the
-  # install is only ever meant to clear the session, so the mode is set to the
-  # one SDDM itself uses rather than copied from an unreadable file.
+  # The remembered session is replaced in place under [Last]. A file with no
+  # [Last] section gets one first, and everything else is kept byte for byte.
+  awk -v wanted="$sddm_wanted" '
+    /^[[:space:]]*\[Last\][[:space:]]*$/ { inlast = 1; seen = 1; print; if (!placed) { print "Session=" wanted; placed = 1 }; next }
+    /^[[:space:]]*\[/ { inlast = 0; print; next }
+    inlast && /^[[:space:]]*Session[[:space:]]*=/ { next }
+    { print }
+    END {
+      if (!seen) { print ""; print "[Last]"; print "Session=" wanted }
+      else if (!placed) { print "Session=" wanted }
+    }
+  ' "$WORK/sddm-state.original" > "$WORK/sddm-state" || return 0
+  # What was written is read back before it replaces the real file: a mistake
+  # here would stop the login screen from starting.
+  [ "$(awk -F= '
+    /^[[:space:]]*\[/ { inlast = ($0 ~ /^[[:space:]]*\[Last\][[:space:]]*$/) }
+    inlast && /^[[:space:]]*Session[[:space:]]*=/ { gsub(/[[:space:]]+$/, "", $2); print $2 }
+  ' "$WORK/sddm-state" | head -n 1)" = "$sddm_wanted" ] || \
+    die 'could not prepare the SDDM session choice; nothing was changed'
   sddm_mode=644
   sddm_owner=$(as_root stat -c %u:%g "$sddm_state" 2>/dev/null || :)
-  awk '
-    /^[[:space:]]*\[/ { last = ($0 ~ /^[[:space:]]*\[Last\][[:space:]]*$/) }
-    last && /^[[:space:]]*Session[[:space:]]*=/ { next }
-    { print }
-  ' "$WORK/sddm-state.original" > "$WORK/sddm-state" || return 0
   as_root cp -p "$sddm_state" "$sddm_state.nirux-backup" 2>/dev/null || :
   as_root install -m "$sddm_mode" "$WORK/sddm-state" "$sddm_state" || return 0
   [ -z "$sddm_owner" ] || as_root chown "$sddm_owner" "$sddm_state" 2>/dev/null || :
-  say "Cleared remembered SDDM session ${sddm_remembered##*/}; SDDM now offers every installed session, NIRUWM first"
+  if [ -n "$sddm_remembered" ]; then
+    say "SDDM now preselects NIRUWM (was ${sddm_remembered##*/}); every session stays in its list"
+  else
+    say 'SDDM now preselects NIRUWM; every session stays in its list'
+  fi
 }
 
 setup_startx() {

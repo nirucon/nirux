@@ -54,11 +54,15 @@ for OS in debian arch void; do
   DM=sddm
   mkdir -p "$ROOT/var/lib/sddm" "$ROOT/usr/share/xsessions"
   chmod 750 "$ROOT/var/lib/sddm"
-  # A fresh SDDM starts with an empty state and shows its session list.
+  # A fresh SDDM starts with an empty state; NIRUX names NIRUWM as its
+  # remembered session so the login screen preselects it.
   : > "$ROOT/var/lib/sddm/state.conf"
+  printf '[Desktop Entry]\nName=NIRUWM\n' > "$ROOT/usr/share/xsessions/niruwm.desktop"
   setup_dm_session
   state=$ROOT/var/lib/sddm/state.conf
-  [ "$(wc -c < "$state")" = 0 ] || fail "$OS SDDM empty state changed"
+  grep -qx 'Session=' "$state" && fail "$OS SDDM still empty" || :
+  grep -qx "Session=/usr/share/xsessions/niruwm.desktop" "$state" ||
+    fail "$OS SDDM does not preselect NIRUWM"
   [ "$(stat -c %a "$ROOT/var/lib/sddm")" = 750 ] || fail 'SDDM home permissions changed'
   first_sum=$(sha256sum "$state")
   setup_dm_session
@@ -67,16 +71,19 @@ for OS in debian arch void; do
   printf '[Other]\nSetting=keep\n' > "$state"
   setup_dm_session
   grep -qx 'Setting=keep' "$state" || fail 'unrelated setting overwritten'
+  grep -qx "Session=/usr/share/xsessions/niruwm.desktop" "$state" ||
+    fail 'SDDM preselect was not added to a file without [Last]'
 
-
-  # A remembered session is forgotten on install so SDDM offers its list.
+  # An old remembered session is replaced by NIRUWM, and the user is kept.
   # SDDM writes a trailing space after the path on some machines.
   printf '[Last]\nUser=alice\nSession=/usr/share/xsessions/nirupi-dwm.desktop \n' > "$state"
   setup_dm_session
-  ! grep -q '^Session=' "$state" || fail 'remembered session was not cleared'
-  grep -qx 'User=alice' "$state" || fail 'SDDM user lost while clearing the session'
+  [ "$(grep -c '^Session=' "$state")" = 1 ] || fail 'SDDM session line duplicated'
+  grep -qx "Session=/usr/share/xsessions/niruwm.desktop" "$state" ||
+    fail 'remembered session was not replaced'
+  grep -qx 'User=alice' "$state" || fail 'SDDM user lost while setting the session'
 
-  # Autologin keeps its remembered session: clearing it would not change which
+  # Autologin keeps its remembered session: changing it would not change which
   # session starts, and the user's setup stays exactly as it was. SDDM keeps
   # the autologin choice in its own main configuration, not in state.conf.
   printf '[Last]\nUser=alice\nSession=/usr/share/xsessions/nirupi-dwm.desktop\n' > "$state"
@@ -87,12 +94,14 @@ for OS in debian arch void; do
   [ "$(sha256sum "$state")" = "$autologin_sum" ] || fail 'autologin state was changed'
   rm -f "$ROOT/etc/sddm.conf.d/autologin.conf"
 
-  # Every other remembered session is cleared too: the login screen then
-  # offers its list with NIRUWM first. Nothing else in the file changes.
+  # Every other remembered session is replaced too, and the rest of the file,
+  # including later sections, is kept.
   printf '[Last]\nUser=alice\nSession=/usr/share/xsessions/xfce.desktop\n[Other]\nKeep=1\n' > "$state"
   setup_dm_session
-  ! grep -q '^Session=' "$state" || fail 'remembered session was not cleared'
-  grep -qx 'Keep=1' "$state" || fail 'unrelated setting lost while clearing the session'
+  grep -qx "Session=/usr/share/xsessions/niruwm.desktop" "$state" ||
+    fail 'remembered session was not replaced'
+  grep -qx 'Keep=1' "$state" || fail 'unrelated setting lost while setting the session'
+  grep -q 'xfce.desktop' "$state" && fail 'old session name survived' || :
   remembered_sum=$(sha256sum "$state")
 
   # An existing manager kept through auto, startx, and updates remain untouched.

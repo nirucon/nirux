@@ -84,10 +84,11 @@ does and have backups of anything you care about.
   history, actions and live theme changes.
 - **Session:** startx, SDDM or LightDM, PAM lock, idle screen, Polkit power
   actions and a managed session bus. On a fresh SDDM, NIRUWM is the first
-  session in the list; an existing SDDM keeps its configuration, and a
-  remembered session from another desktop is cleared on install, so the login
-  screen offers every installed session with NIRUWM first. Autologin is never
-  changed.
+  session in the list; an existing SDDM keeps its configuration, its theme and
+  its remembered user, and install names NIRUWM as the remembered session so
+  the login screen preselects it. Every installed session (for example an older
+  NIRUPI) stays in the list, and a session chosen at the login screen is
+  remembered as usual. Autologin is never changed.
 - **Hardware controls:** PipeWire/WirePlumber audio and microphone, BlueZ
   Bluetooth, RandR display profiles, power-profiles-daemon, backlight and
   night light.
@@ -142,9 +143,10 @@ cd nirux
 ```
 
 An existing display manager is preserved; otherwise choose startx (default),
-SDDM or LightDM. A fresh install offers the managed Helium browser and installs
-kitty/fish integration and terminal colours. User configuration is not
-overwritten.
+SDDM or LightDM. With SDDM the login screen preselects NIRUWM while every
+installed session stays available. A fresh install offers the managed Helium
+browser and installs kitty/fish integration and terminal colours. User
+configuration is not overwritten.
 
 Use `./nirux install --no-packages` only when all runtime dependencies already
 exist.
