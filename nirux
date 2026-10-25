@@ -2,7 +2,7 @@
 # NIRUX: install a complete X11 desktop, or maintain an existing installation.
 set -eu
 
-VERSION=0.12.13
+VERSION=0.12.14
 PREFIX=${NIRUX_PREFIX:-$HOME/.local}
 BIN=$PREFIX/bin
 STATE=$PREFIX/share/nirux
@@ -2696,15 +2696,31 @@ setup_dm_session() {
       else
         : > "$WORK/sddm-state.original"
       fi
-      if awk '
+      # A remembered session this suite does not own (NIRUPI, dwm) is replaced
+      # below; any other remembered choice, or autologin, is kept.
+      sddm_remembered=$(awk '
         /^[[:space:]]*\[/ { last = ($0 ~ /^[[:space:]]*\[Last\][[:space:]]*$/) }
         last && /^[[:space:]]*Session[[:space:]]*=/ {
-          sub(/^[^=]*=[[:space:]]*/, ""); sub(/[[:space:]]*$/, "")
-          if (length) found = 1
+          sub(/^[^=]*=[[:space:]]*/, ""); sub(/[[:space:]]*$/, ""); print; exit
         }
-        END { exit !found }
-      ' "$WORK/sddm-state.original"; then
-        say 'Keeping remembered SDDM session'
+      ' "$WORK/sddm-state.original")
+      case "$sddm_remembered" in
+        /usr/share/xsessions/niruwm.desktop|"")
+          if [ -n "$sddm_remembered" ]; then
+            say 'Keeping remembered SDDM session'
+            return 0
+          fi
+          ;;
+        *nirupi*|*dwm*)
+          say "Replacing remembered SDDM session ${sddm_remembered##*/} with NIRUWM"
+          ;;
+        *)
+          say 'Keeping remembered SDDM session'
+          return 0
+          ;;
+      esac
+      if as_root grep -q '^[[:space:]]*Autologin[[:space:]]*=' "$WORK/sddm-state.original" 2>/dev/null; then
+        say 'Keeping SDDM autologin'
         return 0
       fi
       awk '

@@ -84,6 +84,13 @@ EOF
   [ "$(stat -c %a "$state")" = 600 ] || fail 'SDDM state mode changed'
   grep -qx 'Session=/usr/share/xsessions/niruwm.desktop' "$state" || fail 'empty session was not seeded'
 
+  # A remembered NIRUPI session is replaced: this suite does not provide it,
+  # and leaving it preselected sends the login screen to another desktop.
+  printf '[Last]\nUser=alice\nSession=/usr/share/xsessions/nirupi-dwm.desktop \n' > "$state"
+  setup_dm_session
+  grep -qx 'Session=/usr/share/xsessions/niruwm.desktop' "$state" || fail 'legacy NIRUPI session was not replaced'
+  grep -qx 'User=alice' "$state" || fail 'SDDM user lost while replacing a legacy session'
+
   # A genuine remembered session is never replaced, including the first entry.
   printf '[Last]\nUser=alice\nSession=/usr/share/xsessions/xfce.desktop\n' > "$state"
   remembered_sum=$(sha256sum "$state")
