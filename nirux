@@ -2384,6 +2384,16 @@ legacy_owned() {
     *) return 1 ;;
   esac
 }
+# Are two files identical? `cmp` is not installed by default on every
+# distribution NIRUX supports (Arch's coreutils leaves it out), so the check
+# falls back to comparing the bytes with the shell tools that are always there.
+same_file() {
+  if command -v cmp >/dev/null 2>&1; then
+    cmp -s "$1" "$2"
+  else
+    [ "$(sha256sum "$1" | cut -d ' ' -f1)" = "$(sha256sum "$2" | cut -d ' ' -f1)" ]
+  fi
+}
 write_system() {
   target=$1; source=$2
   if [ -f "$target" ]; then
@@ -2824,7 +2834,8 @@ install_login_wallpaper_rule() {
   sudoers_file=$ROOT/etc/sudoers.d/49-nirux-login-wallpaper
   # write_system compares the file by reading it, and sudoers.d is closed to
   # this user, so an unchanged rule is compared by root and left alone.
-  if as_root test -f "$sudoers_file" && as_root cmp -s "$WORK/sudoers" "$sudoers_file"; then
+  # Compare by reading, since sudoers.d is closed to this user.
+  if [ -f "$sudoers_file" ] && [ "$(as_root cat "$sudoers_file" 2>/dev/null)" = "$(cat "$WORK/sudoers")" ]; then
     :
   else
     write_system "$sudoers_file" "$WORK/sudoers"
@@ -3491,7 +3502,7 @@ repair_wallpaper() {
     in_wallpaper && /^theme_dir[[:space:]]*=/ { printf "theme_dir = \"%s\"\n", theme; next }
     { print }
   ' "$target" > "$tmp" || { rm -f "$tmp"; die 'could not update wallpaper paths'; }
-  if ! cmp -s "$target" "$tmp"; then
+  if ! same_file "$target" "$tmp"; then
     mode=$(stat -c %a "$target") || mode=644
     chmod "$mode" "$tmp" && mv -f "$tmp" "$target" || { rm -f "$tmp"; die 'could not activate wallpaper paths'; }
     say "Updated wallpaper paths for the XDG Pictures directory."

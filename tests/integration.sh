@@ -485,7 +485,10 @@ for TEST_OS in arch debian void; do
   [ -f "$icon" ] || fail 'wallpaper app icon was not installed'
   # The icon must stay a valid PNG: no comment may be put in front of it.
   [ "$(head -c 8 "$icon" | od -An -tx1 | tr -d ' \n')" = 89504e470d0a1a0a ] || fail 'installed wallpaper icon is not a PNG'
-  cmp -s "$icon" "$FIXTURE/niruwallpaper/$wallpaper_app_version/niruwallpaper.png" || fail 'installed icon differs from the released icon'
+  # `diff` is in the base image of every distribution the CI uses; `cmp` is
+  # not (Arch's coreutils package does not carry it).
+  diff -q "$icon" "$FIXTURE/niruwallpaper/$wallpaper_app_version/niruwallpaper.png" >/dev/null ||
+    fail 'installed icon differs from the released icon'
   find "$ROOT" -name '*.sha256' -path '*nirux-owned*' | grep -q niruwallpaper.png || fail 'icon ownership was not recorded beside the file'
   first=$(readlink "$STATE/current")
   operation install_or_update update --no-packages --release 99.0.0
@@ -883,7 +886,7 @@ layout apply Desk >/dev/null
 layout auto >/dev/null
 printf '%s\n' 'display save Desk' 'display rotate DisplayPort-5 inverted' \
   'display apply Desk' 'display auto' > "$layout_test/expected"
-if ! cmp -s "$layout_test/log" "$layout_test/expected"; then
+if ! diff -q "$layout_test/log" "$layout_test/expected" >/dev/null; then
   cat "$layout_test/log" >&2
   fail 'nirux layout did not pass the call through'
 fi

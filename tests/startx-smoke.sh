@@ -177,7 +177,13 @@ if [ -x "$BIN/niructl" ]; then
     "$BIN/niructl" theme niru-satie >/dev/null 2>&1 || :
     sleep 1
     # The manager says so on its own stderr, which the session writes to the
-    # session log.
+    # session log. The message appears on the way to the colour, once per
+    # screen, so wait for it rather than sampling a single instant.
+    i=0
+    while [ "$i" -lt 100 ]; do
+      grep -q 'theme background colour' "$HOME/.local/state/niruwm/session.log" 2>/dev/null && break
+      i=$((i + 1)); sleep 0.1
+    done
     grep -q 'theme background colour' "$HOME/.local/state/niruwm/session.log" 2>/dev/null || {
       printf 'a theme without a wallpaper did not fall back to its colour\n' >&2
       [ ! -f "$HOME/.local/state/niruwm/session.log" ] ||
