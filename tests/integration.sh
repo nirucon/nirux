@@ -262,7 +262,9 @@ resolved=$(_debian_t64_name libgtk-3-0)
   fail 'the rename helper no longer names the t64 package'
 [ -z "$(_debian_t64_name bluez)" ] || fail 'the rename helper renamed an unchanged package' 
 
+# shellcheck disable=SC2034 # read by resolved_missing_packages
 unset NIRUX_PACKAGE_MAP
+# shellcheck disable=SC2034 # read by distribution_package_present
 NIRUX_PACKAGE_QUERY=
 # The real list again, read from the installer source.
 eval "$(sed -n '/^packages_for() {/,/^}/p' "$SOURCE/nirux")"

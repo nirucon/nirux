@@ -2,7 +2,7 @@
 # NIRUX: install a complete X11 desktop, or maintain an existing installation.
 set -eu
 
-VERSION=0.12.28
+VERSION=0.12.29
 PREFIX=${NIRUX_PREFIX:-$HOME/.local}
 BIN=$PREFIX/bin
 STATE=$PREFIX/share/nirux
@@ -433,8 +433,10 @@ provision_packages() {
       ;;
     missing)
       # Renames (Debian trixie's *t64 libraries) come from this machine's own
-      # package database; the staged target uses them for every name it asks.
-      NIRUX_PACKAGE_MAP=$(required_package_map)
+      # package database. An explicit value from the caller is kept.
+      if [ -z "${NIRUX_PACKAGE_MAP:-}" ]; then
+        NIRUX_PACKAGE_MAP=$(required_package_map)
+      fi
       missing=$(resolved_missing_packages)
       if [ -z "$missing" ]; then say 'OS runtime packages are present'; return; fi
       if [ "${NIRUX_PACKAGES_DRY_RUN:-0}" = 1 ]; then say "would install missing: $missing"; return; fi
