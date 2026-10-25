@@ -115,7 +115,7 @@ does and have backups of anything you care about.
 | [NIRULAUNCHER](https://github.com/nirucon/nirulauncher) | Keyboard-first application and action launcher |
 | [NIRUNOTIFY](https://github.com/nirucon/nirunotify) | Native notifications and hardware OSD |
 | [NIRUSHOT](https://github.com/nirucon/nirushot) | Screenshot capture, review and annotation |
-| [NIRUWALLPAPER](https://github.com/nirucon/niruwallpaper) | Wallpaper settings with previews, opened from the launcher |
+| [NIRUWALLPAPER](https://github.com/nirucon/niruwallpaper) | Wallpaper settings with previews and a per-screen choice, opened from the launcher |
 | [NIRUFETCH](https://github.com/nirucon/nirufetch) | NIRU-themed terminal system fetch |
 | [NIRUWEBAPP](https://github.com/nirucon/niruwebapp) | Browser-backed webapp manager |
 
@@ -189,6 +189,38 @@ without reinstalling anything.
 A theme without its image paints its own background colour, taken from the
 theme file, so the desktop still matches the theme instead of showing the
 previous theme's picture. `remove` never deletes a file you modified.
+
+### More than one screen
+
+NIRUWM sets every screen separately. By default all screens show the same
+picture, scaled and cropped for each screen's own size and position; one
+picture is not stretched across the desktop. In **NIRU Wallpaper**, the header
+lists *All screens* and each connected screen, so one screen can keep its own
+picture while the others follow the shared settings and the theme.
+
+A screen's own picture survives theme changes, reloads, rotation and a
+reconnect. A new screen inherits the shared settings. Screens are identified by
+their RandR output name, so a cable moved to another port starts from the shared
+settings; the saved entry stays for the original port. Settings are stored as
+`[[wallpaper.outputs]]` entries in `~/.config/niruwm/config.toml`:
+
+```toml
+[[wallpaper.outputs]]
+output = "DP-1"
+mode = "single"          # this screen shows file; "theme" follows the theme
+file = "~/Pictures/Wallpapers/mine/tower.png"
+scale = "fill"           # empty inherits the common scale
+```
+
+The same from the command line:
+
+```sh
+niructl wallpaper output list                    # screens and their settings
+niructl wallpaper output set DP-1 image FILE
+niructl wallpaper output set DP-1 scale fit
+niructl wallpaper output set DP-1 mode theme
+niructl wallpaper output reset DP-1              # inherit the shared settings
+```
 
 ## Maintain
 

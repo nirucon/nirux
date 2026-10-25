@@ -2,7 +2,7 @@
 # NIRUX: install a complete X11 desktop, or maintain an existing installation.
 set -eu
 
-VERSION=0.12.11
+VERSION=0.12.12
 PREFIX=${NIRUX_PREFIX:-$HOME/.local}
 BIN=$PREFIX/bin
 STATE=$PREFIX/share/nirux
@@ -2096,6 +2096,47 @@ owned() {
     grep -qxF "// NIRUX owner: $PREFIX" "$1" ||
     grep -qxF "/* NIRUX owner: $PREFIX */" "$1"
 }
+# A binary file cannot carry a comment: the header bytes would corrupt it and
+# a PNG decoder would reject the icon. Ownership for such files is recorded in
+# a sidecar beside the installed file instead, named by its SHA-256. A replaced
+# file no longer matches and is therefore not removed.
+owned_binary() {
+  [ -f "$1" ] || return 1
+  [ -f "$own_record" ] || return 1
+  current=$(sha256sum "$1" | cut -d ' ' -f1)
+  grep -qxF "$current" "$own_record"
+}
+write_binary() {
+  target=$1; source=$2
+  own_record=$ROOT$(dirname "$target").nirux-owned/$(basename "$target").sha256
+  if [ -f "$target" ]; then
+    installed_sum=$(sha256sum "$target" | cut -d ' ' -f1)
+    source_sum=$(sha256sum "$source" | cut -d ' ' -f1)
+    [ "$installed_sum" != "$source_sum" ] || return 0
+    # An unmodified NIRUX icon is replaced; anything else is preserved as a
+    # backup first, exactly as write_system does for text files.
+    if ! owned_binary "$target"; then
+      [ -f "$target.nirux-backup" ] || as_root cp -p "$target" "$target.nirux-backup"
+    fi
+  fi
+  as_root install -d -m 755 "$(dirname "$target")"
+  as_root install -m 644 "$source" "$target"
+  as_root install -d -m 755 "$(dirname "$own_record")"
+  { sha256sum "$source" | cut -d ' ' -f1 | as_root tee "$own_record" >/dev/null; }
+}
+remove_binary() {
+  target=$1
+  own_record=$ROOT$(dirname "$target").nirux-owned/$(basename "$target").sha256
+  if [ -f "$target" ] && owned_binary "$target"; then
+    if [ -f "$target.nirux-backup" ]; then as_root mv -f "$target.nirux-backup" "$target"
+    else as_root rm -f "$target"
+    fi
+  fi
+  if [ -f "$own_record" ]; then
+    as_root rm -f "$own_record"
+    as_root rmdir "$(dirname "$own_record")" 2>/dev/null || :
+  fi
+}
 legacy_owned() {
   case "$1" in
     */xsessions/niruwm.desktop)
@@ -2614,15 +2655,15 @@ install_wallpaper_app() {
   [ -f "$WORK/download/nirux/niruwallpaper.png" ] || return 0
   { say "# NIRUX owner: $PREFIX"; sed "s|^Exec=niruwallpaper$|Exec=$BIN/niruwallpaper|" \
       "$WORK/download/nirux/niruwallpaper.desktop"; } > "$WORK/niruwallpaper.desktop"
-  # write_system only removes what it recognises as NIRUX-owned, so the icon
-  # gets the same owner line the desktop entry has. PNG readers ignore it.
-  { say "# NIRUX owner: $PREFIX"; cat "$WORK/download/nirux/niruwallpaper.png"; } > "$WORK/niruwallpaper-icon.png"
+  # The icon is a PNG, so it is installed byte for byte and its ownership is
+  # recorded beside it: a comment in front of the PNG header would make it an
+  # invalid image.
   write_system "$ROOT/usr/share/applications/niruwallpaper.desktop" "$WORK/niruwallpaper.desktop"
-  write_system "$ROOT/usr/share/icons/hicolor/256x256/apps/niruwallpaper.png" "$WORK/niruwallpaper-icon.png"
+  write_binary "$ROOT/usr/share/icons/hicolor/256x256/apps/niruwallpaper.png" "$WORK/download/nirux/niruwallpaper.png"
 }
 remove_wallpaper_app() {
   remove_system "$ROOT/usr/share/applications/niruwallpaper.desktop"
-  remove_system "$ROOT/usr/share/icons/hicolor/256x256/apps/niruwallpaper.png"
+  remove_binary "$ROOT/usr/share/icons/hicolor/256x256/apps/niruwallpaper.png"
   # The directories themselves belong to the package manager. Removing one that
   # happens to be empty would delete a system directory NIRUX never owned, and
   # the hicolor theme is shared with every other application.

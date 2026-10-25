@@ -56,7 +56,7 @@ checksums() { (cd "$1"; sha256sum ./* | sed 's@  ./@  @' > SHA256SUMS); }
 # a placeholder so they never depend on a checkout of another repository.
 wallpaper_app_assets() {
   printf '[Desktop Entry]\nType=Application\nName=NIRU Wallpaper\nExec=niruwallpaper\n' > "$1/niruwallpaper.desktop"
-  printf '\211PNG\r\n\032\n' > "$1/niruwallpaper.png"
+  printf '\211PNG\r\n\032\n\0\0\0\rIHDR' > "$1/niruwallpaper.png"
 }
 wallpaper_archive() {
   build=$TEST/wallpaper-build
@@ -115,8 +115,9 @@ fixture nirushot "$shot_version" nirushot
 fixture nirufetch "$fetch_version" nirufetch
 fixture niruwebapp "$webapp_version" niruwebapp
 fixture niruwallpaper "$wallpaper_app_version" niruwallpaper niruwallpaper.desktop
-# The icon is not a program, so it is not part of the fixture binary.
-printf '\211PNG\r\n\032\n' > "$FIXTURE/niruwallpaper/$wallpaper_app_version/niruwallpaper.png"
+# The icon is not a program, so it is not part of the fixture binary. It
+# starts with the PNG signature, which an owner comment would break.
+printf '\211PNG\r\n\032\n\0\0\0\rIHDR' > "$FIXTURE/niruwallpaper/$wallpaper_app_version/niruwallpaper.png"
 for os in arch void; do
   printf 'auth include system-auth\naccount include system-auth\n' > "$FIXTURE/nirulock/$lock_version/pam-$os"
 done
@@ -456,7 +457,12 @@ for TEST_OS in arch debian void; do
   # user could replace, and the icon must come from the release.
   app_desktop=$ROOT/usr/share/applications/niruwallpaper.desktop
   grep -qxF "Exec=$BIN/niruwallpaper" "$app_desktop" || fail 'wallpaper app entry does not use the managed binary'
-  [ -f "$ROOT/usr/share/icons/hicolor/256x256/apps/niruwallpaper.png" ] || fail 'wallpaper app icon was not installed'
+  icon=$ROOT/usr/share/icons/hicolor/256x256/apps/niruwallpaper.png
+  [ -f "$icon" ] || fail 'wallpaper app icon was not installed'
+  # The icon must stay a valid PNG: no comment may be put in front of it.
+  [ "$(head -c 8 "$icon" | od -An -tx1 | tr -d ' \n')" = 89504e470d0a1a0a ] || fail 'installed wallpaper icon is not a PNG'
+  cmp -s "$icon" "$FIXTURE/niruwallpaper/$wallpaper_app_version/niruwallpaper.png" || fail 'installed icon differs from the released icon'
+  find "$ROOT" -name '*.sha256' -path '*nirux-owned*' | grep -q niruwallpaper.png || fail 'icon ownership was not recorded beside the file'
   first=$(readlink "$STATE/current")
   operation install_or_update update --no-packages --release 99.0.0
   second=$(readlink "$STATE/current")
@@ -479,6 +485,7 @@ for TEST_OS in arch debian void; do
   [ ! -e "$ROOT/etc/pam.d/nirulock" ] || fail 'owned PAM service remained'
   [ ! -e "$ROOT/usr/share/applications/niruwallpaper.desktop" ] || fail 'wallpaper app entry remained after uninstall'
   [ ! -e "$ROOT/usr/share/icons/hicolor/256x256/apps/niruwallpaper.png" ] || fail 'wallpaper app icon remained after uninstall'
+  find "$ROOT" -name '*.sha256' -path '*nirux-owned*' | grep -q niruwallpaper.png && fail 'icon ownership record remained after uninstall'
   # The directories belong to the package manager. Uninstall removes the files
   # it installed, never a shared directory, even when it is empty.
   [ -d "$ROOT/usr/share/applications" ] || fail 'uninstall removed the shared application directory'
