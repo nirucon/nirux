@@ -260,6 +260,25 @@ Profiles live in `~/.config/niruwm/displays.toml`. The launcher's Displays
 group offers the same actions, including a turn entry for every rotation of
 every connected screen.
 
+### Workspaces, bars and screens
+
+Each screen runs its own bar, with that screen's workspace cells and its own
+clock, and each screen shows its own workspace independently. The display
+module says which bar is which when there are two screens: `2 below`,
+`2 above`, `2 left` or `2 right`, from where the screens sit rather than from
+their cable order.
+
+Screens are placed with a display layout (see above). Side by side and one
+above the other are the same setting: a screen placed below another is
+reached by moving the pointer straight down, and in the other order straight
+up, so the physical arrangement you see is the one the pointer follows.
+
+```sh
+nirux layout rotate DisplayPort-5 inverted   # the screen itself
+nirux layout auto                            # side by side
+nirux layout save Stacked                    # then apply it after a re-plug
+```
+
 ## Maintain
 
 ```sh
