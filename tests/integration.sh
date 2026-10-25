@@ -479,6 +479,10 @@ for TEST_OS in arch debian void; do
   [ ! -e "$ROOT/etc/pam.d/nirulock" ] || fail 'owned PAM service remained'
   [ ! -e "$ROOT/usr/share/applications/niruwallpaper.desktop" ] || fail 'wallpaper app entry remained after uninstall'
   [ ! -e "$ROOT/usr/share/icons/hicolor/256x256/apps/niruwallpaper.png" ] || fail 'wallpaper app icon remained after uninstall'
+  # The directories belong to the package manager. Uninstall removes the files
+  # it installed, never a shared directory, even when it is empty.
+  [ -d "$ROOT/usr/share/applications" ] || fail 'uninstall removed the shared application directory'
+  [ -d "$ROOT/usr/share/icons/hicolor" ] || fail 'uninstall removed the shared icon theme directory'
   for dir in niruwm niruui nirubar nirulauncher nirunotify; do
     [ -d "$XDG_CONFIG_HOME/$dir" ] || fail "normal uninstall removed $dir config"
   done
@@ -937,6 +941,31 @@ grep -qx 'background = "101010"' "$appearance_test/custom.toml" || fail 'custom 
   [ ! -e "$ROOT/etc/polkit-1/rules.d/49-nirux-power.rules" ] || fail 'greeter removal left the power rule'
   ROOT=$saved_root
   WORK=$saved_work
+)
+
+# A release that has the wallpaper program but not its launcher entry and icon
+# must still install. The assets were added after the program, so an older
+# release legitimately lacks them and the installer must not refuse it.
+(
+  PREFIX=$TEST/no-desktop-app; BIN=$PREFIX/bin; STATE=$PREFIX/share/nirux
+  # A private system root: the shared one already holds the entry from the
+  # earlier installs, which would make this check meaningless.
+  ROOT=$TEST/no-desktop-app-system
+  download=$TEST/no-desktop-app-download
+  mkdir -p "$download"
+  cp "$FIXTURE/nirux/$VERSION/nirux" "$FIXTURE/nirux/$VERSION/manifest" \
+    "$FIXTURE/nirux/$VERSION/SHA256SUMS" "$download/"
+  rm -f "$download/niruwallpaper.desktop" "$download/niruwallpaper.png"
+  sed -i '/niruwallpaper.desktop/d; /niruwallpaper.png/d' "$download/SHA256SUMS"
+  WORK=$download
+  install_wallpaper_app
+  # Without the guard the function writes an empty file built from a missing
+  # source, so an entry whose only line is the owner comment is the failure.
+  if [ -e "$ROOT/usr/share/applications/niruwallpaper.desktop" ]; then
+    [ "$(grep -vc '^# NIRUX owner:' "$ROOT/usr/share/applications/niruwallpaper.desktop")" -gt 0 ] ||
+      fail 'a release without the entry installed an empty one'
+    fail 'a release without the entry installed one anyway'
+  fi
 )
 
 sh "$SOURCE/tests/app-lifecycle.sh"

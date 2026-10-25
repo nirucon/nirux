@@ -2607,6 +2607,9 @@ register_session() {
 # entry and icon come from the release so they stay in step with the binary
 # that actually reports the version.
 install_wallpaper_app() {
+  # A release older than the app's first published assets has the program but
+  # not its entry and icon. Skipping them is correct; failing would make the
+  # installer refuse a release that is otherwise fine.
   [ -f "$WORK/download/nirux/niruwallpaper.desktop" ] || return 0
   [ -f "$WORK/download/nirux/niruwallpaper.png" ] || return 0
   { say "# NIRUX owner: $PREFIX"; sed "s|^Exec=niruwallpaper$|Exec=$BIN/niruwallpaper|" \
@@ -2620,8 +2623,9 @@ install_wallpaper_app() {
 remove_wallpaper_app() {
   remove_system "$ROOT/usr/share/applications/niruwallpaper.desktop"
   remove_system "$ROOT/usr/share/icons/hicolor/256x256/apps/niruwallpaper.png"
-  as_root rmdir "$ROOT/usr/share/applications" "$ROOT/usr/share/icons/hicolor/256x256/apps" \
-    "$ROOT/usr/share/icons/hicolor/256x256" "$ROOT/usr/share/icons/hicolor" 2>/dev/null || :
+  # The directories themselves belong to the package manager. Removing one that
+  # happens to be empty would delete a system directory NIRUX never owned, and
+  # the hicolor theme is shared with every other application.
 }
 # Registration only makes NIRUWM available. Debian's Default Xsession (and
 # other desktops on Arch/Void) can otherwise win the first-login selection.
