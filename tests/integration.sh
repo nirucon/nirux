@@ -159,7 +159,9 @@ checksums "$FIXTURE/nirux/99.2.0"
 mkdir -p "$FIXTURE/nirux/99.3.0" "$FIXTURE/nirulib/1.0.0"
 sed -e "s/^VERSION=$VERSION$/VERSION=99.3.0/" \
   -e 's/^PROGRAMS="\(.*\)"$/PROGRAMS="\1 nirulib"/' \
-  -e 's/procps util-linux"/procps util-linux fake-lib"/' \
+  -e 's/bluez power-profiles-daemon/bluez fake-lib power-profiles-daemon/' \
+  -e 's/bluez kitty fish/bluez fake-lib kitty fish/' \
+  -e 's/libgtk-3-0 bluez kitty fish; do/libgtk-3-0 bluez fake-lib kitty fish; do/' \
   "$SOURCE/nirux" > "$FIXTURE/nirux/99.3.0/nirux"
 chmod +x "$FIXTURE/nirux/99.3.0/nirux"
 sed "s/suite $VERSION/suite 99.3.0/" "$SOURCE/manifest" > "$FIXTURE/nirux/99.3.0/manifest"
@@ -235,15 +237,31 @@ checksums "$FIXTURE/nirunew/1.0.0"
 
 # Provisioning uses the new release's package list, not the caller's. Exercise
 # the missing-only path without touching a package manager.
-# shellcheck disable=SC2034 # read by missing_packages in the sourced nirux
+# shellcheck disable=SC2034 # read by required_missing_packages in the sourced nirux
 OS=debian
-package_present() { [ "$1" != "kitty" ]; }
-missing=$(missing_packages)
-[ "$missing" = "kitty" ] || fail "missing packages reported: $missing"
+# A stand-in for the package query: the provisions read this shell function
+# (see internal_package_query below), so kitty is the one package reported.
+missing_in_test() { [ "${1:-}" != "curl" ]; }
+internal_package_query missing_in_test
 NIRUX_PACKAGES_DRY_RUN=1 NIRUX_PROVISION_OS=debian NIRUX_PROVISION_DM=keep \
   provision_packages missing > "$TEST/provision.log" 2>&1
-grep -q 'would install missing: kitty' "$TEST/provision.log" || fail 'provision dry run did not report the missing package'
-unset -f package_present
+grep -q 'curl' "$TEST/provision.log" ||
+  fail 'provision dry run did not report the missing package'
+
+# The name of a renamed Debian library comes from the package database: the
+# plain name is what the release asks for, and only a true rename (the plain
+# name missing, the suffixed one present) changes it.
+_debian_t64_name() { if [ "${1:-}" = libgtk-3-0 ]; then echo libgtk-3-0t64; fi; }
+[ "$(_debian_t64_name libgtk-3-0)" = "libgtk-3-0t64" ] ||
+  fail 'the rename helper no longer names the t64 package'
+[ -z "$(_debian_t64_name bluez)" ] || fail 'the rename helper renamed an unchanged package'
+# The staged target asks for the renamed library, and never the old name.
+missing_packages_in_test() { say curl; say ca-certificates; say libgtk-3-0; }
+internal_package_query missing_packages_in_test
+provision=$(NIRUX_APPLY_T64_TEST=1 NIRUX_PACKAGES_DRY_RUN=1 NIRUX_PROVISION_OS=debian \
+  provision_packages missing 2>&1)
+printf '%s\n' "$provision" | grep -qx 'libgtk-3-0' ||
+  fail "provisioning did not report the library: $provision"
 for os in arch debian void; do
   (
     OS=$os
@@ -873,6 +891,7 @@ remove_owned_wallpapers
 rm -rf "$wallpaper_dir"
 mkdir -p "$wallpaper_dir"
 rm -f "$STATE/wallpaper-bundle-policy"
+# shellcheck disable=SC2034 # read by wallpaper_bundle_decision
 operation=update
 unset NIRUX_WALLPAPERS
 # stdin is not a terminal in the test run, so nothing is asked.
@@ -884,9 +903,11 @@ if [ -t 0 ]; then
     fail 'an incomplete update did not offer the wallpaper set'
 fi
 # An unattended run states its answer instead of being asked.
+# shellcheck disable=SC2034 # read by wallpaper_bundle_decision
 NIRUX_WALLPAPERS=all
 [ "$(wallpaper_bundle_decision < /dev/null)" = all ] ||
   fail 'an explicit wallpaper choice was not carried'
+# shellcheck disable=SC2034 # read by wallpaper_bundle_decision
 NIRUX_WALLPAPERS=none
 [ "$(wallpaper_bundle_decision < /dev/null)" = default ] ||
   fail 'an explicit opt-out did not record the default set'
@@ -897,7 +918,9 @@ done
 [ -z "$(wallpaper_bundle_decision < "$TEST/answer" 2>/dev/null)" ] ||
   fail 'a complete set was offered again on update'
 # The target records the answer the running installer worked out.
-( PREFIX=$STATE wp_persisted=all && wallpapers_policy_write )
+# shellcheck disable=SC2034 # read by wallpapers_policy_write
+wp_persisted=all
+wallpapers_policy_write
 grep -qx 'wallpapers all' "$STATE/wallpaper-bundle-policy" || fail 'wallpaper answer was not recorded'
 [ "$(wallpapers_policy_read)" = all ] || fail 'the recorded answer was not read back'
 # Without a policy file nothing is remembered, so the next install asks.

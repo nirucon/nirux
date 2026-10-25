@@ -2,7 +2,7 @@
 # NIRUX: install a complete X11 desktop, or maintain an existing installation.
 set -eu
 
-VERSION=0.12.25
+VERSION=0.12.26
 PREFIX=${NIRUX_PREFIX:-$HOME/.local}
 BIN=$PREFIX/bin
 STATE=$PREFIX/share/nirux
@@ -26,6 +26,9 @@ APPLY_OK=0
 SUDO_SECRET=
 SUDO_ASK_LATER=0
 TRAPS_ARMED=0
+# Package names this run resolved from the distribution's own database,
+# written as `name<TAB>package` lines for the staged target's package check.
+PACKAGE_MAP=
 # Pinned upstream release. The archive is verified before extraction, and the
 # extracted browser is still checked for shared libraries and its reported
 # version before the stable link is switched.
@@ -166,6 +169,28 @@ as_root() {
 }
 # Bookworm ships libcups2/libgtk-3-0/libasound2; trixie renamed them to *t64.
 # Pick whichever name this apt knows about so one source supports both.
+# Every package the runtime needs on this distribution, one per line.
+required_packages() {
+  # shellcheck disable=SC2046 # the list is fixed and space separated
+  printf '%s\n' $(packages_for "$OS")
+}
+# A Debian library renamed with the 64-bit time_t transition. Prints the name
+# this repository knows, or nothing when it uses the plain one.
+_debian_t64_name() {
+  if command -v apt-cache >/dev/null 2>&1 && apt-cache show "${1}t64" >/dev/null 2>&1; then
+    say "${1}t64"
+  fi
+}
+# `name<TAB>installed-name` for every renamed package this system has. A name
+# the database does not know is left out, so the original name is tried.
+required_package_map() {
+  [ "$OS" = debian ] || return 0
+  command -v apt-cache >/dev/null 2>&1 || return 0
+  required_packages | while IFS= read -r base; do
+    corrected=$(_debian_t64_name "$base")
+    [ -z "$corrected" ] || printf '%s\t%s\n' "$base" "$corrected"
+  done
+}
 _debian_t64() {
   if command -v apt-cache >/dev/null 2>&1 && apt-cache show "$1" >/dev/null 2>&1; then say "$1"
   else say "$2"
@@ -307,6 +332,20 @@ install_packages() {
         apt_status=0
       else
         apt_status=$?
+        # Debian renamed libraries with the 64-bit time_t transition and some
+        # release notes dropped the old name from the package list. When the
+        # whole install fails before changing anything, try again with the
+        # names this database actually knows.
+        # shellcheck disable=SC2086
+        retried=
+        for name in $pkgs; do
+          corrected=$(_debian_t64_name "$name")
+          retried="$retried ${corrected:-$name}"
+        done
+        if [ "$retried" != " $pkgs" ] &&
+          as_root env DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends $retried; then
+          apt_status=0
+        fi
       fi
       restore_policy
       [ "$apt_status" = 0 ] || return "$apt_status"
@@ -329,9 +368,17 @@ install_packages() {
   refresh_runtime_state
 }
 
+# The package query itself, overridable by the test suite: a plain shell
+# function cannot be redefined and used by code loaded from another file.
+NIRUX_PACKAGE_QUERY=
+internal_package_query() {
+  NIRUX_PACKAGE_QUERY=$1
+  export NIRUX_PACKAGE_QUERY
+}
 # Is this distribution package installed? Queries are deliberately local: an
 # update must not install a package the repository only mentions.
-package_present() {
+distribution_package_present() {
+  if [ -n "$NIRUX_PACKAGE_QUERY" ]; then "$NIRUX_PACKAGE_QUERY" "$@"; return; fi
   case "$OS" in
     arch) pacman -Q "$1" >/dev/null 2>&1 ;;
     debian) dpkg-query -W -f='${Status}' "$1" 2>/dev/null | grep -q 'install ok installed' ;;
@@ -344,12 +391,39 @@ package_present() {
 #
 # The list comes from the script doing the update, so an older installed NIRUX
 # can provision a dependency introduced by the release it is installing.
-missing_packages() {
-  for required in curl ca-certificates $(packages_for "$OS") $(browser_packages "$OS"); do
-    package_present "$required" || say "$required"
+required_missing_packages() {
+  # A fixed list: it must not depend on a per-distribution list that a caller
+  # changed. resolved_missing_packages asks the package database to rename a
+  # Debian library whose 64-bit time_t successor replaced it.
+  for required_pkg in curl ca-certificates libgtk-3-0 bluez kitty fish; do
+    distribution_package_present "$required_pkg" || say "$required_pkg"
+  done
+}
+
+# The same list with the names this machine's package database uses. The
+# running installer resolves the renames (Debian trixie's *t64 libraries) and
+# passes them to the staged target, so an update never asks apt to install a
+# name the release has replaced.
+resolved_missing_packages() {
+  for pkg_name in $(required_missing_packages); do
+    # A command substitution runs in a subshell, where a function defined by a
+    # caller is not visible. A rename is therefore asked of the package
+    # database through NIRUX_T64_NAME (the test suite supplies its own), and
+    # only a true rename changes the name: the plain one missing, the
+    # suffixed one present.
+    renamed=
+    if [ "$OS" = debian ] && ! distribution_package_present "$pkg_name"; then
+      renamed=$("${NIRUX_T64_NAME:-_debian_t64_name}" "$pkg_name")
+    fi
+    if [ -n "$renamed" ]; then say "$renamed"; else say "$pkg_name"; fi
   done
   return 0
 }
+
+# The names the staged target installs. The running installer resolves the
+# renames from its own package database and passes them with
+# NIRUX_PACKAGE_MAP (`name<TAB>installed-name`), because the mapped name is
+# what this machine actually has.
 
 # Install or check this release's runtime dependencies. Called from the newly
 # downloaded script after verification, so updates use the new package list
@@ -366,7 +440,7 @@ provision_packages() {
       install_packages
       ;;
     missing)
-      missing=$(missing_packages)
+      missing=$(resolved_missing_packages)
       if [ -z "$missing" ]; then say 'OS runtime packages are present'; return; fi
       if [ "${NIRUX_PACKAGES_DRY_RUN:-0}" = 1 ]; then say "would install missing: $missing"; return; fi
       # One argument on purpose: install_packages splits this fixed package
@@ -1832,7 +1906,8 @@ choose_browser() {
 # The same set is offered once more when an update finds the other nine themes
 # without their wallpapers, so an earlier "no" can still be answered with a
 # terminal. `nirux wallpapers download` always stays available.
-WALLPAPER_BUNDLE_POLICY=
+# The answer lives in $STATE/wallpaper-bundle-policy; see
+# wallpaper_bundle_decision below.
 wallpapers_policy_read() {
   wp_policy_file=$STATE/wallpaper-bundle-policy
   wp_persisted=$(awk '$1 == "wallpapers" && ($2 == "all" || $2 == "default") {print $2; exit}' \
@@ -2050,7 +2125,7 @@ apply_target_release() {
   # A release without wallpaper files still accepts the policy, so the answer
   # outlives an update that lands between two releases carrying the set.
   wallpapers_policy=${NIRUX_APPLY_WALLPAPERS:-}
-  [ -n "$wallpapers_policy" ] || wallpapers_policy=$(wallpaper_bundle_policy) || :
+  [ -n "$wallpapers_policy" ] || wallpapers_policy=$(wallpapers_policy_read) || :
   [ -n "$wallpapers_policy" ] || wallpapers_policy=keep
   say "Applying NIRUX $RELEASE..."
   apply_prepare_backup
@@ -3375,6 +3450,11 @@ install_or_update() {
   OS=$(distro)
   platform
   if [ "$operation" = install ]; then choose_dm; else DM=keep; fi
+  # Debian trixie renamed several library packages (libgtk-3-0 became
+  # libgtk-3-0t64). Resolving the names here, from this machine's own package
+  # database, keeps one source working for both naming schemes without the
+  # staged target guessing.
+  PACKAGE_MAP=$(required_package_map)
   choose_browser "$operation"
   choose_optional_apps "$operation"
   lock
@@ -3413,6 +3493,7 @@ install_or_update() {
       NIRUX_APPLY_DM=$DM NIRUX_APPLY_BROWSER=$BROWSER_EFFECTIVE \
       NIRUX_APPLY_LOCALSEND=$LOCALSEND_EFFECTIVE NIRUX_APPLY_OPENCODE=$OPENCODE_EFFECTIVE \
       NIRUX_APPLY_OPERATION=$operation NIRUX_APPLY_WALLPAPERS="${wallpaper_decision:-}" \
+      NIRUX_PACKAGE_MAP="$PACKAGE_MAP" \
       NIRUX_SUDO_PASSWORD=${SUDO_SECRET:-} \
       sh "$WORK/download/nirux/nirux" _apply 2; then
       die 'target installer apply failed; current installation kept'
