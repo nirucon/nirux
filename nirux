@@ -2847,8 +2847,11 @@ install_login_picture() {
     return
   fi
   stage=/tmp/nirux-login-background.png
+  rm -f "$stage"
   ( umask 022; install -m 644 "$source" "$stage" ) || return 1
-  if sudo -n install -m 644 -o root -g root "$stage" "$target" 2>/dev/null; then
+  # The rule names /usr/bin/install with these exact arguments; a PATH lookup
+  # of bare `install` would not match it.
+  if sudo -n /usr/bin/install -m 644 -o root -g root "$stage" "$target" 2>/dev/null; then
     rm -f "$stage"
     return 0
   fi

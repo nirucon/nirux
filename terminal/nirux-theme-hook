@@ -159,13 +159,15 @@ login_sync() {
   [ -f "$CONFIG_HOME/nirux/login-wallpaper" ] && return 0
   command -v sudo >/dev/null 2>&1 || return 0
   case "$THEME" in *[!A-Za-z0-9_-]*) return 0 ;; esac
+  # The staged picture is for the grant NIRUX installed, which names exactly
+  # this path. The install commands below are run without a password: a theme
+  # hook must never wait for one.
   stage=/tmp/nirux-login-background.png
+  rm -f "$stage"
   ( umask 022; install -m 644 "$picture" "$stage" ) || return 0
-  if ! sudo -n /usr/bin/install -d -m 755 /usr/share/sddm/themes/nirux 2>/dev/null; then
-    rm -f "$stage"
-    return 0
-  fi
-  sudo -n /usr/bin/install -d -m 755 /usr/share/nirux/greeter 2>/dev/null || :
+  # Each greeter picture is covered by its own grant. An untouched file also
+  # matches the installed rule (sudo compares the command, not the contents),
+  # so this attempt needs no password in a plain terminal either.
   sudo -n /usr/bin/install -m 644 -o root -g root "$stage" \
     /usr/share/sddm/themes/nirux/background.png 2>/dev/null || :
   sudo -n /usr/bin/install -m 644 -o root -g root "$stage" \
