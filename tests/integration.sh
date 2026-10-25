@@ -671,7 +671,7 @@ set +e
 NIRUX_LIBRARY=1 NIRUX_TEST_AS_ROOT=0 sh -c '
   . "$1"
   id() { printf "1000\n"; }
-  sudo() { case "$*" in "-n true") return 0 ;; *) return 7 ;; esac; }
+  sudo() { case "$*" in "-n id -u"*) return 0 ;; *) return 7 ;; esac; }
   as_root false
 ' test "$SOURCE/nirux"
 rc=$?

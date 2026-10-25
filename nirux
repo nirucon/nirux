@@ -2,7 +2,7 @@
 # NIRUX: install a complete X11 desktop, or maintain an existing installation.
 set -eu
 
-VERSION=0.12.12
+VERSION=0.12.13
 PREFIX=${NIRUX_PREFIX:-$HOME/.local}
 BIN=$PREFIX/bin
 STATE=$PREFIX/share/nirux
@@ -96,13 +96,17 @@ as_root() {
   if [ "${NIRUX_TEST_AS_ROOT:-0}" = 1 ]; then "$@"; return; fi
   if [ "$(id -u)" = 0 ]; then "$@"; return; fi
   command -v sudo >/dev/null 2>&1 || die "install sudo and grant this user access, then retry"
-  if ! sudo -n true 2>/dev/null; then
+  if ! sudo -n id -u >/dev/null 2>&1; then
     if [ -t 0 ]; then
       sudo -v || return $?
     else
       printf 'Password for sudo: ' >&2
       IFS= read -r password || die "sudo needs a password (use a terminal or pipe one line on stdin)"
-      if printf '%s\n' "$password" | sudo -S -p '' -v; then
+      if printf '%s\n' "$password" | sudo -S -p "" -v; then
+        # The staged target installer is a separate process with its own sudo
+        # context, so hand the password to that one child only.
+        NIRUX_SUDO_PASSWORD=$password
+        export NIRUX_SUDO_PASSWORD
         unset password
       else
         result=$?
@@ -3239,6 +3243,7 @@ install_or_update() {
       NIRUX_APPLY_DM=$DM NIRUX_APPLY_BROWSER=$BROWSER_EFFECTIVE \
       NIRUX_APPLY_LOCALSEND=$LOCALSEND_EFFECTIVE NIRUX_APPLY_OPENCODE=$OPENCODE_EFFECTIVE \
       NIRUX_APPLY_OPERATION=$operation \
+      NIRUX_SUDO_PASSWORD=${NIRUX_SUDO_PASSWORD:-} \
       sh "$WORK/download/nirux/nirux" _apply 2; then
       die 'target installer apply failed; current installation kept'
     fi
@@ -3285,6 +3290,12 @@ install_or_update() {
   fi
 }
 main() {
+  # A staged target installer receives the bootstrap's one sudo password here.
+  if [ -n "${NIRUX_SUDO_PASSWORD:-}" ] && [ "$(id -u)" != 0 ] &&
+     ! sudo -n id -u >/dev/null 2>&1; then
+    printf '%s\n' "$NIRUX_SUDO_PASSWORD" | sudo -S -p "" -v >/dev/null 2>&1 || :
+  fi
+  unset NIRUX_SUDO_PASSWORD
   case "${1:-}" in
     install|update) install_or_update "$@" ;;
     _provision) shift; provision_packages "$@" ;;
