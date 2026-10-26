@@ -31,7 +31,14 @@ cp -R "$SOURCE/greeters/." "$TEST/integration-build/"
 cp "$SOURCE/polkit/49-nirux-power.rules" "$TEST/integration-build/polkit/"
 cp "$SOURCE/wallpaper/nirux-wallpaper-noir-4k.png" "$TEST/integration-build/background.png"
 tar -cJf "$TEST/release/nirux-integration.tar.xz" -C "$TEST/integration-build" .
-(cd "$TEST/release"; sha256sum nirux manifest config.example.toml appearance.example.toml nirux-wallpapers.tar.xz nirux-terminal.tar.xz nirux-integration.tar.xz > SHA256SUMS)
+# The graphical app entries and icons are NIRUX release assets. The local
+# fixture must carry them too; otherwise release-smoke would try to download
+# the not-yet-published NIRUX release for its own optional assets.
+printf '[Desktop Entry]\nType=Application\nName=NIRU Display\nExec=nirudisplay\n' > "$TEST/release/nirudisplay.desktop"
+printf '\211PNG\r\n\032\n\0\0\0\rIHDR' > "$TEST/release/nirudisplay.png"
+printf '[Desktop Entry]\nType=Application\nName=NIRU Theme Selector\nExec=niruthemeselector\n' > "$TEST/release/niruthemeselector.desktop"
+printf '\211PNG\r\n\032\n\0\0\0\rIHDR' > "$TEST/release/niruthemeselector.png"
+(cd "$TEST/release"; sha256sum nirux manifest config.example.toml appearance.example.toml nirux-wallpapers.tar.xz nirux-terminal.tar.xz nirux-integration.tar.xz nirudisplay.desktop nirudisplay.png niruthemeselector.desktop niruthemeselector.png > SHA256SUMS)
 for include in system-auth common-auth common-account; do
   [ ! -f "/etc/pam.d/$include" ] || ln -s "/etc/pam.d/$include" "$ROOT/etc/pam.d/$include"
 done
