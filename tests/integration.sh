@@ -909,6 +909,29 @@ install_wallpapers >/dev/null
   fail 'an update removed a downloaded theme wallpaper'
 grep -q 'nirux-wallpaper-satie-4k.png' "$STATE/wallpapers.sha256" ||
   fail 'an update dropped a downloaded theme from the manifest'
+# The optional Carl Larsson and Erik Satie colour packs must survive a normal
+# release update that only ships the default theme.
+for extra_pack in carl-larsson satie; do
+  for extra_colour in red blue green noir; do
+    for extra_size in 4k 8k; do
+      extra_name=nirux-wallpaper-$extra_pack-$extra_colour-$extra_size.png
+      printf '\211PNG\r\n\032\ndownloaded\n' > "$wallpaper_dir/$extra_name"
+      printf '%s  %s\n' "$(sha256sum "$wallpaper_dir/$extra_name" | cut -d ' ' -f1)" \
+        "$extra_name" >> "$STATE/wallpapers.sha256"
+    done
+  done
+done
+[ "$(wallpaper_extra_count)" = 16 ] || fail 'extra wallpaper count was wrong'
+install_wallpapers >/dev/null
+for extra_pack in carl-larsson satie; do
+  for extra_colour in red blue green noir; do
+    for extra_size in 4k 8k; do
+      extra_name=nirux-wallpaper-$extra_pack-$extra_colour-$extra_size.png
+      [ -f "$wallpaper_dir/$extra_name" ] ||
+        fail "an update removed $extra_name"
+    done
+  done
+done
 # `nirux layout` reaches NIRUWM's display profiles and refuses a partial call.
 # Run in a subshell so a `die` inside the sourced installer ends only this
 # call, not the test run.

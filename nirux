@@ -2,7 +2,7 @@
 # NIRUX: install a complete X11 desktop, or maintain an existing installation.
 set -eu
 
-VERSION=0.12.46
+VERSION=0.12.47
 PREFIX=${NIRUX_PREFIX:-$HOME/.local}
 BIN=$PREFIX/bin
 STATE=$PREFIX/share/nirux
@@ -85,7 +85,7 @@ usage() {
   say "       nirux update [--no-packages] [--release VERSION] [--browser helium|none|keep]"
   say "                    [--wallpapers all|default] [--localsend yes|no] [--opencode yes|no]"
   say "       nirux login-wallpaper [list|set FILE|reset|sync]"
-  say "       nirux wallpapers [status|download|remove]"
+  say "       nirux wallpapers [status|download [themes|extras|all|carl-larsson|satie]|remove]"
   say "       nirux layout list|save NAME|apply NAME|rotate OUTPUT normal|left|right|inverted|auto"
   say "       nirux reset-config"
   say "       nirux repair-session | repair-wallpaper"
@@ -1124,6 +1124,8 @@ install_wallpapers() {
           carl-larsson-[48]k.png|forest-vigil-[48]k.png|blood-of-urdr-[48]k.png) keep=1 ;;
           root-and-stone-[48]k.png|blue-horizon-[48]k.png) keep=1 ;;
           the-norns-[48]k.png|winter-nights-[48]k.png) keep=1 ;;
+          carl-larsson-red-[48]k.png|carl-larsson-blue-[48]k.png|carl-larsson-green-[48]k.png|carl-larsson-noir-[48]k.png) keep=1 ;;
+          satie-red-[48]k.png|satie-blue-[48]k.png|satie-green-[48]k.png|satie-noir-[48]k.png) keep=1 ;;
         esac
         if [ "$keep" = 1 ]; then
           printf '%s  %s\n' "$old_hash" "$name" >> "$next"
@@ -2601,6 +2603,16 @@ WALLPAPER_BUNDLE_URL=https://nextcloud.nirucon.se/s/2b9MX7GZKpLsyGx/download
 WALLPAPER_BUNDLE_SHA256=4dd71b0510b7aca125feb6b6fa111fea13239888cd51a3857609e300368098fc
 WALLPAPER_BUNDLE_BYTES=326176620
 WALLPAPER_THEMES='noir nord satie carl-larsson forest-vigil blood-of-urdr root-and-stone blue-horizon the-norns winter-nights'
+# Two optional packs add colour variants (red, blue, green and noir) of the
+# Carl Larsson and Erik Satie themes. They are separate from the ten default
+# theme wallpapers so choosing one never replaces the theme's own image.
+CARL_LARSSON_BUNDLE_URL=https://nextcloud.nirucon.se/s/bmp7adPwQWLgZmH/download
+CARL_LARSSON_BUNDLE_SHA256=a1b5a2bd4a4dac3c23a72398aaf0e53e83c86249d1f25501055a2763c9c098ad
+CARL_LARSSON_BUNDLE_BYTES=182782549
+SATIE_BUNDLE_URL=https://nextcloud.nirucon.se/s/We5oogp7sWwL6Ba/download
+SATIE_BUNDLE_SHA256=85b1268aa59e23c4c1b2e3377d7916c7340f62e5199b905f2a322a22617e9ff2
+SATIE_BUNDLE_BYTES=83910092
+WALLPAPER_EXTRA_COLOURS='red blue green noir'
 
 wallpaper_destination() {
   printf '%s\n' "$(pictures_directory)/Wallpapers/NIRU"
@@ -2641,14 +2653,19 @@ wallpapers() {
   case "$sub" in
     status) wallpapers_status ;;
     download)
+      wp_choice=${2:-themes}
+      case "$wp_choice" in
+        themes|extras|all|carl-larsson|satie|erik-satie) ;;
+        *) die 'wallpapers download takes themes, extras, all, carl-larsson or satie' ;;
+      esac
       # Self-contained command: it can run outside install/update, where WORK
-      # and OS are never set. A private directory keeps the archive off /tmp
-      # and removes it again. OS is needed only to install unzip when missing.
+      # and OS are never set. A private directory keeps the archives off /tmp
+      # and removes them again. OS is needed only to install unzip when missing.
       OS=${OS:-$(distro)}
       wp_work=$(mktemp -d "${TMPDIR:-/tmp}/nirux-wallpapers.XXXXXX") ||
         die 'could not create a temporary directory'
       trap 'rm -rf "$wp_work"' EXIT HUP INT TERM
-      WP_WORK=$wp_work wallpapers_download
+      WP_WORK=$wp_work wallpapers_download "$wp_choice"
       ;;
     remove) wallpapers_remove ;;
     *) die 'wallpapers takes status, download or remove' ;;
@@ -2665,20 +2682,44 @@ wallpaper_theme_count() {
   printf '%s\n' "$wp_count"
 }
 
+# Count the two optional colour-variant packs. Erik Satie's package uses the
+# existing `satie` theme slug so the variants sit beside the default theme image.
+wallpaper_extra_count() {
+  wp_extra_dir=$(wallpaper_destination)
+  wp_extra=0
+  for wp_pack in carl-larsson satie; do
+    for wp_colour in $WALLPAPER_EXTRA_COLOURS; do
+      for wp_size in 4k 8k; do
+        [ -f "$wp_extra_dir/nirux-wallpaper-$wp_pack-$wp_colour-$wp_size.png" ] &&
+          wp_extra=$((wp_extra + 1))
+      done
+    done
+  done
+  printf '%s\n' "$wp_extra"
+}
+
 wallpapers_status() {
   wp_dir=$(wallpaper_destination)
   wp_have=$(wallpaper_theme_count)
+  wp_extra=$(wallpaper_extra_count)
   say "Theme wallpapers: $wp_have of 10 installed in $wp_dir"
-  if [ "$wp_have" -eq 10 ]; then
-    say 'Every theme has its wallpaper; nothing to download.'
+  say "Additional colour packs: $wp_extra of 16 installed"
+  if [ "$wp_have" -eq 10 ] && [ "$wp_extra" -eq 16 ]; then
+    say 'Every theme and additional wallpaper is installed; nothing to download.'
     return 0
   fi
   say ''
-  say 'A theme without its wallpaper uses its own background colour, so the'
-  say 'desktop still matches the theme. Download all ten (4k and 8k, ~326 MB):'
+  say 'A theme without its own wallpaper uses its background colour, so the'
+  say 'desktop still matches the theme. The main set (4k and 8k, ~326 MB):'
   say ''
-  say '    nirux wallpapers download'
+  say '    nirux wallpapers download themes'
   say ''
+  say 'Carl Larsson and Erik Satie colour variants (red, blue, green, noir;'
+  say '4k and 8k, ~255 MB together):'
+  say ''
+  say '    nirux wallpapers download extras'
+  say ''
+  say 'Download everything: nirux wallpapers download all'
   say 'The same action is offered in the launcher under Wallpaper.'
 }
 
@@ -2697,7 +2738,7 @@ fetch_wallpaper_bundle() {
   say 'Download verified.'
 }
 
-wallpapers_download() {
+wallpapers_download_themes() {
   wp_dir=$(wallpaper_destination)
   if [ "$(wallpaper_theme_count)" -eq 10 ]; then
     say 'All ten theme wallpapers are already installed.'
@@ -2772,6 +2813,120 @@ wallpapers_download() {
   say "Installed $wp_installed wallpaper file(s) in $wp_dir"
   say "Themes available now: $(wallpaper_theme_count) of 10"
   say 'Switch theme to see them: niructl theme niru-nord'
+}
+
+# Verify and install one optional colour pack. The archive is staged, every
+# expected file is checked, and only then is the shared manifest updated.
+wallpapers_download_pack() {
+  wp_pack=$1
+  case "$wp_pack" in
+    carl-larsson)
+      wp_url=$CARL_LARSSON_BUNDLE_URL
+      wp_sha=$CARL_LARSSON_BUNDLE_SHA256
+      wp_bytes=$CARL_LARSSON_BUNDLE_BYTES
+      wp_label='Carl Larsson'
+      ;;
+    satie)
+      wp_url=$SATIE_BUNDLE_URL
+      wp_sha=$SATIE_BUNDLE_SHA256
+      wp_bytes=$SATIE_BUNDLE_BYTES
+      wp_label='Erik Satie'
+      ;;
+    *) die "unknown wallpaper pack: $wp_pack" ;;
+  esac
+  wp_dir=$(wallpaper_destination)
+  wp_expected=0
+  for wp_colour in $WALLPAPER_EXTRA_COLOURS; do
+    for wp_size in 4k 8k; do
+      [ -f "$wp_dir/nirux-wallpaper-$wp_pack-$wp_colour-$wp_size.png" ] &&
+        wp_expected=$((wp_expected + 1))
+    done
+  done
+  if [ "$wp_expected" -eq 8 ]; then
+    say "$wp_label additional wallpapers are already installed."
+    return 0
+  fi
+  if ! command -v unzip >/dev/null 2>&1; then
+    say 'Installing unzip, which the wallpaper archive needs...'
+    install_packages unzip ||
+      die 'unzip is needed to install the extra wallpapers; install it and run the command again'
+  fi
+  wp_work=${WP_WORK:?no work directory}
+  wp_zip=$wp_work/$wp_pack.zip
+  rm -f "$wp_zip"
+  say "Downloading $wp_label additional wallpapers (~$((wp_bytes / 1024 / 1024)) MB) from nextcloud.nirucon.se..."
+  fetch "$wp_url" "$wp_zip" ||
+    die "could not download the $wp_label wallpaper pack; check the network connection"
+  wp_size_actual=$(wc -c < "$wp_zip" | tr -d ' ')
+  [ "$wp_size_actual" = "$wp_bytes" ] ||
+    die "the $wp_label download was incomplete ($wp_size_actual of $wp_bytes bytes); run the command again"
+  [ "$(sha256sum "$wp_zip" | cut -d ' ' -f1)" = "$wp_sha" ] ||
+    die "the $wp_label download did not match its checksum; nothing was installed"
+  say 'Download verified.'
+  wp_stage=$wp_work/$wp_pack-stage
+  rm -rf "$wp_stage"
+  mkdir -p "$wp_stage" || die 'could not create the staging directory'
+  unzip -q -o "$wp_zip" -d "$wp_stage" ||
+    die "could not extract the $wp_label wallpaper pack"
+  mkdir -p "$wp_dir" || die "could not create $wp_dir"
+  wp_manifest=$(wallpaper_manifest)
+  mkdir -p "${wp_manifest%/*}" || die 'could not create the NIRUX state directory'
+  : > "$wp_manifest.new"
+  # Preserve every existing record except the names this pack replaces.
+  if [ -f "$wp_manifest" ]; then
+    while IFS= read -r wp_line; do
+      wp_name=${wp_line#*  }
+      [ -n "$wp_name" ] || continue
+      case "$wp_name" in
+        nirux-wallpaper-$wp_pack-*-4k.png|nirux-wallpaper-$wp_pack-*-8k.png) continue ;;
+      esac
+      printf '%s\n' "$wp_line" >> "$wp_manifest.new"
+    done < "$wp_manifest"
+  fi
+  wp_installed=0
+  for wp_colour in $WALLPAPER_EXTRA_COLOURS; do
+    for wp_size in 4k 8k; do
+      wp_name=nirux-wallpaper-$wp_pack-$wp_colour-$wp_size.png
+      # The Erik Satie archive predates the shorter theme slug. Store it under
+      # the slug NIRUX themes use, so the pair is consistent and easy to find.
+      wp_source=$wp_stage/nirux-wallpaper-$wp_pack-$wp_colour-$wp_size.png
+      [ "$wp_pack" = satie ] &&
+        wp_source=$wp_stage/nirux-wallpaper-erik-satie-$wp_colour-$wp_size.png
+      [ -f "$wp_source" ] || die "the $wp_label wallpaper pack is missing $wp_source"
+      wp_target=$wp_dir/$wp_name
+      if [ -f "$wp_target" ]; then
+        wp_old=$(awk -v n="$wp_name" '$2 == n {print $1; exit}' "$wp_manifest" 2>/dev/null)
+        wp_cur=$(sha256sum "$wp_target" | cut -d ' ' -f1)
+        if [ -z "$wp_old" ] || [ "$wp_cur" != "$wp_old" ]; then
+          say "Keeping your own $wp_target"
+          printf '%s  %s\n' "$wp_cur" "$wp_name" >> "$wp_manifest.new"
+          continue
+        fi
+      fi
+      install -m 644 "$wp_source" "$wp_target" || die "could not install $wp_target"
+      printf '%s  %s\n' "$(sha256sum "$wp_target" | cut -d ' ' -f1)" "$wp_name"         >> "$wp_manifest.new"
+      wp_installed=$((wp_installed + 1))
+    done
+  done
+  chmod 644 "$wp_manifest.new" 2>/dev/null || :
+  mv -f "$wp_manifest.new" "$wp_manifest" || die 'could not record the installed wallpapers'
+  rm -rf "$wp_stage" "$wp_zip"
+  say "Installed $wp_installed $wp_label wallpaper file(s)."
+}
+
+wallpapers_download() {
+  wp_choice=${1:-themes}
+  case "$wp_choice" in
+    themes|all) wallpapers_download_themes ;;
+  esac
+  case "$wp_choice" in
+    extras|all)
+      wallpapers_download_pack carl-larsson
+      wallpapers_download_pack satie
+      ;;
+    carl-larsson) wallpapers_download_pack carl-larsson ;;
+    satie|erik-satie) wallpapers_download_pack satie ;;
+  esac
 }
 
 wallpapers_remove() {

@@ -169,6 +169,26 @@ uses the remembered policy and only downloads again when the set is incomplete.
 Pass `default` explicitly to opt out. The password is handed to the staged
 target and never written to disk.
 
+### Additional theme wallpapers
+
+The optional Carl Larsson and Erik Satie packs add red, blue, green and noir
+variants of both themes in 4K and 8K. They are separate from the default theme
+images, so applying a variant never changes which image the theme itself uses.
+
+```sh
+nirux wallpapers status
+nirux wallpapers download extras       # both packs, ~255 MB
+nirux wallpapers download carl-larsson # one pack
+nirux wallpapers download satie
+nirux wallpapers download all          # theme set plus both packs
+```
+
+The same `extras` action is in the launcher under **Wallpaper**. Installed
+variants appear in **NIRU Wallpaper → Official themes**. The downloads are
+size- and SHA-256-verified before extraction, recorded in the same manifest as
+the theme set, survive normal NIRUX updates, and are removed by
+`nirux wallpapers remove` unless replaced by the user.
+
 ### Wallpapers
 
 Only the default theme's wallpaper ships with a release, in 4K and 8K. The
