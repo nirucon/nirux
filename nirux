@@ -2,7 +2,7 @@
 # NIRUX: install a complete X11 desktop, or maintain an existing installation.
 set -eu
 
-VERSION=0.12.47
+VERSION=0.12.48
 PREFIX=${NIRUX_PREFIX:-$HOME/.local}
 BIN=$PREFIX/bin
 STATE=$PREFIX/share/nirux
@@ -250,6 +250,8 @@ _debian_t64() {
   fi
 }
 packages_for() {
+  # The root-owned, restricted standalone Wi-Fi helper uses the system Python.
+  case "$1" in arch) say python ;; debian|void) say python3 ;; esac
   case "$1" in
     arch) say "xorg-server xorg-xinit xorg-xauth xorg-xrandr xorg-xset xorg-xprop xorg-xdpyinfo xorg-xwininfo xorg-xrdb xorg-xsetroot xorg-setxkbmap xf86-input-libinput xkeyboard-config noto-fonts-emoji dbus pam pipewire pipewire-audio pipewire-pulse pipewire-alsa wireplumber alsa-utils alsa-ucm-conf rtkit fontconfig libglvnd ttf-dejavu ttf-jetbrains-mono-nerd kitty fish polkit-gnome libayatana-appindicator libayatana-indicator ayatana-ido bluez bluez-utils power-profiles-daemon dunst picom feh maim slop xclip pcmanfm playerctl libnotify brightnessctl gammastep iproute2 iw xdg-utils xdg-user-dirs unzip procps-ng util-linux" ;;
     debian) say "xserver-xorg xserver-xorg-input-libinput xinit xauth x11-xserver-utils x11-utils x11-xkb-utils xkb-data dbus-x11 dbus-user-session libpam0g pipewire pipewire-pulse pipewire-alsa wireplumber alsa-utils alsa-ucm-conf rtkit fontconfig libgles2 fonts-dejavu-core fonts-font-awesome fonts-jetbrains-mono fonts-noto-color-emoji kitty fish lxpolkit libayatana-appindicator3-1 libayatana-indicator3-7 libayatana-ido3-0.4-0 bluez power-profiles-daemon dunst picom feh maim slop xclip pcmanfm playerctl libnotify-bin brightnessctl gammastep iproute2 iw rfkill xdg-utils xdg-user-dirs unzip procps util-linux" ;;
@@ -1065,7 +1067,15 @@ pictures_directory() {
 wallpaper_manifest() {
   say "$STATE/wallpapers.sha256"
 }
+wallpapers_lock() {
+  [ "${WP_LOCKED_STATE:-}" != "$STATE" ] || return 0
+  mkdir -p "$STATE" || die 'could not create wallpaper state directory'
+  exec 9>"$STATE/wallpapers.lock"
+  flock -w 5 9 || die 'another wallpaper operation is running; try again shortly'
+  WP_LOCKED_STATE=$STATE
+}
 install_wallpapers() {
+  wallpapers_lock
   archive=$WORK/download/nirux/nirux-wallpapers.tar.xz
   [ -f "$archive" ] || return 0
   [ -n "${HOME:-}" ] || return 0
@@ -1150,6 +1160,7 @@ install_wallpapers() {
   rm -rf "$unpack"
 }
 remove_owned_wallpapers() {
+  wallpapers_lock
   manifest=$(wallpaper_manifest)
   [ -f "$manifest" ] || return 0
   destination=$(pictures_directory)/Wallpapers/NIRU
@@ -2438,7 +2449,8 @@ write_system() {
     source_sum=$(sha256sum "$source" | cut -d ' ' -f1)
     [ "$installed_sum" != "$source_sum" ] || return 0
   fi
-  if [ -f "$target" ] && ! owned "$target" && ! legacy_owned "$target"; then
+  if [ -f "$target" ] && ! owned "$target" && ! legacy_owned "$target" &&
+     ! as_root grep -qxF "# NIRUX owner: $PREFIX" "$target" 2>/dev/null; then
     if grep -q '^# NIRUX owner:' "$target" 2>/dev/null; then die "$target belongs to another NIRUX installation"; fi
     [ -f "$target.nirux-backup" ] || as_root cp -p "$target" "$target.nirux-backup"
   fi
@@ -2788,7 +2800,8 @@ wallpapers_download_themes() {
       wp_cur=$(sha256sum "$wp_target" | cut -d ' ' -f1)
       if [ -z "$wp_old" ] || [ "$wp_cur" != "$wp_old" ]; then
         say "Keeping your own $wp_target"
-        printf '%s  %s\n' "$wp_cur" "$wp_name" >> "$wp_manifest.new"
+        # Preserve the original ownership hash, never adopt the user's bytes.
+        [ -z "$wp_old" ] || printf '%s  %s\n' "$wp_old" "$wp_name" >> "$wp_manifest.new"
         continue
       fi
     fi
@@ -2868,6 +2881,15 @@ wallpapers_download_pack() {
   mkdir -p "$wp_stage" || die 'could not create the staging directory'
   unzip -q -o "$wp_zip" -d "$wp_stage" ||
     die "could not extract the $wp_label wallpaper pack"
+  for wp_colour in $WALLPAPER_EXTRA_COLOURS; do
+    for wp_size in 4k 8k; do
+      wp_archive_pack=$wp_pack
+      [ "$wp_pack" != satie ] || wp_archive_pack=erik-satie
+      wp_image=$wp_stage/nirux-wallpaper-$wp_archive_pack-$wp_colour-$wp_size.png
+      [ -f "$wp_image" ] && [ ! -L "$wp_image" ] && is_png "$wp_image" ||
+        die "the $wp_label wallpaper pack is incomplete or invalid; nothing installed"
+    done
+  done
   mkdir -p "$wp_dir" || die "could not create $wp_dir"
   wp_manifest=$(wallpaper_manifest)
   mkdir -p "${wp_manifest%/*}" || die 'could not create the NIRUX state directory'
@@ -2899,7 +2921,7 @@ wallpapers_download_pack() {
         wp_cur=$(sha256sum "$wp_target" | cut -d ' ' -f1)
         if [ -z "$wp_old" ] || [ "$wp_cur" != "$wp_old" ]; then
           say "Keeping your own $wp_target"
-          printf '%s  %s\n' "$wp_cur" "$wp_name" >> "$wp_manifest.new"
+          [ -z "$wp_old" ] || printf '%s  %s\n' "$wp_old" "$wp_name" >> "$wp_manifest.new"
           continue
         fi
       fi
@@ -2915,6 +2937,7 @@ wallpapers_download_pack() {
 }
 
 wallpapers_download() {
+  wallpapers_lock
   wp_choice=${1:-themes}
   case "$wp_choice" in
     themes|all) wallpapers_download_themes ;;
@@ -2930,6 +2953,7 @@ wallpapers_download() {
 }
 
 wallpapers_remove() {
+  wallpapers_lock
   wp_dir=$(wallpaper_destination)
   wp_manifest=$(wallpaper_manifest)
   if [ ! -f "$wp_manifest" ]; then
@@ -2985,24 +3009,29 @@ sddm_qt_version() {
 # D-Bus policy instead and do not need this rule.
 install_wifi_rule() {
   [ -n "${rule_user:-}" ] || return 0
-  wifi_commands=
-  for candidate in /sbin/wpa_cli /usr/sbin/wpa_cli /usr/bin/wpa_cli /sbin/rfkill /usr/sbin/rfkill /usr/bin/rfkill; do
-    [ -x "$ROOT$candidate" ] || [ -x "$candidate" ] || continue
-    case " $wifi_commands " in *" $candidate "*) continue ;; esac
-    wifi_commands="$wifi_commands $candidate"
-  done
-  [ -n "$wifi_commands" ] || {
-    if as_root test -f "$ROOT/etc/sudoers.d/49-nirux-wifi"; then
-      as_root rm -f "$ROOT/etc/sudoers.d/49-nirux-wifi"
-    fi
+  wifi_source=$WORK/wifi-integration/polkit/nirux-wifi
+  wifi_archive=$WORK/download/nirux/nirux-integration.tar.xz
+  if [ -f "$wifi_archive" ]; then
+    mkdir -p "$WORK/wifi-integration"
+    tar -xJf "$wifi_archive" -C "$WORK/wifi-integration" ./polkit/nirux-wifi 2>/dev/null || :
+  fi
+  [ -f "$wifi_source" ] || {
+    # Older release fixtures may not ship the helper; never retain a broad grant.
+    remove_system "$ROOT/etc/sudoers.d/49-nirux-wifi"
     return 0
   }
+  wifi_helper=$ROOT/usr/libexec/nirux-wifi
+  {
+    say '#!/usr/bin/python3'
+    say "# NIRUX owner: $PREFIX"
+    sed '1d' "$wifi_source"
+  } > "$WORK/wifi-helper"
+  write_system "$wifi_helper" "$WORK/wifi-helper"
+  as_root chmod 0755 "$wifi_helper" || die 'could not secure Wi-Fi helper'
   {
     say "# NIRUX owner: $PREFIX"
-    say "# Lets the desktop Wi-Fi selector use standalone wpa_supplicant and rfkill."
-    say "# Only these fixed system programs are granted."
-    say "Cmnd_Alias NIRUX_WIFI = $(printf '%s' "$wifi_commands" | sed 's/^ //')"
-    say "$rule_user ALL=(root) NOPASSWD: NIRUX_WIFI"
+    say '# Only the root-owned request validator is authorized, never raw wpa_cli.'
+    say "$rule_user ALL=(root) NOPASSWD: /usr/libexec/nirux-wifi"
   } > "$WORK/wifi-sudoers"
   if command -v visudo >/dev/null 2>&1; then
     visudo -cf "$WORK/wifi-sudoers" >/dev/null 2>&1 ||
@@ -3195,6 +3224,7 @@ remove_greeters() {
   remove_system "$ROOT/etc/polkit-1/rules.d/49-nirux-power.rules"
   remove_system "$ROOT/etc/sudoers.d/49-nirux-login-wallpaper"
   remove_system "$ROOT/etc/sudoers.d/49-nirux-wifi"
+  remove_system "$ROOT/usr/libexec/nirux-wifi"
   remove_system "$ROOT/etc/sddm.conf.d/50-nirux.conf"
   remove_system "$ROOT/etc/lightdm/lightdm.conf.d/50-nirux-session.conf"
   if [ -f "$ROOT/usr/share/sddm/themes/nirux/Main.qml" ] &&

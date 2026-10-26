@@ -29,6 +29,7 @@ cp "$SOURCE/nirux" "$SOURCE/manifest" "$SOURCE/config.example.toml" "$SOURCE/app
 mkdir -p "$TEST/integration-build/polkit"
 cp -R "$SOURCE/greeters/." "$TEST/integration-build/"
 cp "$SOURCE/polkit/49-nirux-power.rules" "$TEST/integration-build/polkit/"
+cp "$SOURCE/polkit/nirux-wifi" "$TEST/integration-build/polkit/"
 cp "$SOURCE/wallpaper/nirux-wallpaper-noir-4k.png" "$TEST/integration-build/background.png"
 tar -cJf "$TEST/release/nirux-integration.tar.xz" -C "$TEST/integration-build" .
 # The graphical app entries and icons are NIRUX release assets. The local

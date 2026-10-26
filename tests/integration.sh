@@ -87,6 +87,7 @@ integration_archive() {
   mkdir -p "$build/polkit"
   cp -R "$SOURCE/greeters/." "$build/"
   cp "$SOURCE/polkit/49-nirux-power.rules" "$build/polkit/"
+  cp "$SOURCE/polkit/nirux-wifi" "$build/polkit/"
   cp "$SOURCE/wallpaper/nirux-wallpaper-noir-4k.png" "$build/background.png"
   tar -cJf "$1" -C "$build" .
 }
@@ -480,6 +481,7 @@ for TEST_OS in arch debian void; do
   PREFIX=$TEST/$TEST_OS; BIN=$PREFIX/bin; STATE=$PREFIX/share/nirux
   touch "$ROOT/etc/pam.d/system-auth" "$ROOT/etc/pam.d/common-auth" "$ROOT/etc/pam.d/common-account"
   operation install_or_update install --no-packages --browser none --display-manager startx --release "$VERSION"
+  [ -x "$ROOT/usr/libexec/nirux-wifi" ] || fail 'restricted Wi-Fi helper was not installed'
   status
   [ ! -e "$HOME/session-was-started" ] || fail 'status ran the session'
   [ "$(awk '$1 == "suite" {print $2}' "$STATE/current/manifest")" = "$VERSION" ] || fail 'wrong manifest'

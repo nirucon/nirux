@@ -62,6 +62,7 @@ jobs:
           mkdir -p integration-build/polkit
           cp -R greeters/. integration-build/
           cp polkit/49-nirux-power.rules integration-build/polkit/
+          cp polkit/nirux-wifi integration-build/polkit/
           cp wallpaper/nirux-wallpaper-noir-4k.png integration-build/background.png
           tar -cJf nirux-integration.tar.xz -C integration-build .
       - run: |
