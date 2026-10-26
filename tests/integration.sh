@@ -20,6 +20,7 @@ shot_version=$(awk '$1 == "nirushot" {print $2}' "$SOURCE/manifest")
 fetch_version=$(awk '$1 == "nirufetch" {print $2}' "$SOURCE/manifest")
 webapp_version=$(awk '$1 == "niruwebapp" {print $2}' "$SOURCE/manifest")
 wallpaper_app_version=$(awk '$1 == "niruwallpaper" {print $2}' "$SOURCE/manifest")
+display_app_version=$(awk '$1 == "nirudisplay" {print $2}' "$SOURCE/manifest")
 FIXTURE=$TEST/releases
 fail() { printf 'FAIL: %s\n' "$*" >&2; exit 1; }
 no_config_candidates() {
@@ -57,6 +58,10 @@ checksums() { (cd "$1"; sha256sum ./* | sed 's@  ./@  @' > SHA256SUMS); }
 wallpaper_app_assets() {
   printf '[Desktop Entry]\nType=Application\nName=NIRU Wallpaper\nExec=niruwallpaper\n' > "$1/niruwallpaper.desktop"
   printf '\211PNG\r\n\032\n\0\0\0\rIHDR' > "$1/niruwallpaper.png"
+}
+display_app_assets() {
+  printf '[Desktop Entry]\nType=Application\nName=NIRU Display\nExec=nirudisplay\n' > "$1/nirudisplay.desktop"
+  printf '\211PNG\r\n\032\n\0\0\0\rIHDR' > "$1/nirudisplay.png"
 }
 wallpaper_archive() {
   build=$TEST/wallpaper-build
@@ -118,11 +123,13 @@ fixture niruwallpaper "$wallpaper_app_version" niruwallpaper niruwallpaper.deskt
 # The icon is not a program, so it is not part of the fixture binary. It
 # starts with the PNG signature, which an owner comment would break.
 printf '\211PNG\r\n\032\n\0\0\0\rIHDR' > "$FIXTURE/niruwallpaper/$wallpaper_app_version/niruwallpaper.png"
+fixture nirudisplay "$display_app_version" nirudisplay nirudisplay.desktop
+printf '\211PNG\r\n\032\n\0\0\0\rIHDR' > "$FIXTURE/nirudisplay/$display_app_version/nirudisplay.png"
 for os in arch void; do
   printf 'auth include system-auth\naccount include system-auth\n' > "$FIXTURE/nirulock/$lock_version/pam-$os"
 done
 printf 'auth include common-auth\naccount include common-account\n' > "$FIXTURE/nirulock/$lock_version/pam-debian"
-for item in "niruwm/$wm_version" "nirubar/$bar_version" "niruscreensaver/$saver_version" "nirulock/$lock_version" "nirulauncher/$launcher_version" "nirunotify/$notifier_version" "nirushot/$shot_version" "nirufetch/$fetch_version" "niruwebapp/$webapp_version" "niruwallpaper/$wallpaper_app_version"; do checksums "$FIXTURE/$item"; done
+for item in "niruwm/$wm_version" "nirubar/$bar_version" "niruscreensaver/$saver_version" "nirulock/$lock_version" "nirulauncher/$launcher_version" "nirunotify/$notifier_version" "nirushot/$shot_version" "nirufetch/$fetch_version" "niruwebapp/$webapp_version" "niruwallpaper/$wallpaper_app_version" "nirudisplay/$display_app_version"; do checksums "$FIXTURE/$item"; done
 # 99.0.0 is a synthetic second release, never a real network dependency.
 for release in "$VERSION" 99.0.0; do
   mkdir -p "$FIXTURE/nirux/$release"
@@ -132,6 +139,7 @@ for release in "$VERSION" 99.0.0; do
   cp "$SOURCE/config.example.toml" "$FIXTURE/nirux/$release/config.example.toml"
   cp "$SOURCE/appearance.example.toml" "$FIXTURE/nirux/$release/appearance.example.toml"
   wallpaper_app_assets "$FIXTURE/nirux/$release"
+  display_app_assets "$FIXTURE/nirux/$release"
   wallpaper_archive "$FIXTURE/nirux/$release/nirux-wallpapers.tar.xz"
   terminal_archive "$FIXTURE/nirux/$release/nirux-terminal.tar.xz"
   integration_archive "$FIXTURE/nirux/$release/nirux-integration.tar.xz"
@@ -491,6 +499,15 @@ for TEST_OS in arch debian void; do
     "$(sha256sum "$FIXTURE/niruwallpaper/$wallpaper_app_version/niruwallpaper.png" | cut -d ' ' -f1)" ] ||
     fail 'installed icon differs from the released icon'
   find "$ROOT" -name '*.sha256' -path '*nirux-owned*' | grep -q niruwallpaper.png || fail 'icon ownership was not recorded beside the file'
+  display_desktop=$ROOT/usr/share/applications/nirudisplay.desktop
+  grep -qxF "Exec=$BIN/nirudisplay" "$display_desktop" || fail 'display app entry does not use the managed binary'
+  display_icon=$ROOT/usr/share/icons/hicolor/256x256/apps/nirudisplay.png
+  [ -f "$display_icon" ] || fail 'display app icon was not installed'
+  [ "$(head -c 8 "$display_icon" | od -An -tx1 | tr -d ' \n')" = 89504e470d0a1a0a ] || fail 'installed display icon is not a PNG'
+  [ "$(sha256sum "$display_icon" | cut -d ' ' -f1)" = \
+    "$(sha256sum "$FIXTURE/nirudisplay/$display_app_version/nirudisplay.png" | cut -d ' ' -f1)" ] ||
+    fail 'installed display icon differs from the released icon'
+  find "$ROOT" -name '*.sha256' -path '*nirux-owned*' | grep -q nirudisplay.png || fail 'display icon ownership was not recorded beside the file'
   first=$(readlink "$STATE/current")
   operation install_or_update update --no-packages --release 99.0.0
   second=$(readlink "$STATE/current")
@@ -514,6 +531,9 @@ for TEST_OS in arch debian void; do
   [ ! -e "$ROOT/usr/share/applications/niruwallpaper.desktop" ] || fail 'wallpaper app entry remained after uninstall'
   [ ! -e "$ROOT/usr/share/icons/hicolor/256x256/apps/niruwallpaper.png" ] || fail 'wallpaper app icon remained after uninstall'
   find "$ROOT" -name '*.sha256' -path '*nirux-owned*' | grep -q niruwallpaper.png && fail 'icon ownership record remained after uninstall'
+  [ ! -e "$ROOT/usr/share/applications/nirudisplay.desktop" ] || fail 'display app entry remained after uninstall'
+  [ ! -e "$ROOT/usr/share/icons/hicolor/256x256/apps/nirudisplay.png" ] || fail 'display app icon remained after uninstall'
+  find "$ROOT" -name '*.sha256' -path '*nirux-owned*' | grep -q nirudisplay.png && fail 'display icon ownership record remained after uninstall'
   # The directories belong to the package manager. Uninstall removes the files
   # it installed, never a shared directory, even when it is empty.
   [ -d "$ROOT/usr/share/applications" ] || fail 'uninstall removed the shared application directory'

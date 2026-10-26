@@ -234,7 +234,10 @@ profiles automatically based on battery state.
 
 ### Display profiles
 
-Display profiles use `xrandr` and `~/.config/niruwm/displays.toml`.
+Display profiles use `xrandr` and `~/.config/niruwm/displays.toml`. Run
+`nirudisplay` for the graphical editor, or use the launcher's Displays view.
+`niructl display startup set NAME` opts into applying a profile once at login;
+`niructl display startup off` disables it.
 [displays.example.toml](../displays.example.toml) contains Laptop, Desk and
 Presentation templates.
 

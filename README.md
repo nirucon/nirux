@@ -124,6 +124,7 @@ does and have backups of anything you care about.
 | [NIRUNOTIFY](https://github.com/nirucon/nirunotify) | Native notifications and hardware OSD |
 | [NIRUSHOT](https://github.com/nirucon/nirushot) | Screenshot capture, review and annotation |
 | [NIRUWALLPAPER](https://github.com/nirucon/niruwallpaper) | Wallpaper settings with previews and a per-screen choice, opened from the launcher |
+| [NIRUDISPLAY](https://github.com/nirucon/nirudisplay) | Graphical monitor editor: arrangement, modes, refresh rates and saved profiles |
 | [NIRUFETCH](https://github.com/nirucon/nirufetch) | NIRU-themed terminal system fetch |
 | [NIRUWEBAPP](https://github.com/nirucon/niruwebapp) | Browser-backed webapp manager |
 
@@ -187,7 +188,8 @@ nirux wallpapers remove     # delete the downloaded set, keep the default
 
 The same action is in the launcher under **Wallpaper**. To pick a wallpaper with
 preview thumbnails, open **NIRU Wallpaper** from the launcher (search for
-`wallpaper`, `background` or `appearance`) or run `niruwallpaper`. It is a front
+`wallpaper`, `background` or `appearance`) or run `niruwallpaper`. Run
+`nirudisplay` for the graphical monitor editor. It is a front
 end for `niructl wallpaper`, so it changes nothing NIRUWM does not already
 control, and choosing an image there does not change the desktop theme.
 

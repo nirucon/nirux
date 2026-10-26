@@ -2,13 +2,13 @@
 # NIRUX: install a complete X11 desktop, or maintain an existing installation.
 set -eu
 
-VERSION=0.12.38
+VERSION=0.12.39
 PREFIX=${NIRUX_PREFIX:-$HOME/.local}
 BIN=$PREFIX/bin
 STATE=$PREFIX/share/nirux
 CONFDIR=${XDG_CONFIG_HOME:-$HOME/.config}/niruwm
 ROOT=${NIRUX_SYSTEM_ROOT:-}
-PROGRAMS="niruwm niructl niruidle nirubar niruscreensaver nirulock nirulauncher nirunotify nirushot nirufetch niruwebapp niruwallpaper niruwm-session nirux"
+PROGRAMS="niruwm niructl niruidle nirubar niruscreensaver nirulock nirulauncher nirunotify nirushot nirufetch niruwebapp niruwallpaper nirudisplay niruwm-session nirux"
 WORK=
 POLICY_TARGET=
 POLICY_BACKUP=
@@ -2166,6 +2166,8 @@ apply_target_release() {
   release_optional_file nirux "$RELEASE" nirux-integration.tar.xz
   release_optional_file nirux "$RELEASE" niruwallpaper.desktop
   release_optional_file nirux "$RELEASE" niruwallpaper.png
+  release_optional_file nirux "$RELEASE" nirudisplay.desktop
+  release_optional_file nirux "$RELEASE" nirudisplay.png
   # The wallpaper policy is the running installer's answer. It is validated
   # here before any file changes, even when the target ships no wallpaper
   # files of its own.
@@ -2203,6 +2205,7 @@ apply_target_release() {
   [ -n "${rule_user:-}" ] || rule_user=${SUDO_USER:-$(id -un)}
   install_login_wallpaper_rule
   install_wallpaper_app
+  install_display_app
   register_session
   setup_dm_session
   setup_startx
@@ -2249,6 +2252,8 @@ stage_release() {
   release_optional_file nirux "$RELEASE" nirux-integration.tar.xz
   release_optional_file nirux "$RELEASE" niruwallpaper.desktop
   release_optional_file nirux "$RELEASE" niruwallpaper.png
+  release_optional_file nirux "$RELEASE" nirudisplay.desktop
+  release_optional_file nirux "$RELEASE" nirudisplay.png
   [ "$(manifest_version schema)" = 1 ] || die "unsupported manifest schema"
   [ "$(manifest_version suite)" = "$RELEASE" ] || die "suite/manifest version mismatch"
   say 'Verifying the downloaded installer and checksums...'
@@ -3013,6 +3018,20 @@ remove_wallpaper_app() {
   # happens to be empty would delete a system directory NIRUX never owned, and
   # the hicolor theme is shared with every other application.
 }
+# NIRU Display is the graphical monitor editor. Its entry and icon travel with
+# the component release so they cannot drift from the binary's version.
+install_display_app() {
+  [ -f "$WORK/download/nirux/nirudisplay.desktop" ] || return 0
+  [ -f "$WORK/download/nirux/nirudisplay.png" ] || return 0
+  { say "# NIRUX owner: $PREFIX"; sed "s|^Exec=nirudisplay$|Exec=$BIN/nirudisplay|" \
+      "$WORK/download/nirux/nirudisplay.desktop"; } > "$WORK/nirudisplay.desktop"
+  write_system "$ROOT/usr/share/applications/nirudisplay.desktop" "$WORK/nirudisplay.desktop"
+  write_binary "$ROOT/usr/share/icons/hicolor/256x256/apps/nirudisplay.png" "$WORK/download/nirux/nirudisplay.png"
+}
+remove_display_app() {
+  remove_system "$ROOT/usr/share/applications/nirudisplay.desktop"
+  remove_binary "$ROOT/usr/share/icons/hicolor/256x256/apps/nirudisplay.png"
+}
 # Registration only makes NIRUWM available. Debian's Default Xsession (and
 # other desktops on Arch/Void) can otherwise win the first-login selection.
 # Only an explicit install selects defaults; keep/update never change them.
@@ -3447,6 +3466,7 @@ uninstall() {
   lock
   remove_system "$ROOT/usr/share/xsessions/niruwm.desktop"
   remove_wallpaper_app
+  remove_display_app
   remove_system "$ROOT/etc/pam.d/nirulock"
   remove_system "$ROOT/etc/udev/rules.d/70-nirux-backlight.rules"
   remove_greeters
@@ -3645,6 +3665,7 @@ install_or_update() {
   [ -n "${rule_user:-}" ] || rule_user=${SUDO_USER:-$(id -un)}
   install_login_wallpaper_rule
   install_wallpaper_app
+  install_display_app
   register_session
   setup_dm_session
   setup_startx
