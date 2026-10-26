@@ -78,8 +78,11 @@ does and have backups of anything you care about.
   CPU/memory, uptime, power profile, Bluetooth and a system tray.
 - **Standard folders:** locale-aware XDG Documents, Downloads, Music, Pictures
   and Videos.
-- **Keyboard-first desktop:** application search, open-window switching,
-  grouped actions, workspace recipes and focus/presentation modes.
+- **Keyboard-first desktop:** application search with keywords and fuzzy
+  matching, a dedicated web search (GitHub, ArchWiki, Wikipedia, YouTube,
+  crates.io, docs.rs, music, AI and more), searchable keybindings, one NIRUX
+  Settings entry, open-window switching, grouped actions, workspace recipes
+  and focus/presentation modes.
 - **Notifications:** native notification service and hardware OSD, DND,
   history, actions and live theme changes.
 - **Session:** startx, SDDM or LightDM, PAM lock, idle screen, Polkit power

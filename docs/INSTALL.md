@@ -147,6 +147,14 @@ under `~/.config/nirux/theme/`.
 Mouse controls: **Super+left-drag** moves a window, **Super+right-drag** resizes
 from the nearest corner, and **Super+Shift+Space** toggles floating.
 
+**Super+S** opens the dedicated web search: every engine is listed before you
+type, an alias such as `gh niruwm` searches one engine, and a typed `https://`
+address is offered as **Open address**. **Super+Shift+P** finds NIRUX Settings,
+which also lists the effective keybindings and the idle/lock timers.
+**Super+Escape** locks the screen. **Super+Shift+Escape** locks, keeps the lock
+screen visible for three seconds and then suspends; unlocking during that delay
+cancels the suspend.
+
 ## Configuration
 
 Shared window manager and bar settings live in
