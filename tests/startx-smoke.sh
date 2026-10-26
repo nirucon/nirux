@@ -163,16 +163,12 @@ if [ -x "$BIN/niructl" ]; then
   # that must fall back.
   "$BIN/niructl" wallpaper follow-theme on >/dev/null 2>&1 || :
   pictures=$HOME/Pictures/Wallpapers/NIRU
-  satie=
-  for candidate in "$pictures"/nirux-wallpaper-satie-*.png; do
-    [ -f "$candidate" ] || continue
-    satie=$candidate
-    break
-  done
   if "$BIN/niructl" theme niru-satie >/dev/null 2>&1; then
-    [ -z "$satie" ] || rm -f "$satie"
-    # Ask again with the picture gone, so the change under test is the one that
-    # has nothing to show, whether or not the picture was installed.
+    # A theme can ship more than one resolution. Remove every Satie picture,
+    # otherwise theme_image() finds the next suffix and never falls back.
+    rm -f "$pictures"/nirux-wallpaper-satie-*.png
+    # Ask again with the pictures gone, so the change under test is the one
+    # that has nothing to show, whether or not the pictures were installed.
     "$BIN/niructl" theme niru-noir >/dev/null 2>&1 || :
     "$BIN/niructl" theme niru-satie >/dev/null 2>&1 || :
     sleep 1
