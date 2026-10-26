@@ -7,6 +7,9 @@ trap 'rm -rf "$TEST"' EXIT
 export HOME=$TEST/home NIRUX_PREFIX=$TEST/prefix NIRUX_SYSTEM_ROOT=$TEST/system
 export XDG_CONFIG_HOME=$HOME/.config XDG_STATE_HOME=$HOME/.local/state XDG_CACHE_HOME=$HOME/.cache
 export NIRUX_LIBRARY=1 NIRUX_TEST_AS_ROOT=1
+# Offline tests must not fetch the optional 326 MB wallpaper bundle. An
+# explicit choice still overrides this when a test exercises it.
+export NIRUX_WALLPAPERS=default
 mkdir -p "$HOME" "$NIRUX_SYSTEM_ROOT/etc/pam.d" "$NIRUX_SYSTEM_ROOT/usr/share/xsessions"
 . "$SOURCE/nirux"
 unset NIRUX_LIBRARY
@@ -946,10 +949,16 @@ remove_owned_wallpapers
 rm -rf "$wallpaper_dir"
 mkdir -p "$wallpaper_dir"
 rm -f "$STATE/wallpaper-bundle-policy"
+# A fresh unattended install gets the complete set by default.
+# shellcheck disable=SC2034 # read by wallpaper_bundle_decision
+operation=install
+unset NIRUX_WALLPAPERS
+[ "$(wallpaper_bundle_decision </dev/null)" = all ] ||
+  fail 'an unattended install did not choose the complete wallpaper set'
 # shellcheck disable=SC2034 # read by wallpaper_bundle_decision
 operation=update
-unset NIRUX_WALLPAPERS
-# stdin is not a terminal in the test run, so nothing is asked.
+# stdin is not a terminal in the test run, so nothing is asked for a default
+# policy.
 [ -z "$(wallpaper_bundle_decision)" ] || fail 'an update asked about wallpapers without a terminal'
 # A terminal is only asked when a theme is missing its wallpaper.
 printf 'y\n' > "$TEST/answer"

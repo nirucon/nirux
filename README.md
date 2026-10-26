@@ -74,7 +74,7 @@ does and have backups of anything you care about.
 - **Window management:** tiling with seven layouts, per-monitor workspaces,
   scratchpad, floating windows, fullscreen, gap control and session restore.
 - **Bar:** ten per-monitor workspaces with occupancy markers, clock/calendar,
-  network, battery, audio, microphone, brightness, media, weather, updates,
+  wired network and Wi-Fi, battery, audio, microphone, brightness, media, weather, updates,
   CPU/memory, uptime, power profile, Bluetooth and a system tray.
 - **Standard folders:** locale-aware XDG Documents, Downloads, Music, Pictures
   and Videos.
@@ -163,10 +163,11 @@ installer asks. Pass the answers in the environment instead:
 NIRUX_SUDO_PASSWORD="$(cat ~/.config/nirux-sudo)" NIRUX_WALLPAPERS=all ./nirux update
 ```
 
-`NIRUX_WALLPAPERS` takes `all`, `default` (only the default theme's image) or
-`none`; without it, an unattended install fetches only the default theme's
-wallpaper. The password is handed to the staged target and never written to
-disk.
+`NIRUX_WALLPAPERS` and `--wallpapers` take `all` or `default` (only the
+default theme's image). A fresh unattended install defaults to `all`; an update
+uses the remembered policy and only downloads again when the set is incomplete.
+Pass `default` explicitly to opt out. The password is handed to the staged
+target and never written to disk.
 
 ### Wallpapers
 

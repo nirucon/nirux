@@ -2,7 +2,7 @@
 # NIRUX: install a complete X11 desktop, or maintain an existing installation.
 set -eu
 
-VERSION=0.12.44
+VERSION=0.12.45
 PREFIX=${NIRUX_PREFIX:-$HOME/.local}
 BIN=$PREFIX/bin
 STATE=$PREFIX/share/nirux
@@ -65,6 +65,7 @@ OPENCODE_VERSION=2.1.3
 OPENCODE_SHA256=f1561a5fa724b781d97e9bf86eb6aceb82b56ef91fa19c03a2cd7b24c36028ab
 HELIUM_SHA256=6ca6e4a00fef5916821fb1af8a9607cc6b386f678a7eb422e55f19116ba30469
 BROWSER_CHOICE=
+WALLPAPER_CHOICE=
 BROWSER_EFFECTIVE=keep
 BROWSER_EXPLICIT=0
 LOCALSEND_CHOICE=
@@ -79,9 +80,10 @@ die() { say "nirux: $*" >&2; sudo_secret_forget; exit 1; }
 usage() {
   say "NIRUX $VERSION"
   say "Usage: nirux install [--minimal|--no-packages] [--display-manager auto|startx|sddm|lightdm]"
-  say "                    [--browser helium|none|keep] [--localsend yes|no] [--opencode yes|no]"
-  say "       nirux update [--no-packages] [--release VERSION] [--browser helium|none|keep]"
+  say "                    [--browser helium|none|keep] [--wallpapers all|default]"
   say "                    [--localsend yes|no] [--opencode yes|no]"
+  say "       nirux update [--no-packages] [--release VERSION] [--browser helium|none|keep]"
+  say "                    [--wallpapers all|default] [--localsend yes|no] [--opencode yes|no]"
   say "       nirux login-wallpaper [list|set FILE|reset|sync]"
   say "       nirux wallpapers [status|download|remove]"
   say "       nirux layout list|save NAME|apply NAME|rotate OUTPUT normal|left|right|inverted|auto"
@@ -250,7 +252,7 @@ _debian_t64() {
 packages_for() {
   case "$1" in
     arch) say "xorg-server xorg-xinit xorg-xauth xorg-xrandr xorg-xset xorg-xprop xorg-xdpyinfo xorg-xwininfo xorg-xrdb xorg-xsetroot xorg-setxkbmap xf86-input-libinput xkeyboard-config noto-fonts-emoji dbus pam pipewire pipewire-audio pipewire-pulse pipewire-alsa wireplumber alsa-utils alsa-ucm-conf rtkit fontconfig libglvnd ttf-dejavu ttf-jetbrains-mono-nerd kitty fish polkit-gnome libayatana-appindicator libayatana-indicator ayatana-ido bluez bluez-utils power-profiles-daemon dunst picom feh maim slop xclip pcmanfm playerctl libnotify brightnessctl gammastep iproute2 iw xdg-utils xdg-user-dirs unzip procps-ng util-linux" ;;
-    debian) say "xserver-xorg xserver-xorg-input-libinput xinit xauth x11-xserver-utils x11-utils x11-xkb-utils xkb-data dbus-x11 dbus-user-session libpam0g pipewire pipewire-pulse pipewire-alsa wireplumber alsa-utils alsa-ucm-conf rtkit fontconfig libgles2 fonts-dejavu-core fonts-font-awesome fonts-jetbrains-mono fonts-noto-color-emoji kitty fish lxpolkit libayatana-appindicator3-1 libayatana-indicator3-7 libayatana-ido3-0.4-0 bluez power-profiles-daemon dunst picom feh maim slop xclip pcmanfm playerctl libnotify-bin brightnessctl gammastep iproute2 iw xdg-utils xdg-user-dirs unzip procps util-linux" ;;
+    debian) say "xserver-xorg xserver-xorg-input-libinput xinit xauth x11-xserver-utils x11-utils x11-xkb-utils xkb-data dbus-x11 dbus-user-session libpam0g pipewire pipewire-pulse pipewire-alsa wireplumber alsa-utils alsa-ucm-conf rtkit fontconfig libgles2 fonts-dejavu-core fonts-font-awesome fonts-jetbrains-mono fonts-noto-color-emoji kitty fish lxpolkit libayatana-appindicator3-1 libayatana-indicator3-7 libayatana-ido3-0.4-0 bluez power-profiles-daemon dunst picom feh maim slop xclip pcmanfm playerctl libnotify-bin brightnessctl gammastep iproute2 iw rfkill xdg-utils xdg-user-dirs unzip procps util-linux" ;;
     void) say "xorg-minimal xinit xauth xrandr xset xprop xdpyinfo xwininfo xrdb xsetroot setxkbmap xkeyboard-config dbus elogind pam pam-base pipewire wireplumber alsa-utils alsa-ucm-conf rtkit fontconfig libglvnd dejavu-fonts-ttf nerd-fonts-symbols-ttf noto-fonts-emoji kitty fish-shell polkit-gnome libayatana-appindicator libayatana-indicator ayatana-ido bluez power-profiles-daemon dunst picom feh maim slop xclip pcmanfm playerctl libnotify brightnessctl gammastep iproute2 iw xdg-utils xdg-user-dirs unzip procps-ng util-linux" ;;
   esac
 }
@@ -1969,17 +1971,30 @@ wallpapers_policy_read() {
 # to the terminal that started the install: the staged target runs with stdin
 # closed, so it never sees one, and its answer file is carried over instead.
 wallpaper_bundle_decision() {
-  case "${NIRUX_WALLPAPERS:-}" in
+  case "${WALLPAPER_CHOICE:-${NIRUX_WALLPAPERS:-}}" in
     all) say all; return 0 ;;
     none|default) say default; return 0 ;;
   esac
   wp_persisted=$(wallpapers_policy_read)
   case "$operation" in
-    install) ;;
+    install)
+      # A fresh noninteractive install still gets the full nine-theme set.
+      # The owner explicitly wants every installed machine to have all theme
+      # wallpapers; an explicit `default` policy or --wallpapers default is
+      # the way to opt out.
+      if [ -z "$wp_persisted" ] && [ ! -t 0 ]; then
+        say all
+        return 0
+      fi
+      ;;
     update)
       # Only when the ten themes are known to be incomplete, so a machine that
       # already has the set never asks again.
       [ "$(wallpaper_theme_count)" -lt 10 ] || return 0
+      if [ "$wp_persisted" = all ] && [ -f "${WORK}/download/nirux/nirux-wallpapers.tar.xz" ]; then
+        say all
+        return 0
+      fi
       ;;
     *) return 0 ;;
   esac
@@ -2014,6 +2029,13 @@ wallpapers_policy_write() {
   [ -n "${wp_policy_file:-}" ] || wp_policy_file=$STATE/wallpaper-bundle-policy
   printf '# NIRUX owner: %s\nwallpapers %s\n' "$PREFIX" "$wp_persisted" > "$wp_policy_file" ||
     die 'could not record the wallpaper policy'
+}
+# Direct (non-staged) installs used to call a helper that no longer existed.
+# Keep the decision and the persisted policy in one place for both paths.
+select_wallpaper_bundle() {
+  [ -n "${wallpaper_decision:-}" ] || return 0
+  wp_persisted=$wallpaper_decision
+  wallpapers_policy_write
 }
 manifest_version() {
   value=$(awk -v n="$1" '$1 == n {print $2}' "$WORK/download/nirux/manifest")
@@ -2205,6 +2227,7 @@ apply_target_release() {
   # A session with no NIRUX greeter still must not keep a grant from a release
   # that installed one; the helper writes nothing when no greeter is present.
   [ -n "${rule_user:-}" ] || rule_user=${SUDO_USER:-$(id -un)}
+  install_wifi_rule
   install_login_wallpaper_rule
   install_wallpaper_app
   install_display_app
@@ -2799,6 +2822,44 @@ sddm_qt_version() {
 # root run it: the argument restriction was no protection at all. The rule now
 # names the fixed system path the gallery writes, so the grant can never reach
 # a user-controlled executable.
+# Wi-Fi control on a standalone wpa_supplicant system needs root for the
+# control socket and rfkill. The grant names fixed system programs only; the
+# user's own prefix can never match. NetworkManager systems use their normal
+# D-Bus policy instead and do not need this rule.
+install_wifi_rule() {
+  [ -n "${rule_user:-}" ] || return 0
+  wifi_commands=
+  for candidate in /sbin/wpa_cli /usr/sbin/wpa_cli /usr/bin/wpa_cli /sbin/rfkill /usr/sbin/rfkill /usr/bin/rfkill; do
+    [ -x "$ROOT$candidate" ] || [ -x "$candidate" ] || continue
+    case " $wifi_commands " in *" $candidate "*) continue ;; esac
+    wifi_commands="$wifi_commands $candidate"
+  done
+  [ -n "$wifi_commands" ] || {
+    if as_root test -f "$ROOT/etc/sudoers.d/49-nirux-wifi"; then
+      as_root rm -f "$ROOT/etc/sudoers.d/49-nirux-wifi"
+    fi
+    return 0
+  }
+  {
+    say "# NIRUX owner: $PREFIX"
+    say "# Lets the desktop Wi-Fi selector use standalone wpa_supplicant and rfkill."
+    say "# Only these fixed system programs are granted."
+    say "Cmnd_Alias NIRUX_WIFI = $(printf '%s' "$wifi_commands" | sed 's/^ //')"
+    say "$rule_user ALL=(root) NOPASSWD: NIRUX_WIFI"
+  } > "$WORK/wifi-sudoers"
+  if command -v visudo >/dev/null 2>&1; then
+    visudo -cf "$WORK/wifi-sudoers" >/dev/null 2>&1 ||
+      die 'generated Wi-Fi sudoers rule is invalid; nothing was installed'
+  fi
+  wifi_sudoers=$ROOT/etc/sudoers.d/49-nirux-wifi
+  if [ -f "$wifi_sudoers" ] && [ "$(as_root cat "$wifi_sudoers" 2>/dev/null)" = "$(cat "$WORK/wifi-sudoers")" ]; then
+    :
+  else
+    write_system "$wifi_sudoers" "$WORK/wifi-sudoers"
+  fi
+  as_root chmod 0440 "$wifi_sudoers" || die 'could not secure the Wi-Fi sudoers rule'
+}
+
 install_login_wallpaper_rule() {
   legacy_file=$ROOT/etc/sudoers.d/49-nirux-login-wallpaper
   # The unsafe rule from earlier releases goes first, whatever happens next: it
@@ -2976,6 +3037,7 @@ install_greeters() {
 remove_greeters() {
   remove_system "$ROOT/etc/polkit-1/rules.d/49-nirux-power.rules"
   remove_system "$ROOT/etc/sudoers.d/49-nirux-login-wallpaper"
+  remove_system "$ROOT/etc/sudoers.d/49-nirux-wifi"
   remove_system "$ROOT/etc/sddm.conf.d/50-nirux.conf"
   remove_system "$ROOT/etc/lightdm/lightdm.conf.d/50-nirux-session.conf"
   if [ -f "$ROOT/usr/share/sddm/themes/nirux/Main.qml" ] &&
@@ -3610,6 +3672,7 @@ install_or_update() {
       --full) packages=1 ;;
       --display-manager) shift; [ "$#" -gt 0 ] || die 'missing display-manager value'; DM=$1 ;;
       --browser) shift; [ "$#" -gt 0 ] || die 'missing browser value'; BROWSER_CHOICE=$1; BROWSER_EXPLICIT=1 ;;
+      --wallpapers) shift; [ "$#" -gt 0 ] || die 'missing wallpapers value'; WALLPAPER_CHOICE=$1 ;;
       --localsend) shift; [ "$#" -gt 0 ] || die 'missing localsend value'; LOCALSEND_CHOICE=$1; LOCALSEND_EXPLICIT=1 ;;
       --opencode) shift; [ "$#" -gt 0 ] || die 'missing opencode value'; OPENCODE_CHOICE=$1; OPENCODE_EXPLICIT=1 ;;
       --release) shift; [ "$#" -gt 0 ] || die 'missing release version'; RELEASE=${1#v} ;;
@@ -3617,6 +3680,10 @@ install_or_update() {
     esac
     shift
   done
+  case "${WALLPAPER_CHOICE:-}" in
+    ''|all|default) ;;
+    *) die 'wallpapers must be all or default' ;;
+  esac
   case "$operation" in
     update) say "Updating NIRUX... please hold. Checking packages, releases and components." ;;
     install) say "Installing NIRUX... please hold. Checking packages and releases." ;;
@@ -3683,6 +3750,7 @@ install_or_update() {
   # A session with no NIRUX greeter still must not keep a grant from a release
   # that installed one; the helper writes nothing when no greeter is present.
   [ -n "${rule_user:-}" ] || rule_user=${SUDO_USER:-$(id -un)}
+  install_wifi_rule
   install_login_wallpaper_rule
   install_wallpaper_app
   install_display_app
@@ -3699,7 +3767,7 @@ install_or_update() {
   fi
   # The wallpaper set is a large optional download, so it runs after the
   # installation is already usable. A failure here never undoes the install.
-  wallpapers_policy=${NIRUX_WALLPAPERS:-}
+  wallpapers_policy=${WALLPAPER_CHOICE:-${NIRUX_WALLPAPERS:-}}
   [ -n "$wallpapers_policy" ] || wallpapers_policy=$(wallpapers_policy_read) || :
   wallpapers_install_bundle
 }
