@@ -2,7 +2,7 @@
 # NIRUX: install a complete X11 desktop, or maintain an existing installation.
 set -eu
 
-VERSION=0.12.45
+VERSION=0.12.46
 PREFIX=${NIRUX_PREFIX:-$HOME/.local}
 BIN=$PREFIX/bin
 STATE=$PREFIX/share/nirux
@@ -2363,9 +2363,9 @@ activate() {
   say "Activated NIRUX $RELEASE. Previous generation retained for nirux rollback."
 }
 owned() {
-  grep -qxF "# NIRUX owner: $PREFIX" "$1" ||
-    grep -qxF "// NIRUX owner: $PREFIX" "$1" ||
-    grep -qxF "/* NIRUX owner: $PREFIX */" "$1"
+  grep -qxF "# NIRUX owner: $PREFIX" "$1" 2>/dev/null ||
+    grep -qxF "// NIRUX owner: $PREFIX" "$1" 2>/dev/null ||
+    grep -qxF "/* NIRUX owner: $PREFIX */" "$1" 2>/dev/null
 }
 # A binary file cannot carry a comment: the header bytes would corrupt it and
 # a PNG decoder would reject the icon. Ownership for such files is recorded in
@@ -2413,7 +2413,7 @@ legacy_owned() {
     */xsessions/niruwm.desktop)
       grep -qxF "Exec=$BIN/niruwm-session" "$1" ||
         grep -qxF "Exec=\"$BIN/niruwm-session\"" "$1" ;;
-    */pam.d/nirulock) grep -q '^# Installed by nirux\.' "$1" ;;
+    */pam.d/nirulock) grep -q '^# Installed by nirux\.' "$1" 2>/dev/null ;;
     *) return 1 ;;
   esac
 }
@@ -2430,12 +2430,14 @@ same_file() {
 write_system() {
   target=$1; source=$2
   if [ -f "$target" ]; then
-    installed_sum=$(sha256sum "$target" | cut -d ' ' -f1)
+    # Some managed files, notably sudoers rules, are unreadable to the user.
+    # Compare through the same privilege boundary used to install them.
+    installed_sum=$(as_root sha256sum "$target" 2>/dev/null | cut -d ' ' -f1)
     source_sum=$(sha256sum "$source" | cut -d ' ' -f1)
     [ "$installed_sum" != "$source_sum" ] || return 0
   fi
   if [ -f "$target" ] && ! owned "$target" && ! legacy_owned "$target"; then
-    if grep -q '^# NIRUX owner:' "$target"; then die "$target belongs to another NIRUX installation"; fi
+    if grep -q '^# NIRUX owner:' "$target" 2>/dev/null; then die "$target belongs to another NIRUX installation"; fi
     [ -f "$target.nirux-backup" ] || as_root cp -p "$target" "$target.nirux-backup"
   fi
   as_root install -d -m 755 "$(dirname "$target")"
