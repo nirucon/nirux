@@ -21,6 +21,7 @@ fetch_version=$(awk '$1 == "nirufetch" {print $2}' "$SOURCE/manifest")
 webapp_version=$(awk '$1 == "niruwebapp" {print $2}' "$SOURCE/manifest")
 wallpaper_app_version=$(awk '$1 == "niruwallpaper" {print $2}' "$SOURCE/manifest")
 display_app_version=$(awk '$1 == "nirudisplay" {print $2}' "$SOURCE/manifest")
+theme_selector_version=$(awk '$1 == "niruthemeselector" {print $2}' "$SOURCE/manifest")
 FIXTURE=$TEST/releases
 fail() { printf 'FAIL: %s\n' "$*" >&2; exit 1; }
 no_config_candidates() {
@@ -62,6 +63,10 @@ wallpaper_app_assets() {
 display_app_assets() {
   printf '[Desktop Entry]\nType=Application\nName=NIRU Display\nExec=nirudisplay\n' > "$1/nirudisplay.desktop"
   printf '\211PNG\r\n\032\n\0\0\0\rIHDR' > "$1/nirudisplay.png"
+}
+theme_selector_assets() {
+  printf '[Desktop Entry]\nType=Application\nName=NIRU Theme Selector\nExec=niruthemeselector\n' > "$1/niruthemeselector.desktop"
+  printf '\211PNG\r\n\032\n\0\0\0\rIHDR' > "$1/niruthemeselector.png"
 }
 wallpaper_archive() {
   build=$TEST/wallpaper-build
@@ -125,11 +130,13 @@ fixture niruwallpaper "$wallpaper_app_version" niruwallpaper niruwallpaper.deskt
 printf '\211PNG\r\n\032\n\0\0\0\rIHDR' > "$FIXTURE/niruwallpaper/$wallpaper_app_version/niruwallpaper.png"
 fixture nirudisplay "$display_app_version" nirudisplay nirudisplay.desktop
 printf '\211PNG\r\n\032\n\0\0\0\rIHDR' > "$FIXTURE/nirudisplay/$display_app_version/nirudisplay.png"
+fixture niruthemeselector "$theme_selector_version" niruthemeselector niruthemeselector.desktop
+printf '\211PNG\r\n\032\n\0\0\0\rIHDR' > "$FIXTURE/niruthemeselector/$theme_selector_version/niruthemeselector.png"
 for os in arch void; do
   printf 'auth include system-auth\naccount include system-auth\n' > "$FIXTURE/nirulock/$lock_version/pam-$os"
 done
 printf 'auth include common-auth\naccount include common-account\n' > "$FIXTURE/nirulock/$lock_version/pam-debian"
-for item in "niruwm/$wm_version" "nirubar/$bar_version" "niruscreensaver/$saver_version" "nirulock/$lock_version" "nirulauncher/$launcher_version" "nirunotify/$notifier_version" "nirushot/$shot_version" "nirufetch/$fetch_version" "niruwebapp/$webapp_version" "niruwallpaper/$wallpaper_app_version" "nirudisplay/$display_app_version"; do checksums "$FIXTURE/$item"; done
+for item in "niruwm/$wm_version" "nirubar/$bar_version" "niruscreensaver/$saver_version" "nirulock/$lock_version" "nirulauncher/$launcher_version" "nirunotify/$notifier_version" "nirushot/$shot_version" "nirufetch/$fetch_version" "niruwebapp/$webapp_version" "niruwallpaper/$wallpaper_app_version" "nirudisplay/$display_app_version" "niruthemeselector/$theme_selector_version"; do checksums "$FIXTURE/$item"; done
 # 99.0.0 is a synthetic second release, never a real network dependency.
 for release in "$VERSION" 99.0.0; do
   mkdir -p "$FIXTURE/nirux/$release"
@@ -140,6 +147,7 @@ for release in "$VERSION" 99.0.0; do
   cp "$SOURCE/appearance.example.toml" "$FIXTURE/nirux/$release/appearance.example.toml"
   wallpaper_app_assets "$FIXTURE/nirux/$release"
   display_app_assets "$FIXTURE/nirux/$release"
+  theme_selector_assets "$FIXTURE/nirux/$release"
   wallpaper_archive "$FIXTURE/nirux/$release/nirux-wallpapers.tar.xz"
   terminal_archive "$FIXTURE/nirux/$release/nirux-terminal.tar.xz"
   integration_archive "$FIXTURE/nirux/$release/nirux-integration.tar.xz"
@@ -476,6 +484,9 @@ for TEST_OS in arch debian void; do
   grep -qx 'browser = \[\]' "$XDG_CONFIG_HOME/niruwm/config.toml" || fail 'fresh opt-out did not disable the managed browser default'
   [ ! -e "$BIN/helium" ] || fail 'browser was installed despite opt-out'
   [ -f "$HOME/Pictures/Wallpapers/NIRU/nirux-wallpaper-noir-4k.png" ] || fail 'theme wallpapers were not installed'
+  mkdir -p "$XDG_CONFIG_HOME/niruwm/themes"
+  printf 'name = "User Test"\nbackground = "101010"\nforeground = "eeeeee"\nmuted = "999999"\nborder = "333333"\nfocus = "4488cc"\n' > "$XDG_CONFIG_HOME/niruwm/themes/user-test.toml"
+  printf 'hidden = ["niru-satie"]\n' > "$XDG_CONFIG_HOME/niruwm/theme-preferences.toml"
   [ -f "$XDG_CONFIG_HOME/kitty/kitty.conf" ] || fail 'kitty integration was not installed'
   [ -f "$XDG_CONFIG_HOME/nirux/theme/kitty.conf" ] || fail 'kitty theme was not generated'
   [ -f "$XDG_CONFIG_HOME/nirux/theme/fish.fish" ] || fail 'fish theme was not generated'
@@ -508,6 +519,15 @@ for TEST_OS in arch debian void; do
     "$(sha256sum "$FIXTURE/nirudisplay/$display_app_version/nirudisplay.png" | cut -d ' ' -f1)" ] ||
     fail 'installed display icon differs from the released icon'
   find "$ROOT" -name '*.sha256' -path '*nirux-owned*' | grep -q nirudisplay.png || fail 'display icon ownership was not recorded beside the file'
+  theme_desktop=$ROOT/usr/share/applications/niruthemeselector.desktop
+  grep -qxF "Exec=$BIN/niruthemeselector" "$theme_desktop" || fail 'theme selector entry does not use the managed binary'
+  theme_icon=$ROOT/usr/share/icons/hicolor/256x256/apps/niruthemeselector.png
+  [ -f "$theme_icon" ] || fail 'theme selector icon was not installed'
+  [ "$(head -c 8 "$theme_icon" | od -An -tx1 | tr -d ' \n')" = 89504e470d0a1a0a ] || fail 'installed theme selector icon is not a PNG'
+  [ "$(sha256sum "$theme_icon" | cut -d ' ' -f1)" = \
+    "$(sha256sum "$FIXTURE/niruthemeselector/$theme_selector_version/niruthemeselector.png" | cut -d ' ' -f1)" ] ||
+    fail 'installed theme selector icon differs from the released icon'
+  find "$ROOT" -name '*.sha256' -path '*nirux-owned*' | grep -q niruthemeselector.png || fail 'theme selector icon ownership was not recorded beside the file'
   first=$(readlink "$STATE/current")
   operation install_or_update update --no-packages --release 99.0.0
   second=$(readlink "$STATE/current")
@@ -534,6 +554,9 @@ for TEST_OS in arch debian void; do
   [ ! -e "$ROOT/usr/share/applications/nirudisplay.desktop" ] || fail 'display app entry remained after uninstall'
   [ ! -e "$ROOT/usr/share/icons/hicolor/256x256/apps/nirudisplay.png" ] || fail 'display app icon remained after uninstall'
   find "$ROOT" -name '*.sha256' -path '*nirux-owned*' | grep -q nirudisplay.png && fail 'display icon ownership record remained after uninstall'
+  [ ! -e "$ROOT/usr/share/applications/niruthemeselector.desktop" ] || fail 'theme selector entry remained after uninstall'
+  [ ! -e "$ROOT/usr/share/icons/hicolor/256x256/apps/niruthemeselector.png" ] || fail 'theme selector icon remained after uninstall'
+  find "$ROOT" -name '*.sha256' -path '*nirux-owned*' | grep -q niruthemeselector.png && fail 'theme selector icon ownership record remained after uninstall'
   # The directories belong to the package manager. Uninstall removes the files
   # it installed, never a shared directory, even when it is empty.
   [ -d "$ROOT/usr/share/applications" ] || fail 'uninstall removed the shared application directory'
@@ -544,6 +567,8 @@ for TEST_OS in arch debian void; do
   [ -d "$XDG_STATE_HOME/nirulock" ] || fail 'normal uninstall removed lock state'
   [ -d "$XDG_STATE_HOME/niruscreensaver" ] || fail 'normal uninstall removed saver state'
   [ -f "$HOME/Pictures/Wallpapers/NIRU/nirux-wallpaper-noir-4k.png" ] || fail 'normal uninstall removed theme wallpapers'
+  [ -f "$XDG_CONFIG_HOME/niruwm/themes/user-test.toml" ] || fail 'normal uninstall removed a user theme'
+  [ -f "$XDG_CONFIG_HOME/niruwm/theme-preferences.toml" ] || fail 'normal uninstall removed theme preferences'
   [ ! -e "$XDG_CONFIG_HOME/nirux" ] || fail 'normal uninstall left terminal config'
   [ ! -e "$BIN/nirux-theme-hook" ] || fail 'normal uninstall left the theme hook'
   operation uninstall --purge

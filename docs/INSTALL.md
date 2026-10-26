@@ -232,6 +232,14 @@ nirulauncher --power
 Only profiles reported by the provider are offered. NIRUX does not switch
 profiles automatically based on battery state.
 
+### Themes
+
+`niructl theme NAME` remains the fast textual theme switch. Run
+`niruthemeselector` for the graphical browser, or open **Appearance and themes**
+in NIRUX Settings. User themes live in `~/.config/niruwm/themes/`; bundled
+themes can be hidden, and imported themes can be removed without deleting
+external wallpaper files.
+
 ### Display profiles
 
 Display profiles use `xrandr` and `~/.config/niruwm/displays.toml`. Run
@@ -490,6 +498,10 @@ suite-owned configuration directories:
 - `~/.local/state/niruwm`, `~/.local/state/nirulock`,
   `~/.local/state/niruscreensaver`
 - `~/.cache/nirubar`
+
+Normal uninstall keeps user themes in `~/.config/niruwm/themes/`. An explicit
+`--purge` removes suite configuration directories, including user theme files;
+back them up first.
 
 XDG paths are respected. OS packages, the chosen display manager and
 unrelated files are retained.

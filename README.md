@@ -125,6 +125,7 @@ does and have backups of anything you care about.
 | [NIRUSHOT](https://github.com/nirucon/nirushot) | Screenshot capture, review and annotation |
 | [NIRUWALLPAPER](https://github.com/nirucon/niruwallpaper) | Wallpaper settings with previews and a per-screen choice, opened from the launcher |
 | [NIRUDISPLAY](https://github.com/nirucon/nirudisplay) | Graphical monitor editor: arrangement, modes, refresh rates and saved profiles |
+| [NIRUTHEMESELECTOR](https://github.com/nirucon/niruthemeselector) | Graphical theme browser with wallpaper/palette previews, import and hide/remove |
 | [NIRUFETCH](https://github.com/nirucon/nirufetch) | NIRU-themed terminal system fetch |
 | [NIRUWEBAPP](https://github.com/nirucon/niruwebapp) | Browser-backed webapp manager |
 
@@ -189,7 +190,8 @@ nirux wallpapers remove     # delete the downloaded set, keep the default
 The same action is in the launcher under **Wallpaper**. To pick a wallpaper with
 preview thumbnails, open **NIRU Wallpaper** from the launcher (search for
 `wallpaper`, `background` or `appearance`) or run `niruwallpaper`. Run
-`nirudisplay` for the graphical monitor editor. It is a front
+`niruthemeselector` for visual theme previews, import and bundled-theme
+hide/show. Run `nirudisplay` for the graphical monitor editor. It is a front
 end for `niructl wallpaper`, so it changes nothing NIRUWM does not already
 control, and choosing an image there does not change the desktop theme.
 
@@ -336,3 +338,7 @@ XDG paths are respected.
 ## License
 
 MIT. Copyright 2026 Nicklas Rudolfsson.
+
+Normal uninstall keeps user themes in `~/.config/niruwm/themes/`. An explicit
+`nirux uninstall --purge` removes suite configuration directories, including
+those user theme files; back them up first.
