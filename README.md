@@ -46,26 +46,35 @@ applications and image downloads are described in the installation guide.
 - **NIRUWM:** seven layouts, per-monitor workspaces, floating windows, scratchpad,
   keybindings, session state and display profiles.
 - **NIRUBAR:** workspaces, wired/Wi-Fi state, audio, brightness, media, battery,
-  calendar and optional providers, with direct routes to settings.
+  calendar and optional providers, with direct routes to settings. It supports
+  XEmbed and D-Bus StatusNotifierItem trays on the primary monitor, including
+  real icons and clickable application menus. A session watcher recovers windows
+  after dock, lid and output changes and re-applies the saved startup profile
+  when the connected-output set changes.
 - **NIRU Launcher:** applications, windows, web search, actions and NIRUX Settings.
   **Super+A** opens the focused NIRU Actions view; the same entries appear in
   **Super+Shift+P**. It includes storage review, off-screen window recovery, NIRUX
   installed/running status, focus and presentation contexts, recent tasks and an
-  optional OpenCode terminal handoff. Wi-Fi discovery, SSID filtering and profile
-  operations use the existing network manager. See the
-  [backend compatibility notes](docs/WIFI.md) and [NIRU Actions](docs/ACTIONS.md).
+  optional OpenCode terminal handoff. Deterministic phrases such as "lock",
+  "lås", "focus mode", "stör ej" and "höj volymen" resolve to the same commands;
+  **Ctrl+S** saves the selected application or command as a reusable action.
+  Wi-Fi discovery, SSID filtering and profile operations use the existing
+  network manager. See the [backend compatibility notes](docs/WIFI.md) and
+  [NIRU Actions](docs/ACTIONS.md).
 - **Theme Selector, Wallpaper and Display:** native graphical settings; browsing
   previews does not automatically apply a change. Theme Selector and Wallpaper
   open floating on the active monitor.
 - **Notifications, lock, idle and screenshots:** integrated lightweight tools,
   with shared colours/fonts and normal system authentication.
-- **Input settings:** keyboard layout/repeat, pointer speed, natural scrolling and
-  touchpad tap controls. The system X11 layout is inherited unless you explicitly
-  choose another one. See [input settings](docs/INPUT.md).
+- **Input and display scale:** keyboard layout/repeat, pointer speed, natural
+  scrolling and touchpad tap controls. The system X11 layout is inherited unless
+  you explicitly choose another one. The bar and launcher read `Xft.dpi` and
+  scale through `NIRU_UI_SCALE` (bounded 0.75–2.5) while still fitting an
+  800x600 screen. See [input settings](docs/INPUT.md).
 - **NIRU Display 0.2:** stable screen numbers, EDID identity, full frames, frozen
   drag, snapping, zoom/pan, mirror grouping and safe preview transactions.
 - **NIRUBAR:** includes an optional `tasks` module for running/waiting NIRU jobs and
-  an XEmbed tray; it does not require a desktop daemon.
+  an XEmbed + SNI tray; it does not require a desktop daemon.
 
 Start with **Super+P** for applications, **Super+A** for NIRU Actions and
 **Super+Shift+P** for applications, windows, actions and settings. Use the

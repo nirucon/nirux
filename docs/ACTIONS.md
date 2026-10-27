@@ -20,6 +20,46 @@ Deterministic actions cover:
 The action list is built from the same `niructl` commands used by the CLI. Review
 output is shown in a terminal; no personal file is deleted by a silent default.
 
+## Intent phrases
+
+Typing a small, fixed phrase in the normal launcher resolves it to the same
+catalogue entry before ordinary app results. English and Swedish forms are
+supported, including lock/lås, logout/logga ut, restart/starta om, shut
+down/stäng av, focus/fokusläge, presentation/mötesläge, DND/stör ej, keep
+awake/håll vaken, volume/microphone mute, brightness, night light, compositor,
+off-screen window recovery and Wi-Fi radio on/off through NetworkManager.
+Matching is exact after normalization and bounded; unknown text stays a search
+and never becomes a shell command.
+
+## Saved actions
+
+Save any selected application or command row with **Ctrl+S**, or store an argv
+directly:
+
+```sh
+niructl action save "Night desk" -- niructl nightlight on
+niructl action list [--json]
+niructl action run "Night desk"
+niructl action pin "Night desk"
+niructl action rename "Night desk" "Evening"
+niructl action delete "Evening"
+```
+
+Saved actions are user-owned TOML under `~/.config/niruwm/actions.toml`, run
+without a shell, and appear in both the Actions and System Actions views plus
+normal search. A stored favourite uses the existing star/pin behaviour. Only
+name and argv are stored; no transcript, password or model prompt is saved.
+
+## Display transitions
+
+`niructl display watch` is started as a session helper. When the set of
+connected outputs changes it waits for xrandr to settle, applies the configured
+startup profile if every output in it is present, and otherwise moves managed
+windows that are outside every connected display. A manual enable/disable change
+does not re-apply a profile, so it cannot undo a deliberate `xrandr` choice; it
+still recovers off-screen windows. `niructl display watch --once` prints the
+current state for diagnostics.
+
 ## Tasks
 
 `niructl task list` shows recent tasks. `nirubar` can show the optional `tasks`
