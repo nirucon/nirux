@@ -2,7 +2,7 @@
 # NIRUX: install a complete X11 desktop, or maintain an existing installation.
 set -eu
 
-VERSION=0.12.62
+VERSION=0.12.63
 PREFIX=${NIRUX_PREFIX:-$HOME/.local}
 BIN=$PREFIX/bin
 STATE=$PREFIX/share/nirux
@@ -2035,16 +2035,25 @@ icons_apply() {
   icons_source=$ROOT/usr/share/icons/Papirus-Dark
   [ -d "$icons_source" ] || die 'Papirus-Dark is missing after package installation'
   icons_dest=$HOME/.local/share/icons/Papirus-Dark
+  icons_base_source=$ROOT/usr/share/icons/Papirus
+  icons_base_dest=$HOME/.local/share/icons/Papirus
   if [ ! -d "$icons_dest" ]; then
     mkdir -p "$HOME/.local/share/icons" || die 'could not create the local icon directory'
     cp -a "$icons_source" "$icons_dest" || die 'could not copy Papirus-Dark locally'
   fi
+  if [ -d "$icons_base_source" ] && [ ! -d "$icons_base_dest" ]; then
+    mkdir -p "$HOME/.local/share/icons" || die 'could not create the local icon directory'
+    cp -a "$icons_base_source" "$icons_base_dest" || die 'could not copy Papirus locally'
+  fi
   # The full Papirus folder switcher is not packaged consistently across all
   # three distros. Re-point the ordinary folder symbol to the shipped grey
-  # variant; this is the part PCManFM uses for directory icons.
-  for icons_folder in "$icons_dest"/*/places/folder.svg; do
-    [ -f "${icons_folder%/*}/folder-grey.svg" ] || continue
-    ln -sfn folder-grey.svg "$icons_folder" || :
+  # variant in both local themes; this is the part PCManFM uses for folders.
+  for icons_theme in "$icons_dest" "$icons_base_dest"; do
+    [ -d "$icons_theme" ] || continue
+    for icons_folder in "$icons_theme"/*/places/folder.svg; do
+      [ -f "${icons_folder%/*}/folder-grey.svg" ] || continue
+      ln -sfn folder-grey.svg "$icons_folder" || :
+    done
   done
   set_icon_ini "${XDG_CONFIG_HOME:-$HOME/.config}/gtk-3.0/settings.ini" || :
   set_icon_ini "${XDG_CONFIG_HOME:-$HOME/.config}/gtk-4.0/settings.ini" || :
@@ -2056,12 +2065,18 @@ icons_apply() {
     fi
   fi
   printf 'gtk-icon-theme-name="Papirus-Dark"\n' >> "$HOME/.gtkrc-2.0"
+  if command -v dconf >/dev/null 2>&1; then
+    dconf write /org/gnome/desktop/interface/icon-theme "'Papirus-Dark'" >/dev/null 2>&1 || :
+    dconf write /org/gnome/desktop/interface/color-scheme "'prefer-dark'" >/dev/null 2>&1 || :
+  fi
   command -v gsettings >/dev/null 2>&1 && {
     gsettings set org.gnome.desktop.interface icon-theme 'Papirus-Dark' >/dev/null 2>&1 || :
     gsettings set org.gnome.desktop.interface color-scheme 'prefer-dark' >/dev/null 2>&1 || :
   }
-  command -v gtk-update-icon-cache >/dev/null 2>&1 &&
+  command -v gtk-update-icon-cache >/dev/null 2>&1 && {
     gtk-update-icon-cache -f -t "$icons_dest" >/dev/null 2>&1 || :
+    [ -d "$icons_base_dest" ] && gtk-update-icon-cache -f -t "$icons_base_dest" >/dev/null 2>&1 || :
+  }
   icons_policy_write papirus
 }
 icons_choose() {
