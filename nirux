@@ -2,7 +2,7 @@
 # NIRUX: install a complete X11 desktop, or maintain an existing installation.
 set -eu
 
-VERSION=0.12.52
+VERSION=0.12.53
 PREFIX=${NIRUX_PREFIX:-$HOME/.local}
 BIN=$PREFIX/bin
 STATE=$PREFIX/share/nirux
@@ -170,12 +170,32 @@ sudo_refresh() {
   rm -f "$ticket"
   return "$result"
 }
+sudo_with_secret() {
+  [ -n "${SUDO_SECRET_FILE:-}" ] && [ -f "$SUDO_SECRET_FILE" ] || return 1
+  helper=$(mktemp "${TMPDIR:-/tmp}/.nirux-askpass.XXXXXX") || return 1
+  chmod 700 "$helper" 2>/dev/null || :
+  printf '#!/bin/sh\ncat %s\n' "$SUDO_SECRET_FILE" > "$helper" || {
+    rm -f "$helper"
+    return 1
+  }
+  SUDO_ASKPASS=$helper sudo -A -p '' "$@"
+  status=$?
+  rm -f "$helper"
+  return "$status"
+}
 as_root() {
   # Integration tests exercise the target-apply subprocess against a temporary
   # system root. Production never sets this variable.
   if [ "${NIRUX_TEST_AS_ROOT:-0}" = 1 ]; then "$@"; return; fi
   if [ "$(id -u)" = 0 ]; then "$@"; return; fi
   command -v sudo >/dev/null 2>&1 || die "install sudo and grant this user access, then retry"
+  # A supplied password is replayed through askpass for every command. Relying
+  # on a sudo timestamp created from a piped password is not portable: sudo can
+  # key that timestamp to the terminal and then reject a later `sudo -n`.
+  if [ -n "${SUDO_SECRET:-}" ]; then
+    sudo_with_secret "$@"
+    return $?
+  fi
   if ! sudo -n id -u >/dev/null 2>&1; then
     # A supplied password (a deployment script or a host that keeps sudo set
     # for this program) is tried first. This used to be asked of sudo before
@@ -1978,17 +1998,20 @@ wallpapers_policy_read() {
   wp_policy_file=$STATE/wallpaper-bundle-policy
   wp_persisted=$(awk '$1 == "wallpapers" && ($2 == "all" || $2 == "default") {print $2; exit}' \
     "$wp_policy_file" 2>/dev/null) || :
-  say "$wp_persisted"
 }
 # The running installer decides whether to fetch the set. The question belongs
 # to the terminal that started the install: the staged target runs with stdin
 # closed, so it never sees one, and its answer file is carried over instead.
 wallpaper_bundle_decision() {
+  # The decision is returned in wp_decision, never on stdout: the caller uses
+  # this function interactively, and a command substitution would capture the
+  # prompt and leave a blind read waiting for input.
+  wp_decision=
   case "${WALLPAPER_CHOICE:-${NIRUX_WALLPAPERS:-}}" in
-    all) say all; return 0 ;;
-    none|default) say default; return 0 ;;
+    all) wp_decision=all; return 0 ;;
+    none|default) wp_decision=default; return 0 ;;
   esac
-  wp_persisted=$(wallpapers_policy_read)
+  wallpapers_policy_read
   case "$operation" in
     install)
       # A fresh noninteractive install still gets the full nine-theme set.
@@ -1996,7 +2019,7 @@ wallpaper_bundle_decision() {
       # wallpapers; an explicit `default` policy or --wallpapers default is
       # the way to opt out.
       if [ -z "$wp_persisted" ] && [ ! -t 0 ]; then
-        say all
+        wp_decision=all
         return 0
       fi
       ;;
@@ -2005,7 +2028,7 @@ wallpaper_bundle_decision() {
       # already has the set never asks again.
       [ "$(wallpaper_theme_count)" -lt 10 ] || return 0
       if [ "$wp_persisted" = all ] && [ -f "${WORK}/download/nirux/nirux-wallpapers.tar.xz" ]; then
-        say all
+        wp_decision=all
         return 0
       fi
       ;;
@@ -2015,28 +2038,28 @@ wallpaper_bundle_decision() {
   if [ "$wp_persisted" = all ]; then
     # Asked for once and never delivered, for example because the download
     # failed. Fetch it again when the release ships the files.
-    [ -f "${WORK}/download/nirux/nirux-wallpapers.tar.xz" ] && say all
+    [ -f "${WORK}/download/nirux/nirux-wallpapers.tar.xz" ] && wp_decision=all
     return 0
   fi
-    say ''
-    say 'NIRUX ships ten themes, and changing theme is the main way to change the look.'
-    say 'With every wallpaper installed, a theme change brings its wallpaper, bar palette,'
-    say 'terminal colours and login screen together. Without them the nine non-default'
-    say 'themes use their own background colour, which works but looks plain.'
-    say ''
-    say 'The full set is a one-time download of about 280 MB (4k and 8k) from'
-    say 'nextcloud.nirucon.se. An update never fetches it again, and you can add it'
-    say 'later from the launcher under Wallpaper or with: nirux wallpapers download'
-    say ''
-    printf 'Download the wallpapers for all ten themes now? [Y/n]: '
-    IFS= read -r wp_answer || wp_answer=yes
-    # The recommended answer is yes, so an empty line accepts the set. Only an
-    # explicit no declines; an unattended install still defaults to the small
-    # release because it never reaches this prompt.
-    case "$wp_answer" in
-      [nN]*) say default ;;
-      *) say all ;;
-    esac
+  say ''
+  say 'NIRUX ships ten themes, and changing theme is the main way to change the look.'
+  say 'With every wallpaper installed, a theme change brings its wallpaper, bar palette,'
+  say 'terminal colours and login screen together. Without them the nine non-default'
+  say 'themes use their own background colour, which works but looks plain.'
+  say ''
+  say 'The full set is a one-time download of about 280 MB (4k and 8k) from'
+  say 'nextcloud.nirucon.se. An update never fetches it again, and you can add it'
+  say 'later from the launcher under Wallpaper or with: nirux wallpapers download'
+  say ''
+  printf 'Download the wallpapers for all ten themes now? [Y/n]: '
+  IFS= read -r wp_answer || wp_answer=yes
+  # The recommended answer is yes, so an empty line accepts the set. Only an
+  # explicit no declines; an unattended install still defaults to the small
+  # release because it never reaches this prompt.
+  case "$wp_answer" in
+    [nN]*) wp_decision=default ;;
+    *) wp_decision=all ;;
+  esac
 }
 wallpapers_policy_write() {
   [ -n "${wp_policy_file:-}" ] || wp_policy_file=$STATE/wallpaper-bundle-policy
@@ -2215,7 +2238,10 @@ apply_target_release() {
   # A release without wallpaper files still accepts the policy, so the answer
   # outlives an update that lands between two releases carrying the set.
   wallpapers_policy=${NIRUX_APPLY_WALLPAPERS:-}
-  [ -n "$wallpapers_policy" ] || wallpapers_policy=$(wallpapers_policy_read) || :
+  if [ -z "$wallpapers_policy" ]; then
+    wallpapers_policy_read
+    wallpapers_policy=$wp_persisted
+  fi
   [ -n "$wallpapers_policy" ] || wallpapers_policy=keep
   say "Applying NIRUX $RELEASE..."
   apply_prepare_backup
@@ -3610,16 +3636,24 @@ status() {
   # Installed and running can differ after an update. Report it without
   # treating a normal "log out to activate" state as a damaged installation.
   current_wm=$(readlink -f "$BIN/niruwm" 2>/dev/null || :)
-  running_wm=$(for pid in $(pgrep -u "$(id -u)" -x niruwm 2>/dev/null); do readlink -f "/proc/$pid/exe" 2>/dev/null && break; done)
+  running_wm=
+  for pid in $(pgrep -u "$(id -u)" -x niruwm 2>/dev/null || :); do
+    candidate=$(readlink -f "/proc/$pid/exe" 2>/dev/null || :)
+    if [ -n "$candidate" ]; then
+      running_wm=$candidate
+      break
+    fi
+  done
   if [ -n "$running_wm" ] && [ "$running_wm" != "$current_wm" ]; then
     say "running WM: old generation; log out and back in to activate the update"
   elif [ -n "$running_wm" ]; then
     say "running WM: current generation"
   fi
   stale_bar=0
-  for pid in $(pgrep -u "$(id -u)" -x nirubar 2>/dev/null); do
+  current_bar=$(readlink -f "$BIN/nirubar" 2>/dev/null || :)
+  for pid in $(pgrep -u "$(id -u)" -x nirubar 2>/dev/null || :); do
     running_bar=$(readlink -f "/proc/$pid/exe" 2>/dev/null || :)
-    if [ -n "$running_bar" ] && [ "$running_bar" != "$(readlink -f "$BIN/nirubar" 2>/dev/null || :)" ]; then
+    if [ -n "$running_bar" ] && [ "$running_bar" != "$current_bar" ]; then
       stale_bar=1
     fi
   done
@@ -3927,7 +3961,8 @@ install_or_update() {
   # rollback to a release that ships them) and the ten themes are incomplete.
   wallpaper_decision=
   if [ "$APPLY_PROTOCOL" = 0 ] || [ "$NIRUX_STAGE_COMPONENTS" = 1 ]; then
-    wallpaper_decision=$(wallpaper_bundle_decision)
+    wallpaper_bundle_decision
+    wallpaper_decision=$wp_decision
   fi
   if [ "$APPLY_PROTOCOL" = 2 ]; then
     if ! NIRUX_PREFIX=$PREFIX NIRUX_SYSTEM_ROOT=$ROOT NIRUX_STAGE_WORK=$WORK \
@@ -3974,7 +4009,10 @@ install_or_update() {
   # The wallpaper set is a large optional download, so it runs after the
   # installation is already usable. A failure here never undoes the install.
   wallpapers_policy=${WALLPAPER_CHOICE:-${NIRUX_WALLPAPERS:-}}
-  [ -n "$wallpapers_policy" ] || wallpapers_policy=$(wallpapers_policy_read) || :
+  if [ -z "$wallpapers_policy" ]; then
+    wallpapers_policy_read
+    wallpapers_policy=$wp_persisted
+  fi
   wallpapers_install_bundle
 }
 main() {
