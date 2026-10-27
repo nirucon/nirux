@@ -43,8 +43,10 @@ applications and image downloads are described in the installation guide.
 
 ## The desktop at a glance
 
-- **NIRUWM:** seven layouts, per-monitor workspaces, floating windows, scratchpad,
-  keybindings, session state and display profiles.
+- **NIRUWM:** eight layouts, per-monitor workspaces, floating windows, scratchpad,
+  keybindings, session state and display profiles. **Scroll** keeps one window
+  per column and shows one or two adjacent columns, sliding horizontally with
+  focus; `Super+Ctrl+S` selects it and `Super+Ctrl+Shift+S` toggles columns.
 - **NIRUBAR:** workspaces, wired/Wi-Fi state, audio, brightness, media, battery,
   calendar and optional providers, with direct routes to settings. It supports
   XEmbed and D-Bus StatusNotifierItem trays on the primary monitor, including
