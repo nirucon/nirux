@@ -2,7 +2,7 @@
 # NIRUX: install a complete X11 desktop, or maintain an existing installation.
 set -eu
 
-VERSION=0.12.53
+VERSION=0.12.54
 PREFIX=${NIRUX_PREFIX:-$HOME/.local}
 BIN=$PREFIX/bin
 STATE=$PREFIX/share/nirux
@@ -135,6 +135,15 @@ distro() {
 platform() {
   [ "$(uname -m)" = x86_64 ] || die "release binaries currently support x86_64 only"
   getconf GNU_LIBC_VERSION >/dev/null 2>&1 || die "release binaries require glibc; Void musl is not supported yet"
+}
+component_matches_running() {
+  running=$1
+  current=$2
+  [ -n "$running" ] && [ -n "$current" ] || return 1
+  [ "$running" = "$current" ] && return 0
+  running_sum=$(sha256sum "$running" 2>/dev/null | cut -d ' ' -f1) || return 1
+  current_sum=$(sha256sum "$current" 2>/dev/null | cut -d ' ' -f1) || return 1
+  [ -n "$running_sum" ] && [ "$running_sum" = "$current_sum" ]
 }
 # Refresh sudo's timestamp until cleanup. The loop is a child of this shell and
 # is killed by cleanup, so it never outlives the command.
@@ -3644,16 +3653,16 @@ status() {
       break
     fi
   done
-  if [ -n "$running_wm" ] && [ "$running_wm" != "$current_wm" ]; then
+  if [ -n "$running_wm" ] && ! component_matches_running "$running_wm" "$current_wm"; then
     say "running WM: old generation; log out and back in to activate the update"
   elif [ -n "$running_wm" ]; then
-    say "running WM: current generation"
+    say "running WM: current binary"
   fi
   stale_bar=0
   current_bar=$(readlink -f "$BIN/nirubar" 2>/dev/null || :)
   for pid in $(pgrep -u "$(id -u)" -x nirubar 2>/dev/null || :); do
     running_bar=$(readlink -f "/proc/$pid/exe" 2>/dev/null || :)
-    if [ -n "$running_bar" ] && [ "$running_bar" != "$current_bar" ]; then
+    if [ -n "$running_bar" ] && ! component_matches_running "$running_bar" "$current_bar"; then
       stale_bar=1
     fi
   done
