@@ -13,7 +13,11 @@ nirux wallpapers download satie
 nirux wallpapers download all
 ```
 
-The main ten-theme set includes 4K/8K images (about 326 MB). The two additional
+The main ten-theme set includes 4K/8K images (about 326 MB). On a fresh install
+that requests the set, it is downloaded before the first NIRUWM session starts,
+so the selected theme has its image immediately. Running the command from an
+existing session refreshes the active theme after the download finishes; no
+logout is needed. The two additional
 packs contain **Carl Larsson** and **Erik Satie** in red, blue, green and noir:
 four images per pack with 4K and 8K versions, eight files each. Together the extra
 packs are about 255 MiB. The launcher has an additional-wallpaper download action.

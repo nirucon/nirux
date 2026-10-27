@@ -126,9 +126,11 @@ conflicting regular file is reported and left untouched.
 ## Desktop integration
 
 NIRUX installs Noto Color Emoji, Liberation (metric-compatible Arial/Times/
-Courier substitutes), Noto Sans/Serif core fonts and the ten NIRU theme wallpaper
-sets in `~/Pictures/Wallpapers/NIRU`. This gives clean installs a useful web-font
-fallback instead of relying entirely on DejaVu/Nimbus. The CJK/Indic/Arabic Noto
+Courier substitutes), Noto Sans/Serif core fonts and, when selected, the ten NIRU
+theme wallpaper sets in `~/Pictures/Wallpapers/NIRU`. A fresh install fetches the
+selected set before starting the first session; a download started from an
+already running session refreshes that session's theme when it completes. This
+gives clean installs a useful web-font fallback instead of relying entirely on DejaVu/Nimbus. The CJK/Indic/Arabic Noto
 extras are deliberately not installed by default because of their size. Existing files are kept; edited wallpapers are
 never overwritten. The directory can be changed with `XDG_PICTURES_DIR` or
 `[wallpaper] theme_dir`.

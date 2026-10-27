@@ -2,7 +2,7 @@
 # NIRUX: install a complete X11 desktop, or maintain an existing installation.
 set -eu
 
-VERSION=0.12.59
+VERSION=0.12.60
 PREFIX=${NIRUX_PREFIX:-$HOME/.local}
 BIN=$PREFIX/bin
 STATE=$PREFIX/share/nirux
@@ -2269,6 +2269,7 @@ apply_target_release() {
     wp_persisted=$wallpapers_policy
     wallpapers_policy_write
   fi
+  wallpapers_install_bundle
   install_terminal
   prepare_pam
   install_greeters "$DM"
@@ -2295,10 +2296,21 @@ apply_target_release() {
     say 'Applied through the target installer. Running bar restarted; log out/in to activate the new WM, idle daemon and session.'
   else say 'Applied through the target installer. Log out/in to activate all updated programs. In a new NIRU session: niructl restart-bar.'
   fi
-  wallpapers_install_bundle
+  refresh_running_theme
 }
-# The optional theme wallpaper set is a large download, so it runs after the
-# installation is already usable. A failure here never undoes the install.
+# Re-apply the active theme after a wallpaper set becomes available. The
+# installer may run from a real session (update/manual download), where the
+# window manager is already using its earlier colour fallback. A fresh install
+# without DISPLAY gets the files before its first session instead.
+refresh_running_theme() {
+  [ -n "${DISPLAY:-}" ] || return 0
+  [ -x "$BIN/niructl" ] || return 0
+  "$BIN/niructl" reload >/dev/null 2>&1 || :
+}
+
+# The optional theme wallpaper set is downloaded before a fresh session starts,
+# so its images are present when NIRUWM first paints the desktop. On an update
+# the current session is refreshed after the new generation is activated.
 wallpapers_install_bundle() {
   [ "$wallpapers_policy" = all ] || return 0
   wp_install_work=$(mktemp -d "${TMPDIR:-/tmp}/nirux-wallpapers.XXXXXX") || wp_install_work=
@@ -2860,7 +2872,7 @@ wallpapers_download_themes() {
   rm -rf "$wp_stage" "${WP_WORK:?no work directory}/nirux-wallpapers.zip"
   say "Installed $wp_installed wallpaper file(s) in $wp_dir"
   say "Themes available now: $(wallpaper_theme_count) of 10"
-  say 'Switch theme to see them: niructl theme niru-nord'
+  refresh_running_theme
 }
 
 # Verify and install one optional colour pack. The archive is staged, every
@@ -3994,6 +4006,8 @@ install_or_update() {
   install_config
   install_wallpapers
   select_wallpaper_bundle
+  wallpapers_policy=${wallpaper_decision:-}
+  wallpapers_install_bundle
   install_terminal
   prepare_pam
   install_greeters "$DM"
@@ -4015,14 +4029,7 @@ install_or_update() {
     say 'Running bar restarted. Log out/in to activate the new WM, idle daemon and session.'
   else say 'Log out/in to activate all updated programs. In a new NIRU session: niructl restart-bar.'
   fi
-  # The wallpaper set is a large optional download, so it runs after the
-  # installation is already usable. A failure here never undoes the install.
-  wallpapers_policy=${WALLPAPER_CHOICE:-${NIRUX_WALLPAPERS:-}}
-  if [ -z "$wallpapers_policy" ]; then
-    wallpapers_policy_read
-    wallpapers_policy=$wp_persisted
-  fi
-  wallpapers_install_bundle
+  refresh_running_theme
 }
 main() {
   # The bootstrap keeps the one sudo password in a private file, never in the
