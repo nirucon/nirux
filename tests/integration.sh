@@ -978,43 +978,51 @@ rm -f "$STATE/wallpaper-bundle-policy"
 # shellcheck disable=SC2034 # read by wallpaper_bundle_decision
 operation=install
 unset NIRUX_WALLPAPERS
-[ "$(wallpaper_bundle_decision </dev/null)" = all ] ||
+wallpaper_bundle_decision </dev/null
+[ "$wp_decision" = all ] ||
   fail 'an unattended install did not choose the complete wallpaper set'
 # shellcheck disable=SC2034 # read by wallpaper_bundle_decision
 operation=update
 # stdin is not a terminal in the test run, so nothing is asked for a default
 # policy.
-[ -z "$(wallpaper_bundle_decision)" ] || fail 'an update asked about wallpapers without a terminal'
+wallpaper_bundle_decision
+[ -z "$wp_decision" ] || fail 'an update asked about wallpapers without a terminal'
 # A terminal is only asked when a theme is missing its wallpaper.
 printf 'y\n' > "$TEST/answer"
 if [ -t 0 ]; then
-  wallpaper_bundle_decision < "$TEST/answer" | grep -qx all ||
+  wallpaper_bundle_decision < "$TEST/answer"
+  [ "$wp_decision" = all ] ||
     fail 'an incomplete update did not offer the wallpaper set'
 fi
 # An unattended run states its answer instead of being asked.
 # shellcheck disable=SC2034 # read by wallpaper_bundle_decision
 NIRUX_WALLPAPERS=all
-[ "$(wallpaper_bundle_decision < /dev/null)" = all ] ||
+wallpaper_bundle_decision < /dev/null
+[ "$wp_decision" = all ] ||
   fail 'an explicit wallpaper choice was not carried'
 # shellcheck disable=SC2034 # read by wallpaper_bundle_decision
 NIRUX_WALLPAPERS=none
-[ "$(wallpaper_bundle_decision < /dev/null)" = default ] ||
+wallpaper_bundle_decision < /dev/null
+[ "$wp_decision" = default ] ||
   fail 'an explicit opt-out did not record the default set'
 unset NIRUX_WALLPAPERS
 for wp_theme in $WALLPAPER_THEMES; do
   printf '\211PNG\r\n\032\n%s\n' "$wp_theme" > "$wallpaper_dir/nirux-wallpaper-$wp_theme-4k.png"
 done
-[ -z "$(wallpaper_bundle_decision < "$TEST/answer" 2>/dev/null)" ] ||
+wallpaper_bundle_decision < "$TEST/answer" 2>/dev/null
+[ -z "$wp_decision" ] ||
   fail 'a complete set was offered again on update'
 # The target records the answer the running installer worked out.
 # shellcheck disable=SC2034 # read by wallpapers_policy_write
 wp_persisted=all
 wallpapers_policy_write
 grep -qx 'wallpapers all' "$STATE/wallpaper-bundle-policy" || fail 'wallpaper answer was not recorded'
-[ "$(wallpapers_policy_read)" = all ] || fail 'the recorded answer was not read back'
+wallpapers_policy_read
+[ "$wp_persisted" = all ] || fail 'the recorded answer was not read back'
 # Without a policy file nothing is remembered, so the next install asks.
 rm -f "$STATE/wallpaper-bundle-policy"
-[ -z "$(wallpapers_policy_read)" ] || fail 'a missing policy file was read as an answer'
+wallpapers_policy_read
+[ -z "$wp_persisted" ] || fail 'a missing policy file was read as an answer'
 
 # Terminal integration preserves existing kitty/fish config: one managed block,
 # idempotent updates, and block-only removal on uninstall.
