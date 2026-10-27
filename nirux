@@ -2,7 +2,7 @@
 # NIRUX: install a complete X11 desktop, or maintain an existing installation.
 set -eu
 
-VERSION=0.12.51
+VERSION=0.12.52
 PREFIX=${NIRUX_PREFIX:-$HOME/.local}
 BIN=$PREFIX/bin
 STATE=$PREFIX/share/nirux
@@ -3607,6 +3607,25 @@ status() {
   else say 'missing local power polkit rule'; result=1; fi
   browser_status || result=1
   if [ -L "$STATE/current" ]; then say "generation: $(readlink "$STATE/current")"; fi
+  # Installed and running can differ after an update. Report it without
+  # treating a normal "log out to activate" state as a damaged installation.
+  current_wm=$(readlink -f "$BIN/niruwm" 2>/dev/null || :)
+  running_wm=$(for pid in $(pgrep -u "$(id -u)" -x niruwm 2>/dev/null); do readlink -f "/proc/$pid/exe" 2>/dev/null && break; done)
+  if [ -n "$running_wm" ] && [ "$running_wm" != "$current_wm" ]; then
+    say "running WM: old generation; log out and back in to activate the update"
+  elif [ -n "$running_wm" ]; then
+    say "running WM: current generation"
+  fi
+  stale_bar=0
+  for pid in $(pgrep -u "$(id -u)" -x nirubar 2>/dev/null); do
+    running_bar=$(readlink -f "/proc/$pid/exe" 2>/dev/null || :)
+    if [ -n "$running_bar" ] && [ "$running_bar" != "$(readlink -f "$BIN/nirubar" 2>/dev/null || :)" ]; then
+      stale_bar=1
+    fi
+  done
+  if [ "$stale_bar" = 1 ]; then
+    say "running bar: old generation; run niructl restart-bar"
+  fi
   return "$result"
 }
 # The programs the user actually selected in the shared configuration.

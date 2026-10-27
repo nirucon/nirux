@@ -7,6 +7,10 @@ launcher, notifications, locking, screenshots and graphical theme, wallpaper and
 display settings. The components share appearance and configuration conventions.
 It is an early-beta desktop intended for everyday use and continued refinement.
 
+NIRU Actions adds one catalogue for maintenance, diagnostics, display recovery,
+work contexts and optional OpenCode assistance. Deterministic actions work without
+an account, network request or model.
+
 ## Supported systems
 
 - **Arch Linux, Debian and Void Linux glibc**, x86_64.
@@ -44,16 +48,25 @@ applications and image downloads are described in the installation guide.
 - **NIRUBAR:** workspaces, wired/Wi-Fi state, audio, brightness, media, battery,
   calendar and optional providers, with direct routes to settings.
 - **NIRU Launcher:** applications, windows, web search, actions and NIRUX Settings.
-  Wi-Fi discovery, SSID filtering and profile operations use the existing network
-  manager. See the [backend compatibility notes](docs/WIFI.md).
+  **Super+A** opens the focused NIRU Actions view; the same entries appear in
+  **Super+Shift+P**. It includes storage review, off-screen window recovery, NIRUX
+  installed/running status, focus and presentation contexts, recent tasks and an
+  optional OpenCode terminal handoff. Wi-Fi discovery, SSID filtering and profile
+  operations use the existing network manager. See the
+  [backend compatibility notes](docs/WIFI.md) and [NIRU Actions](docs/ACTIONS.md).
 - **Theme Selector, Wallpaper and Display:** native graphical settings; browsing
   previews does not automatically apply a change. Theme Selector and Wallpaper
   open floating on the active monitor.
 - **Notifications, lock, idle and screenshots:** integrated lightweight tools,
   with shared colours/fonts and normal system authentication.
+- **NIRU Display 0.2:** stable screen numbers, EDID identity, full frames, frozen
+  drag, snapping, zoom/pan, mirror grouping and safe preview transactions.
+- **NIRUBAR:** includes an optional `tasks` module for running/waiting NIRU jobs and
+  an XEmbed tray; it does not require a desktop daemon.
 
-Start with **Super+P** for applications and **Super+Shift+P** for actions/settings.
-Use the launcher's keybinding view for the active shortcuts, including overrides.
+Start with **Super+P** for applications, **Super+A** for NIRU Actions and
+**Super+Shift+P** for applications, windows, actions and settings. Use the
+launcher's keybinding view for the active shortcuts, including overrides.
 
 ## Update and activation
 
@@ -65,7 +78,8 @@ Use the launcher's keybinding view for the active shortcuts, including overrides
 Updates keep a previous generation for rollback. Settings and custom content are
 preserved according to installer ownership rules. Follow the activation message:
 **log out and back in when WM/session programs change**. Restarting a bar alone
-does not activate a new running window manager. The installer never updates the
+does not activate a new running window manager. `nirux status` reports when the
+installed and running bar/WM generations differ. The installer never updates the
 whole base operating system on your behalf.
 
 ```sh
@@ -86,23 +100,40 @@ Use `nirux --help` and [installation/removal details](docs/INSTALL.md) before us
 lossless undo of every change. Personal or modified files must be preserved, and
 distribution runtime packages may remain installed.
 
+## Important installed software
+
+NIRUX provisions the X11 runtime, keyboard/mouse input, PipeWire audio, NetworkManager
+or the existing Wi-Fi stack, fonts, kitty, fish, pcmanfm, picom, dunst, screenshot
+and notification tools. Helium, LocalSend and OpenCode are optional managed choices;
+an existing installation of any of them is left untouched. OpenCode is not required
+for NIRU Actions; its integration opens a terminal handoff and asks before changes.
+
 ## Documentation and components
 
 - [Installation, session choices and troubleshooting](docs/INSTALL.md)
+- [NIRU Actions, tasks and optional OpenCode](docs/ACTIONS.md)
 - [Wi-Fi backends and limitations](docs/WIFI.md)
 - [Theme and additional wallpaper packs](docs/WALLPAPERS.md)
 - [Shared configuration example](config.example.toml) and
   [appearance overrides](appearance.example.toml)
 - [Pinned component versions](manifest)
 
-[NIRUWM](https://github.com/nirucon/niruwm) ·
-[NIRUBAR](https://github.com/nirucon/nirubar) ·
-[Launcher](https://github.com/nirucon/nirulauncher) ·
-[Theme Selector](https://github.com/nirucon/niruthemeselector) ·
-[Wallpaper](https://github.com/nirucon/niruwallpaper) ·
-[Display](https://github.com/nirucon/nirudisplay) ·
-[Lock](https://github.com/nirucon/nirulock) ·
-[Notifications](https://github.com/nirucon/nirunotify) ·
-[Screenshots](https://github.com/nirucon/nirushot)
+Every component below is installed from the pinned manifest:
+
+| Repository | Purpose |
+|---|---|
+| [nirux](https://github.com/nirucon/nirux) | Installer, update/rollback, suite pins and session integration |
+| [niruwm](https://github.com/nirucon/niruwm) | Window manager, workspaces, `niructl`, `niruidle` and session |
+| [nirubar](https://github.com/nirucon/nirubar) | Per-monitor bar, panels, tray and tasks |
+| [nirulauncher](https://github.com/nirucon/nirulauncher) | Applications, windows, search, settings and NIRU Actions |
+| [nirudisplay](https://github.com/nirucon/nirudisplay) | Monitor layout, modes, rotation and profiles |
+| [niruwallpaper](https://github.com/nirucon/niruwallpaper) | Wallpaper selection, scale, rotation and output |
+| [niruthemeselector](https://github.com/nirucon/niruthemeselector) | Theme browsing and application |
+| [nirunotify](https://github.com/nirucon/nirunotify) | Notification service and hardware OSD |
+| [nirulock](https://github.com/nirucon/nirulock) | PAM lock screen |
+| [niruscreensaver](https://github.com/nirucon/niruscreensaver) | Idle screen |
+| [nirushot](https://github.com/nirucon/nirushot) | Screenshot capture, review and annotation |
+| [niruwebapp](https://github.com/nirucon/niruwebapp) | Small isolated web-app windows |
+| [nirufetch](https://github.com/nirucon/nirufetch) | NIRU-styled system summary |
 
 NIRUX is provided without warranty. See [LICENSE](LICENSE).
