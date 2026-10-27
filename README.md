@@ -59,6 +59,9 @@ applications and image downloads are described in the installation guide.
   open floating on the active monitor.
 - **Notifications, lock, idle and screenshots:** integrated lightweight tools,
   with shared colours/fonts and normal system authentication.
+- **Input settings:** keyboard layout/repeat, pointer speed, natural scrolling and
+  touchpad tap controls. The system X11 layout is inherited unless you explicitly
+  choose another one. See [input settings](docs/INPUT.md).
 - **NIRU Display 0.2:** stable screen numbers, EDID identity, full frames, frozen
   drag, snapping, zoom/pan, mirror grouping and safe preview transactions.
 - **NIRUBAR:** includes an optional `tasks` module for running/waiting NIRU jobs and
@@ -112,6 +115,7 @@ for NIRU Actions; its integration opens a terminal handoff and asks before chang
 
 - [Installation, session choices and troubleshooting](docs/INSTALL.md)
 - [NIRU Actions, tasks and optional OpenCode](docs/ACTIONS.md)
+- [Input settings](docs/INPUT.md)
 - [Wi-Fi backends and limitations](docs/WIFI.md)
 - [Theme and additional wallpaper packs](docs/WALLPAPERS.md)
 - [Shared configuration example](config.example.toml) and
