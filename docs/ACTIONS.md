@@ -19,6 +19,8 @@ Deterministic actions cover:
 
 The action list is built from the same `niructl` commands used by the CLI. Review
 output is shown in a terminal; no personal file is deleted by a silent default.
+Informational terminal actions keep the window open after the command exits and
+wait for Enter, so storage reviews, task history and diagnostics remain readable.
 
 ## Intent phrases
 
