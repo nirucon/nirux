@@ -117,8 +117,8 @@ distribution runtime packages may remain installed.
 ## Important installed software
 
 NIRUX provisions the X11 runtime, keyboard/mouse input, PipeWire audio, NetworkManager
-or the existing Wi-Fi stack, fonts, kitty, fish, pcmanfm, picom, dunst, screenshot
-and notification tools. Helium, LocalSend and OpenCode are optional managed choices;
+or the existing Wi-Fi stack, fonts (DejaVu, Liberation, Noto Sans/Serif and Color
+Emoji), kitty, fish, pcmanfm, picom, dunst, screenshot and notification tools. Helium, LocalSend and OpenCode are optional managed choices;
 an existing installation of any of them is left untouched. OpenCode is not required
 for NIRU Actions; its integration opens a terminal handoff and asks before changes.
 

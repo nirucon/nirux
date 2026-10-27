@@ -125,8 +125,11 @@ conflicting regular file is reported and left untouched.
 
 ## Desktop integration
 
-NIRUX installs Noto Color Emoji and the ten NIRU theme wallpaper sets in
-`~/Pictures/Wallpapers/NIRU`. Existing files are kept; edited wallpapers are
+NIRUX installs Noto Color Emoji, Liberation (metric-compatible Arial/Times/
+Courier substitutes), Noto Sans/Serif core fonts and the ten NIRU theme wallpaper
+sets in `~/Pictures/Wallpapers/NIRU`. This gives clean installs a useful web-font
+fallback instead of relying entirely on DejaVu/Nimbus. The CJK/Indic/Arabic Noto
+extras are deliberately not installed by default because of their size. Existing files are kept; edited wallpapers are
 never overwritten. The directory can be changed with `XDG_PICTURES_DIR` or
 `[wallpaper] theme_dir`.
 
