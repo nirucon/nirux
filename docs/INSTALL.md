@@ -362,6 +362,24 @@ other PNG in `~/Pictures/Wallpapers/NIRU` appears in both
 `nirux login-wallpaper list` and `niructl wallpaper list` without changing
 NIRUX.
 
+### File manager, removable media and archives
+
+A normal install provisions `udisks2`, GVFS and the GVFS backends for MTP,
+SMB/CIFS, Apple devices and FUSE mounts, plus `xarchiver`, 7-Zip, ZIP and RAR
+support and `exfatprogs`. PCManFM can therefore show removable media, phones and
+network shares through the normal GVFS/udisks2 path. Arch enables `udisks2` and
+Void creates the runit service link; Debian uses D-Bus activation.
+
+### Optional Papirus icons
+
+Papirus is intentionally opt-in because the theme is about 112–190 MB per
+distribution and is copied into the user's `~/.local/share/icons/Papirus-Dark`.
+Select `--icons papirus` (or answer yes during an interactive install) to install
+Papirus-Dark with grey folders. The GTK3, GTK4 and GTK2 icon settings and the
+GSettings icon theme are updated for the installing user, and the local icon
+cache is refreshed. Choose `--icons none` to opt out; an existing local Papirus
+installation is left untouched. `papirus-folders` is not required.
+
 ### Fonts
 
 The suite default font is configured in `~/.config/niruwm/appearance.toml`:

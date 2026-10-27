@@ -68,6 +68,9 @@ applications and image downloads are described in the installation guide.
   open floating on the active monitor.
 - **Notifications, lock, idle and screenshots:** integrated lightweight tools,
   with shared colours/fonts and normal system authentication.
+- **Files and removable media:** udisks2/GVFS backends for USB, MTP, SMB and
+  phones, plus archive tools. Papirus-Dark with grey folders is an optional
+  per-user install (`--icons papirus`) because of its size.
 - **Input and display scale:** keyboard layout/repeat, pointer speed, natural
   scrolling and touchpad tap controls. The system X11 layout is inherited unless
   you explicitly choose another one. The bar and launcher read `Xft.dpi` and
