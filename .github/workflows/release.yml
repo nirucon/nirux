@@ -18,36 +18,52 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          for repo in niruwm nirubar niruscreensaver nirulock nirulauncher nirunotify nirushot niruwallpaper nirudisplay niruthemeselector; do
-            version=$(awk -v repo="$repo" '$1 == repo {print $2}' manifest)
-            gh release view "v$version" -R "nirucon/$repo" --json assets --jq '.assets[].name' > /tmp/assets
-            grep -qx "$repo" /tmp/assets
-            grep -qx SHA256SUMS /tmp/assets
+          set -eu
+          test "$(awk '$1 == "schema" {print $2}' manifest)" = 1
+          awk '$1 != "schema" && $1 != "suite" {print $1}' manifest | sort | uniq -d | tee /tmp/duplicates
+          test ! -s /tmp/duplicates
+          assets=/tmp/release-assets
+          rm -rf "$assets"
+          mkdir -p "$assets"
+          while read -r repo version; do
             case "$repo" in
-              niruwm) grep -qx niruwm-session /tmp/assets ;;
-              nirulock) for distro in arch debian void; do grep -qx "pam-$distro" /tmp/assets; done ;;
-              # The launcher entry and its icon travel with the suite so they
-              # cannot drift from the binary's version.
-              niruwallpaper)
-                grep -qx niruwallpaper.desktop /tmp/assets
-                gh release download "v$version" -R "nirucon/niruwallpaper" -p niruwallpaper.desktop -O /tmp/niruwallpaper.desktop
-                version=$(awk '$1 == "niruwallpaper" {print $2}' manifest)
-                gh release download "v$version" -R "nirucon/niruwallpaper" -p niruwallpaper.png -O /tmp/niruwallpaper.png
-                ;;
-              nirudisplay)
-                grep -qx nirudisplay.desktop /tmp/assets
-                gh release download "v$version" -R "nirucon/nirudisplay" -p nirudisplay.desktop -O /tmp/nirudisplay.desktop
-                version=$(awk '$1 == "nirudisplay" {print $2}' manifest)
-                gh release download "v$version" -R "nirucon/nirudisplay" -p nirudisplay.png -O /tmp/nirudisplay.png
-                ;;
-              niruthemeselector)
-                grep -qx niruthemeselector.desktop /tmp/assets
-                gh release download "v$version" -R "nirucon/niruthemeselector" -p niruthemeselector.desktop -O /tmp/niruthemeselector.desktop
-                version=$(awk '$1 == "niruthemeselector" {print $2}' manifest)
-                gh release download "v$version" -R "nirucon/niruthemeselector" -p niruthemeselector.png -O /tmp/niruthemeselector.png
-                ;;
+              schema|suite|nirux) continue ;;
             esac
-          done
+            base="https://github.com/nirucon/$repo/releases/download/v$version"
+            dir="$assets/$repo"
+            mkdir -p "$dir"
+            gh release view "v$version" -R "nirucon/$repo" --json assets --jq '.assets[].name' > "$dir/assets"
+            grep -qx "$repo" "$dir/assets"
+            grep -qx SHA256SUMS "$dir/assets"
+            extra=
+            case "$repo" in
+              niruwm) extra="niructl niruidle niruwm-session nirubar-version" ;;
+              nirulock) extra="pam-arch pam-debian pam-void" ;;
+              niruwallpaper) extra="niruwallpaper.desktop niruwallpaper.png" ;;
+              nirudisplay) extra="nirudisplay.desktop nirudisplay.png" ;;
+              niruthemeselector) extra="niruthemeselector.desktop niruthemeselector.png" ;;
+            esac
+            for asset in "$repo" SHA256SUMS $extra; do
+              grep -qx "$asset" "$dir/assets"
+              curl -fsSL --retry 3 "$base/$asset" -o "$dir/$asset"
+              expected=$(awk -v n="$asset" '$2 == n {print $1}' "$dir/SHA256SUMS")
+              test "${#expected}" = 64
+              test "$(sha256sum "$dir/$asset" | cut -d' ' -f1)" = "$expected"
+            done
+            chmod +x "$dir/$repo"
+            if [ -x "$dir/$repo" ]; then
+              reported=$("$dir/$repo" --version 2>/dev/null | awk '{print $2}')
+              test "$reported" = "$version" || {
+                echo "$repo reports $reported, manifest pins $version"; exit 1;
+              }
+            fi
+            if [ "$repo" = niruwm ]; then
+              bar=$(cat "$dir/nirubar-version")
+              test "$bar" = "$(awk '$1 == "nirubar" {print $2}' manifest)" || {
+                echo "NIRUWM bundles NIRUBAR $bar but manifest pins another version"; exit 1;
+              }
+            fi
+          done < <(awk '$1 != "schema" && $1 != "suite" {print $1, $2}' manifest)
       - name: Package wallpapers, terminal, greeters and power rule
         run: |
           # Only the default theme's wallpaper ships in the release. The other
@@ -66,9 +82,9 @@ jobs:
           cp wallpaper/nirux-wallpaper-noir-4k.png integration-build/background.png
           tar -cJf nirux-integration.tar.xz -C integration-build .
       - run: |
-          cp /tmp/niruwallpaper.desktop /tmp/niruwallpaper.png .
-          cp /tmp/nirudisplay.desktop /tmp/nirudisplay.png .
-          cp /tmp/niruthemeselector.desktop /tmp/niruthemeselector.png .
+          cp /tmp/release-assets/niruwallpaper/niruwallpaper.desktop /tmp/release-assets/niruwallpaper/niruwallpaper.png .
+          cp /tmp/release-assets/nirudisplay/nirudisplay.desktop /tmp/release-assets/nirudisplay/nirudisplay.png .
+          cp /tmp/release-assets/niruthemeselector/niruthemeselector.desktop /tmp/release-assets/niruthemeselector/niruthemeselector.png .
           sha256sum nirux manifest config.example.toml appearance.example.toml nirux-wallpapers.tar.xz nirux-terminal.tar.xz nirux-integration.tar.xz niruwallpaper.desktop niruwallpaper.png nirudisplay.desktop nirudisplay.png niruthemeselector.desktop niruthemeselector.png > SHA256SUMS
       - uses: softprops/action-gh-release@v2
         with:

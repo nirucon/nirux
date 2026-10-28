@@ -658,6 +658,19 @@ grep -q 'target installer apply failed' "$TEST/apply-fail.log" || fail 'caller d
 operation uninstall --purge >/dev/null 2>&1 || :
 rm -rf "$PREFIX"
 
+
+# Package policy: --no-packages must not invoke the package manager even when
+# the optional Papirus theme is persisted as the user's choice.
+icon_test=$TEST/icon-policy
+mkdir -p "$icon_test/root/usr/share/icons" "$icon_test/home"
+(
+  ROOT=$icon_test/root HOME=$icon_test/home OS=debian packages=0 ICONS_EFFECTIVE=papirus
+  install_packages() { : > "$icon_test/package-called"; }
+  icons_apply > "$icon_test/log" 2>&1
+)
+[ ! -e "$icon_test/package-called" ] || fail 'no-packages invoked the package manager for Papirus'
+grep -q 'skipping the optional icon theme' "$icon_test/log" || fail 'no-packages did not explain the skipped icon theme'
+
 # I07: a new shared-library dependency is provisioned before staged components
 # are executed. The synthetic component fails its version check without it.
 TEST_OS=debian; PREFIX=$TEST/libdep; BIN=$PREFIX/bin; STATE=$PREFIX/share/nirux

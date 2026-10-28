@@ -66,8 +66,10 @@ applications and image downloads are described in the installation guide.
 - **Theme Selector, Wallpaper and Display:** native graphical settings; browsing
   previews does not automatically apply a change. Theme Selector and Wallpaper
   open floating on the active monitor.
-- **Notifications, lock, idle and screenshots:** integrated lightweight tools,
-  with shared colours/fonts and normal system authentication.
+- **Notifications, lock, idle, screenshots and recording:** integrated lightweight
+  tools, with shared colours/fonts and normal system authentication. NIRUCLIP
+  records the screen, a region or camera with optional overlay, microphone and
+  desktop audio; the launcher exposes built-in or saved profiles.
 - **Files and removable media:** udisks2/GVFS backends for USB, MTP, SMB and
   phones, plus archive tools. Papirus-Dark with grey folders is an optional
   per-user install (`--icons papirus`) because of its size.
@@ -151,6 +153,7 @@ Every component below is installed from the pinned manifest:
 | [nirulock](https://github.com/nirucon/nirulock) | PAM lock screen |
 | [niruscreensaver](https://github.com/nirucon/niruscreensaver) | Idle screen |
 | [nirushot](https://github.com/nirucon/nirushot) | Screenshot capture, review and annotation |
+| [niruclip](https://github.com/nirucon/niruclip) | Screen, region and camera recording with profiles and recovery |
 | [niruwebapp](https://github.com/nirucon/niruwebapp) | Small isolated web-app windows |
 | [nirufetch](https://github.com/nirucon/nirufetch) | NIRU-styled system summary |
 

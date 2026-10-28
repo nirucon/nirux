@@ -214,16 +214,27 @@ installed by NIRUX.
 ### Capture and NIRUCLIP
 
 NIRUX installs `ffmpeg`, `slop`, `maim`, `v4l-utils`, `xclip` and X11 tools.
-`niruclip` owns recordings; NIRUSHOT remains the one-shot screenshot tool.
+NIRUCLIP 0.2 is a static native recorder that owns its process and a versioned
+state file; NIRUSHOT remains the one-shot screenshot tool.
 
 ```sh
 niruclip --full --audio mic
-niruclip --region --webcam corner
+niruclip --region --webcam corner --webcam-size medium
+niruclip --webcam-only --audio mic
+niruclip --profile screen-camera
 niruclip --stop
+niruclip --status --json
+niruclip --recover
 ```
 
-The launcher exposes **Capture** actions through `nirulauncher --clip`; add
-`"recording"` to the NIRUBAR modules for the active timer/stop indicator.
+The launcher exposes **Capture** actions through `nirulauncher --clip`, including
+the built-in profiles `screen-mic`, `screen-camera`, `camera-mic` and
+`screen-desktop`. `niruclip --list-profiles` lists saved profiles;
+`--save-profile NAME` stores the current choices under
+`$XDG_CONFIG_HOME/niruclip/config.toml`. A valid interrupted partial is offered
+as `recover`; a failed startup is shown as `failed`, not as false recovery.
+Add `"recording"` to the NIRUBAR modules for the active timer, stop and recovery
+indicator. `--no-packages` never installs the optional Papirus icon theme.
 
 ### Bluetooth
 

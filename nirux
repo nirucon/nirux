@@ -2,7 +2,7 @@
 # NIRUX: install a complete X11 desktop, or maintain an existing installation.
 set -eu
 
-VERSION=0.12.81
+VERSION=0.12.82
 PREFIX=${NIRUX_PREFIX:-$HOME/.local}
 BIN=$PREFIX/bin
 STATE=$PREFIX/share/nirux
@@ -2028,11 +2028,17 @@ set_icon_ini() {
 }
 icons_apply() {
   [ "${ICONS_EFFECTIVE:-none}" = papirus ] || return 0
-  icons_packages=$(icons_packages_for "$OS")
-  # The package is installed only for this explicit choice; it is deliberately
-  # not in the base package list because the theme is large.
-  install_packages "$icons_packages" || die 'could not install Papirus icon packages'
   icons_source=$ROOT/usr/share/icons/Papirus-Dark
+  if [ ! -d "$icons_source" ]; then
+    if [ "${packages:-1}" = 0 ]; then
+      say 'Papirus-Dark is not installed; skipping the optional icon theme (--no-packages).'
+      return 0
+    fi
+    icons_packages=$(icons_packages_for "$OS")
+    # The package is installed only for this explicit choice; it is deliberately
+    # not in the base package list because the theme is large.
+    install_packages "$icons_packages" || die 'could not install Papirus icon packages'
+  fi
   [ -d "$icons_source" ] || die 'Papirus-Dark is missing after package installation'
   icons_dest=$HOME/.local/share/icons/Papirus-Dark
   icons_base_source=$ROOT/usr/share/icons/Papirus
@@ -2330,6 +2336,7 @@ apply_target_release() {
   LOCALSEND_EFFECTIVE=${NIRUX_APPLY_LOCALSEND:-yes}
   OPENCODE_EFFECTIVE=${NIRUX_APPLY_OPENCODE:-yes}
   ICONS_EFFECTIVE=${NIRUX_APPLY_ICONS:-none}
+  packages=${NIRUX_APPLY_PACKAGES:-1}
   operation=${NIRUX_APPLY_OPERATION:-update}
   RELEASE=${NIRUX_APPLY_RELEASE:-$(manifest_version suite)}
   [ "$(manifest_version schema)" = 1 ] || die 'unsupported manifest schema'
@@ -4118,6 +4125,7 @@ install_or_update() {
       NIRUX_APPLY_LOCALSEND=$LOCALSEND_EFFECTIVE NIRUX_APPLY_OPENCODE=$OPENCODE_EFFECTIVE \
       NIRUX_APPLY_OPERATION=$operation NIRUX_APPLY_WALLPAPERS="${wallpaper_decision:-}" \
       NIRUX_APPLY_ICONS="${ICONS_EFFECTIVE:-none}" \
+      NIRUX_APPLY_PACKAGES="$packages" \
       NIRUX_SUDO_SECRET_FILE=${SUDO_SECRET_FILE:-} \
       sh "$WORK/download/nirux/nirux" _apply 2; then
       die 'target installer apply failed; current installation kept'
