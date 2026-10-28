@@ -664,6 +664,7 @@ rm -rf "$PREFIX"
 icon_test=$TEST/icon-policy
 mkdir -p "$icon_test/root/usr/share/icons" "$icon_test/home"
 (
+  # shellcheck disable=SC2034 # read by icons_apply from the sourced installer
   ROOT=$icon_test/root HOME=$icon_test/home OS=debian packages=0 ICONS_EFFECTIVE=papirus
   install_packages() { : > "$icon_test/package-called"; }
   icons_apply > "$icon_test/log" 2>&1
