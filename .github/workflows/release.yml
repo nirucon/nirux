@@ -43,7 +43,8 @@ jobs:
               nirudisplay) extra="nirudisplay.desktop nirudisplay.png" ;;
               niruthemeselector) extra="niruthemeselector.desktop niruthemeselector.png" ;;
             esac
-            for asset in "$repo" SHA256SUMS $extra; do
+            curl -fsSL --retry 3 "$base/SHA256SUMS" -o "$dir/SHA256SUMS"
+            for asset in "$repo" $extra; do
               grep -qx "$asset" "$dir/assets"
               curl -fsSL --retry 3 "$base/$asset" -o "$dir/$asset"
               expected=$(awk -v n="$asset" '$2 == n {print $1}' "$dir/SHA256SUMS")
