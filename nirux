@@ -2,7 +2,7 @@
 # NIRUX: install a complete X11 desktop, or maintain an existing installation.
 set -eu
 
-VERSION=0.12.70
+VERSION=0.12.71
 PREFIX=${NIRUX_PREFIX:-$HOME/.local}
 BIN=$PREFIX/bin
 STATE=$PREFIX/share/nirux
@@ -3851,7 +3851,7 @@ doctor() {
     fi
   fi
   bluez_spa=
-  for candidate in /usr/lib/spa-0.2/bluez5/libspa-bluez5.so /usr/lib64/spa-0.2/bluez5/libspa-bluez5.so; do
+  for candidate in /usr/lib/spa-0.2/bluez5/libspa-bluez5.so /usr/lib64/spa-0.2/bluez5/libspa-bluez5.so /usr/lib/x86_64-linux-gnu/spa-0.2/bluez5/libspa-bluez5.so; do
     [ -f "$candidate" ] && bluez_spa="$candidate" && break
   done
   if [ -n "$bluez_spa" ]; then say "Bluetooth BlueZ SPA available ($bluez_spa)"; else say 'Bluetooth BlueZ SPA missing; install the distribution PipeWire BlueZ package'; result=1; fi
