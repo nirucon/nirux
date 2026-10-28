@@ -180,6 +180,7 @@ mkdir -p "$FIXTURE/nirux/99.3.0" "$FIXTURE/nirulib/1.0.0"
 sed -e "s/^VERSION=$VERSION$/VERSION=99.3.0/" \
   -e 's/^PROGRAMS="\(.*\)"$/PROGRAMS="\1 nirulib"/' \
   -e 's/bluez power-profiles-daemon/bluez fake-lib power-profiles-daemon/' \
+  -e 's/bluez libspa-0.2-bluetooth power-profiles-daemon/bluez libspa-0.2-bluetooth fake-lib power-profiles-daemon/' \
   -e 's/bluez kitty fish/bluez fake-lib kitty fish/' \
   -e 's/libgtk-3-0 bluez kitty fish; do/libgtk-3-0 bluez fake-lib kitty fish; do/' \
   "$SOURCE/nirux" > "$FIXTURE/nirux/99.3.0/nirux"
