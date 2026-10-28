@@ -47,7 +47,7 @@ applications and image downloads are described in the installation guide.
   keybindings, session state and display profiles. **Scroll** keeps one window
   per column and shows one or two adjacent columns, sliding horizontally with
   focus; `Super+Ctrl+S` selects it and `Super+Ctrl+Shift+S` toggles columns.
-- **NIRUBAR:** workspaces, wired/Wi-Fi state, audio, brightness, media, battery,
+- **NIRUBAR:** workspaces, wired/Wi-Fi state, audio, microphone, brightness, media, battery,
   calendar and optional providers, with direct routes to settings. It supports
   XEmbed and D-Bus StatusNotifierItem trays on the primary monitor, including
   real icons and clickable application menus. A session watcher recovers windows
@@ -119,7 +119,7 @@ distribution runtime packages may remain installed.
 
 ## Important installed software
 
-NIRUX provisions the X11 runtime, keyboard/mouse input, PipeWire audio, NetworkManager
+NIRUX provisions the X11 runtime, keyboard/mouse input, PipeWire audio (including the NIRU Sound panel via `nirulauncher --sound`), NetworkManager
 or the existing Wi-Fi stack, fonts (DejaVu, Liberation, Noto Sans/Serif and Color
 Emoji), kitty, fish, pcmanfm, picom, dunst, screenshot and notification tools. Helium, LocalSend and OpenCode are optional managed choices;
 an existing installation of any of them is left untouched. OpenCode is not required

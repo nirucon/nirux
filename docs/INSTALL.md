@@ -191,13 +191,20 @@ nirunotify --osd volume 45
 ### Audio and microphone
 
 ```sh
-niructl audio outputs
-niructl audio sources
+niructl audio status --json
+niructl audio outputs --json
+niructl audio sources --json
 niructl audio mute
-niructl audio mic-status
+niructl audio mic-status --json
 niructl audio mic-mute on|off|toggle
 niructl audio mic-level up|down|set N
+niructl audio mic-test 5 --json
+nirulauncher --sound
 ```
+The Sound panel shows output volume/mute, input gain/mute, active streams and a
+local five-second microphone test with peak/RMS/clipping feedback. `Test
+microphone` is never automatic; temporary recordings are removed when the panel
+closes. The same controls are available from Super+Shift+P and Super+A.
 
 The optional `microphone` bar module shows mute and input gain. Unmuted is not
 reported as actively recording. Controls are also available through
