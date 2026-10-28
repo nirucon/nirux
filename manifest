@@ -1,5 +1,5 @@
 schema 1
-suite 0.12.78
+suite 0.12.79
 niruwm 0.16.123
 nirubar 0.18.55
 niruscreensaver 0.8.6
@@ -7,7 +7,7 @@ nirulock 0.16.13
 nirulauncher 0.2.59
 nirunotify 0.3.11
 nirushot 0.4.5
-niruclip 0.1.7
+niruclip 0.1.8
 niruwallpaper 0.1.2
 nirudisplay 0.2.1
 niruthemeselector 0.1.2
