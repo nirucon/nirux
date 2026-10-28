@@ -213,8 +213,10 @@ installed by NIRUX.
 
 ### Bluetooth
 
-BlueZ is installed and the distribution Bluetooth service is enabled. Add
-`"bluetooth"` to the bar modules to show adapter and connected-device state.
+NIRUX installs BlueZ and the PipeWire BlueZ SPA package
+(`libspa-0.2-bluetooth` on Debian; the native PipeWire package on Arch/Void).
+The distribution Bluetooth service must remain enabled. Add `"bluetooth"` to the
+bar modules to show adapter and connected-device state.
 
 ```sh
 niructl bluetooth status
