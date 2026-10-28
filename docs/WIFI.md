@@ -8,7 +8,7 @@ Passwords stay out of command arguments and launcher history.
 | Backend | Interface | Validation / limitations |
 |---|---|---|
 | NetworkManager | Native system D-Bus, saved-profile identity, scan/connect/disconnect/forget and WirelessEnabled | Used on real Arch/Void systems; active-session authorization applies. Existing enterprise profiles can be activated explicitly. |
-| Standalone wpa_supplicant | Existing control socket through a root-owned restricted helper | Used with an existing DHCP service on Debian. NIRUX never starts a competing DHCP client. |
+| Standalone wpa_supplicant | Existing control socket through a root-owned restricted helper | Used with an existing DHCP service on Debian. NIRUX never starts a competing DHCP client. Profile saving is best-effort because ifupdown can start wpa_supplicant without a writable configuration file. |
 | Standalone iwd | Native D-Bus device/station/network plus short-lived personal-secret agent | Native adapter/contract tests; live hardware combination not yet verified. Existing IP ownership is preserved. |
 | ConnMan | Native D-Bus technology/service plus short-lived personal-secret agent | Native adapter/contract tests; live hardware combination not yet verified. ConnMan retains IP/DNS ownership. |
 
