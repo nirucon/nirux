@@ -228,7 +228,7 @@ The launcher exposes **Capture** actions through `nirulauncher --clip`; add
 ### Bluetooth
 
 NIRUX installs BlueZ and the PipeWire BlueZ SPA package
-(`libspa-0.2-bluetooth` on Debian; the native PipeWire package on Arch/Void).
+(`libspa-0.2-bluetooth` on Debian; the native PipeWire package on Arch and `libspa-bluetooth` on Void).
 The distribution Bluetooth service must remain enabled. Add `"bluetooth"` to the
 bar modules to show adapter and connected-device state.
 
