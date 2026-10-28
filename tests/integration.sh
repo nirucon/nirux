@@ -20,6 +20,7 @@ lock_version=$(awk '$1 == "nirulock" {print $2}' "$SOURCE/manifest")
 launcher_version=$(awk '$1 == "nirulauncher" {print $2}' "$SOURCE/manifest")
 notifier_version=$(awk '$1 == "nirunotify" {print $2}' "$SOURCE/manifest")
 shot_version=$(awk '$1 == "nirushot" {print $2}' "$SOURCE/manifest")
+clip_version=$(awk '$1 == "niruclip" {print $2}' "$SOURCE/manifest")
 fetch_version=$(awk '$1 == "nirufetch" {print $2}' "$SOURCE/manifest")
 webapp_version=$(awk '$1 == "niruwebapp" {print $2}' "$SOURCE/manifest")
 wallpaper_app_version=$(awk '$1 == "niruwallpaper" {print $2}' "$SOURCE/manifest")
@@ -126,6 +127,7 @@ fixture nirulock "$lock_version" nirulock
 fixture nirulauncher "$launcher_version" nirulauncher
 fixture nirunotify "$notifier_version" nirunotify
 fixture nirushot "$shot_version" nirushot
+fixture niruclip "$clip_version" niruclip
 fixture nirufetch "$fetch_version" nirufetch
 fixture niruwebapp "$webapp_version" niruwebapp
 fixture niruwallpaper "$wallpaper_app_version" niruwallpaper niruwallpaper.desktop
@@ -140,7 +142,7 @@ for os in arch void; do
   printf 'auth include system-auth\naccount include system-auth\n' > "$FIXTURE/nirulock/$lock_version/pam-$os"
 done
 printf 'auth include common-auth\naccount include common-account\n' > "$FIXTURE/nirulock/$lock_version/pam-debian"
-for item in "niruwm/$wm_version" "nirubar/$bar_version" "niruscreensaver/$saver_version" "nirulock/$lock_version" "nirulauncher/$launcher_version" "nirunotify/$notifier_version" "nirushot/$shot_version" "nirufetch/$fetch_version" "niruwebapp/$webapp_version" "niruwallpaper/$wallpaper_app_version" "nirudisplay/$display_app_version" "niruthemeselector/$theme_selector_version"; do checksums "$FIXTURE/$item"; done
+for item in "niruwm/$wm_version" "nirubar/$bar_version" "niruscreensaver/$saver_version" "nirulock/$lock_version" "nirulauncher/$launcher_version" "nirunotify/$notifier_version" "nirushot/$shot_version" "niruclip/$clip_version" "nirufetch/$fetch_version" "niruwebapp/$webapp_version" "niruwallpaper/$wallpaper_app_version" "nirudisplay/$display_app_version" "niruthemeselector/$theme_selector_version"; do checksums "$FIXTURE/$item"; done
 # 99.0.0 is a synthetic second release, never a real network dependency.
 for release in "$VERSION" 99.0.0; do
   mkdir -p "$FIXTURE/nirux/$release"

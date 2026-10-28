@@ -211,6 +211,20 @@ reported as actively recording. Controls are also available through
 `nirulauncher --microphone` and Super+Shift+P. WirePlumber and `wpctl` are
 installed by NIRUX.
 
+### Capture and NIRUCLIP
+
+NIRUX installs `ffmpeg`, `slop`, `maim`, `v4l-utils`, `xclip` and X11 tools.
+`niruclip` owns recordings; NIRUSHOT remains the one-shot screenshot tool.
+
+```sh
+niruclip --full --audio mic
+niruclip --region --webcam corner
+niruclip --stop
+```
+
+The launcher exposes **Capture** actions through `nirulauncher --clip`; add
+`"recording"` to the NIRUBAR modules for the active timer/stop indicator.
+
 ### Bluetooth
 
 NIRUX installs BlueZ and the PipeWire BlueZ SPA package
