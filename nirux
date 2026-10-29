@@ -2,7 +2,7 @@
 # NIRUX: install a complete X11 desktop, or maintain an existing installation.
 set -eu
 
-VERSION=0.12.97
+VERSION=0.12.98
 PREFIX=${NIRUX_PREFIX:-$HOME/.local}
 BIN=$PREFIX/bin
 STATE=$PREFIX/share/nirux
@@ -907,6 +907,7 @@ upgrade_default_bar_modules() {
   ' "$mig_file")
   [ -n "$mig_modules" ] || return 0
   mig_add=""
+  mig_tail=0
   for mig_module in layout display niruxupdate; do
     case "$mig_modules" in
       *"\"$mig_module\""*) continue ;;
@@ -918,18 +919,22 @@ upgrade_default_bar_modules() {
   if ! printf '%s' "$mig_modules" | grep -q '"tailscale"' &&
      printf '%s' "$mig_modules" | grep -q '"network"'; then
     mig_modules=$(printf '%s' "$mig_modules" | sed 's/"network"/"tailscale", "network"/')
-    mig_add="$mig_add tailscale"
+    mig_tail=1
   fi
-  [ -n "$mig_add" ] || return 0
-  mig_extra=$(printf '%s' "$mig_add" | sed 's/^ //; s/ /", "/g; s/^/"/; s/$/"/')
-  # `niruxupdate` belongs with the status group on the right, so it goes before
-  # the clock rather than next to the workspaces.
-  if printf '%s' "$mig_modules" | grep -q '"clock"'; then
-    mig_new=$(printf '%s' "$mig_modules" |
-      sed "s/\"clock\"/$mig_extra, \"clock\"/")
+  [ -n "$mig_add" ] || [ "$mig_tail" = 1 ] || return 0
+  if [ -n "$mig_add" ]; then
+    mig_extra=$(printf '%s' "$mig_add" | sed 's/^ //; s/ /", "/g; s/^/"/; s/$/"/')
+    # `niruxupdate` belongs with the status group on the right, so it goes
+    # before the clock rather than next to the workspaces.
+    if printf '%s' "$mig_modules" | grep -q '"clock"'; then
+      mig_new=$(printf '%s' "$mig_modules" |
+        sed "s/\"clock\"/$mig_extra, \"clock\"/")
+    else
+      mig_new=$(printf '%s' "$mig_modules" |
+        sed "s/\(\"workspaces\"\)/\1, $mig_extra/")
+    fi
   else
-    mig_new=$(printf '%s' "$mig_modules" |
-      sed "s/\(\"workspaces\"\)/\1, $mig_extra/")
+    mig_new=$mig_modules
   fi
   mig_mode=$(stat -c %a "$mig_file" 2>/dev/null) || mig_mode=644
   mig_tmp=$(mktemp "$mig_file.nirux-modules.XXXXXX") || return 0
@@ -945,7 +950,7 @@ upgrade_default_bar_modules() {
     { print }
   ' "$mig_file" > "$mig_tmp" || { rm -f "$mig_tmp"; return 0; }
   if chmod "$mig_mode" "$mig_tmp" && mv -f "$mig_tmp" "$mig_file"; then
-    say "Added bar module(s):$mig_add"
+    say "Added bar module(s):$mig_add${mig_tail:+ tailscale}"
   else
     rm -f "$mig_tmp"
   fi
