@@ -2,11 +2,14 @@
 # NIRUX: install a complete X11 desktop, or maintain an existing installation.
 set -eu
 
-VERSION=0.12.108
+VERSION=0.12.109
 PREFIX=${NIRUX_PREFIX:-$HOME/.local}
 BIN=$PREFIX/bin
 STATE=$PREFIX/share/nirux
 CONFDIR=${XDG_CONFIG_HOME:-$HOME/.config}/niruwm
+NIRUX_CONFIG=${XDG_CONFIG_HOME:-$HOME/.config}/nirux
+SOUNDS_STATE=$STATE/sounds
+SOUNDS_CONFIG=$NIRUX_CONFIG/sounds.toml
 ROOT=${NIRUX_SYSTEM_ROOT:-}
 PROGRAMS="niruwm niructl niruidle nirubar niruscreensaver nirulock nirulauncher nirunotify nirushot niruclip nirufetch niruwebapp niruwallpaper nirudisplay niruthemeselector niruwm-session niruclipboard nirugestured nirux"
 WORK=
@@ -1278,6 +1281,157 @@ remove_managed_block() {
   chmod "$block_mode" "$block_tmp" || die "could not set permissions on $block_target"
   mv -f "$block_tmp" "$block_target" || die "could not update $block_target"
 }
+sounds_ensure_config() {
+  [ -f "$SOUNDS_CONFIG" ] && return 0
+  mkdir -p "$NIRUX_CONFIG" || return 0
+  cat > "$SOUNDS_CONFIG.tmp.$$" <<'EOF'
+[sounds]
+enabled = true
+volume = 35
+startup = true
+notification = true
+update = true
+shutdown = true
+notification_cooldown_ms = 2500
+respect_mute = true
+EOF
+  mv -f "$SOUNDS_CONFIG.tmp.$$" "$SOUNDS_CONFIG" 2>/dev/null || rm -f "$SOUNDS_CONFIG.tmp.$$"
+}
+
+sounds_value() {
+  sounds_key=$1
+  sounds_default=$2
+  if [ -f "$SOUNDS_CONFIG" ]; then
+    sounds_found=$(awk -F= -v k="$sounds_key" '
+      $1 ~ "^[[:space:]]*" k "[[:space:]]*$" {
+        v=$2; sub(/^[[:space:]]+/, "", v); sub(/[[:space:]]+$/, "", v)
+        gsub(/^"|"$/, "", v); print v; exit
+      }' "$SOUNDS_CONFIG" 2>/dev/null || :)
+    [ -n "${sounds_found:-}" ] && { say "$sounds_found"; return 0; }
+  fi
+  say "$sounds_default"
+}
+
+sounds_enabled() {
+  [ "${NIRUX_SOUNDS:-}" = off ] && return 1
+  [ "$(sounds_value enabled true)" = true ]
+}
+
+sounds_event_enabled() {
+  sounds_enabled || return 1
+  [ "$(sounds_value "$1" true)" = true ]
+}
+
+sounds_muted() {
+  [ "$(sounds_value respect_mute true)" = true ] || return 1
+  command -v wpctl >/dev/null 2>&1 || return 1
+  wpctl get-volume @DEFAULT_AUDIO_SINK@ 2>/dev/null | grep -q '\[MUTED\]'
+}
+
+sounds_cooldown() {
+  [ "$1" = notification ] || return 0
+  sounds_cd=$(sounds_value notification_cooldown_ms 2500)
+  case "$sounds_cd" in ''|*[!0-9]*) sounds_cd=2500 ;; esac
+  sounds_stamp=$SOUNDS_STATE/.notification-stamp
+  sounds_now=$(date +%s%3N 2>/dev/null || :)
+  [ -n "$sounds_now" ] || return 0
+  if [ -f "$sounds_stamp" ]; then
+    sounds_prev=$(cat "$sounds_stamp" 2>/dev/null || :)
+    case "$sounds_prev" in ''|*[!0-9]*) sounds_prev=0 ;; esac
+    [ $((sounds_now - sounds_prev)) -lt "$sounds_cd" ] && return 1
+  fi
+  printf '%s\n' "$sounds_now" > "$sounds_stamp" 2>/dev/null || :
+  return 0
+}
+
+sounds_play() {
+  sounds_event=$1
+  sounds_file=$SOUNDS_STATE/$sounds_event.ogg
+  sounds_event_enabled "$sounds_event" || return 0
+  sounds_cooldown "$sounds_event" || return 0
+  sounds_muted && { [ "$sounds_event" = notification ] && return 0 || return 0; }
+  [ -f "$sounds_file" ] || return 0
+  sounds_vol=$(sounds_value volume 35)
+  case "$sounds_vol" in ''|*[!0-9]*) sounds_vol=35 ;; esac
+  [ "$sounds_vol" -ge 1 ] || sounds_vol=1
+  [ "$sounds_vol" -le 100 ] || sounds_vol=100
+  sounds_vol01=$(awk -v v="$sounds_vol" 'BEGIN {printf "%.2f", v/100}')
+  if command -v pw-play >/dev/null 2>&1; then
+    pw-play --volume="$sounds_vol01" "$sounds_file" >/dev/null 2>&1 &
+  elif command -v ffplay >/dev/null 2>&1; then
+    ffplay -nodisp -autoexit -loglevel quiet -volume "$sounds_vol" "$sounds_file" >/dev/null 2>&1 &
+  elif command -v mpv >/dev/null 2>&1; then
+    mpv --no-video --really-quiet --volume="$sounds_vol" "$sounds_file" >/dev/null 2>&1 &
+  fi
+  return 0
+}
+
+sounds_set() {
+  sounds_ensure_config
+  sounds_key=$1
+  sounds_val=$2
+  sounds_tmp=$SOUNDS_CONFIG.tmp.$$
+  if awk -F= -v k="$sounds_key" -v v="$sounds_val" '
+    $1 ~ "^[[:space:]]*" k "[[:space:]]*$" { print k " = " v; done=1; next }
+    { print }
+    END { if (!done) print k " = " v }
+  ' "$SOUNDS_CONFIG" > "$sounds_tmp"; then
+    mv -f "$sounds_tmp" "$SOUNDS_CONFIG"
+  else
+    rm -f "$sounds_tmp"; return 1
+  fi
+}
+
+sounds_status() {
+  sounds_ensure_config
+  sounds_enabled && sounds_global=on || sounds_global=off
+  say "Sounds: $sounds_global · volume $(sounds_value volume 35)% · config $SOUNDS_CONFIG"
+  for sounds_event in startup notification update shutdown; do
+    sounds_event_enabled "$sounds_event" && sounds_on=on || sounds_on=off
+    say "  $sounds_event: $sounds_on"
+  done
+}
+
+sounds_command() {
+  sounds_action=${1:-status}
+  case "$sounds_action" in
+    status) sounds_status ;;
+    on) sounds_set enabled true; say 'Sounds enabled' ;;
+    off) sounds_set enabled false; say 'Sounds disabled' ;;
+    toggle)
+      [ "$#" = 2 ] || die 'usage: nirux sounds toggle startup|notification|update|shutdown'
+      case "$2" in startup|notification|update|shutdown) ;; *) die 'unknown sound event' ;; esac
+      sounds_event_enabled "$2" && sounds_next=false || sounds_next=true
+      sounds_set "$2" "$sounds_next"
+      say "$2: $([ "$sounds_next" = true ] && echo on || echo off)" ;;
+    test)
+      [ "$#" = 2 ] || die 'usage: nirux sounds test startup|notification|update|shutdown'
+      sounds_event=$2
+      case "$sounds_event" in startup|notification|update|shutdown) ;; *) die 'unknown sound event' ;; esac
+      sounds_cooldown() { return 0; }
+      sounds_play "$sounds_event" ;;
+    play)
+      [ "$#" = 2 ] || die 'usage: nirux sounds play startup|notification|update|shutdown'
+      sounds_play "$2" ;;
+    *) die 'usage: nirux sounds [status|on|off|toggle EVENT|test EVENT|play EVENT]' ;;
+  esac
+}
+
+install_sounds() {
+  sounds_archive=$WORK/download/nirux/nirux-sounds.tar.xz
+  [ -f "$sounds_archive" ] || return 0
+  sounds_unpack=$WORK/sounds-unpack
+  rm -rf "$sounds_unpack"
+  mkdir -p "$sounds_unpack" || die 'could not create sounds extraction directory'
+  tar -xJf "$sounds_archive" -C "$sounds_unpack" || die 'could not extract sounds archive'
+  [ -f "$sounds_unpack/sounds/startup.ogg" ] || die 'sounds archive is incomplete'
+  mkdir -p "$SOUNDS_STATE"
+  cp -f "$sounds_unpack"/sounds/*.ogg "$SOUNDS_STATE"/ || die 'could not install sounds'
+  chmod 644 "$SOUNDS_STATE"/*.ogg
+  sounds_ensure_config
+  rm -rf "$sounds_unpack"
+}
+
 install_terminal() {
   terminal_archive=$WORK/download/nirux/nirux-terminal.tar.xz
   [ -f "$terminal_archive" ] || return 0
@@ -2674,6 +2828,7 @@ apply_target_release() {
   # or system files.
   release_optional_file nirux "$RELEASE" nirux-wallpapers.tar.xz
   release_optional_file nirux "$RELEASE" nirux-terminal.tar.xz
+  release_optional_file nirux "$RELEASE" nirux-sounds.tar.xz
   release_optional_file nirux "$RELEASE" nirux-integration.tar.xz
   release_optional_file nirux "$RELEASE" niruwallpaper.desktop
   release_optional_file nirux "$RELEASE" niruwallpaper.png
@@ -2717,6 +2872,7 @@ apply_target_release() {
   wallpapers_install_bundle
   icons_apply
   install_terminal
+  install_sounds
   prepare_pam
   install_greeters "$DM"
   # A session with no NIRUX greeter still must not keep a grant from a release
@@ -2781,6 +2937,7 @@ stage_release() {
   release_files nirux "$RELEASE" nirux manifest config.example.toml appearance.example.toml
   release_optional_file nirux "$RELEASE" nirux-wallpapers.tar.xz
   release_optional_file nirux "$RELEASE" nirux-terminal.tar.xz
+  release_optional_file nirux "$RELEASE" nirux-sounds.tar.xz
   release_optional_file nirux "$RELEASE" nirux-integration.tar.xz
   release_optional_file nirux "$RELEASE" niruwallpaper.desktop
   release_optional_file nirux "$RELEASE" niruwallpaper.png
@@ -4541,6 +4698,7 @@ main() {
     reset-config) [ "$#" = 1 ] || die 'reset-config takes no arguments'; reset_config ;;
     repair-session) [ "$#" = 1 ] || die 'repair-session takes no arguments'; repair_session ;;
     repair-wallpaper) [ "$#" = 1 ] || die 'repair-wallpaper takes no arguments'; repair_wallpaper ;;
+    sounds) shift; sounds_command "$@" ;;
     browser-addon)
       [ "$#" = 2 ] || die 'usage: nirux browser-addon bonjourr|none|status'
       case "$2" in

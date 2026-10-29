@@ -84,6 +84,7 @@ jobs:
             wallpaper/nirux-wallpaper-noir-4k.png \
             wallpaper/nirux-wallpaper-noir-8k.png
           tar -cJf nirux-terminal.tar.xz terminal
+          tar -cJf nirux-sounds.tar.xz sounds
           rm -rf integration-build
           mkdir -p integration-build/polkit
           cp -R greeters/. integration-build/
@@ -95,7 +96,7 @@ jobs:
           cp /tmp/release-assets/niruwallpaper/niruwallpaper.desktop /tmp/release-assets/niruwallpaper/niruwallpaper.png .
           cp /tmp/release-assets/nirudisplay/nirudisplay.desktop /tmp/release-assets/nirudisplay/nirudisplay.png .
           cp /tmp/release-assets/niruthemeselector/niruthemeselector.desktop /tmp/release-assets/niruthemeselector/niruthemeselector.png .
-          sha256sum nirux manifest config.example.toml appearance.example.toml nirux-wallpapers.tar.xz nirux-terminal.tar.xz nirux-integration.tar.xz niruwallpaper.desktop niruwallpaper.png nirudisplay.desktop nirudisplay.png niruthemeselector.desktop niruthemeselector.png > SHA256SUMS
+          sha256sum nirux manifest config.example.toml appearance.example.toml nirux-wallpapers.tar.xz nirux-terminal.tar.xz nirux-sounds.tar.xz nirux-integration.tar.xz niruwallpaper.desktop niruwallpaper.png nirudisplay.desktop nirudisplay.png niruthemeselector.desktop niruthemeselector.png > SHA256SUMS
       - uses: softprops/action-gh-release@v2
         with:
           files: |
@@ -105,6 +106,7 @@ jobs:
             appearance.example.toml
             nirux-wallpapers.tar.xz
             nirux-terminal.tar.xz
+            nirux-sounds.tar.xz
             nirux-integration.tar.xz
             niruwallpaper.desktop
             niruwallpaper.png
