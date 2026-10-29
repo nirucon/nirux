@@ -694,6 +694,8 @@ grep -q 'ExtensionInstallForcelist' "$policy" || fail 'browser addon policy has 
 [ -f "$addon_test/state/browser-presets/bonjourr-nirux.json" ] || fail 'Bonjourr preset was not written'
 grep -q '"lang": "en"' "$addon_test/state/browser-presets/bonjourr-nirux.json" || fail 'Bonjourr preset is not English'
 grep -q '"ampm": false' "$addon_test/state/browser-presets/bonjourr-nirux.json" || fail 'Bonjourr preset is not 24-hour'
+grep -q '"linkgroups"' "$addon_test/state/browser-presets/bonjourr-nirux.json" || fail 'Bonjourr preset has no link group'
+grep -q '"parent": "default"' "$addon_test/state/browser-presets/bonjourr-nirux.json" || fail 'Bonjourr links are not in the default group'
 (
   ROOT=$addon_test/system STATE=$addon_test/state BIN=$addon_test/bin WORK=$addon_test/work
   # shellcheck disable=SC2034 # read by browser_addon_apply in the sourced installer
