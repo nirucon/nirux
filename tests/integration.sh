@@ -683,6 +683,7 @@ EOF
 chmod +x "$addon_test/bin/helium"
 (
   ROOT=$addon_test/system STATE=$addon_test/state BIN=$addon_test/bin WORK=$addon_test/work
+  # shellcheck disable=SC2034 # read by browser_addon_apply in the sourced installer
   BROWSER_ADDON_POLICY=$addon_test/system/etc/chromium/policies/managed/nirux-bonjourr.json
   PREFIX=$addon_test/prefix
   browser_addon_apply bonjourr > "$addon_test/apply.log" 2>&1
@@ -695,6 +696,7 @@ grep -q '"lang": "en"' "$addon_test/state/browser-presets/bonjourr-nirux.json" |
 grep -q '"ampm": false' "$addon_test/state/browser-presets/bonjourr-nirux.json" || fail 'Bonjourr preset is not 24-hour'
 (
   ROOT=$addon_test/system STATE=$addon_test/state BIN=$addon_test/bin WORK=$addon_test/work
+  # shellcheck disable=SC2034 # read by browser_addon_apply in the sourced installer
   BROWSER_ADDON_POLICY=$addon_test/system/etc/chromium/policies/managed/nirux-bonjourr.json
   PREFIX=$addon_test/prefix
   browser_addon_apply none >/dev/null 2>&1
