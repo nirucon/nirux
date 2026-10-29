@@ -2,7 +2,7 @@
 # NIRUX: install a complete X11 desktop, or maintain an existing installation.
 set -eu
 
-VERSION=0.12.111
+VERSION=0.12.112
 PREFIX=${NIRUX_PREFIX:-$HOME/.local}
 BIN=$PREFIX/bin
 STATE=$PREFIX/share/nirux
@@ -1293,6 +1293,7 @@ notification = true
 update = true
 shutdown = true
 notification_cooldown_ms = 2500
+notification_exclude_apps = ["nplay", "spotify"]
 respect_mute = true
 EOF
   mv -f "$SOUNDS_CONFIG.tmp.$$" "$SOUNDS_CONFIG" 2>/dev/null || rm -f "$SOUNDS_CONFIG.tmp.$$"
@@ -1344,10 +1345,26 @@ sounds_cooldown() {
   return 0
 }
 
+sounds_app_excluded() {
+  sounds_app=$1
+  [ -n "$sounds_app" ] || return 1
+  sounds_app=$(printf '%s' "$sounds_app" | tr '[:upper:]' '[:lower:]' | sed 's/^[[:space:]]*//; s/[[:space:]]*$//; s/\.desktop$//')
+  sounds_excluded=$(sounds_value notification_exclude_apps '["nplay", "spotify"]')
+  [ "$sounds_excluded" = "[]" ] && return 1
+  for sounds_item in $(printf '%s' "$sounds_excluded" | tr -d '[]"' | tr ',' ' '); do
+    sounds_item=$(printf '%s' "$sounds_item" | tr '[:upper:]' '[:lower:]' | sed 's/^[[:space:]]*//; s/[[:space:]]*$//')
+    [ -n "$sounds_item" ] || continue
+    [ "$sounds_app" = "$sounds_item" ] && return 0
+  done
+  return 1
+}
+
 sounds_play() {
   sounds_event=$1
+  sounds_app=${2:-}
   sounds_file=$SOUNDS_STATE/$sounds_event.ogg
   sounds_event_enabled "$sounds_event" || return 0
+  [ "$sounds_event" = notification ] && sounds_app_excluded "$sounds_app" && return 0
   sounds_cooldown "$sounds_event" || return 0
   sounds_muted && { [ "$sounds_event" = notification ] && return 0 || return 0; }
   [ -f "$sounds_file" ] || return 0
@@ -1390,6 +1407,7 @@ sounds_status() {
     sounds_event_enabled "$sounds_event" && sounds_on=on || sounds_on=off
     say "  $sounds_event: $sounds_on"
   done
+  say "notification sound excluded for: $(sounds_value notification_exclude_apps '["nplay", "spotify"]')"
 }
 
 sounds_command() {
@@ -1404,15 +1422,22 @@ sounds_command() {
       sounds_event_enabled "$2" && sounds_next=false || sounds_next=true
       sounds_set "$2" "$sounds_next"
       say "$2: $([ "$sounds_next" = true ] && echo on || echo off)" ;;
-    test)
-      [ "$#" = 2 ] || die 'usage: nirux sounds test startup|notification|update|shutdown'
-      sounds_event=$2
+    test|play)
+      sounds_action=$sounds_action
+      shift
+      [ "$#" -ge 1 ] || die "usage: nirux sounds $sounds_action EVENT [--app NAME]"
+      sounds_event=$1
+      shift
       case "$sounds_event" in startup|notification|update|shutdown) ;; *) die 'unknown sound event' ;; esac
-      sounds_cooldown() { return 0; }
-      sounds_play "$sounds_event" ;;
-    play)
-      [ "$#" = 2 ] || die 'usage: nirux sounds play startup|notification|update|shutdown'
-      sounds_play "$2" ;;
+      sounds_app=
+      while [ "$#" -gt 0 ]; do
+        case "$1" in
+          --app) [ "$#" -ge 2 ] || die '--app needs a name'; sounds_app=$2; shift 2 ;;
+          *) die "unknown sound option: $1" ;;
+        esac
+      done
+      [ "$sounds_action" = test ] && sounds_cooldown() { return 0; }
+      sounds_play "$sounds_event" "$sounds_app" ;;
     *) die 'usage: nirux sounds [status|on|off|toggle EVENT|test EVENT|play EVENT]' ;;
   esac
 }

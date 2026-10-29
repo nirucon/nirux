@@ -119,8 +119,10 @@ nirux sounds test startup
 ```
 
 Configuration lives in `~/.config/nirux/sounds.toml`. Sounds respect system mute;
-notification sounds are rate-limited. Startup/shutdown sounds are part of the
-session and need a new login after an update.
+notification sounds are rate-limited. Apps in `notification_exclude_apps` still
+show their text notifications and history but do not play the notification cue.
+Startup/shutdown sounds are part of the session and need a new login after an
+update.
 
 ### Optional suite extras
 
