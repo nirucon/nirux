@@ -9,6 +9,15 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Install shellcheck
+        run: sudo apt-get update && sudo apt-get install -y shellcheck
+      - name: Shellcheck release scripts
+        run: |
+          sh -n nirux
+          sh -n terminal/nirux-theme-hook
+          for script in tests/*.sh; do sh -n "$script"; done
+          shellcheck -S warning -s sh nirux tests/integration.sh tests/display-manager.sh tests/runtime-state.sh tests/config-smoke.sh tests/startx-smoke.sh tests/release-smoke.sh tests/browser-smoke.sh terminal/nirux-theme-hook
+      - run: python3 tests/terminal-theme.py
       - run: sh tests/integration.sh
       - name: Verify release identity
         run: |
