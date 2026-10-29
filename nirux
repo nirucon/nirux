@@ -2,13 +2,13 @@
 # NIRUX: install a complete X11 desktop, or maintain an existing installation.
 set -eu
 
-VERSION=0.12.101
+VERSION=0.12.102
 PREFIX=${NIRUX_PREFIX:-$HOME/.local}
 BIN=$PREFIX/bin
 STATE=$PREFIX/share/nirux
 CONFDIR=${XDG_CONFIG_HOME:-$HOME/.config}/niruwm
 ROOT=${NIRUX_SYSTEM_ROOT:-}
-PROGRAMS="niruwm niructl niruidle nirubar niruscreensaver nirulock nirulauncher nirunotify nirushot niruclip nirufetch niruwebapp niruwallpaper nirudisplay niruthemeselector niruwm-session nirux"
+PROGRAMS="niruwm niructl niruidle nirubar niruscreensaver nirulock nirulauncher nirunotify nirushot niruclip nirufetch niruwebapp niruwallpaper nirudisplay niruthemeselector niruwm-session niruclipboard nirux"
 WORK=
 POLICY_TARGET=
 POLICY_BACKUP=
@@ -908,7 +908,7 @@ upgrade_default_bar_modules() {
   [ -n "$mig_modules" ] || return 0
   mig_add=""
   mig_tail=0
-  for mig_module in layout display niruxupdate; do
+  for mig_module in layout display quicksettings niruxupdate; do
     case "$mig_modules" in
       *"\"$mig_module\""*) continue ;;
     esac
@@ -2528,7 +2528,7 @@ manifest_version() {
 }
 component_files() {
   case "$1" in
-    niruwm) say "niruwm niructl niruidle niruwm-session" ;;
+    niruwm) say "niruwm niructl niruidle niruwm-session niruclipboard" ;;
     *) say "$1" ;;
   esac
 }
@@ -2536,7 +2536,7 @@ stage_component_assets() {
   component=$1
   component_version=$2
   case "$component" in
-    niruwm) release_files niruwm "$component_version" niruwm niructl niruidle niruwm-session ;;
+    niruwm) release_files niruwm "$component_version" niruwm niructl niruidle niruwm-session niruclipboard ;;
     nirulock) release_files nirulock "$component_version" nirulock pam-arch pam-debian pam-void ;;
     nirux) : ;;
     *) release_files "$component" "$component_version" "$component" ;;
@@ -2586,6 +2586,7 @@ stage_components() {
       niruwm)
         verify_staged_version niruwm "$component_version"
         verify_staged_version niruidle "$component_version"
+        verify_staged_version niruclipboard "$component_version"
         ;;
       *) verify_staged_version "$component" "$component_version" ;;
     esac
