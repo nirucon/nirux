@@ -42,6 +42,10 @@ NIRUX writes an importable JSON preset to:
 ${XDG_DATA_HOME:-~/.local/share}/nirux/browser-presets/bonjourr-nirux.json
 ```
 
+The canonical source is
+[`browser/bonjourr-nirux.json`](../browser/bonjourr-nirux.json). It includes three
+public NIRUX project links and no private hostnames or bookmarks.
+
 The preset is deliberately conservative:
 
 - English UI text.
@@ -50,6 +54,7 @@ The preset is deliberately conservative:
   Pomodoro sources.
 - No private hostnames, bookmarks or user content.
 - Noto Sans typography and restrained link styling.
+- Three public project links: NIRUX, NIRUCLIP and NIRUPRES.
 
 Bonjourr uses the interface language for localized month and weekday names.
 There is no supported mixed “English UI + Swedish date words” mode; Swedish

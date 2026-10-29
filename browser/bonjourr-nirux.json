@@ -1,0 +1,101 @@
+{
+  "about": {
+    "browser": "chrome",
+    "version": "22.3.0"
+  },
+  "lang": "en",
+  "dateformat": "eu",
+  "dark": "dark",
+  "pagegap": 1,
+  "pagewidth": 1600,
+  "time": true,
+  "showall": false,
+  "quicklinks": true,
+  "linkstyle": "medium",
+  "linktitles": true,
+  "linkbackgrounds": false,
+  "linksrow": 5,
+  "textShadow": 0.18,
+  "backgrounds": {
+    "type": "color",
+    "color": "#0f0f10",
+    "fadein": 0,
+    "blur": 0,
+    "bright": 0.8,
+    "frequency": "hour",
+    "texture": {
+      "type": "none"
+    }
+  },
+  "clock": {
+    "size": 1.1,
+    "ampm": false,
+    "analog": false,
+    "seconds": false,
+    "ampmlabel": false,
+    "worldclocks": false,
+    "timezone": "auto"
+  },
+  "weather": {
+    "unit": "metric",
+    "show_unit": false,
+    "moreinfo": "none",
+    "forecast": "auto",
+    "temperature": "actual",
+    "geolocation": "approximate"
+  },
+  "quotes": {
+    "on": false,
+    "author": false,
+    "frequency": "day"
+  },
+  "notes": {
+    "on": false
+  },
+  "searchbar": {
+    "on": false
+  },
+  "pomodoro": {
+    "on": false
+  },
+  "supporters": {
+    "enabled": false
+  },
+  "greeting": "",
+  "greetingsmode": "auto",
+  "greetingscustom": {
+    "morning": "",
+    "afternoon": "",
+    "evening": "",
+    "night": ""
+  },
+  "font": {
+    "family": "Noto Sans",
+    "size": "14",
+    "system": true,
+    "color": "#eceff4",
+    "weightlist": [],
+    "weight": "300"
+  },
+  "linksnirux1": {
+    "_id": "linksnirux1",
+    "parent": "",
+    "order": 1,
+    "title": "NIRUX",
+    "url": "https://github.com/nirucon/nirux"
+  },
+  "linksnirux2": {
+    "_id": "linksnirux2",
+    "parent": "",
+    "order": 2,
+    "title": "NIRUCLIP",
+    "url": "https://github.com/nirucon/niruclip"
+  },
+  "linksnirux3": {
+    "_id": "linksnirux3",
+    "parent": "",
+    "order": 3,
+    "title": "NIRUPRES",
+    "url": "https://github.com/nirucon/nirupres"
+  }
+}
