@@ -124,7 +124,10 @@ distribution runtime packages may remain installed.
 NIRUX provisions the X11 runtime, keyboard/mouse input, PipeWire audio (including the NIRU Sound panel via `nirulauncher --sound`), NetworkManager
 or the existing Wi-Fi stack, fonts (DejaVu, Liberation, Noto Sans/Serif and Color
 Emoji), kitty, fish, pcmanfm, picom, dunst, screenshot and notification tools. Helium, LocalSend and OpenCode are optional managed choices;
-an existing installation of any of them is left untouched. OpenCode is not required
+an existing installation of any of them is left untouched. A selected Helium
+installation can optionally receive the Bonjourr new-tab extension. This is an
+explicit browser-addon choice, persisted for later updates; it is not enabled
+silently. OpenCode is not required
 for NIRU Actions; its integration opens a terminal handoff and asks before changes.
 
 ## Documentation and components
@@ -134,6 +137,7 @@ for NIRU Actions; its integration opens a terminal handoff and asks before chang
 - [Input settings](docs/INPUT.md)
 - [Wi-Fi backends and limitations](docs/WIFI.md)
 - [Theme and additional wallpaper packs](docs/WALLPAPERS.md)
+- [Browser addons](docs/BROWSER-ADDONS.md)
 - [Shared configuration example](config.example.toml) and
   [appearance overrides](appearance.example.toml)
 - [Pinned component versions](manifest)

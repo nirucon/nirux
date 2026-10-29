@@ -672,6 +672,36 @@ mkdir -p "$icon_test/root/usr/share/icons" "$icon_test/home"
 [ ! -e "$icon_test/package-called" ] || fail 'no-packages invoked the package manager for Papirus'
 grep -q 'skipping the optional icon theme' "$icon_test/log" || fail 'no-packages did not explain the skipped icon theme'
 
+
+# Browser addon policy is explicit, dependency-aware and removable.
+addon_test=$TEST/browser-addon
+mkdir -p "$addon_test/bin" "$addon_test/state" "$addon_test/system" "$addon_test/work"
+cat > "$addon_test/bin/helium" <<'EOF'
+#!/bin/sh
+printf 'Helium 99.9.9 (test)\n'
+EOF
+chmod +x "$addon_test/bin/helium"
+(
+  ROOT=$addon_test/system STATE=$addon_test/state BIN=$addon_test/bin WORK=$addon_test/work
+  BROWSER_ADDON_POLICY=$addon_test/system/etc/chromium/policies/managed/nirux-bonjourr.json
+  PREFIX=$addon_test/prefix
+  browser_addon_apply bonjourr > "$addon_test/apply.log" 2>&1
+)
+policy=$addon_test/system/etc/chromium/policies/managed/nirux-bonjourr.json
+[ -f "$policy" ] || fail 'browser addon policy was not written'
+grep -q 'ExtensionInstallForcelist' "$policy" || fail 'browser addon policy has no force-install list'
+[ -f "$addon_test/state/browser-presets/bonjourr-nirux.json" ] || fail 'Bonjourr preset was not written'
+grep -q '"lang": "en"' "$addon_test/state/browser-presets/bonjourr-nirux.json" || fail 'Bonjourr preset is not English'
+grep -q '"ampm": false' "$addon_test/state/browser-presets/bonjourr-nirux.json" || fail 'Bonjourr preset is not 24-hour'
+(
+  ROOT=$addon_test/system STATE=$addon_test/state BIN=$addon_test/bin WORK=$addon_test/work
+  BROWSER_ADDON_POLICY=$addon_test/system/etc/chromium/policies/managed/nirux-bonjourr.json
+  PREFIX=$addon_test/prefix
+  browser_addon_apply none >/dev/null 2>&1
+)
+[ ! -e "$policy" ] || fail 'browser addon policy survived removal'
+rm -rf "$addon_test"
+
 # I07: a new shared-library dependency is provisioned before staged components
 # are executed. The synthetic component fails its version check without it.
 TEST_OS=debian; PREFIX=$TEST/libdep; BIN=$PREFIX/bin; STATE=$PREFIX/share/nirux

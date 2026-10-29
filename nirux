@@ -2,7 +2,7 @@
 # NIRUX: install a complete X11 desktop, or maintain an existing installation.
 set -eu
 
-VERSION=0.12.90
+VERSION=0.12.91
 PREFIX=${NIRUX_PREFIX:-$HOME/.local}
 BIN=$PREFIX/bin
 STATE=$PREFIX/share/nirux
@@ -77,6 +77,9 @@ LOCALSEND_EXPLICIT=0
 OPENCODE_CHOICE=
 OPENCODE_EFFECTIVE=yes
 OPENCODE_EXPLICIT=0
+BROWSER_ADDON_CHOICE=
+BROWSER_ADDON_EFFECTIVE=keep
+BROWSER_ADDON_EXPLICIT=0
 
 say() { printf '%s\n' "$*"; }
 die() { say "nirux: $*" >&2; sudo_secret_forget; exit 1; }
@@ -85,7 +88,7 @@ usage() {
   say "Usage: nirux install [--minimal|--no-packages] [--display-manager auto|startx|sddm|lightdm]"
   say "                    [--browser helium|none|keep] [--wallpapers all|default]"
   say "                    [--localsend yes|no] [--opencode yes|no] [--icons none|papirus]"
-  say "       nirux update [--no-packages] [--release VERSION] [--browser helium|none|keep]"
+  say "       nirux update [--no-packages] [--release VERSION] [--browser helium|none|keep] [--browser-addon bonjourr|none|keep]"
   say "                    [--wallpapers all|default] [--localsend yes|no] [--opencode yes|no] [--icons keep|none|papirus]"
   say "       nirux login-wallpaper [list|set FILE|reset|sync]"
   say "       nirux wallpapers [status|download [themes|extras|all|carl-larsson|satie]|remove]"
@@ -93,6 +96,7 @@ usage() {
   say "       nirux reset-config"
   say "       nirux repair-session | repair-wallpaper"
   say "       nirux remove helium|localsend|opencode"
+  say "       nirux browser-addon bonjourr|none|status"
   say "       nirux rollback | status | doctor | uninstall [--purge] | --version | --help"
   say "Default: keep an existing display manager; otherwise offer startx (default), SDDM or LightDM."
   say "Browser: a fresh install offers Helium (default Helium) and remembers the choice."
@@ -1587,6 +1591,164 @@ release_optional_file() {
 # application with its own release cadence. Its verified files live under the
 # NIRUX state directory, one stable link is exposed in BIN, and the persistent
 # policy file records whether the user selected it or opted out.
+BROWSER_ADDON_BONJOURR_ID=dlnejlppicbjfcfcedcflplfjajinajd
+BROWSER_ADDON_POLICY=$ROOT/etc/chromium/policies/managed/nirux-bonjourr.json
+BROWSER_ADDON_POLICY_DIR=$ROOT/etc/chromium/policies/managed
+
+browser_addon_policy() {
+  if [ -f "$STATE/browser-addon-policy" ]; then
+    value=$(awk '$1 == "addon" && ($2 == "bonjourr" || $2 == "none") {print $2; exit}' "$STATE/browser-addon-policy")
+    [ -n "$value" ] || value=none
+    say "$value"
+  else
+    say none
+  fi
+}
+
+browser_addon_policy_set() {
+  mkdir -p "$STATE"
+  printf '# NIRUX owner: %s
+addon %s
+' "$PREFIX" "$1" > "$STATE/.browser-addon-policy.$$" || \
+    die 'could not stage the browser addon policy'
+  mv -f "$STATE/.browser-addon-policy.$$" "$STATE/browser-addon-policy" || \
+    die 'could not persist the browser addon policy'
+}
+
+browser_bonjourr_preset() {
+  preset_dir=$STATE/browser-presets
+  preset=$preset_dir/bonjourr-nirux.json
+  mkdir -p "$preset_dir" || die 'could not create the browser preset directory'
+  cat > "$preset.tmp.$$" <<'JSON'
+{
+  "about": {
+    "browser": "chrome",
+    "version": "22.3.0"
+  },
+  "lang": "en",
+  "dateformat": "eu",
+  "dark": "dark",
+  "pagegap": 1,
+  "pagewidth": 1600,
+  "time": true,
+  "showall": false,
+  "quicklinks": true,
+  "linkstyle": "medium",
+  "linktitles": true,
+  "linkbackgrounds": false,
+  "linksrow": 5,
+  "textShadow": 0.2,
+  "backgrounds": {
+    "type": "color",
+    "color": "#0f0f10",
+    "fadein": 0,
+    "blur": 0,
+    "bright": 0.8,
+    "frequency": "hour",
+    "texture": { "type": "none" }
+  },
+  "clock": {
+    "size": 1.1,
+    "ampm": false,
+    "analog": false,
+    "seconds": false,
+    "ampmlabel": false,
+    "worldclocks": false,
+    "timezone": "auto"
+  },
+  "weather": {
+    "unit": "metric",
+    "show_unit": false,
+    "moreinfo": "none",
+    "forecast": "auto",
+    "temperature": "actual",
+    "geolocation": "approximate"
+  },
+  "quotes": {
+    "on": false,
+    "author": false,
+    "frequency": "day"
+  },
+  "notes": { "on": false },
+  "searchbar": { "on": false },
+  "pomodoro": { "on": false },
+  "greeting": "",
+  "greetingsmode": "auto",
+  "greetingscustom": {
+    "morning": "",
+    "afternoon": "",
+    "evening": "",
+    "night": ""
+  },
+  "font": {
+    "family": "Noto Sans",
+    "size": "14",
+    "system": true,
+    "color": "#eceff4",
+    "weightlist": [],
+    "weight": "300"
+  }
+}
+JSON
+  mv -f "$preset.tmp.$$" "$preset" || die 'could not publish the Bonjourr preset'
+  say "$preset"
+}
+
+browser_addon_apply() {
+  addon=${1:-$(browser_addon_policy)}
+  case "$addon" in
+    none)
+      remove_binary "$BROWSER_ADDON_POLICY"
+      return 0 ;;
+    bonjourr) ;;
+    *) die "unknown browser addon: $addon" ;;
+  esac
+  if ! browser_path >/dev/null 2>&1; then
+    say 'Bonjourr is requested but Helium is not installed; browser policy skipped.'
+    return 0
+  fi
+  preset=$(browser_bonjourr_preset)
+  mkdir -p "$WORK" 2>/dev/null || :
+  policy_tmp=$(mktemp "${TMPDIR:-/tmp}/nirux-bonjourr.XXXXXX") || die 'could not create browser policy temp file'
+  printf '%s\n' "{\"ExtensionInstallForcelist\":[\"$BROWSER_ADDON_BONJOURR_ID;https://clients2.google.com/service/update2/crx\"]}" > "$policy_tmp"
+  write_binary "$BROWSER_ADDON_POLICY" "$policy_tmp"
+  rm -f "$policy_tmp"
+  say "Bonjourr enabled for Helium. Preset: $preset"
+  say 'Restart Helium; the extension is force-installed by its managed policy.'
+}
+
+browser_addon_remove() {
+  remove_binary "$BROWSER_ADDON_POLICY"
+  rm -f "$STATE/browser-addon-policy"
+  rm -rf "$STATE/browser-presets"
+}
+
+browser_addon_choose() {
+  if [ "$BROWSER_ADDON_EXPLICIT" = 1 ] && [ "$BROWSER_ADDON_CHOICE" != keep ]; then
+    BROWSER_ADDON_EFFECTIVE=$BROWSER_ADDON_CHOICE
+  elif [ "$operation" = update ]; then
+    BROWSER_ADDON_EFFECTIVE=$(browser_addon_policy)
+  elif [ -t 0 ]; then
+    say 'Install Bonjourr (new-tab page) in Helium with a NIRUX preset? [y/N]'
+    printf 'Install Bonjourr [y/N]: '
+    IFS= read -r addon_answer || addon_answer=no
+    case "$addon_answer" in [yY]*) BROWSER_ADDON_EFFECTIVE=bonjourr ;; *) BROWSER_ADDON_EFFECTIVE=none ;; esac
+  else
+    BROWSER_ADDON_EFFECTIVE=none
+  fi
+  case "$BROWSER_ADDON_EFFECTIVE" in bonjourr|none) ;; *) die 'browser-addon must be bonjourr, none or keep' ;; esac
+  if [ "$BROWSER_ADDON_EXPLICIT" = 1 ] || [ "$operation" = install ]; then
+    browser_addon_policy_set "$BROWSER_ADDON_EFFECTIVE"
+  fi
+}
+
+browser_addon_status() {
+  say "browser addon: $(browser_addon_policy)"
+  if browser_path >/dev/null 2>&1; then say "Helium: $(browser_path)"; else say 'Helium: not installed'; fi
+  if [ -f "$BROWSER_ADDON_POLICY" ]; then say "policy: $BROWSER_ADDON_POLICY"; else say 'policy: not installed'; fi
+  [ ! -f "$STATE/browser-presets/bonjourr-nirux.json" ] || say "preset: $STATE/browser-presets/bonjourr-nirux.json"
+}
+
 browser_policy() {
   [ -f "$STATE/browser-policy" ] || { say keep; return 0; }
   policy=$(awk '$1 == "browser" && ($2 == "helium" || $2 == "none") {print $2; exit}' "$STATE/browser-policy")
@@ -2336,6 +2498,7 @@ apply_target_release() {
   LOCALSEND_EFFECTIVE=${NIRUX_APPLY_LOCALSEND:-yes}
   OPENCODE_EFFECTIVE=${NIRUX_APPLY_OPENCODE:-yes}
   ICONS_EFFECTIVE=${NIRUX_APPLY_ICONS:-none}
+  BROWSER_ADDON_EFFECTIVE=${NIRUX_APPLY_BROWSER_ADDON:-none}
   packages=${NIRUX_APPLY_PACKAGES:-1}
   operation=${NIRUX_APPLY_OPERATION:-update}
   RELEASE=${NIRUX_APPLY_RELEASE:-$(manifest_version suite)}
@@ -2377,6 +2540,7 @@ apply_target_release() {
   APPLY_OK=0
   trap 'apply_restore_config' EXIT INT TERM HUP
   browser_install
+  browser_addon_apply "${NIRUX_APPLY_BROWSER_ADDON:-$(browser_addon_policy)}"
   if [ "$LOCALSEND_EFFECTIVE" = yes ]; then localsend_install; else localsend_remove_managed; fi
   if [ "$OPENCODE_EFFECTIVE" = yes ]; then opencode_install; else opencode_remove_managed; fi
   ensure_user_dirs
@@ -3952,6 +4116,7 @@ uninstall() {
   opencode_remove_managed
   browser_remove_managed
   browser_remove_policy
+  browser_addon_remove
   rm -f "$STATE/localsend-policy" "$STATE/opencode-policy"
   remove_terminal
   if [ "$purge" = 1 ]; then
@@ -4064,6 +4229,7 @@ install_or_update() {
       --full) packages=1 ;;
       --display-manager) shift; [ "$#" -gt 0 ] || die 'missing display-manager value'; DM=$1 ;;
       --browser) shift; [ "$#" -gt 0 ] || die 'missing browser value'; BROWSER_CHOICE=$1; BROWSER_EXPLICIT=1 ;;
+      --browser-addon) shift; [ "$#" -gt 0 ] || die 'missing browser-addon value'; BROWSER_ADDON_CHOICE=$1; BROWSER_ADDON_EXPLICIT=1 ;;
       --wallpapers) shift; [ "$#" -gt 0 ] || die 'missing wallpapers value'; WALLPAPER_CHOICE=$1 ;;
       --localsend) shift; [ "$#" -gt 0 ] || die 'missing localsend value'; LOCALSEND_CHOICE=$1; LOCALSEND_EXPLICIT=1 ;;
       --opencode) shift; [ "$#" -gt 0 ] || die 'missing opencode value'; OPENCODE_CHOICE=$1; OPENCODE_EXPLICIT=1 ;;
@@ -4085,6 +4251,7 @@ install_or_update() {
   platform
   if [ "$operation" = install ]; then choose_dm; else DM=keep; fi
   choose_browser "$operation"
+  browser_addon_choose
   choose_optional_apps "$operation"
   icons_choose "$operation"
   lock
@@ -4125,6 +4292,7 @@ install_or_update() {
       NIRUX_APPLY_LOCALSEND=$LOCALSEND_EFFECTIVE NIRUX_APPLY_OPENCODE=$OPENCODE_EFFECTIVE \
       NIRUX_APPLY_OPERATION=$operation NIRUX_APPLY_WALLPAPERS="${wallpaper_decision:-}" \
       NIRUX_APPLY_ICONS="${ICONS_EFFECTIVE:-none}" \
+      NIRUX_APPLY_BROWSER_ADDON="${BROWSER_ADDON_EFFECTIVE:-none}" \
       NIRUX_APPLY_PACKAGES="$packages" \
       NIRUX_SUDO_SECRET_FILE=${SUDO_SECRET_FILE:-} \
       sh "$WORK/download/nirux/nirux" _apply 2; then
@@ -4133,6 +4301,7 @@ install_or_update() {
     return 0
   fi
   browser_install
+  browser_addon_apply "$BROWSER_ADDON_EFFECTIVE"
   if [ "$LOCALSEND_EFFECTIVE" = yes ]; then localsend_install; else localsend_remove_managed; fi
   if [ "$OPENCODE_EFFECTIVE" = yes ]; then opencode_install; else opencode_remove_managed; fi
   ensure_user_dirs
@@ -4208,6 +4377,13 @@ main() {
     reset-config) [ "$#" = 1 ] || die 'reset-config takes no arguments'; reset_config ;;
     repair-session) [ "$#" = 1 ] || die 'repair-session takes no arguments'; repair_session ;;
     repair-wallpaper) [ "$#" = 1 ] || die 'repair-wallpaper takes no arguments'; repair_wallpaper ;;
+    browser-addon)
+      [ "$#" = 2 ] || die 'usage: nirux browser-addon bonjourr|none|status'
+      case "$2" in
+        status) browser_addon_status ;;
+        bonjourr|none) browser_addon_policy_set "$2"; browser_addon_apply "$2" ;;
+        *) die 'browser-addon must be bonjourr, none or status' ;;
+      esac ;;
     status|doctor) [ "$#" = 1 ] || die "$1 takes no arguments"; "$1" ;;
     --version) say "NIRUX $VERSION" ;;
     --help|help) usage ;;
