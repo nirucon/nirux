@@ -46,7 +46,7 @@ jobs:
             grep -qx SHA256SUMS "$dir/assets"
             extra=
             case "$repo" in
-              niruwm) extra="niructl niruidle niruwm-session nirubar-version" ;;
+              niruwm) extra="niructl niruidle niruwm-session niruclipboard nirugestured nirubar-version" ;;
               nirulock) extra="pam-arch pam-debian pam-void" ;;
               niruwallpaper) extra="niruwallpaper.desktop niruwallpaper.png" ;;
               nirudisplay) extra="nirudisplay.desktop nirudisplay.png" ;;
