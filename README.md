@@ -1,26 +1,28 @@
 # NIRUX
 
-**A minimal, native X11 desktop by Nicklas Rudolfsson.**
+**A minimal, native X11 desktop built by me, for me.**
 
-NIRUX brings together a tiling window manager, per-monitor status bar, keyboard-first
-launcher, notifications, locking, screenshots and graphical theme, wallpaper and
-display settings. The components share appearance and configuration conventions.
-It is an early-beta desktop intended for everyday use and continued refinement.
+NIRUX is my personal desktop suite: a tiling window manager, keyboard-first
+launcher, status bar, notifications, lock screen, screenshots, recording,
+themes, wallpaper and display tools. It is heavily inspired by **dwm**, which I
+used for many years, but it is not a dwm fork, a dwm configuration or a copy of
+dwm. The layouts, session layer, bar, launcher and tools are their own code and
+their own design.
 
-NIRU Actions adds one catalogue for maintenance, diagnostics, display recovery,
-work contexts and optional OpenCode assistance. Deterministic actions work without
-an account, network request or model.
+I consider NIRUX an **early beta**. It is made for my own machines and my own
+workflow. Others are welcome to test it at their own risk. I give no guarantees
+of stability, data safety, compatibility or fitness for any purpose. Read the
+installer and back up anything important before changing a working desktop.
 
 ## Supported systems
 
 - **Arch Linux, Debian and Void Linux glibc**, x86_64.
-- An existing Linux installation with working graphics, drivers and firmware.
-- A normal user with `sudo`, Internet access and `git` for the installation below.
-- X11; released binaries do not support Wayland, Void musl or other architectures.
+- A normal user with `sudo`, network access and `git`.
+- X11 with working graphics, drivers and firmware.
+- Released binaries do not support Wayland, Void musl or other architectures.
 
 NIRUX installs desktop runtime dependencies, not an operating system or GPU
-drivers. It preserves existing user settings where possible. Back up important
-configuration before changing an existing desktop.
+drivers. It preserves existing user settings where possible.
 
 ## Install
 
@@ -34,79 +36,151 @@ cd nirux
 
 The installer downloads versioned release assets and verifies their checksums.
 The default prefix is `~/.local`. It preserves an existing display manager and
-supports **startx, SDDM and LightDM**; select NIRUWM when logging in. For explicit
-session selection and installation options, see [installation](docs/INSTALL.md).
+supports **startx, SDDM and LightDM**; choose NIRUWM when logging in. See
+[installation](docs/INSTALL.md) for explicit session and package choices.
 
-Use `--no-packages` only when the required runtime packages already exist. Driver
-and firmware problems must be resolved through the distribution. Optional managed
-applications and image downloads are described in the installation guide.
+Use `--no-packages` only when the required runtime packages already exist.
+Driver and firmware problems belong to the distribution, not to NIRUX.
 
-## The desktop at a glance
+## What is in the box
 
-- **NIRUWM:** eight layouts, per-monitor workspaces, floating windows, scratchpad,
-  keybindings, session state and display profiles. **Scroll** keeps one window
-  per column and shows one or two adjacent columns, sliding horizontally with
-  focus; `Super+Ctrl+S` selects it and `Super+Ctrl+Shift+S` toggles columns.
-- **NIRUBAR:** workspaces, wired/Wi-Fi state, audio, microphone, brightness, media, battery,
-  calendar and optional providers, with direct routes to settings. It supports
-  XEmbed and D-Bus StatusNotifierItem trays on the primary monitor, including
-  real icons and clickable application menus. A session watcher recovers windows
-  after dock, lid and output changes and re-applies the saved startup profile
-  when the connected-output set changes.
-- **NIRU Launcher:** applications, windows, web search, actions and NIRUX Settings.
-  **Super+A** opens the focused NIRU Actions view; the same entries appear in
-  **Super+Shift+P**. It includes storage review, off-screen window recovery, NIRUX
-  installed/running status, focus and presentation contexts, recent tasks and an
-  optional OpenCode terminal handoff. Deterministic phrases such as "lock",
-  "lås", "focus mode", "stör ej" and "höj volymen" resolve to the same commands;
-  **Ctrl+S** saves the selected application or command as a reusable action.
-  Wi-Fi discovery, SSID filtering and profile operations use the existing
-  network manager. See the [backend compatibility notes](docs/WIFI.md) and
-  [NIRU Actions](docs/ACTIONS.md).
-- **Theme Selector, Wallpaper and Display:** native graphical settings; browsing
-  previews does not automatically apply a change. Theme Selector and Wallpaper
-  open floating on the active monitor.
-- **Notifications, lock, idle, screenshots and recording:** integrated lightweight
-  tools, with shared colours/fonts and normal system authentication. NIRUCLIP
-  records the screen, a region or camera with optional overlay, microphone and
-  desktop audio; the launcher exposes built-in or saved profiles.
-- **Files and removable media:** udisks2/GVFS backends for USB, MTP, SMB and
-  phones, plus archive tools. Papirus-Dark with grey folders is an optional
-  per-user install (`--icons papirus`) because of its size.
-- **Input and display scale:** keyboard layout/repeat, pointer speed, natural
-  scrolling and touchpad tap controls. The system X11 layout is inherited unless
-  you explicitly choose another one. The bar and launcher read `Xft.dpi` and
-  scale through `NIRU_UI_SCALE` (bounded 0.75–2.5) while still fitting an
-  800x600 screen. See [input settings](docs/INPUT.md).
-- **NIRU Display 0.2:** stable screen numbers, EDID identity, full frames, frozen
-  drag, snapping, zoom/pan, mirror grouping and safe preview transactions.
-- **NIRUBAR:** includes an optional `tasks` module for running/waiting NIRU jobs and
-  an XEmbed + SNI tray; it does not require a desktop daemon.
+### Window management and session
 
-Start with **Super+P** for applications, **Super+A** for NIRU Actions and
-**Super+Shift+P** for applications, windows, actions and settings. Use the
-launcher's keybinding view for the active shortcuts, including overrides.
+- **NIRUWM:** eight layouts: tile, left, monocle, centered, centered-floating,
+  fibonacci, floating and Scroll.
+- Per-monitor workspaces and per-workspace layouts.
+- Floating windows, fullscreen, scratchpad, gaps, master count and master ratio.
+- **Sticky windows:** `Super+Alt+S` keeps the focused window visible on every
+  workspace of its monitor. The same key turns sticky off again.
+- Window rules for floating, centered, workspace, sticky and compositor opacity.
+- Session state, saved window placement, display profiles and safe recovery.
+- **Scroll layout:** one window per column, one or two adjacent columns visible;
+  `Super+Ctrl+S` selects Scroll and `Super+Ctrl+Shift+S` toggles columns.
 
-## Update and activation
+### Bar and panels
+
+- **NIRUBAR:** per-monitor workspace cells, title, media, volume, microphone,
+  brightness, network, Wi-Fi, battery, mode, tasks, updates and calendar.
+- Optional **Tailscale** peers module, placed before network and visible only
+  when Tailscale is installed.
+- **Quick Settings:** opens from the gear icon and brings volume, microphone,
+  Wi-Fi, Bluetooth, displays, power profile, themes, DND, idle inhibition,
+  night light and lock into one launcher view.
+- XEmbed and D-Bus StatusNotifierItem trays with real icons and menus.
+- Clickable panels and a narrow-width overflow menu.
+
+### Launcher, keyboard and clipboard
+
+- **NIRU Launcher:** applications, windows, NIRU Actions, web search, Wi-Fi,
+  Bluetooth, displays, power, themes, sound, timing, input, screenshots and
+  recording.
+- **Alt+Tab / Super+grave:** window switcher and workspace-grouped overview.
+- **Super+V:** local clipboard history. Entries are stored under
+  `~/.local/state/niru/clipboard.json`, capped at 200 entries, filtered for
+  obvious secrets and never uploaded.
+- **Super+P:** applications. **Super+A:** NIRU Actions. **Super+Shift+P:**
+  applications, windows, actions and settings in one view.
+- Deterministic phrases such as “lock”, “lås”, “focus mode”, “stör ej” and
+  “höj volymen” resolve to the same native actions. No account, model or network
+  request is required.
+
+### Themes, wallpaper and display
+
+- **NIRU Theme Selector** and **NIRU Wallpaper** with graphical previews.
+- Ten built-in NIRUX themes and custom user themes.
+- Wallpaper scale, rotation, output selection and follow-theme behaviour.
+- **NIRU Display:** stable screen numbers, EDID identity, frozen drag, snapping,
+  zoom/pan, mirror grouping and safe preview transactions.
+
+### Notifications, lock and media
+
+- **NIRUNOTIFY:** native notifications, DND, history, clipboard-safe OSDs and
+  optional event sounds.
+- **NIRULOCK:** PAM-backed lock screen with minimal, terminal, runic and corner
+  layouts.
+- **NIRUSCREENSAVER:** idle screen with configurable inactivity and lock timing.
+- **NIRUSHOT:** full-screen, region and window capture with review/annotation;
+  the original capture is always copied to the clipboard.
+- **NIRUCLIP:** screen, region or camera recording with microphone, desktop
+  audio, overlays and profiles.
+
+### Event sounds
+
+NIRUX has four short audio cues: startup, notification, NIRUX update and
+shutdown. They are enabled by default at 35% volume and are easy to change:
+
+```sh
+nirux sounds status
+nirux sounds off
+nirux sounds on
+nirux sounds toggle notification
+nirux sounds test startup
+```
+
+Configuration lives in `~/.config/nirux/sounds.toml`. Sounds respect system mute;
+notification sounds are rate-limited. Startup/shutdown sounds are part of the
+session and need a new login after an update.
+
+### Optional suite extras
+
+These are suite-adjacent applications, but they are **not** part of the core
+manifest and are never installed by a normal `nirux update`:
+
+```sh
+nirux extras list
+nirux extras select niruflow
+nirux extras install niruflow
+nirux extras update
+```
+
+Available extras:
+
+- **NIRUORG** — file and folder management.
+- **NIRUNOTE** — minimal Markdown editor.
+- **NIRUPRES** — presentation studio.
+- **NPLAY** — terminal music, radio and podcast player.
+- **NIRUFLOW** — local maintenance and automation.
+
+## Key bindings at a glance
+
+| Binding | Action |
+|---|---|
+| `Super+P` | Applications |
+| `Super+A` | NIRU Actions |
+| `Super+Shift+P` | Applications, windows, actions and settings |
+| `Alt+Tab` | Window switcher |
+| `Super+grave` | Workspace overview |
+| `Super+V` | Clipboard history |
+| `Super+Alt+S` | Toggle sticky for the focused window |
+| `Super+Ctrl+S` | Scroll layout |
+| `Super+Ctrl+Shift+S` | Toggle Scroll columns |
+| `Super+Shift+Space` | Toggle floating |
+| `Super+Shift+E` | Toggle fullscreen |
+| `Super+Shift+S` | Scratchpad |
+| `Super+Shift+R` | Reload configuration |
+
+The launcher’s keybinding view always shows the effective shortcuts, including
+local overrides.
+
+## Update, rollback and activation
 
 ```sh
 ~/.local/bin/nirux update
 ~/.local/bin/nirux status
 ```
 
-Updates keep a previous generation for rollback. Settings and custom content are
-preserved according to installer ownership rules. Follow the activation message:
-**log out and back in when WM/session programs change**. Restarting a bar alone
-does not activate a new running window manager. `nirux status` reports when the
-installed and running bar/WM generations differ. The installer never updates the
-whole base operating system on your behalf.
+Updates keep a previous program generation for rollback. Settings and custom
+content are preserved according to installer ownership rules. Follow the
+activation message: **log out and back in when WM/session programs change.**
+Restarting a bar alone does not activate a new running window manager, although
+the bar can normally be restarted with `niructl restart-bar`.
 
 ```sh
 ~/.local/bin/nirux rollback
 ```
 
-Rollback restores the previous program generation; it is not a backup of all
-personal files or operating-system packages. Activate the restored session normally.
+Rollback restores the previous program generation; it is not a backup of
+personal files or operating-system packages.
 
 ## Removal
 
@@ -114,21 +188,9 @@ personal files or operating-system packages. Activate the restored session norma
 ~/.local/bin/nirux uninstall
 ```
 
-Use `nirux --help` and [installation/removal details](docs/INSTALL.md) before using
-`--purge`. Purge removes additional managed configuration/state; it is not a
-lossless undo of every change. Personal or modified files must be preserved, and
-distribution runtime packages may remain installed.
-
-## Important installed software
-
-NIRUX provisions the X11 runtime, keyboard/mouse input, PipeWire audio (including the NIRU Sound panel via `nirulauncher --sound`), NetworkManager
-or the existing Wi-Fi stack, fonts (DejaVu, Liberation, Noto Sans/Serif and Color
-Emoji), kitty, fish, pcmanfm, picom, dunst, screenshot and notification tools. Helium, LocalSend and OpenCode are optional managed choices;
-an existing installation of any of them is left untouched. A selected Helium
-installation can optionally receive the Bonjourr new-tab extension. This is an
-explicit browser-addon choice, persisted for later updates; it is not enabled
-silently. OpenCode is not required
-for NIRU Actions; its integration opens a terminal handoff and asks before changes.
+Use `nirux --help` and [installation/removal details](docs/INSTALL.md) before
+using `--purge`. Purge removes additional managed configuration/state and is not
+a lossless undo of every change.
 
 ## Documentation and components
 
@@ -138,28 +200,36 @@ for NIRU Actions; its integration opens a terminal handoff and asks before chang
 - [Wi-Fi backends and limitations](docs/WIFI.md)
 - [Theme and additional wallpaper packs](docs/WALLPAPERS.md)
 - [Browser addons](docs/BROWSER-ADDONS.md)
+- [Optional extras](docs/EXTRAS.md)
 - [Shared configuration example](config.example.toml) and
   [appearance overrides](appearance.example.toml)
 - [Pinned component versions](manifest)
 
-Every component below is installed from the pinned manifest:
+Core components come from the pinned manifest:
 
 | Repository | Purpose |
 |---|---|
 | [nirux](https://github.com/nirucon/nirux) | Installer, update/rollback, suite pins and session integration |
-| [niruwm](https://github.com/nirucon/niruwm) | Window manager, workspaces, `niructl`, `niruidle` and session |
-| [nirubar](https://github.com/nirucon/nirubar) | Per-monitor bar, panels, tray and tasks |
-| [nirulauncher](https://github.com/nirucon/nirulauncher) | Applications, windows, search, settings and NIRU Actions |
+| [niruwm](https://github.com/nirucon/niruwm) | Window manager, workspaces, `niructl`, `niruidle`, clipboard and gesture helpers |
+| [nirubar](https://github.com/nirucon/nirubar) | Per-monitor bar, panels, Quick Settings, tray, Tailscale and tasks |
+| [nirulauncher](https://github.com/nirucon/nirulauncher) | Applications, windows, overview, clipboard, settings and NIRU Actions |
 | [nirudisplay](https://github.com/nirucon/nirudisplay) | Monitor layout, modes, rotation and profiles |
 | [niruwallpaper](https://github.com/nirucon/niruwallpaper) | Wallpaper selection, scale, rotation and output |
 | [niruthemeselector](https://github.com/nirucon/niruthemeselector) | Theme browsing and application |
-| [NIRUFLOW](https://github.com/nirucon/niruflow) | Optional local maintenance and automation |
-| [nirunotify](https://github.com/nirucon/nirunotify) | Notification service and hardware OSD |
+| [nirunotify](https://github.com/nirucon/nirunotify) | Notification service, DND and hardware OSD |
 | [nirulock](https://github.com/nirucon/nirulock) | PAM lock screen |
 | [niruscreensaver](https://github.com/nirucon/niruscreensaver) | Idle screen |
 | [nirushot](https://github.com/nirucon/nirushot) | Screenshot capture, review and annotation |
 | [niruclip](https://github.com/nirucon/niruclip) | Screen, region and camera recording with profiles and recovery |
 | [niruwebapp](https://github.com/nirucon/niruwebapp) | Small isolated web-app windows |
 | [nirufetch](https://github.com/nirucon/nirufetch) | NIRU-styled system summary |
+
+## Release policy
+
+The current release and the previous two functional releases are the supported
+window. Older releases are historical and may contain bugs fixed in later
+versions. Git tags and commits remain as release evidence; old GitHub Releases
+and assets may be removed during cleanup. A version with a known broken asset is
+not kept merely because its number is recent.
 
 NIRUX is provided without warranty. See [LICENSE](LICENSE).
