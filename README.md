@@ -80,9 +80,10 @@ Driver and firmware problems belong to the distribution, not to NIRUX.
   obvious secrets and never uploaded.
 - **Super+P:** applications. **Super+A:** NIRU Actions. **Super+Shift+P:**
   applications, windows, actions and settings in one view.
-- Deterministic phrases such as “lock”, “lås”, “focus mode”, “stör ej” and
-  “höj volymen” resolve to the same native actions. No account, model or network
-  request is required.
+- Deterministic English phrases such as “lock”, “focus mode”, “do not disturb”
+  and “volume up” resolve to the same native actions. Additional language
+  aliases are documented in [NIRU Actions](docs/ACTIONS.md). No account, model
+  or network request is required.
 
 ### Themes, wallpaper and display
 
