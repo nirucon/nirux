@@ -153,6 +153,7 @@ Every component below is installed from the pinned manifest:
 | [nirudisplay](https://github.com/nirucon/nirudisplay) | Monitor layout, modes, rotation and profiles |
 | [niruwallpaper](https://github.com/nirucon/niruwallpaper) | Wallpaper selection, scale, rotation and output |
 | [niruthemeselector](https://github.com/nirucon/niruthemeselector) | Theme browsing and application |
+| [NIRUFLOW](https://github.com/nirucon/niruflow) | Optional local maintenance and automation |
 | [nirunotify](https://github.com/nirucon/nirunotify) | Notification service and hardware OSD |
 | [nirulock](https://github.com/nirucon/nirulock) | PAM lock screen |
 | [niruscreensaver](https://github.com/nirucon/niruscreensaver) | Idle screen |

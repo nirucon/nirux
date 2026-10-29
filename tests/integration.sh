@@ -696,6 +696,9 @@ grep -q '"lang": "en"' "$addon_test/state/browser-presets/bonjourr-nirux.json" |
 grep -q '"ampm": false' "$addon_test/state/browser-presets/bonjourr-nirux.json" || fail 'Bonjourr preset is not 24-hour'
 grep -q '"linkgroups"' "$addon_test/state/browser-presets/bonjourr-nirux.json" || fail 'Bonjourr preset has no link group'
 grep -q '"parent": "default"' "$addon_test/state/browser-presets/bonjourr-nirux.json" || fail 'Bonjourr links are not in the default group'
+embedded_preset=$addon_test/embedded-bonjourr.json
+awk '/cat > "\$preset\.tmp\.\$\$" <<.JSON./ {flag=1; next} /^JSON$/ {flag=0} flag' "$SOURCE/nirux" > "$embedded_preset"
+cmp -s "$embedded_preset" "$SOURCE/browser/bonjourr-nirux.json" || fail 'embedded Bonjourr preset differs from the canonical file'
 (
   ROOT=$addon_test/system STATE=$addon_test/state BIN=$addon_test/bin WORK=$addon_test/work
   # shellcheck disable=SC2034 # read by browser_addon_apply in the sourced installer
@@ -705,6 +708,13 @@ grep -q '"parent": "default"' "$addon_test/state/browser-presets/bonjourr-nirux.
 )
 [ ! -e "$policy" ] || fail 'browser addon policy survived removal'
 rm -rf "$addon_test"
+
+extras_test=$TEST/extras
+mkdir -p "$extras_test/state" "$extras_test/home"
+HOME=$extras_test/home XDG_STATE_HOME=$extras_test/state "$SOURCE/nirux" extras list > "$extras_test/list"
+grep -q 'niruflow' "$extras_test/list" || fail 'extras list omitted niruflow'
+grep -q 'niruorg' "$extras_test/list" || fail 'extras list omitted niruorg'
+rm -rf "$extras_test"
 
 # I07: a new shared-library dependency is provisioned before staged components
 # are executed. The synthetic component fails its version check without it.
