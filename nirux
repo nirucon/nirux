@@ -2,13 +2,13 @@
 # NIRUX: install a complete X11 desktop, or maintain an existing installation.
 set -eu
 
-VERSION=0.12.104
+VERSION=0.12.105
 PREFIX=${NIRUX_PREFIX:-$HOME/.local}
 BIN=$PREFIX/bin
 STATE=$PREFIX/share/nirux
 CONFDIR=${XDG_CONFIG_HOME:-$HOME/.config}/niruwm
 ROOT=${NIRUX_SYSTEM_ROOT:-}
-PROGRAMS="niruwm niructl niruidle nirubar niruscreensaver nirulock nirulauncher nirunotify nirushot niruclip nirufetch niruwebapp niruwallpaper nirudisplay niruthemeselector niruwm-session niruclipboard nirux"
+PROGRAMS="niruwm niructl niruidle nirubar niruscreensaver nirulock nirulauncher nirunotify nirushot niruclip nirufetch niruwebapp niruwallpaper nirudisplay niruthemeselector niruwm-session niruclipboard nirugestured nirux"
 WORK=
 POLICY_TARGET=
 POLICY_BACKUP=
@@ -292,9 +292,9 @@ packages_for() {
   # The root-owned, restricted standalone Wi-Fi helper uses the system Python.
   case "$1" in arch) say python ;; debian|void) say python3 ;; esac
   case "$1" in
-    arch) say "xorg-server xorg-xinit xorg-xauth xorg-xrandr xorg-xset xorg-xprop xorg-xdpyinfo xorg-xwininfo xorg-xrdb xorg-xsetroot xorg-setxkbmap xorg-xinput xf86-input-libinput xkeyboard-config noto-fonts-emoji ttf-liberation noto-fonts udisks2 gvfs gvfs-mtp gvfs-smb gvfs-afc gvfs-nfs gvfs-dnssd glib2 xarchiver 7zip unzip zip unrar-free exfatprogs dbus pam pipewire pipewire-audio pipewire-pulse pipewire-alsa wireplumber alsa-utils alsa-ucm-conf rtkit fontconfig libglvnd ttf-dejavu ttf-jetbrains-mono-nerd kitty fish polkit-gnome libayatana-appindicator libayatana-indicator ayatana-ido bluez bluez-utils power-profiles-daemon dunst picom feh maim slop xclip ffmpeg v4l-utils xorg-xrandr xorg-xprop pcmanfm playerctl libnotify brightnessctl gammastep iproute2 iw xdg-utils xdg-user-dirs unzip procps-ng util-linux" ;;
-    debian) say "xserver-xorg xserver-xorg-input-libinput xinput xinit xauth x11-xserver-utils x11-utils x11-xkb-utils xkb-data fonts-liberation fonts-noto-core udisks2 gvfs gvfs-backends gvfs-fuse libglib2.0-bin xarchiver 7zip unzip zip unrar-free exfatprogs dbus-x11 dbus-user-session libpam0g pipewire pipewire-pulse pipewire-alsa wireplumber alsa-utils alsa-ucm-conf rtkit fontconfig libgles2 fonts-dejavu-core fonts-font-awesome fonts-jetbrains-mono fonts-noto-color-emoji kitty fish lxpolkit libayatana-appindicator3-1 libayatana-indicator3-7 libayatana-ido3-0.4-0 bluez libspa-0.2-bluetooth power-profiles-daemon dunst picom feh maim slop xclip ffmpeg v4l-utils x11-utils pcmanfm playerctl libnotify-bin brightnessctl gammastep iproute2 iw rfkill xdg-utils xdg-user-dirs unzip procps util-linux" ;;
-    void) say "xorg-minimal xinit xauth xrandr xset xprop xdpyinfo xwininfo xrdb xsetroot setxkbmap xinput xkeyboard-config liberation-fonts-ttf noto-fonts-ttf udisks2 gvfs gvfs-mtp gvfs-smb gvfs-afc glib xarchiver 7zip unzip zip exfatprogs dbus elogind pam pam-base pipewire wireplumber alsa-utils alsa-ucm-conf rtkit fontconfig libglvnd dejavu-fonts-ttf nerd-fonts-symbols-ttf noto-fonts-emoji kitty fish-shell polkit-gnome libayatana-appindicator libayatana-indicator ayatana-ido bluez libspa-bluetooth power-profiles-daemon dunst picom feh maim slop xclip ffmpeg v4l-utils xrandr xprop pcmanfm playerctl libnotify brightnessctl gammastep iproute2 iw xdg-utils xdg-user-dirs unzip procps-ng util-linux" ;;
+    arch) say "xorg-server xorg-xinit xorg-xauth xorg-xrandr xorg-xset xorg-xprop xorg-xdpyinfo xorg-xwininfo xorg-xrdb xorg-xsetroot xorg-setxkbmap xorg-xinput xf86-input-libinput libinput xkeyboard-config noto-fonts-emoji ttf-liberation noto-fonts udisks2 gvfs gvfs-mtp gvfs-smb gvfs-afc gvfs-nfs gvfs-dnssd glib2 xarchiver 7zip unzip zip unrar-free exfatprogs dbus pam pipewire pipewire-audio pipewire-pulse pipewire-alsa wireplumber alsa-utils alsa-ucm-conf rtkit fontconfig libglvnd ttf-dejavu ttf-jetbrains-mono-nerd kitty fish polkit-gnome libayatana-appindicator libayatana-indicator ayatana-ido bluez bluez-utils power-profiles-daemon dunst picom feh maim slop xclip ffmpeg v4l-utils xorg-xrandr xorg-xprop pcmanfm playerctl libnotify brightnessctl gammastep iproute2 iw xdg-utils xdg-user-dirs unzip procps-ng util-linux" ;;
+    debian) say "xserver-xorg xserver-xorg-input-libinput xinput libinput-tools xinit xauth x11-xserver-utils x11-utils x11-xkb-utils xkb-data fonts-liberation fonts-noto-core udisks2 gvfs gvfs-backends gvfs-fuse libglib2.0-bin xarchiver 7zip unzip zip unrar-free exfatprogs dbus-x11 dbus-user-session libpam0g pipewire pipewire-pulse pipewire-alsa wireplumber alsa-utils alsa-ucm-conf rtkit fontconfig libgles2 fonts-dejavu-core fonts-font-awesome fonts-jetbrains-mono fonts-noto-color-emoji kitty fish lxpolkit libayatana-appindicator3-1 libayatana-indicator3-7 libayatana-ido3-0.4-0 bluez libspa-0.2-bluetooth power-profiles-daemon dunst picom feh maim slop xclip ffmpeg v4l-utils x11-utils pcmanfm playerctl libnotify-bin brightnessctl gammastep iproute2 iw rfkill xdg-utils xdg-user-dirs unzip procps util-linux" ;;
+    void) say "xorg-minimal xinit xauth xrandr xset xprop xdpyinfo xwininfo xrdb xsetroot setxkbmap xinput libinput xkeyboard-config liberation-fonts-ttf noto-fonts-ttf udisks2 gvfs gvfs-mtp gvfs-smb gvfs-afc glib xarchiver 7zip unzip zip exfatprogs dbus elogind pam pam-base pipewire wireplumber alsa-utils alsa-ucm-conf rtkit fontconfig libglvnd dejavu-fonts-ttf nerd-fonts-symbols-ttf noto-fonts-emoji kitty fish-shell polkit-gnome libayatana-appindicator libayatana-indicator ayatana-ido bluez libspa-bluetooth power-profiles-daemon dunst picom feh maim slop xclip ffmpeg v4l-utils xrandr xprop pcmanfm playerctl libnotify brightnessctl gammastep iproute2 iw xdg-utils xdg-user-dirs unzip procps-ng util-linux" ;;
   esac
 }
 # Runtime libraries and extraction tools for the pinned Helium archive. These
@@ -2528,7 +2528,7 @@ manifest_version() {
 }
 component_files() {
   case "$1" in
-    niruwm) say "niruwm niructl niruidle niruwm-session niruclipboard" ;;
+    niruwm) say "niruwm niructl niruidle niruwm-session niruclipboard nirugestured" ;;
     *) say "$1" ;;
   esac
 }
@@ -2536,7 +2536,7 @@ stage_component_assets() {
   component=$1
   component_version=$2
   case "$component" in
-    niruwm) release_files niruwm "$component_version" niruwm niructl niruidle niruwm-session niruclipboard ;;
+    niruwm) release_files niruwm "$component_version" niruwm niructl niruidle niruwm-session niruclipboard nirugestured ;;
     nirulock) release_files nirulock "$component_version" nirulock pam-arch pam-debian pam-void ;;
     nirux) : ;;
     *) release_files "$component" "$component_version" "$component" ;;
@@ -2587,6 +2587,7 @@ stage_components() {
         verify_staged_version niruwm "$component_version"
         verify_staged_version niruidle "$component_version"
         verify_staged_version niruclipboard "$component_version"
+        verify_staged_version nirugestured "$component_version"
         ;;
       *) verify_staged_version "$component" "$component_version" ;;
     esac

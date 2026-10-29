@@ -118,7 +118,7 @@ EOF
 chmod +x "$TEST/bin/curl"
 export FIXTURE
 export PATH="$TEST/bin:$PATH"
-fixture niruwm "$wm_version" niruwm niructl niruidle niruwm-session niruclipboard
+fixture niruwm "$wm_version" niruwm niructl niruidle niruwm-session niruclipboard nirugestured
 # Executing the session script during status must be caught.
 say 'touch "$HOME/session-was-started"' >> "$FIXTURE/niruwm/$wm_version/niruwm-session"
 fixture nirubar "$bar_version" nirubar
