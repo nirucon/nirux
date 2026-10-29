@@ -15,6 +15,15 @@
   "linktitles": true,
   "linkbackgrounds": false,
   "linksrow": 5,
+  "linkgroups": {
+    "on": true,
+    "selected": "default",
+    "groups": [
+      "default"
+    ],
+    "pinned": [],
+    "synced": []
+  },
   "textShadow": 0.18,
   "backgrounds": {
     "type": "color",
@@ -79,21 +88,21 @@
   },
   "linksnirux1": {
     "_id": "linksnirux1",
-    "parent": "",
+    "parent": "default",
     "order": 1,
     "title": "NIRUX",
     "url": "https://github.com/nirucon/nirux"
   },
   "linksnirux2": {
     "_id": "linksnirux2",
-    "parent": "",
+    "parent": "default",
     "order": 2,
     "title": "NIRUCLIP",
     "url": "https://github.com/nirucon/niruclip"
   },
   "linksnirux3": {
     "_id": "linksnirux3",
-    "parent": "",
+    "parent": "default",
     "order": 3,
     "title": "NIRUPRES",
     "url": "https://github.com/nirucon/nirupres"

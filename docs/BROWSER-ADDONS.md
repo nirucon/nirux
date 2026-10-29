@@ -54,7 +54,9 @@ The preset is deliberately conservative:
   Pomodoro sources.
 - No private hostnames, bookmarks or user content.
 - Noto Sans typography and restrained link styling.
-- Three public project links: NIRUX, NIRUCLIP and NIRUPRES.
+- Three public project links in Bonjourr's `default` link group. Keep the
+  Quick Links widget enabled; turning it off hides the links even though they
+  remain in the preset.
 
 Bonjourr uses the interface language for localized month and weekday names.
 There is no supported mixed “English UI + Swedish date words” mode; Swedish
