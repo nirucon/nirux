@@ -805,7 +805,7 @@ for os in arch debian void; do
   case "$(packages_for "$os")" in *xidlehook*) fail 'obsolete mandatory xidlehook' ;; esac
 done
 (DM=auto; existing_dm() { say lightdm; }; choose_dm; [ "$DM" = keep ]) || fail 'existing display manager was not kept'
-TEST_OS=debian; OS=debian; (DM=auto; existing_dm() { :; }; choose_dm </dev/null; [ "$DM" = nirulogin ]) || fail 'noninteractive Debian default is not nirulogin'
+for default_os in arch debian void; do TEST_OS=$default_os; OS=$default_os; (DM=auto; existing_dm() { :; }; choose_dm </dev/null; [ "$DM" = nirulogin ]) || fail "noninteractive $default_os default is not nirulogin"; done
 # Sudo validation can succeed while the privileged command fails. Preserve
 # that command's error status (the old implementation incorrectly returned 0).
 set +e
