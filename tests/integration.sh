@@ -698,7 +698,7 @@ grep -q '"linkgroups"' "$addon_test/state/browser-presets/bonjourr-nirux.json" |
 grep -q '"parent": "default"' "$addon_test/state/browser-presets/bonjourr-nirux.json" || fail 'Bonjourr links are not in the default group'
 embedded_preset=$addon_test/embedded-bonjourr.json
 awk '/cat > "\$preset\.tmp\.\$\$" <<.JSON./ {flag=1; next} /^JSON$/ {flag=0} flag' "$SOURCE/nirux" > "$embedded_preset"
-cmp -s "$embedded_preset" "$SOURCE/browser/bonjourr-nirux.json" || fail 'embedded Bonjourr preset differs from the canonical file'
+[ "$(cksum < "$embedded_preset")" = "$(cksum < "$SOURCE/browser/bonjourr-nirux.json")" ] || fail 'embedded Bonjourr preset differs from the canonical file'
 (
   ROOT=$addon_test/system STATE=$addon_test/state BIN=$addon_test/bin WORK=$addon_test/work
   # shellcheck disable=SC2034 # read by browser_addon_apply in the sourced installer
