@@ -59,6 +59,9 @@ first-login default on Debian, Arch and Void. LightDM uses a managed seat
 default and GTK greeter default; SDDM is seeded only if it has no remembered
 session. Existing remembered sessions are preserved. Keeping an existing
 display manager or running an update does not reset its session selection.
+The LightDM GTK greeter's top panel cannot centre a clock reliably between the
+host and session groups, so NIRUX leaves the clock out rather than showing an
+off-centre time. Use the NIRUX SDDM greeter when a clock is required.
 The SDDM theme selects the installed Qt5/Qt6 greeter and resolves its images
 from the theme directory rather than the shared SDDM component directory.
 Display managers selected by NIRUX start only after the program generation is

@@ -1216,6 +1216,7 @@ grep -qx 'background = "101010"' "$appearance_test/custom.toml" || fail 'custom 
   [ -f "$ROOT/usr/share/nirux/greeter/login.png" ] || fail 'missing LightDM background'
   grep -qx 'background=/usr/share/nirux/greeter/login.png' "$ROOT/usr/share/lightdm/lightdm-gtk-greeter.conf.d/50-nirux.conf" || fail 'LightDM background path is wrong'
   grep -qx 'position=50%,center 68%,center' "$ROOT/usr/share/lightdm/lightdm-gtk-greeter.conf.d/50-nirux.conf" || fail 'LightDM login window is not centred at 68%'
+  ! grep -q '~clock' "$ROOT/usr/share/lightdm/lightdm-gtk-greeter.conf.d/50-nirux.conf" || fail 'LightDM still shows the off-centre panel clock'
   remove_greeters
   [ ! -e "$ROOT/usr/share/sddm/themes/nirux" ] || fail 'greeter removal left the SDDM theme'
   [ ! -e "$ROOT/usr/share/themes/NIRU" ] || fail 'greeter removal left the GTK theme'
