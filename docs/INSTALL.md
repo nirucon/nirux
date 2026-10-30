@@ -332,20 +332,24 @@ nirufetch --plain
 
 `niruwebapp` creates normal desktop applications backed by an already installed
 Helium/Chromium browser. Each app gets an owned desktop entry, a stable ID and a
-dedicated profile. No Electron, WebView runtime or browser is installed.
+dedicated profile by default. No Electron, WebView runtime or browser is
+installed.
 
 ```sh
 niruwebapp create "YouTube Music" https://music.youtube.com
 niruwebapp list
 niruwebapp launch "YouTube Music"
 niruwebapp icon youtube-music ~/Pictures/yt.png
+niruwebapp edit youtube-music --shared-profile
+niruwebapp edit youtube-music --isolated-profile
 niruwebapp remove youtube-music --delete-profile
 ```
 
-`--icon` and `icon` accept PNG, SVG, XPM or JPEG; owned icons are removed
-with the launcher.
-
-Removing a launcher keeps its profile unless `--delete-profile` is explicit.
+`--shared-profile` uses the browser's ordinary session; `--isolated-profile`
+returns to a dedicated profile. Switching keeps the old profile on disk, so it
+is non-destructive. `--icon` and `icon` accept PNG, SVG, XPM or JPEG; owned
+icons are removed with the launcher. Removing a launcher keeps its profile
+unless `--delete-profile` is explicit.
 
 ### OpenCode
 

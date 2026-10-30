@@ -224,7 +224,7 @@ Core components come from the pinned manifest:
 | [niruscreensaver](https://github.com/nirucon/niruscreensaver) | Idle screen |
 | [nirushot](https://github.com/nirucon/nirushot) | Screenshot capture, review and annotation |
 | [niruclip](https://github.com/nirucon/niruclip) | Screen, region and camera recording with profiles and recovery |
-| [niruwebapp](https://github.com/nirucon/niruwebapp) | Small isolated web-app windows |
+| [niruwebapp](https://github.com/nirucon/niruwebapp) | Web-app windows with isolated or shared profiles |
 | [nirufetch](https://github.com/nirucon/nirufetch) | NIRU-styled system summary |
 
 ## Release policy
