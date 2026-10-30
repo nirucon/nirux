@@ -97,8 +97,9 @@ cd nirux
 ```
 
 The installer downloads versioned release assets and verifies their checksums.
-The default prefix is `~/.local`. It preserves an existing display manager and
-supports **startx, SDDM and LightDM**; choose NIRUWM when logging in. See
+The default prefix is `~/.local`. It preserves an existing display manager;
+new installations default to **NIRU Login**, with **startx, SDDM and LightDM**
+available as explicit choices. NIRU Login always starts NIRUWM. See
 [installation](docs/INSTALL.md) for explicit session and package choices.
 
 Use `--no-packages` only when the required runtime packages already exist.
@@ -116,6 +117,8 @@ Driver and firmware problems belong to the distribution, not to NIRUX.
   workspace of its monitor. The same key turns sticky off again.
 - Window rules for floating, centered, workspace, sticky and compositor opacity.
 - Session state, saved window placement, display profiles and safe recovery.
+- **NIRU Login:** a minimal greetd/X11 login with Swedish keyboard layout,
+  clock, password prompt and power-off/restart actions.
 - **Scroll layout:** one window per column, one or two adjacent columns visible;
   `Super+Ctrl+S` selects Scroll and `Super+Ctrl+Shift+S` toggles columns.
 
@@ -279,6 +282,7 @@ Core components come from the pinned manifest:
 | [nirubar](https://github.com/nirucon/nirubar) | Per-monitor bar, panels, Quick Settings, tray, Tailscale and tasks |
 | [nirulauncher](https://github.com/nirucon/nirulauncher) | Applications, windows, overview, clipboard, settings and NIRU Actions |
 | [nirudisplay](https://github.com/nirucon/nirudisplay) | Monitor layout, modes, rotation and profiles |
+| [nirulogin](https://github.com/nirucon/nirulogin) | Minimal greetd/X11 login for NIRUWM |
 | [niruwallpaper](https://github.com/nirucon/niruwallpaper) | Wallpaper selection, scale, rotation and output |
 | [niruthemeselector](https://github.com/nirucon/niruthemeselector) | Theme browsing and application |
 | [nirunotify](https://github.com/nirucon/nirunotify) | Notification service, DND and hardware OSD |
