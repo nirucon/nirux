@@ -2,7 +2,7 @@
 # NIRUX: install a complete X11 desktop, or maintain an existing installation.
 set -eu
 
-VERSION=0.12.131
+VERSION=0.12.132
 PREFIX=${NIRUX_PREFIX:-$HOME/.local}
 BIN=$PREFIX/bin
 STATE=$PREFIX/share/nirux
@@ -3820,7 +3820,7 @@ install_nirulogin() {
   done
   [ -n "$greeter_user" ] || die 'greetd greeter user is missing'
   as_root install -m 755 "$WORK/generation/bin/nirulogin" "$ROOT/usr/local/bin/nirulogin"
-  { say '#!/bin/sh'; say 'set -eu'; say 'layout=${NIRULOGIN_LAYOUT:-se}'; say 'setxkbmap -layout "$layout" 2>/dev/null || :'; say 'session=${NIRULOGIN_SESSION:-}'; say '[ -n "$session" ] || session=$HOME/.local/bin/niruwm-session'; say 'exec "$session"'; } > "$WORK/nirulogin-session"
+  { say '#!/bin/sh'; say 'set -eu'; say 'layout=${NIRULOGIN_LAYOUT:-se}'; say 'setxkbmap -layout "$layout" 2>/dev/null || :'; say 'session=${NIRULOGIN_SESSION:-}'; say 'case "$session" in ""|/usr/local/bin/nirulogin-session) session=$HOME/.local/bin/niruwm-session ;; esac'; say 'exec "$session"'; } > "$WORK/nirulogin-session"
   as_root install -m 755 "$WORK/nirulogin-session" "$ROOT/usr/local/bin/nirulogin-session"
   { say 'polkit.addRule(function(action, subject) {'; say '    if (!subject.local || !subject.active) return;'; say '    if (subject.user != "_greetd" && subject.user != "greeter" && subject.user != "_greeter") return;'; say '    var allowed = ["org.freedesktop.login1.power-off", "org.freedesktop.login1.power-off-multiple-sessions", "org.freedesktop.login1.reboot", "org.freedesktop.login1.reboot-multiple-sessions"];'; say '    if (allowed.indexOf(action.id) >= 0) return polkit.Result.YES;'; say '});'; } > "$WORK/nirulogin-power.rules"
   as_root install -D -m 0644 "$WORK/nirulogin-power.rules" "$ROOT/etc/polkit-1/rules.d/49-nirulogin-power.rules"
