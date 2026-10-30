@@ -14,6 +14,52 @@ workflow. Others are welcome to test it at their own risk. I give no guarantees
 of stability, data safety, compatibility or fitness for any purpose. Read the
 installer and back up anything important before changing a working desktop.
 
+## The name, and what NIRUX is
+
+**NIRU** is my personal mark, from my name: Nicklas Rudolfsson. The programs are
+named **NIRUWM**, **NIRUBAR**, **NIRULAUNCHER** and so on because they belong to
+that personal family of tools. **NIRUX** adds the X: it is the X11 desktop suite
+built from those programs, for Linux with X11.
+
+That distinction is intentional:
+
+- **NIRU** programs form the program family. Individual NIRU apps may be useful
+  outside the desktop and some may run on other display servers where their
+  toolkit allows it.
+- **NIRUX** is the X11 desktop and the supported session. Its core components
+  are designed around X11 and are not Wayland-native.
+
+NIRUX is primarily a personal project. It is built for my own machines, my own
+workflow and my own idea of a good desktop. I have used **dwm** for many years
+and it is the main inspiration, but NIRUX is not a dwm fork or a dwm
+configuration: the window manager, session layer, bar, launcher and tools are
+their own code and their own design.
+
+### X11, and the Wayland boundary
+
+The core is X11-only:
+
+- **NIRUWM**
+- **NIRUBAR**
+- **NIRULAUNCHER**
+- **NIRUNOTIFY**
+- **NIRULOCK**
+- **NIRUSCREENSAVER**
+- **NIRUSHOT**
+- **NIRUDISPLAY**
+- **NIRUWALLPAPER**
+- **NIRUGESTURED**
+
+These programs depend on X11, EWMH, X11 atoms, struts, root-window handling or
+X11 input. They are part of the NIRUX session and are not advertised as working
+under Wayland.
+
+Some separate NIRU applications are toolkit-based and can be run under Wayland
+where their toolkit supports it. For example, the Qt/PySide applications
+**NIRUNOTE**, **NIRUORG**, **NIRUPRES** and **NIRUFLOW** are NIRU apps first, not
+NIRUX desktop components. They are useful alongside NIRUX, but they do not
+change the X11 requirement of the desktop itself.
+
 ## Supported systems
 
 - **Arch Linux, Debian and Void Linux glibc**, x86_64.
@@ -23,6 +69,22 @@ installer and back up anything important before changing a working desktop.
 
 NIRUX installs desktop runtime dependencies, not an operating system or GPU
 drivers. It preserves existing user settings where possible.
+
+## Why Debian, Arch and Void
+
+I focus on these three distributions because they represent the three ways I
+actually use a computer:
+
+| Distribution | How I use it |
+|---|---|
+| **Debian** | My main choice, especially on my music computers and DAWs. I want a stable base when I am working with audio, sessions and recordings. |
+| **Arch** | My laptop and my rolling-release choice. I use it when I want newer packages and to live a little closer to the edge. |
+| **Void** | A fast, systemd-free alternative. It is a different way of running Linux and keeps NIRUX honest about not assuming one init system or one package-manager culture. |
+
+Debian is the distribution I use most. Arch gives me rolling packages and Void
+keeps the project exposed to a different, lighter system. I occasionally use
+other distributions too, but NIRUX is deliberately focused on these three right
+now. I have no plans to change that focus at the time of writing.
 
 ## Install
 
