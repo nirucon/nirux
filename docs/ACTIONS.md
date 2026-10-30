@@ -73,9 +73,11 @@ full model prompts.
 
 OpenCode is optional and is never installed, started, logged in or selected as a
 model provider automatically. When `opencode` is present, NIRU Actions offers
-**Ask OpenCode…**. This is a terminal handoff: `niructl agent` writes a small
-context file under the user's state directory and starts the installed OpenCode
-interface with a prompt. OpenCode's own permissions and authentication apply.
+**Ask OpenCode…**, and the `agent` bar icon opens a one-line prompt in the
+launcher. This is a terminal handoff: `niructl agent` writes a small context file
+under the user's state directory and starts the installed OpenCode interface with
+a prompt in a centred floating terminal. OpenCode's own permissions and
+authentication apply.
 
 The handoff never uses `--auto`, never disables permissions, never reads stored
 credentials, and never grants root. It asks OpenCode to inspect current state with
