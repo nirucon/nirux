@@ -2,7 +2,7 @@
 # NIRUX: install a complete X11 desktop, or maintain an existing installation.
 set -eu
 
-VERSION=0.12.126
+VERSION=0.12.127
 PREFIX=${NIRUX_PREFIX:-$HOME/.local}
 BIN=$PREFIX/bin
 STATE=$PREFIX/share/nirux
@@ -11,7 +11,7 @@ NIRUX_CONFIG=${XDG_CONFIG_HOME:-$HOME/.config}/nirux
 SOUNDS_STATE=$STATE/sounds
 SOUNDS_CONFIG=$NIRUX_CONFIG/sounds.toml
 ROOT=${NIRUX_SYSTEM_ROOT:-}
-PROGRAMS="niruwm niructl niruidle nirubar niruscreensaver nirulock nirulauncher nirunotify nirushot niruclip nirufetch niruwebapp niruwallpaper nirudisplay niruthemeselector niruwm-session niruclipboard nirugestured nirux"
+PROGRAMS="niruwm niructl niruidle nirubar niruscreensaver nirulock nirulauncher nirunotify nirushot niruclip nirufetch niruwebapp niruwallpaper nirudisplay niruthemeselector niruwm-session niruclipboard nirugestured nirulogin nirux"
 WORK=
 POLICY_TARGET=
 POLICY_BACKUP=
@@ -89,7 +89,7 @@ say() { printf '%s\n' "$*"; }
 die() { say "nirux: $*" >&2; sudo_secret_forget; exit 1; }
 usage() {
   say "NIRUX $VERSION"
-  say "Usage: nirux install [--minimal|--no-packages] [--display-manager auto|startx|sddm|lightdm]"
+  say "Usage: nirux install [--minimal|--no-packages] [--display-manager auto|startx|nirulogin|sddm|lightdm]"
   say "                    [--browser helium|none|keep] [--wallpapers all|default]"
   say "                    [--localsend yes|no] [--opencode yes|no] [--icons none|papirus]"
   say "       nirux update [--no-packages] [--release VERSION] [--browser helium|none|keep] [--browser-addon bonjourr|none|keep]"
@@ -103,7 +103,7 @@ usage() {
   say "       nirux browser-addon bonjourr|none|status"
   say "       nirux extras [list|status|select NAME|unselect NAME|install [NAME...]|update]"
   say "       nirux rollback | status | doctor | uninstall [--purge] | --version | --help"
-  say "Default: keep an existing display manager; otherwise offer startx (default), SDDM or LightDM."
+  say "Default: keep an existing display manager; on Debian a fresh install uses NIRU Login, otherwise startx/SDDM/LightDM."
   say "Browser: a fresh install offers Helium (default Helium) and remembers the choice."
   say "         --browser none is a persistent opt-out; --browser keep preserves the current policy."
   say "         --localsend/--opencode choose optional apps; without a flag an install prompts and an update preserves the current choice."
@@ -395,6 +395,10 @@ install_packages() {
       void) pkgs="$pkgs mesa-dri" ;;
     esac
     case "$DM" in
+      nirulogin)
+        [ "$OS" = debian ] || die "NIRU Login currently requires Debian/Ubuntu with greetd"
+        pkgs="$pkgs greetd xserver-xorg-legacy"
+        ;;
       sddm)
         pkgs="$pkgs sddm"
         # Arch's sddm-greeter links Qt5 but the package only recommends the
@@ -1699,7 +1703,7 @@ install_config() {
 existing_dm() {
   dm_unit=$ROOT/etc/systemd/system/display-manager.service
   if [ -L "$dm_unit" ]; then basename "$(readlink "$dm_unit")" .service; return; fi
-  for candidate in sddm lightdm gdm lxdm xdm ly; do
+  for candidate in sddm lightdm greetd gdm lxdm xdm ly; do
     if [ -e "$ROOT/var/service/$candidate" ] || command -v "$candidate" >/dev/null 2>&1; then
       say "$candidate"; return
     fi
@@ -1709,6 +1713,14 @@ choose_dm() {
   EXISTING_DM=$(existing_dm)
   if [ "$DM" = auto ]; then
     if [ -n "$EXISTING_DM" ]; then DM=keep
+    elif [ "$OS" = debian ]; then
+      if [ -t 0 ]; then
+        say "No display manager found. Choose: 1) NIRU Login (default) 2) startx 3) SDDM 4) LightDM"
+        printf 'Choice [1]: '
+        IFS= read -r answer || answer=1
+        case "$answer" in ''|1|nirulogin) DM=nirulogin ;; 2|startx) DM=startx ;; 3|sddm) DM=sddm ;; 4|lightdm) DM=lightdm ;; *) die "invalid display-manager choice" ;; esac
+      else DM=nirulogin
+      fi
     elif [ -t 0 ]; then
       say "No display manager found. Choose: 1) startx (default) 2) SDDM 3) LightDM"
       printf 'Choice [1]: '
@@ -1719,10 +1731,14 @@ choose_dm() {
   fi
   case "$DM" in
     startx|keep) ;;
+    nirulogin)
+      [ "$OS" = debian ] || die "NIRU Login currently requires Debian/Ubuntu with greetd"
+      [ -z "$EXISTING_DM" ] || [ "$EXISTING_DM" = "$DM" ] || die "existing display manager is $EXISTING_DM; disable it explicitly before choosing nirulogin"
+      ;;
     sddm|lightdm)
       [ -z "$EXISTING_DM" ] || [ "$EXISTING_DM" = "$DM" ] || die "existing display manager is $EXISTING_DM; disable it explicitly before choosing $DM"
       ;;
-    *) die "display manager must be auto, startx, sddm or lightdm" ;;
+    *) die "display manager must be auto, startx, nirulogin, sddm or lightdm" ;;
   esac
   say "Session entry: $DM${EXISTING_DM:+ (existing: $EXISTING_DM)}"
 }
@@ -3802,6 +3818,31 @@ install_login_picture() {
   return 1
 }
 
+install_nirulogin() {
+  [ -x "$WORK/generation/bin/nirulogin" ] || die 'staged nirulogin is missing'
+  greeter_user=
+  for candidate in _greetd greeter; do
+    getent passwd "$candidate" >/dev/null 2>&1 && { greeter_user=$candidate; break; }
+  done
+  [ -n "$greeter_user" ] || die 'greetd greeter user is missing'
+  as_root install -m 755 "$WORK/generation/bin/nirulogin" "$ROOT/usr/local/bin/nirulogin"
+  as_root install -d -m 755 "$ROOT/etc/greetd"
+  if as_root test -f "$ROOT/etc/X11/Xwrapper.config"; then
+    as_root cp -a "$ROOT/etc/X11/Xwrapper.config" "$ROOT/etc/X11/Xwrapper.config.before-nirulogin"
+  fi
+  { say 'allowed_users=anybody'; say 'needs_root_rights=yes'; } > "$WORK/Xwrapper.config"
+  write_system "$ROOT/etc/X11/Xwrapper.config" "$WORK/Xwrapper.config"
+  if as_root test -f "$ROOT/etc/greetd/config.toml" &&
+     ! as_root grep -q '^# NIRULOGIN owner:' "$ROOT/etc/greetd/config.toml" 2>/dev/null; then
+    as_root cp -a "$ROOT/etc/greetd/config.toml" "$ROOT/etc/greetd/config.toml.before-nirulogin"
+  fi
+  { say "# NIRULOGIN owner: $PREFIX"; say '[terminal]'; say 'vt = 7'; say ''; say '[general]'; say 'source_profile = false'; say ''; say '[default_session]'; say "command = \"/usr/bin/startx /usr/local/bin/nirulogin -- :0 vt7\""; say "user = \"$greeter_user\""; } > "$WORK/nirulogin-greetd.toml"
+  write_system "$ROOT/etc/greetd/config.toml" "$WORK/nirulogin-greetd.toml"
+  as_root rm -f "$ROOT/etc/systemd/system/display-manager.service"
+  as_root ln -s /lib/systemd/system/greetd.service "$ROOT/etc/systemd/system/display-manager.service"
+  say 'Installed NIRU Login greeter'
+}
+
 install_greeters() {
   greeter_dm=${1:-keep}
   # `keep` must still install a themed greeter on the display manager the
@@ -3811,7 +3852,9 @@ install_greeters() {
   # nothing of its own, and did nothing.
   case "$greeter_dm" in
     keep)
-      if [ -f "$ROOT/etc/sddm.conf.d/50-nirux.conf" ] && owned "$ROOT/etc/sddm.conf.d/50-nirux.conf"; then
+      if [ -f "$ROOT/etc/greetd/config.toml" ] && owned "$ROOT/etc/greetd/config.toml"; then
+        greeter_dm=nirulogin
+      elif [ -f "$ROOT/etc/sddm.conf.d/50-nirux.conf" ] && owned "$ROOT/etc/sddm.conf.d/50-nirux.conf"; then
         greeter_dm=sddm
       elif [ -f "$ROOT/usr/share/lightdm/lightdm-gtk-greeter.conf.d/50-nirux.conf" ] &&
            owned "$ROOT/usr/share/lightdm/lightdm-gtk-greeter.conf.d/50-nirux.conf"; then
@@ -3820,7 +3863,7 @@ install_greeters() {
         # No NIRUX greeter yet: adopt the display manager in use, never a
         # different one. `existing_dm` reports what is installed.
         case "$(existing_dm)" in
-          sddm|lightdm) greeter_dm=$(existing_dm) ;;
+          nirulogin|sddm|lightdm) greeter_dm=$(existing_dm) ;;
         esac
       fi
       ;;
@@ -3854,6 +3897,9 @@ install_greeters() {
   write_system "$ROOT/etc/polkit-1/rules.d/49-nirux-power.rules" "$WORK/power.rules"
 
   case "$greeter_dm" in
+    nirulogin)
+      install_nirulogin
+      ;;
     sddm)
       for file in theme.conf arrow.png; do
         [ -f "$unpack/sddm/$file" ] || die "integration archive is missing sddm/$file"
@@ -3896,6 +3942,10 @@ install_greeters() {
 }
 
 remove_greeters() {
+  if [ -f "$ROOT/etc/greetd/config.toml" ] && owned "$ROOT/etc/greetd/config.toml"; then
+    as_root rm -f "$ROOT/etc/greetd/config.toml"
+  fi
+  if [ -f "$ROOT/usr/local/bin/nirulogin" ]; then as_root rm -f "$ROOT/usr/local/bin/nirulogin"; fi
   remove_system "$ROOT/etc/polkit-1/rules.d/49-nirux-power.rules"
   remove_system "$ROOT/etc/sudoers.d/49-nirux-login-wallpaper"
   remove_system "$ROOT/etc/sudoers.d/49-nirux-wifi"
@@ -4114,7 +4164,7 @@ setup_startx() {
 # generation exist. Package installation must never start it early.
 start_selected_dm() {
   [ "$operation" = install ] || return 0
-  case "$DM" in sddm|lightdm) ;; *) return 0 ;; esac
+  case "$DM" in sddm|lightdm|nirulogin) ;; *) return 0 ;; esac
   if [ "$OS" = void ]; then
     # Linking into runsvdir starts the service immediately, unlike systemctl
     # enable. Do this after activate, never while the generation is staged.
@@ -4124,8 +4174,10 @@ start_selected_dm() {
     return 0
   fi
   case "$OS" in arch|debian) ;; *) return 0 ;; esac
-  if ! as_root systemctl is-active --quiet "$DM.service" 2>/dev/null; then
-    as_root systemctl start "$DM.service" >/dev/null 2>&1 ||
+  dm_service=$DM.service
+  [ "$DM" = nirulogin ] && dm_service=greetd.service
+  if ! as_root systemctl is-active --quiet "$dm_service" 2>/dev/null; then
+    as_root systemctl start "$dm_service" >/dev/null 2>&1 ||
       say "Could not start $DM; reboot to use it"
   fi
 }
@@ -4206,7 +4258,7 @@ enable_services() {
       fi
     done
   else
-    case "$DM" in sddm|lightdm) as_root systemctl enable "$DM.service" ;; esac
+    case "$DM" in sddm|lightdm) as_root systemctl enable "$DM.service" ;; nirulogin) as_root systemctl enable greetd.service ;; esac
     for service in bluetooth.service power-profiles-daemon.service udisks2.service; do
       if [ -f "$ROOT/usr/lib/systemd/system/$service" ] ||
          [ -f "$ROOT/lib/systemd/system/$service" ]; then

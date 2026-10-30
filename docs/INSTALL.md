@@ -48,11 +48,17 @@ nirux remove opencode
 
 External installations and user files are never removed.
 
-An existing display manager is preserved. If none exists, the interactive
-default is startx; SDDM and LightDM can be selected explicitly. NIRUX-owned
-greeters use the selected theme palette and its matching wallpaper, with the
-login panel centred in the lower part of the screen. An existing
-`~/.xinitrc` is preserved.
+An existing display manager is preserved. On a fresh Debian installation with
+no display manager, the default is **NIRU Login** (`nirulogin`) on greetd; a
+non-Debian fresh install keeps startx as its default. SDDM and LightDM remain
+explicit options. NIRUX-owned SDDM/LightDM greeters use the selected theme
+palette and its matching wallpaper, with the login panel centred in the lower
+part of the screen. An existing `~/.xinitrc` is preserved.
+
+NIRU Login is the minimal NIRUX X11 greeter: it has no session picker and
+always launches NIRUWM. It uses greetd for PAM and starts through `startx`; the
+installer keeps SDDM/LightDM available as the fallback and manages the
+Xwrapper configuration needed by the unprivileged greeter user.
 
 When LightDM or SDDM is explicitly selected during installation, NIRUWM is the
 first-login default on Debian, Arch and Void. LightDM uses a managed seat

@@ -26,6 +26,7 @@ webapp_version=$(awk '$1 == "niruwebapp" {print $2}' "$SOURCE/manifest")
 wallpaper_app_version=$(awk '$1 == "niruwallpaper" {print $2}' "$SOURCE/manifest")
 display_app_version=$(awk '$1 == "nirudisplay" {print $2}' "$SOURCE/manifest")
 theme_selector_version=$(awk '$1 == "niruthemeselector" {print $2}' "$SOURCE/manifest")
+login_version=$(awk '$1 == "nirulogin" {print $2}' "$SOURCE/manifest")
 FIXTURE=$TEST/releases
 fail() { printf 'FAIL: %s\n' "$*" >&2; exit 1; }
 no_config_candidates() {
@@ -125,6 +126,7 @@ fixture nirubar "$bar_version" nirubar
 fixture niruscreensaver "$saver_version" niruscreensaver
 fixture nirulock "$lock_version" nirulock
 fixture nirulauncher "$launcher_version" nirulauncher
+fixture nirulogin "$login_version" nirulogin
 fixture nirunotify "$notifier_version" nirunotify
 fixture nirushot "$shot_version" nirushot
 fixture niruclip "$clip_version" niruclip
@@ -142,7 +144,7 @@ for os in arch void; do
   printf 'auth include system-auth\naccount include system-auth\n' > "$FIXTURE/nirulock/$lock_version/pam-$os"
 done
 printf 'auth include common-auth\naccount include common-account\n' > "$FIXTURE/nirulock/$lock_version/pam-debian"
-for item in "niruwm/$wm_version" "nirubar/$bar_version" "niruscreensaver/$saver_version" "nirulock/$lock_version" "nirulauncher/$launcher_version" "nirunotify/$notifier_version" "nirushot/$shot_version" "niruclip/$clip_version" "nirufetch/$fetch_version" "niruwebapp/$webapp_version" "niruwallpaper/$wallpaper_app_version" "nirudisplay/$display_app_version" "niruthemeselector/$theme_selector_version"; do checksums "$FIXTURE/$item"; done
+for item in "niruwm/$wm_version" "nirubar/$bar_version" "niruscreensaver/$saver_version" "nirulock/$lock_version" "nirulauncher/$launcher_version" "nirulogin/$login_version" "nirunotify/$notifier_version" "nirushot/$shot_version" "niruclip/$clip_version" "nirufetch/$fetch_version" "niruwebapp/$webapp_version" "niruwallpaper/$wallpaper_app_version" "nirudisplay/$display_app_version" "niruthemeselector/$theme_selector_version"; do checksums "$FIXTURE/$item"; done
 # 99.0.0 is a synthetic second release, never a real network dependency.
 for release in "$VERSION" 99.0.0; do
   mkdir -p "$FIXTURE/nirux/$release"
@@ -803,7 +805,7 @@ for os in arch debian void; do
   case "$(packages_for "$os")" in *xidlehook*) fail 'obsolete mandatory xidlehook' ;; esac
 done
 (DM=auto; existing_dm() { say lightdm; }; choose_dm; [ "$DM" = keep ]) || fail 'existing display manager was not kept'
-(DM=auto; existing_dm() { :; }; choose_dm </dev/null; [ "$DM" = startx ]) || fail 'noninteractive default is not startx'
+TEST_OS=debian; OS=debian; (DM=auto; existing_dm() { :; }; choose_dm </dev/null; [ "$DM" = nirulogin ]) || fail 'noninteractive Debian default is not nirulogin'
 # Sudo validation can succeed while the privileged command fails. Preserve
 # that command's error status (the old implementation incorrectly returned 0).
 set +e
