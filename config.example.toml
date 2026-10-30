@@ -78,7 +78,8 @@ gap = 8
 border_width = 2
 # Height of the bar, in pixels. The bar reserves exactly this much.
 bar_height = 28
-# Share of the screen width given to the master column (0.1 to 0.9).
+# Default share of the screen width given to the master column (0.1 to 0.9).
+# Each workspace keeps its own ratio after Super+H/L; this is only the default.
 master_ratio = 0.55
 
 # ── Programs ────────────────────────────────────────────────────────────────
@@ -208,6 +209,9 @@ step = 5
 
 [monitors]
 workspaces = 10
+# Per-workspace tiling state written by NIRUWM after Super+H/L or Super+I/D:
+# master_ratios = [0.55, 0.65, 0.45]
+# nmasters = [1, 2, 1]
 
 # [[monitors.profiles]]
 # name = "HDMI-1"
