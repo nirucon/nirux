@@ -2,7 +2,7 @@
 # NIRUX: install a complete X11 desktop, or maintain an existing installation.
 set -eu
 
-VERSION=0.12.140
+VERSION=0.12.141
 PREFIX=${NIRUX_PREFIX:-$HOME/.local}
 BIN=$PREFIX/bin
 STATE=$PREFIX/share/nirux
@@ -4650,6 +4650,11 @@ rollback() {
   switch_link current "$previous"
   switch_link previous "$current"
   sync_front_links
+  # NIRULOGIN is a system entry point, not only a user-prefix generation
+  # binary. Keep the real greeter in step with the generation being restored.
+  if [ -x "$STATE/current/bin/nirulogin" ] && as_root test -w /usr/local/bin; then
+    as_root install -m 755 "$STATE/current/bin/nirulogin" /usr/local/bin/nirulogin
+  fi
   say 'Previous program generation restored. System packages and PAM configuration are not rolled back.'
   say 'Log out and back in to use the restored WM and session.'
 }
