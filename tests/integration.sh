@@ -40,6 +40,7 @@ fetch() {
       relative=${1#https://github.com/nirucon/}
       repo=${relative%%/*}
       relative=${relative#*/releases/download/v}
+      relative=${relative%%\?*}
       cp "$FIXTURE/$repo/$relative" "$2" ;;
     *) fail "unexpected fetch: $1" ;;
   esac
@@ -112,6 +113,7 @@ case "$url" in
     relative=${url#https://github.com/nirucon/}
     repo=${relative%%/*}
     relative=${relative#*/releases/download/v}
+    relative=${relative%%\?*}
     cp "$FIXTURE/$repo/$relative" "$out" ;;
   *) exit 22 ;;
 esac
