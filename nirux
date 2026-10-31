@@ -2,7 +2,7 @@
 # NIRUX: install a complete X11 desktop, or maintain an existing installation.
 set -eu
 
-VERSION=0.12.138
+VERSION=0.12.139
 PREFIX=${NIRUX_PREFIX:-$HOME/.local}
 BIN=$PREFIX/bin
 STATE=$PREFIX/share/nirux
@@ -1740,6 +1740,7 @@ fetch() {
   if command -v curl >/dev/null 2>&1; then
     case "$1" in
       *api.github.com*|*/SHA256SUMS) curl -fsSL --connect-timeout 20 --max-time 300 --retry 3 -o "$2" "$1" ;;
+      *github.com/*/releases/download/*) curl -fsSL -H 'Cache-Control: no-cache' --connect-timeout 20 --max-time 300 --retry 3 -o "$2" "$1" ;;
       *)
         if [ -t 2 ]; then
           curl -fL --progress-bar --connect-timeout 20 --max-time 300 --retry 3 -o "$2" "$1"
