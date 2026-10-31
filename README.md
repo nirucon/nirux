@@ -284,6 +284,7 @@ Core components come from the pinned manifest:
 | [nirulauncher](https://github.com/nirucon/nirulauncher) | Applications, windows, overview, clipboard, settings and NIRU Actions |
 | [nirudisplay](https://github.com/nirucon/nirudisplay) | Monitor layout, modes, rotation and profiles |
 | [nirulogin](https://github.com/nirucon/nirulogin) | Minimal greetd/X11 login for NIRUWM |
+| [nirushare](https://github.com/nirucon/nirushare) | Trusted Tailscale sharing for text and images |
 | [niruwallpaper](https://github.com/nirucon/niruwallpaper) | Wallpaper selection, scale, rotation and output |
 | [niruthemeselector](https://github.com/nirucon/niruthemeselector) | Theme browsing and application |
 | [nirunotify](https://github.com/nirucon/nirunotify) | Notification service, DND and hardware OSD |
