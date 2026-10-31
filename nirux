@@ -2,7 +2,7 @@
 # NIRUX: install a complete X11 desktop, or maintain an existing installation.
 set -eu
 
-VERSION=0.12.137
+VERSION=0.12.138
 PREFIX=${NIRUX_PREFIX:-$HOME/.local}
 BIN=$PREFIX/bin
 STATE=$PREFIX/share/nirux
@@ -3062,7 +3062,7 @@ activate() {
 }
 owned() {
   grep -qxF "# NIRUX owner: $PREFIX" "$1" 2>/dev/null ||
-    grep -qxF "# NIRULOGIN owner: $PREFIX" "$1" 2>/dev/null ||
+    grep -q '^# NIRULOGIN owner:' "$1" 2>/dev/null ||
     grep -qxF "// NIRUX owner: $PREFIX" "$1" 2>/dev/null ||
     grep -qxF "/* NIRUX owner: $PREFIX */" "$1" 2>/dev/null
 }
@@ -3826,12 +3826,14 @@ install_nirulogin() {
   { say 'polkit.addRule(function(action, subject) {'; say '    if (!subject.local || !subject.active) return;'; say '    if (subject.user != "_greetd" && subject.user != "greeter" && subject.user != "_greeter") return;'; say '    var allowed = ["org.freedesktop.login1.power-off", "org.freedesktop.login1.power-off-multiple-sessions", "org.freedesktop.login1.reboot", "org.freedesktop.login1.reboot-multiple-sessions"];'; say '    if (allowed.indexOf(action.id) >= 0) return polkit.Result.YES;'; say '});'; } > "$WORK/nirulogin-power.rules"
   as_root install -D -m 0644 "$WORK/nirulogin-power.rules" "$ROOT/etc/polkit-1/rules.d/49-nirulogin-power.rules"
   as_root install -d -m 755 "$ROOT/etc/greetd"
-  if as_root test -f "$ROOT/etc/X11/Xwrapper.config"; then
+  if as_root test -f "$ROOT/etc/X11/Xwrapper.config" &&
+     ! as_root test -f "$ROOT/etc/X11/Xwrapper.config.before-nirulogin"; then
     as_root cp -a "$ROOT/etc/X11/Xwrapper.config" "$ROOT/etc/X11/Xwrapper.config.before-nirulogin"
   fi
   { say 'allowed_users=anybody'; say 'needs_root_rights=yes'; } > "$WORK/Xwrapper.config"
   write_system "$ROOT/etc/X11/Xwrapper.config" "$WORK/Xwrapper.config"
   if as_root test -f "$ROOT/etc/greetd/config.toml" &&
+     ! as_root test -f "$ROOT/etc/greetd/config.toml.before-nirulogin" &&
      ! as_root grep -q '^# NIRULOGIN owner:' "$ROOT/etc/greetd/config.toml" 2>/dev/null; then
     as_root cp -a "$ROOT/etc/greetd/config.toml" "$ROOT/etc/greetd/config.toml.before-nirulogin"
   fi
@@ -3843,6 +3845,11 @@ install_nirulogin() {
   if [ "$OS" = void ]; then
     [ -d "$ROOT/etc/sv/greetd" ] || die 'missing greetd runit service'
   else
+    if as_root test -L "$ROOT/etc/systemd/system/display-manager.service" &&
+       ! as_root test -f "$ROOT/etc/nirulogin-previous-display-manager"; then
+      as_root readlink "$ROOT/etc/systemd/system/display-manager.service" > "$WORK/previous-dm"
+      write_system "$ROOT/etc/nirulogin-previous-display-manager" "$WORK/previous-dm"
+    fi
     as_root rm -f "$ROOT/etc/systemd/system/display-manager.service"
     as_root ln -s /lib/systemd/system/greetd.service "$ROOT/etc/systemd/system/display-manager.service"
   fi
@@ -3949,6 +3956,16 @@ install_greeters() {
 }
 
 remove_greeters() {
+  if [ -f "$ROOT/etc/nirulogin-previous-display-manager" ]; then
+    previous_dm=$(as_root cat "$ROOT/etc/nirulogin-previous-display-manager" 2>/dev/null || :)
+    case "$previous_dm" in
+      */lightdm.service|*/sddm.service|*/gdm.service|*/greetd.service)
+        as_root rm -f "$ROOT/etc/systemd/system/display-manager.service"
+        as_root ln -s "$previous_dm" "$ROOT/etc/systemd/system/display-manager.service"
+        ;;
+    esac
+  fi
+  as_root rm -f "$ROOT/etc/nirulogin-previous-display-manager"
   if [ -f "$ROOT/etc/greetd/config.toml" ] && owned "$ROOT/etc/greetd/config.toml"; then
     as_root rm -f "$ROOT/etc/greetd/config.toml"
   fi
