@@ -2,7 +2,7 @@
 # NIRUX: install a complete X11 desktop, or maintain an existing installation.
 set -eu
 
-VERSION=0.12.132
+VERSION=0.12.133
 PREFIX=${NIRUX_PREFIX:-$HOME/.local}
 BIN=$PREFIX/bin
 STATE=$PREFIX/share/nirux
@@ -3062,6 +3062,7 @@ activate() {
 }
 owned() {
   grep -qxF "# NIRUX owner: $PREFIX" "$1" 2>/dev/null ||
+    grep -qxF "# NIRULOGIN owner: $PREFIX" "$1" 2>/dev/null ||
     grep -qxF "// NIRUX owner: $PREFIX" "$1" 2>/dev/null ||
     grep -qxF "/* NIRUX owner: $PREFIX */" "$1" 2>/dev/null
 }
@@ -3834,7 +3835,10 @@ install_nirulogin() {
      ! as_root grep -q '^# NIRULOGIN owner:' "$ROOT/etc/greetd/config.toml" 2>/dev/null; then
     as_root cp -a "$ROOT/etc/greetd/config.toml" "$ROOT/etc/greetd/config.toml.before-nirulogin"
   fi
-  { say "# NIRULOGIN owner: $PREFIX"; say '[terminal]'; say 'vt = 7'; say ''; say '[general]'; say 'source_profile = false'; say ''; say '[default_session]'; say "command = \"/usr/bin/startx /usr/local/bin/nirulogin -- :0 vt7\""; say "user = \"$greeter_user\""; } > "$WORK/nirulogin-greetd.toml"
+  if [ "$OS" = arch ] && [ "$greeter_user" = greeter ]; then
+    as_root install -d -o greeter -g greeter -m 700 "$ROOT/var/lib/greetd"
+  fi
+  { say "# NIRULOGIN owner: $PREFIX"; say '[terminal]'; say 'vt = 7'; say ''; say '[general]'; say 'source_profile = false'; say ''; say '[default_session]'; say "command = \"env HOME=/var/lib/greetd /usr/bin/startx /usr/local/bin/nirulogin -- :0 vt7\""; say "user = \"$greeter_user\""; } > "$WORK/nirulogin-greetd.toml"
   write_system "$ROOT/etc/greetd/config.toml" "$WORK/nirulogin-greetd.toml"
   if [ "$OS" = void ]; then
     [ -d "$ROOT/etc/sv/greetd" ] || die 'missing greetd runit service'
@@ -3866,6 +3870,7 @@ install_greeters() {
         # different one. `existing_dm` reports what is installed.
         case "$(existing_dm)" in
           nirulogin|sddm|lightdm) greeter_dm=$(existing_dm) ;;
+          greetd) greeter_dm=nirulogin ;;
         esac
       fi
       ;;
