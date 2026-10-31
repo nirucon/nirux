@@ -2,7 +2,7 @@
 # NIRUX: install a complete X11 desktop, or maintain an existing installation.
 set -eu
 
-VERSION=0.12.141
+VERSION=0.12.142
 PREFIX=${NIRUX_PREFIX:-$HOME/.local}
 BIN=$PREFIX/bin
 STATE=$PREFIX/share/nirux
@@ -1739,7 +1739,7 @@ choose_dm() {
 fetch() {
   if command -v curl >/dev/null 2>&1; then
     case "$1" in
-      *api.github.com*|*/SHA256SUMS) curl -fsSL --connect-timeout 20 --max-time 300 --retry 3 -o "$2" "$1" ;;
+      *api.github.com*) curl -fsSL --connect-timeout 20 --max-time 300 --retry 3 -o "$2" "$1" ;;
       *github.com/*/releases/download/*)
         # GitHub's release CDN can serve a stale asset for a new tag when a
         # release is republished within its short cache window. A unique query
