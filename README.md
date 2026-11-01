@@ -287,6 +287,9 @@ Options:
 Firmware/BIOS flashing and AUR/Flatpak/Snap/Docker updates are not included in
 this command. Those remain separate, explicit operations.
 
+See [Update and power off / restart](docs/UPDATE-POWER.md) for the safety model and
+tested backends.
+
 The NIRUBAR update indicator follows the **core suite** because NIRUX installs
 and updates those components as one verified generation. Optional extras have
 independent release cadences and are intentionally not polled individually by
