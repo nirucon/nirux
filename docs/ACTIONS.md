@@ -15,7 +15,8 @@ Deterministic actions cover:
 - installed/running NIRUX status;
 - focus and presentation work contexts with a timer;
 - recent NIRU tasks;
-- existing diagnostics, updates, themes, audio, layout, recipes and settings.
+- existing diagnostics, updates, themes, audio, layout, recipes and settings;
+- update and restart or update and shut down: a terminal-based full system/NIRUX/extras update with sudo, followed by the normal logind/runit power path only after success.
 
 The action list is built from the same `niructl` commands used by the CLI. Review
 output is shown in a terminal; no personal file is deleted by a silent default.

@@ -261,6 +261,32 @@ the bar can normally be restarted with `niructl restart-bar`.
 Rollback restores the previous program generation; it is not a backup of
 personal files or operating-system packages.
 
+### Update and power off or restart
+
+The power menu can launch a full system update in a terminal and then power off
+or restart after a successful result:
+
+```sh
+nirux update-shutdown
+nirux update-reboot
+```
+
+These commands update the distribution packages (including kernels), NIRUX and
+the extras you selected, then use the normal logind/runit power path. They never
+force a shutdown and never power off after a failed update. A terminal is used
+so sudo and package-manager configuration prompts remain visible. The current
+machine state is protected from idle suspend while the update runs.
+
+Options:
+
+- `--yes` skips the final confirmation; the GUI confirmation supplies it.
+- `--dry-run` prints the distro-specific plan without changing anything.
+- `--no-power` runs the updates but leaves the machine running, useful for
+  testing and for a later manual restart.
+
+Firmware/BIOS flashing and AUR/Flatpak/Snap/Docker updates are not included in
+this command. Those remain separate, explicit operations.
+
 The NIRUBAR update indicator follows the **core suite** because NIRUX installs
 and updates those components as one verified generation. Optional extras have
 independent release cadences and are intentionally not polled individually by
