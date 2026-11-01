@@ -9,8 +9,8 @@ explicit request, and never pulled in by a core `nirux update`.
 | niruorg | 0.5.1 | File and folder management |
 | nirunote | 0.5.0 | Markdown editor |
 | nirupres | 2.1.4 | Presentation studio |
-| nplay | 1.7.1 | Terminal music, radio and podcast player; standalone |
-| niruamp | 0.3.0 | Graphical frontend for NPLAY; requires NPLAY 1.7.1+ |
+| nplay | 1.7.2 | Terminal music, radio and podcast player; standalone |
+| niruamp | 0.3.1 | Graphical frontend for NPLAY; requires NPLAY 1.7.2+ |
 | niruflow | 0.6.0 | Local maintenance and automation |
 
 ## Commands
