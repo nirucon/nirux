@@ -41,3 +41,13 @@ Removal keeps the default Noir images and must retain personal/modified files.
 An ownership record tracks package bytes, never adopts a user's changed bytes.
 Theme removal conservatively retains wallpaper data when deletion ownership is
 uncertain. See [installation](INSTALL.md) for update and purge behavior.
+
+## Release asset verification
+
+On 2026-11-01 the optional archives were downloaded from
+`nirucon/nirux-wallpapers` v1.0.0 in a temporary home on `algiz`. All nine
+theme archives and both extra colour packs verified their pinned byte counts and
+SHA-256 checksums; the completed set contained 34 PNG files. The installed
+NIRUX 0.12.178 release was then used to download a single theme into a temporary
+home with the same result. Existing real wallpaper directories were not
+re-downloaded or replaced.
