@@ -2,7 +2,7 @@
 # NIRUX: install a complete X11 desktop, or maintain an existing installation.
 set -eu
 
-VERSION=0.12.161
+VERSION=0.12.162
 PREFIX=${NIRUX_PREFIX:-$HOME/.local}
 BIN=$PREFIX/bin
 STATE=$PREFIX/share/nirux
@@ -1997,7 +1997,7 @@ niruorg niruorg 0.5.1 ac11439b8a3af945aedcfdbd3167941570bf796ac8aaa1f1be60a8115e
 nirunote nirunote 0.5.0 7cff905b9c05046a49a0a5dacca42b68e654a6ce6825b76df5a8680f0a8b4112
 nirupres nirupres 2.1.4 93abaf9b8d2e2d1419fc45ea1296e1b764b35a5baec462dcd1f0a7b4154b77d0
 nplay nplay 1.7.3 cafcd915f3936185304deb096aef646364ace04b7ad2ac1c5b29c4b6abfd8f34
-niruamp niruamp 0.3.2 c5ea380b8a8d5836b12b339a6da7a65035f74ffb3d43e79bc339a49fb94c890d
+niruamp niruamp 0.3.3 3711844ed804964fb673deccfd666658ff53e91609416b708068fb8b5d07082f
 niruflow niruflow 0.6.0 814aa1429f5fd5a7ecbb95f68041fac347d453b03559f03fb4d7cc98efb670ad
 EOF
 }
@@ -3840,6 +3840,11 @@ install_nirulogin() {
   as_root install -m 755 "$WORK/generation/bin/nirulogin" "$ROOT/usr/local/bin/nirulogin"
   { say '#!/bin/sh'; say 'set -eu'; say 'layout=${NIRULOGIN_LAYOUT:-se}'; say 'setxkbmap -layout "$layout" 2>/dev/null || :'; say 'session=${NIRULOGIN_SESSION:-}'; say 'case "$session" in ""|/usr/local/bin/nirulogin-session) session=$HOME/.local/bin/niruwm-session ;; esac'; say 'exec "$session"'; } > "$WORK/nirulogin-session"
   as_root install -m 755 "$WORK/nirulogin-session" "$ROOT/usr/local/bin/nirulogin-session"
+  as_root install -d -m 755 "$ROOT/etc/nirulogin"
+  if ! as_root test -f "$ROOT/etc/nirulogin/layouts"; then
+    { say "# NIRULOGIN owner: $PREFIX"; say '# Keyboard layouts offered at the login screen; the first is the default.'; say '# Add or remove XKB layout codes here. Examples: se, us, gb, de, fr.'; say 'se'; say 'us'; } > "$WORK/nirulogin-layouts"
+    write_system "$ROOT/etc/nirulogin/layouts" "$WORK/nirulogin-layouts"
+  fi
   { say 'polkit.addRule(function(action, subject) {'; say '    if (!subject.local || !subject.active) return;'; say '    if (subject.user != "_greetd" && subject.user != "greeter" && subject.user != "_greeter") return;'; say '    var allowed = ["org.freedesktop.login1.power-off", "org.freedesktop.login1.power-off-multiple-sessions", "org.freedesktop.login1.reboot", "org.freedesktop.login1.reboot-multiple-sessions"];'; say '    if (allowed.indexOf(action.id) >= 0) return polkit.Result.YES;'; say '});'; } > "$WORK/nirulogin-power.rules"
   as_root install -D -m 0644 "$WORK/nirulogin-power.rules" "$ROOT/etc/polkit-1/rules.d/49-nirulogin-power.rules"
   as_root install -d -m 755 "$ROOT/etc/greetd"
@@ -3988,6 +3993,10 @@ remove_greeters() {
   fi
   if [ -f "$ROOT/usr/local/bin/nirulogin" ]; then as_root rm -f "$ROOT/usr/local/bin/nirulogin"; fi
   if [ -f "$ROOT/usr/local/bin/nirulogin-session" ]; then as_root rm -f "$ROOT/usr/local/bin/nirulogin-session"; fi
+  if [ -f "$ROOT/etc/nirulogin/layouts" ] && owned "$ROOT/etc/nirulogin/layouts"; then
+    as_root rm -f "$ROOT/etc/nirulogin/layouts"
+    as_root rmdir "$ROOT/etc/nirulogin" 2>/dev/null || :
+  fi
   if [ -f "$ROOT/etc/polkit-1/rules.d/49-nirulogin-power.rules" ]; then as_root rm -f "$ROOT/etc/polkit-1/rules.d/49-nirulogin-power.rules"; fi
   remove_system "$ROOT/etc/polkit-1/rules.d/49-nirux-power.rules"
   remove_system "$ROOT/etc/sudoers.d/49-nirux-login-wallpaper"

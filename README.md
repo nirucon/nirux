@@ -117,9 +117,10 @@ Driver and firmware problems belong to the distribution, not to NIRUX.
   workspace of its monitor. The same key turns sticky off again.
 - Window rules for floating, centered, workspace, sticky and compositor opacity.
 - Session state, saved window placement, display profiles and safe recovery.
-- **NIRU Login:** a minimal greetd/X11 login with Swedish keyboard layout,
-  clock, password prompt and power-off/restart actions. Keep an established
-  SDDM/LightDM or TTY login available while validating a new login release.
+- **NIRU Login:** a minimal greetd/X11 login with Swedish keyboard layout as
+  default, a clickable layout selector, clock, password prompt and
+  power-off/restart actions. Keep an established SDDM/LightDM or TTY login
+  available while validating a new login release.
 - **Scroll layout:** one window per column, one or two adjacent columns visible;
   `Super+Ctrl+S` selects Scroll and `Super+Ctrl+Shift+S` toggles columns.
 

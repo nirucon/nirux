@@ -10,7 +10,7 @@ explicit request, and never pulled in by a core `nirux update`.
 | nirunote | 0.5.0 | Markdown editor |
 | nirupres | 2.1.4 | Presentation studio |
 | nplay | 1.7.3 | Terminal music, radio and podcast player; standalone |
-| niruamp | 0.3.2 | Graphical frontend for NPLAY; requires NPLAY 1.7.3+ |
+| niruamp | 0.3.3 | Graphical frontend for NPLAY with themed fullscreen visual mode; requires NPLAY 1.7.3+ |
 | niruflow | 0.6.0 | Local maintenance and automation |
 
 ## Commands
