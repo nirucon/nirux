@@ -2,7 +2,7 @@
 # NIRUX: install a complete X11 desktop, or maintain an existing installation.
 set -eu
 
-VERSION=0.12.177
+VERSION=0.12.178
 PREFIX=${NIRUX_PREFIX:-$HOME/.local}
 BIN=$PREFIX/bin
 STATE=$PREFIX/share/nirux
@@ -95,7 +95,7 @@ usage() {
   say "       nirux update [--no-packages] [--release VERSION] [--browser helium|none|keep] [--browser-addon bonjourr|none|keep]"
   say "                    [--wallpapers all|default] [--localsend yes|no] [--opencode yes|no] [--icons keep|none|papirus]"
   say "       nirux login-wallpaper [list|set FILE|reset|sync]"
-  say "       nirux wallpapers [status|download [themes|extras|all|carl-larsson|satie]|remove]"
+  say "       nirux wallpapers [status|download [themes|extras|all|theme NAME]|remove]"
   say "       nirux layout list|save NAME|apply NAME|rotate OUTPUT normal|left|right|inverted|auto"
   say "       nirux reset-config"
   say "       nirux repair-session | repair-wallpaper"
@@ -2885,7 +2885,7 @@ icons_choose() {
 # Ask once whether to fetch the optional theme wallpaper set.
 #
 # Only the default theme's wallpaper ships with a release; the other nine are a
-# 326 MB set from the project's server so a GitHub release stays small. The
+# optional set is a GitHub release so the core NIRUX release stays small. The
 # question is asked at install only, remembered in a policy file, and defaults
 # to no so an unattended install never pulls hundreds of megabytes.
 #
@@ -2947,11 +2947,11 @@ wallpaper_bundle_decision() {
   say 'terminal colours and login screen together. Without them the nine non-default'
   say 'themes use their own background colour, which works but looks plain.'
   say ''
-  say 'The full set is a one-time download of about 280 MB (4k and 8k) from'
-  say 'nextcloud.nirucon.se. An update never fetches it again, and you can add it'
-  say 'later from the launcher under Wallpaper or with: nirux wallpapers download'
+  say 'The optional set is downloaded from GitHub release assets in nirucon/nirux-wallpapers.'
+  say 'An update never fetches it again, and you can add it later from the launcher'
+  say 'or with: nirux wallpapers download [themes|theme NAME]'
   say ''
-  printf 'Download the wallpapers for all ten themes now? [Y/n]: '
+  printf 'Download the nine optional theme wallpapers now? [Y/n]: '
   IFS= read -r wp_answer || wp_answer=yes
   # The recommended answer is yes, so an empty line accepts the set. Only an
   # explicit no declines; an unattended install still defaults to the small
@@ -3555,25 +3555,38 @@ login_wallpaper() {
 }
 
 # ── Optional theme wallpaper set ────────────────────────────────────────────
-# NIRUX ships only the default theme's wallpaper with its release. The other
-# nine themes are a 326 MB set served by the project's own Nextcloud, so a
-# routine GitHub release stays small and every update does not re-download it.
-# A theme without its image paints its own background colour, so nothing looks
-# broken while the set is absent.
-WALLPAPER_BUNDLE_URL=https://nextcloud.nirucon.se/s/2b9MX7GZKpLsyGx/download
-WALLPAPER_BUNDLE_SHA256=4dd71b0510b7aca125feb6b6fa111fea13239888cd51a3857609e300368098fc
-WALLPAPER_BUNDLE_BYTES=326176620
+# NIRUX ships only the default Noir wallpaper with its release. The other nine
+# theme wallpapers, plus the optional colour packs, are published as GitHub
+# release assets in nirucon/nirux-wallpapers. A theme without its image paints
+# its own background colour, so nothing looks broken while a pack is absent.
+WALLPAPER_RELEASE=v1.0.0
+WALLPAPER_BASE_URL=https://github.com/nirucon/nirux-wallpapers/releases/download/$WALLPAPER_RELEASE
+WALLPAPER_OPTIONAL_THEMES='nord satie carl-larsson forest-vigil blood-of-urdr root-and-stone blue-horizon the-norns winter-nights'
 WALLPAPER_THEMES='noir nord satie carl-larsson forest-vigil blood-of-urdr root-and-stone blue-horizon the-norns winter-nights'
-# Two optional packs add colour variants (red, blue, green and noir) of the
-# Carl Larsson and Erik Satie themes. They are separate from the ten default
-# theme wallpapers so choosing one never replaces the theme's own image.
-CARL_LARSSON_BUNDLE_URL=https://nextcloud.nirucon.se/s/bmp7adPwQWLgZmH/download
-CARL_LARSSON_BUNDLE_SHA256=a1b5a2bd4a4dac3c23a72398aaf0e53e83c86249d1f25501055a2763c9c098ad
-CARL_LARSSON_BUNDLE_BYTES=182782549
-SATIE_BUNDLE_URL=https://nextcloud.nirucon.se/s/We5oogp7sWwL6Ba/download
-SATIE_BUNDLE_SHA256=85b1268aa59e23c4c1b2e3377d7916c7340f62e5199b905f2a322a22617e9ff2
-SATIE_BUNDLE_BYTES=83910092
+# Archive bytes and SHA-256 are pinned here. The optional assets live outside
+# the NIRUX release so the core desktop update stays small and does not fetch
+# hundreds of megabytes on machines that already have their wallpapers.
+WALLPAPER_THEME_ASSETS='
+nirux-wallpaper-nord.tar.xz 34724648 4e9336cf8a6fd4e32570b16decc36ce1a30ee54fb3413cccbd1a9c9a80cafd61
+nirux-wallpaper-satie.tar.xz 37974168 d8122198e69e8d2dc9ec69f56701fdcc19f9f05876c60d3bf0106ab9f2c50118
+nirux-wallpaper-carl-larsson.tar.xz 38690916 1d6415e8c296ef4bfb776422fa0bf65eeda9d1fd5f46eb4df17ffd30fbc013a2
+nirux-wallpaper-forest-vigil.tar.xz 34347800 73048d2df310e0236a45de33f21d49199ec478768acaf52d2aafbfa3b6b78acd
+nirux-wallpaper-blood-of-urdr.tar.xz 27205920 8d19192f5dbbbc58478436b9abc29e725e5a9f374bd0a804c9a5824429907979
+nirux-wallpaper-root-and-stone.tar.xz 35445828 d4c693ba0550c47bc6bb4148cee78669fedff1ce70e3c9a6449b7d3695449dc9
+nirux-wallpaper-blue-horizon.tar.xz 26247548 4c69e15b2dafece5337b91d73cf2c9a67320ef875b6c7955220bfaabbd444cd7
+nirux-wallpaper-the-norns.tar.xz 28489296 b34ebfbd6aa228020880abe28102010dab7dfbdaf0cc2e96846e680e3020bfe8
+nirux-wallpaper-winter-nights.tar.xz 34407324 94cf9dff3ceebeef859a3a9d8b8e736406cb75ff69f14ce6e175fcea410ac4d6
+'
+WALLPAPER_EXTRA_ASSETS='
+nirux-wallpaper-carl-larsson-extras.tar.xz 182739720 c2225a723d74963ee03a7861cbadceec0221cbf4a83764ed48e596d9c09a6feb
+nirux-wallpaper-satie-extras.tar.xz 83893724 5ce97288cc819af72dde4ddc2edd3ba9c5c9d075bdcc424bce3de0f06080310f
+'
 WALLPAPER_EXTRA_COLOURS='red blue green noir'
+
+wallpaper_asset_meta() {
+  printf '%s\n%s\n' "$WALLPAPER_THEME_ASSETS" "$WALLPAPER_EXTRA_ASSETS" |
+    awk -v n="$1" '$1 == n {print $2, $3; found=1} END {exit found ? 0 : 1}'
+}
 
 wallpaper_destination() {
   printf '%s\n' "$(pictures_directory)/Wallpapers/NIRU"
@@ -3615,9 +3628,13 @@ wallpapers() {
     status) wallpapers_status ;;
     download)
       wp_choice=${2:-themes}
+      if [ "$wp_choice" = theme ]; then
+        [ -n "${3:-}" ] || die 'wallpapers download theme needs a theme name'
+        wp_choice=theme:$3
+      fi
       case "$wp_choice" in
-        themes|extras|all|carl-larsson|satie|erik-satie) ;;
-        *) die 'wallpapers download takes themes, extras, all, carl-larsson or satie' ;;
+        themes|extras|all|carl-larsson|satie|erik-satie|theme:*) ;;
+        *) die 'wallpapers download takes themes, extras, all, theme NAME, carl-larsson or satie' ;;
       esac
       # Self-contained command: it can run outside install/update, where WORK
       # and OS are never set. A private directory keeps the archives off /tmp
@@ -3671,12 +3688,13 @@ wallpapers_status() {
   fi
   say ''
   say 'A theme without its own wallpaper uses its background colour, so the'
-  say 'desktop still matches the theme. The main set (4k and 8k, ~326 MB):'
+  say 'desktop still matches the theme. Optional theme wallpaper archives are'
+  say 'downloaded from GitHub release assets and verified by byte count and SHA-256:'
   say ''
   say '    nirux wallpapers download themes'
+  say '    nirux wallpapers download nord'
   say ''
-  say 'Carl Larsson and Erik Satie colour variants (red, blue, green, noir;'
-  say '4k and 8k, ~255 MB together):'
+  say 'Carl Larsson and Erik Satie colour variants (red, blue, green, noir):'
   say ''
   say '    nirux wallpapers download extras'
   say ''
@@ -3684,220 +3702,185 @@ wallpapers_status() {
   say 'The same action is offered in the launcher under Wallpaper.'
 }
 
-fetch_wallpaper_bundle() {
-  wp_dir_work=${WP_WORK:-${WORK:?no work directory}}
-  wp_zip=$wp_dir_work/nirux-wallpapers.zip
-  rm -f "$wp_zip"
-  fetch "$WALLPAPER_BUNDLE_URL" "$wp_zip" ||
-    die 'could not download the wallpaper set; check the network connection'
-  wp_size=$(wc -c < "$wp_zip" | tr -d ' ')
-  [ "$wp_size" = "$WALLPAPER_BUNDLE_BYTES" ] ||
-    die "the download was incomplete ($wp_size of $WALLPAPER_BUNDLE_BYTES bytes); run the command again"
-  wp_sum=$(sha256sum "$wp_zip" | cut -d ' ' -f1)
-  [ "$wp_sum" = "$WALLPAPER_BUNDLE_SHA256" ] ||
-    die 'the download did not match its checksum; nothing was installed'
-  say 'Download verified.'
+wallpaper_asset_path() {
+  case "$1" in
+    */*|'') die "invalid wallpaper asset name: $1" ;;
+  esac
+  printf '%s\n' "$1"
 }
 
-wallpapers_download_themes() {
-  wp_dir=$(wallpaper_destination)
-  if [ "$(wallpaper_theme_count)" -eq 10 ]; then
-    say 'All ten theme wallpapers are already installed.'
-    return 0
-  fi
-  # unzip is in the package list, but an install made with --no-packages may
-  # not have it, and the command is also useful on a machine where only the
-  # programs were installed. Install it rather than refusing a 326 MB download
-  # the user already asked for.
-  if ! command -v unzip >/dev/null 2>&1; then
-    say 'Installing unzip, which the wallpaper archive needs...'
-    install_packages unzip ||
-      die 'unzip is needed to install the wallpaper set; install it and run the command again'
-  fi
-  say 'Downloading the NIRUX theme wallpapers (~326 MB) from nextcloud.nirucon.se...'
-  fetch_wallpaper_bundle
-  # Stage everything first: a truncated archive must never leave a half-written
-  # set that looks installed.
-  wp_stage=${WP_WORK:?no work directory}/wallpapers-stage
-  rm -rf "$wp_stage"
-  mkdir -p "$wp_stage" || die 'could not create the staging directory'
-  unzip -q -o "${WP_WORK:?no work directory}/nirux-wallpapers.zip" -d "$wp_stage" ||
-    die 'could not extract the wallpaper set'
-  [ -n "$(find "$wp_stage" -name 'nirux-wallpaper-*.png' -print -quit)" ] ||
-    die 'the wallpaper set contained no PNG files'
+wallpaper_fetch_asset() {
+  wp_asset=$(wallpaper_asset_path "$1")
+  wp_meta=$(wallpaper_asset_meta "$wp_asset") ||
+    die "unknown wallpaper asset: $wp_asset"
+  wp_bytes=${wp_meta%% *}
+  wp_sha=${wp_meta#* }
+  wp_file=${WP_WORK:?no work directory}/$wp_asset
+  rm -f "$wp_file"
+  fetch "$WALLPAPER_BASE_URL/$wp_asset" "$wp_file" ||
+    die "could not download $wp_asset; check the network connection"
+  wp_actual_bytes=$(wc -c < "$wp_file" | tr -d ' ')
+  [ "$wp_actual_bytes" = "$wp_bytes" ] ||
+    die "the $wp_asset download was incomplete ($wp_actual_bytes of $wp_bytes bytes); run the command again"
+  [ "$(sha256sum "$wp_file" | cut -d ' ' -f1)" = "$wp_sha" ] ||
+    die "$wp_asset did not match its checksum; nothing was installed"
+  printf '%s\n' "$wp_file"
+}
 
-  mkdir -p "$wp_dir" || die "could not create $wp_dir"
+wallpaper_extract_asset() {
+  wp_asset=$1
+  wp_tar=$2
+  wp_stage=${WP_WORK:?no work directory}/${wp_asset%.tar.xz}-stage
+  rm -rf "$wp_stage"
+  mkdir -p "$wp_stage" || die 'could not create the wallpaper staging directory'
+  tar -xJf "$wp_tar" -C "$wp_stage" ||
+    die "could not extract $wp_asset"
+  printf '%s\n' "$wp_stage"
+}
+
+# Install the PNGs from one verified archive. Existing user-modified files are
+# never adopted; only NIRUX-owned bytes are updated. Unrelated manifest entries
+# are retained.
+wallpaper_install_stage() {
+  wp_stage=$1
   wp_manifest=$(wallpaper_manifest)
   mkdir -p "${wp_manifest%/*}" || die 'could not create the NIRUX state directory'
-  : > "$wp_manifest.new"
+  wp_next=${WP_WORK:?no work directory}/wallpapers-manifest.next
+  if [ -f "$wp_manifest" ]; then
+    cp -p "$wp_manifest" "$wp_next"
+  else
+    : > "$wp_next"
+  fi
   wp_installed=0
   for wp_src in "$wp_stage"/nirux-wallpaper-*.png; do
     [ -f "$wp_src" ] || continue
     wp_name=${wp_src##*/}
-    # The bundle names two sets with a `noir-` prefix; NIRUX's theme slugs have
-    # used the shorter names since 0.10.120. Accept both so the theme lookup
-    # finds the file whichever name the bundle was built with.
-    case "$wp_name" in
-      nirux-wallpaper-noir-the-norns-*.png)
-        wp_name=nirux-wallpaper-the-norns-${wp_name##*noir-the-norns-} ;;
-      nirux-wallpaper-noir-winter-nights-*.png)
-        wp_name=nirux-wallpaper-winter-nights-${wp_name##*noir-winter-nights-} ;;
-    esac
-    wp_target=$wp_dir/$wp_name
+    awk -v n="$wp_name" '$2 != n' "$wp_next" > "$wp_next.tmp" ||
+      die 'could not update the wallpaper manifest'
+    mv -f "$wp_next.tmp" "$wp_next"
+    wp_target=$(wallpaper_destination)/$wp_name
+    mkdir -p "$(dirname "$wp_target")" || die "could not create $(dirname "$wp_target")"
     if [ -f "$wp_target" ]; then
       wp_old=$(awk -v n="$wp_name" '$2 == n {print $1; exit}' "$wp_manifest" 2>/dev/null)
       wp_cur=$(sha256sum "$wp_target" | cut -d ' ' -f1)
       if [ -z "$wp_old" ] || [ "$wp_cur" != "$wp_old" ]; then
         say "Keeping your own $wp_target"
-        # Preserve the original ownership hash, never adopt the user's bytes.
-        [ -z "$wp_old" ] || printf '%s  %s\n' "$wp_old" "$wp_name" >> "$wp_manifest.new"
+        [ -z "$wp_old" ] || printf '%s  %s\n' "$wp_old" "$wp_name" >> "$wp_next"
         continue
       fi
     fi
     install -m 644 "$wp_src" "$wp_target" || die "could not install $wp_target"
-    printf '%s  %s\n' "$(sha256sum "$wp_target" | cut -d ' ' -f1)" "$wp_name" \
-      >> "$wp_manifest.new"
+    printf '%s  %s\n' "$(sha256sum "$wp_target" | cut -d ' ' -f1)" "$wp_name" >> "$wp_next"
     wp_installed=$((wp_installed + 1))
   done
-  # Keep any previously recorded file this set did not mention.
-  if [ -f "$wp_manifest" ]; then
-    while IFS= read -r wp_line; do
-      wp_name=${wp_line#*  }
-      [ -n "$wp_name" ] || continue
-      grep -q "  $wp_name\$" "$wp_manifest.new" && continue
-      [ -f "$wp_dir/$wp_name" ] || continue
-      printf '%s\n' "$wp_line" >> "$wp_manifest.new"
-    done < "$wp_manifest"
+  chmod 644 "$wp_next" 2>/dev/null || :
+  mv -f "$wp_next" "$wp_manifest" || die 'could not record the installed wallpapers'
+  WP_INSTALLED_COUNT=$wp_installed
+}
+
+wallpaper_theme_installed() {
+  wp_theme_dir=$(wallpaper_destination)
+  [ -f "$wp_theme_dir/nirux-wallpaper-$1-4k.png" ] &&
+    [ -f "$wp_theme_dir/nirux-wallpaper-$1-8k.png" ]
+}
+
+wallpaper_download_theme() {
+  wp_theme=$1
+  case " $WALLPAPER_OPTIONAL_THEMES " in
+    *" $wp_theme "*) ;;
+    *) die "unknown optional theme wallpaper: $wp_theme" ;;
+  esac
+  if wallpaper_theme_installed "$wp_theme"; then
+    say "$wp_theme wallpapers are already installed."
+    return 0
   fi
-  chmod 644 "$wp_manifest.new" 2>/dev/null || :
-  mv -f "$wp_manifest.new" "$wp_manifest" || die 'could not record the installed wallpapers'
-  rm -rf "$wp_stage" "${WP_WORK:?no work directory}/nirux-wallpapers.zip"
-  say "Installed $wp_installed wallpaper file(s) in $wp_dir"
-  say "Themes available now: $(wallpaper_theme_count) of 10"
+  wp_asset=nirux-wallpaper-$wp_theme.tar.xz
+  say "Downloading $wp_theme 4k/8k wallpapers from GitHub..."
+  wp_tar=$(wallpaper_fetch_asset "$wp_asset")
+  wp_stage=$(wallpaper_extract_asset "$wp_asset" "$wp_tar")
+  for wp_size in 4k 8k; do
+    wp_image=$wp_stage/nirux-wallpaper-$wp_theme-$wp_size.png
+    [ -f "$wp_image" ] && [ ! -L "$wp_image" ] && is_png "$wp_image" ||
+      die "the $wp_theme wallpaper archive is incomplete or invalid; nothing installed"
+  done
+  say 'Download verified.'
+  wallpaper_install_stage "$wp_stage"
+  rm -rf "$wp_stage" "$wp_tar"
+  say "Installed $WP_INSTALLED_COUNT $wp_theme wallpaper file(s)."
+}
+
+wallpapers_download_themes() {
+  wp_missing=0
+  for wp_theme in $WALLPAPER_OPTIONAL_THEMES; do
+    if ! wallpaper_theme_installed "$wp_theme"; then
+      wp_missing=1
+      wallpaper_download_theme "$wp_theme" || return 1
+    fi
+  done
+  if [ "$wp_missing" -eq 0 ]; then
+    say 'All nine optional theme wallpapers are already installed.'
+  fi
   refresh_running_theme
 }
 
-# Verify and install one optional colour pack. The archive is staged, every
-# expected file is checked, and only then is the shared manifest updated.
+wallpaper_pack_installed() {
+  wp_pack=$1
+  wp_dir=$(wallpaper_destination)
+  for wp_colour in $WALLPAPER_EXTRA_COLOURS; do
+    for wp_size in 4k 8k; do
+      [ -f "$wp_dir/nirux-wallpaper-$wp_pack-$wp_colour-$wp_size.png" ] || return 1
+    done
+  done
+  return 0
+}
+
+# Verify and install one optional colour pack.
 wallpapers_download_pack() {
   wp_pack=$1
   case "$wp_pack" in
-    carl-larsson)
-      wp_url=$CARL_LARSSON_BUNDLE_URL
-      wp_sha=$CARL_LARSSON_BUNDLE_SHA256
-      wp_bytes=$CARL_LARSSON_BUNDLE_BYTES
-      wp_label='Carl Larsson'
-      ;;
-    satie)
-      wp_url=$SATIE_BUNDLE_URL
-      wp_sha=$SATIE_BUNDLE_SHA256
-      wp_bytes=$SATIE_BUNDLE_BYTES
-      wp_label='Erik Satie'
-      ;;
+    carl-larsson) wp_label='Carl Larsson' ;;
+    satie) wp_label='Erik Satie' ;;
     *) die "unknown wallpaper pack: $wp_pack" ;;
   esac
-  wp_dir=$(wallpaper_destination)
-  wp_expected=0
-  for wp_colour in $WALLPAPER_EXTRA_COLOURS; do
-    for wp_size in 4k 8k; do
-      [ -f "$wp_dir/nirux-wallpaper-$wp_pack-$wp_colour-$wp_size.png" ] &&
-        wp_expected=$((wp_expected + 1))
-    done
-  done
-  if [ "$wp_expected" -eq 8 ]; then
+  if wallpaper_pack_installed "$wp_pack"; then
     say "$wp_label additional wallpapers are already installed."
     return 0
   fi
-  if ! command -v unzip >/dev/null 2>&1; then
-    say 'Installing unzip, which the wallpaper archive needs...'
-    install_packages unzip ||
-      die 'unzip is needed to install the extra wallpapers; install it and run the command again'
-  fi
-  wp_work=${WP_WORK:?no work directory}
-  wp_zip=$wp_work/$wp_pack.zip
-  rm -f "$wp_zip"
-  say "Downloading $wp_label additional wallpapers (~$((wp_bytes / 1024 / 1024)) MB) from nextcloud.nirucon.se..."
-  fetch "$wp_url" "$wp_zip" ||
-    die "could not download the $wp_label wallpaper pack; check the network connection"
-  wp_size_actual=$(wc -c < "$wp_zip" | tr -d ' ')
-  [ "$wp_size_actual" = "$wp_bytes" ] ||
-    die "the $wp_label download was incomplete ($wp_size_actual of $wp_bytes bytes); run the command again"
-  [ "$(sha256sum "$wp_zip" | cut -d ' ' -f1)" = "$wp_sha" ] ||
-    die "the $wp_label download did not match its checksum; nothing was installed"
-  say 'Download verified.'
-  wp_stage=$wp_work/$wp_pack-stage
-  rm -rf "$wp_stage"
-  mkdir -p "$wp_stage" || die 'could not create the staging directory'
-  unzip -q -o "$wp_zip" -d "$wp_stage" ||
-    die "could not extract the $wp_label wallpaper pack"
+  wp_asset=nirux-wallpaper-$wp_pack-extras.tar.xz
+  say "Downloading $wp_label colour wallpapers from GitHub..."
+  wp_tar=$(wallpaper_fetch_asset "$wp_asset")
+  wp_stage=$(wallpaper_extract_asset "$wp_asset" "$wp_tar")
   for wp_colour in $WALLPAPER_EXTRA_COLOURS; do
     for wp_size in 4k 8k; do
-      wp_archive_pack=$wp_pack
-      [ "$wp_pack" != satie ] || wp_archive_pack=erik-satie
-      wp_image=$wp_stage/nirux-wallpaper-$wp_archive_pack-$wp_colour-$wp_size.png
+      wp_image=$wp_stage/nirux-wallpaper-$wp_pack-$wp_colour-$wp_size.png
       [ -f "$wp_image" ] && [ ! -L "$wp_image" ] && is_png "$wp_image" ||
         die "the $wp_label wallpaper pack is incomplete or invalid; nothing installed"
     done
   done
-  mkdir -p "$wp_dir" || die "could not create $wp_dir"
-  wp_manifest=$(wallpaper_manifest)
-  mkdir -p "${wp_manifest%/*}" || die 'could not create the NIRUX state directory'
-  : > "$wp_manifest.new"
-  # Preserve every existing record except the names this pack replaces.
-  if [ -f "$wp_manifest" ]; then
-    while IFS= read -r wp_line; do
-      wp_name=${wp_line#*  }
-      [ -n "$wp_name" ] || continue
-      case "$wp_name" in
-        nirux-wallpaper-$wp_pack-*-4k.png|nirux-wallpaper-$wp_pack-*-8k.png) continue ;;
-      esac
-      printf '%s\n' "$wp_line" >> "$wp_manifest.new"
-    done < "$wp_manifest"
-  fi
-  wp_installed=0
-  for wp_colour in $WALLPAPER_EXTRA_COLOURS; do
-    for wp_size in 4k 8k; do
-      wp_name=nirux-wallpaper-$wp_pack-$wp_colour-$wp_size.png
-      # The Erik Satie archive predates the shorter theme slug. Store it under
-      # the slug NIRUX themes use, so the pair is consistent and easy to find.
-      wp_source=$wp_stage/nirux-wallpaper-$wp_pack-$wp_colour-$wp_size.png
-      [ "$wp_pack" = satie ] &&
-        wp_source=$wp_stage/nirux-wallpaper-erik-satie-$wp_colour-$wp_size.png
-      [ -f "$wp_source" ] || die "the $wp_label wallpaper pack is missing $wp_source"
-      wp_target=$wp_dir/$wp_name
-      if [ -f "$wp_target" ]; then
-        wp_old=$(awk -v n="$wp_name" '$2 == n {print $1; exit}' "$wp_manifest" 2>/dev/null)
-        wp_cur=$(sha256sum "$wp_target" | cut -d ' ' -f1)
-        if [ -z "$wp_old" ] || [ "$wp_cur" != "$wp_old" ]; then
-          say "Keeping your own $wp_target"
-          [ -z "$wp_old" ] || printf '%s  %s\n' "$wp_old" "$wp_name" >> "$wp_manifest.new"
-          continue
-        fi
-      fi
-      install -m 644 "$wp_source" "$wp_target" || die "could not install $wp_target"
-      printf '%s  %s\n' "$(sha256sum "$wp_target" | cut -d ' ' -f1)" "$wp_name"         >> "$wp_manifest.new"
-      wp_installed=$((wp_installed + 1))
-    done
-  done
-  chmod 644 "$wp_manifest.new" 2>/dev/null || :
-  mv -f "$wp_manifest.new" "$wp_manifest" || die 'could not record the installed wallpapers'
-  rm -rf "$wp_stage" "$wp_zip"
-  say "Installed $wp_installed $wp_label wallpaper file(s)."
+  say 'Download verified.'
+  wallpaper_install_stage "$wp_stage"
+  rm -rf "$wp_stage" "$wp_tar"
+  say "Installed $WP_INSTALLED_COUNT $wp_label wallpaper file(s)."
 }
 
 wallpapers_download() {
   wallpapers_lock
   wp_choice=${1:-themes}
   case "$wp_choice" in
-    themes|all) wallpapers_download_themes ;;
-  esac
-  case "$wp_choice" in
-    extras|all)
+    themes) wallpapers_download_themes ;;
+    extras)
+      wallpapers_download_pack carl-larsson
+      wallpapers_download_pack satie
+      ;;
+    all)
+      wallpapers_download_themes
       wallpapers_download_pack carl-larsson
       wallpapers_download_pack satie
       ;;
     carl-larsson) wallpapers_download_pack carl-larsson ;;
     satie|erik-satie) wallpapers_download_pack satie ;;
+    theme:*) wallpaper_download_theme "${wp_choice#theme:}" ;;
+    *) die 'wallpapers download takes themes, extras, all, theme NAME, carl-larsson or satie' ;;
   esac
 }
 

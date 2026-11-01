@@ -88,9 +88,8 @@ jobs:
       - name: Package wallpapers, terminal, greeters and power rule
         run: |
           # Only the default theme's wallpaper ships in the release. The other
-          # nine themes are a ~311 MB optional set served by the project's
-          # Nextcloud, so a release stays small and every update does not
-          # re-download wallpapers the user may already have.
+          # nine are optional GitHub release assets in nirucon/nirux-wallpapers,
+          # so the core release stays small and updates never redownload them.
           tar -cJf nirux-wallpapers.tar.xz \
             wallpaper/nirux-wallpaper-noir-4k.png \
             wallpaper/nirux-wallpaper-noir-8k.png

@@ -7,7 +7,7 @@ trap 'rm -rf "$TEST"' EXIT
 export HOME=$TEST/home NIRUX_PREFIX=$TEST/prefix NIRUX_SYSTEM_ROOT=$TEST/system
 export XDG_CONFIG_HOME=$HOME/.config XDG_STATE_HOME=$HOME/.local/state XDG_CACHE_HOME=$HOME/.cache
 export NIRUX_LIBRARY=1 NIRUX_TEST_AS_ROOT=1
-# Offline tests must not fetch the optional 326 MB wallpaper bundle. An
+# Offline tests must not fetch the optional wallpaper release assets. An
 # explicit choice still overrides this when a test exercises it.
 export NIRUX_WALLPAPERS=default
 mkdir -p "$HOME" "$NIRUX_SYSTEM_ROOT/etc/pam.d" "$NIRUX_SYSTEM_ROOT/usr/share/xsessions"
