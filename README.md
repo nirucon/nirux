@@ -192,8 +192,9 @@ update.
 
 ### Optional suite extras
 
-These are suite-adjacent applications, but they are **not** part of the core
-manifest and are never installed by a normal `nirux update`:
+A normal NIRUX install contains only the pinned core components in the table
+below. These additional suite applications are **not** installed by a normal
+`nirux install` or `nirux update`; install only the ones you want:
 
 ```sh
 nirux extras list
@@ -202,13 +203,19 @@ nirux extras install niruflow
 nirux extras update
 ```
 
-Available extras:
+| Extra | Role |
+|---|---|
+| **NIRUORG** | File and folder management |
+| **NIRUNOTE** | Minimal Markdown editor |
+| **NIRUPRES** | Presentation studio |
+| **NPLAY** | Terminal music, radio and podcast player; also a standalone player |
+| **NIRUAMP** | Graphical Winamp-inspired frontend for NPLAY; requires NPLAY |
+| **NIRUFLOW** | Local maintenance and automation |
 
-- **NIRUORG** — file and folder management.
-- **NIRUNOTE** — minimal Markdown editor.
-- **NIRUPRES** — presentation studio.
-- **NPLAY** — terminal music, radio and podcast player.
-- **NIRUFLOW** — local maintenance and automation.
+The music pair follows NPLAY's ownership model: **NPLAY is a complete standalone
+terminal player**, while **NIRUAMP is only the graphical frontend** and cannot
+run without NPLAY. `nirux extras install niruamp` installs/updates the pinned NPLAY
+first. Installing NPLAY alone is fully supported, with or without NIRUX.
 
 ## Key bindings at a glance
 
@@ -274,7 +281,8 @@ a lossless undo of every change.
   [appearance overrides](appearance.example.toml)
 - [Pinned component versions](manifest)
 
-Core components come from the pinned manifest:
+A normal install provisions these core components from the pinned manifest.
+They are installed together and updated as one verified suite generation:
 
 | Repository | Purpose |
 |---|---|
@@ -297,10 +305,10 @@ Core components come from the pinned manifest:
 
 ## Release policy
 
-The current release and the previous two functional releases are the supported
-window. Older releases are historical and may contain bugs fixed in later
-versions. Git tags and commits remain as release evidence; old GitHub Releases
-and assets may be removed during cleanup. A version with a known broken asset is
-not kept merely because its number is recent.
+The current release and the immediately previous functional release are the
+supported window. Older GitHub Releases and assets are historical and are
+removed during cleanup; Git tags and commits remain as release evidence. A
+version with a known broken asset is not kept merely because its number is
+recent.
 
 NIRUX is provided without warranty. See [LICENSE](LICENSE).

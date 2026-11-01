@@ -2,7 +2,7 @@
 # NIRUX: install a complete X11 desktop, or maintain an existing installation.
 set -eu
 
-VERSION=0.12.156
+VERSION=0.12.157
 PREFIX=${NIRUX_PREFIX:-$HOME/.local}
 BIN=$PREFIX/bin
 STATE=$PREFIX/share/nirux
@@ -1996,7 +1996,8 @@ extras_table() {
 niruorg niruorg 0.5.1 ac11439b8a3af945aedcfdbd3167941570bf796ac8aaa1f1be60a8115eee03e7
 nirunote nirunote 0.5.0 7cff905b9c05046a49a0a5dacca42b68e654a6ce6825b76df5a8680f0a8b4112
 nirupres nirupres 2.1.4 93abaf9b8d2e2d1419fc45ea1296e1b764b35a5baec462dcd1f0a7b4154b77d0
-nplay nplay 1.6.0 4258925dc3f71685c8c9ad21c80c8a60b21d16e93d68a2c09c027e8a86907a7a
+nplay nplay 1.7.1 65f7ba0742e56a581953f4ef4905a2b793c38b8f2f1cb7e45c55ac5f43fde1cc
+niruamp niruamp 0.3.0 8a799b500126ae8a81c25b2e96e7b9b3f65cab7cb1152a247830f031e9749a5f
 niruflow niruflow 0.6.0 814aa1429f5fd5a7ecbb95f68041fac347d453b03559f03fb4d7cc98efb670ad
 EOF
 }
@@ -2042,6 +2043,15 @@ extras_list() {
 extras_install_one() {
   name=$1
   row=$(extras_row "$name") || die "unknown extra: $name"
+  # NIRUAMP is a graphical frontend, not a player. Keep the music pair coherent
+  # by installing/updating NPLAY first when NIRUAMP is requested.
+  if [ "$name" = niruamp ]; then
+    nplay_pin=$(extras_row nplay | awk '{print $3}')
+    nplay_now=$(extras_installed_version nplay 2>/dev/null || :)
+    if [ "$nplay_now" != "$nplay_pin" ]; then
+      extras_install_one nplay || die 'NIRUAMP requires NPLAY; NPLAY installation failed'
+    fi
+  fi
   repo=$(printf '%s\n' "$row" | awk '{print $2}')
   version=$(printf '%s\n' "$row" | awk '{print $3}')
   expected=$(printf '%s\n' "$row" | awk '{print $4}')
@@ -2056,7 +2066,7 @@ extras_install_one() {
   src=$(find "$tmp" -mindepth 1 -maxdepth 1 -type d | head -n 1)
   if [ -z "$src" ] || [ ! -f "$src/install.sh" ]; then rm -rf "$tmp"; die "$repo $version has no installer"; fi
   say "Installing $repo $version (the vendor installer may ask for confirmation)."
-  if ! ( cd "$src" && bash ./install.sh ); then rm -rf "$tmp"; die "$repo installer failed; existing data was not intentionally removed"; fi
+  if ! ( cd "$src" && PATH="$HOME/.local/bin:$PATH" bash ./install.sh ); then rm -rf "$tmp"; die "$repo installer failed; existing data was not intentionally removed"; fi
   installed=$(extras_installed_version "$name" 2>/dev/null || :)
   if [ -z "$installed" ]; then rm -rf "$tmp"; die "$repo installed without a working $name command"; fi
   rm -rf "$tmp"
