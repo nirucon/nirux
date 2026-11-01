@@ -213,6 +213,7 @@ nirux extras update
 | **NPLAY** | Terminal music, radio and podcast player; also a standalone player |
 | **NIRUAMP** | Graphical Winamp-inspired frontend for NPLAY; requires NPLAY |
 | **NIRUFLOW** | Local maintenance and automation |
+| **NIRUSEC** | Firewall, ports, updates, firmware and security overview GUI |
 
 The music pair follows NPLAY's ownership model: **NPLAY is a complete standalone
 terminal player**, while **NIRUAMP is only the graphical frontend** and cannot
