@@ -12,7 +12,7 @@ explicit request, and never pulled in by a core `nirux update`.
 | nplay | 1.7.3 | Terminal music, radio and podcast player; standalone |
 | niruamp | 0.3.3 | Graphical frontend for NPLAY with themed fullscreen visual mode; requires NPLAY 1.7.3+ |
 | niruflow | 0.6.0 | Local maintenance and automation |
-| nirusec | 0.1.1 | Firewall, ports, updates, firmware and security overview GUI |
+| nirusec | 0.1.2 | Firewall, ports, updates, firmware and security overview GUI |
 
 ## Commands
 
