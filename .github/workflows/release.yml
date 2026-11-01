@@ -76,6 +76,13 @@ jobs:
               test "$bar" = "$(awk '$1 == "nirubar" {print $2}' manifest)" || {
                 echo "NIRUWM bundles NIRUBAR $bar but manifest pins another version"; exit 1;
               }
+              for helper in niruclipboard nirugestured; do
+                chmod +x "$dir/$helper"
+                reported=$("$dir/$helper" --version 2>/dev/null | awk '{print $2}')
+                test "$reported" = "$version" || {
+                  echo "$helper reports $reported, NIRUWM pins $version"; exit 1;
+                }
+              done
             fi
           done < <(awk '$1 != "schema" && $1 != "suite" {print $1, $2}' manifest)
       - name: Package wallpapers, terminal, greeters and power rule
