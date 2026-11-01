@@ -302,7 +302,7 @@ They are installed together and updated as one verified suite generation:
 | [nirushare](https://github.com/nirucon/nirushare) | Trusted Tailscale sharing for text and images |
 | [niruwallpaper](https://github.com/nirucon/niruwallpaper) | Wallpaper selection, scale, rotation and output |
 | [niruthemeselector](https://github.com/nirucon/niruthemeselector) | Theme browsing and application |
-| [nirunotify](https://github.com/nirucon/nirunotify) | Notification service, DND and hardware OSD |
+| [nirunotify](https://github.com/nirucon/nirunotify) | Notification service, DND, hardware OSD and coalesced event sounds |
 | [nirulock](https://github.com/nirucon/nirulock) | PAM lock screen with themed CAVA visualizer |
 | [niruscreensaver](https://github.com/nirucon/niruscreensaver) | Idle screen with themed CAVA visualizer |
 | [nirushot](https://github.com/nirucon/nirushot) | Screenshot capture, review and annotation |
