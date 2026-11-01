@@ -163,9 +163,10 @@ Driver and firmware problems belong to the distribution, not to NIRUX.
 
 - **NIRUNOTIFY:** native notifications, DND, history, clipboard-safe OSDs and
   optional event sounds.
-- **NIRULOCK:** PAM-backed lock screen with minimal, terminal, runic and corner
-  layouts.
-- **NIRUSCREENSAVER:** idle screen with configurable inactivity and lock timing.
+- **NIRULOCK:** PAM-backed lock screen with CAVA, minimal, terminal, runic and
+  corner layouts. CAVA is the default and follows the active suite theme.
+- **NIRUSCREENSAVER:** idle screen with CAVA, minimal, terminal, runic and
+  corner layouts, plus configurable inactivity and lock timing.
 - **NIRUSHOT:** full-screen, region and window capture with review/annotation;
   the original capture is always copied to the clipboard.
 - **NIRUCLIP:** screen, region or camera recording with microphone, desktop
@@ -302,8 +303,8 @@ They are installed together and updated as one verified suite generation:
 | [niruwallpaper](https://github.com/nirucon/niruwallpaper) | Wallpaper selection, scale, rotation and output |
 | [niruthemeselector](https://github.com/nirucon/niruthemeselector) | Theme browsing and application |
 | [nirunotify](https://github.com/nirucon/nirunotify) | Notification service, DND and hardware OSD |
-| [nirulock](https://github.com/nirucon/nirulock) | PAM lock screen |
-| [niruscreensaver](https://github.com/nirucon/niruscreensaver) | Idle screen |
+| [nirulock](https://github.com/nirucon/nirulock) | PAM lock screen with themed CAVA visualizer |
+| [niruscreensaver](https://github.com/nirucon/niruscreensaver) | Idle screen with themed CAVA visualizer |
 | [nirushot](https://github.com/nirucon/nirushot) | Screenshot capture, review and annotation |
 | [niruclip](https://github.com/nirucon/niruclip) | Screen, region and camera recording with profiles and recovery |
 | [niruwebapp](https://github.com/nirucon/niruwebapp) | Web-app windows with isolated or shared profiles |
