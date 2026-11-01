@@ -258,6 +258,12 @@ the bar can normally be restarted with `niructl restart-bar`.
 Rollback restores the previous program generation; it is not a backup of
 personal files or operating-system packages.
 
+The NIRUBAR update indicator follows the **core suite** because NIRUX installs
+and updates those components as one verified generation. Optional extras have
+independent release cadences and are intentionally not polled individually by
+the bar; use `nirux extras status` to see pinned/installed extras and
+`nirux extras update` to update the ones you selected.
+
 ## Removal
 
 ```sh

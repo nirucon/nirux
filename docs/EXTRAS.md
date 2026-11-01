@@ -24,7 +24,10 @@ nirux extras unselect niruflow
 ```
 
 `select` records a preference in
-`~/.local/state/nirux/extras-selected` without installing anything. `install`
+`~/.local/state/nirux/extras-selected` without installing anything. Use
+`nirux extras status` to see pinned, installed and selected versions. NIRUBAR's
+suite-update module intentionally tracks the core generation only; it does not
+poll each extra's GitHub repository. `install`
 downloads the pinned source tag, verifies its SHA-256 before extraction, and
 runs that project's own installer. `update` updates only selected extras to the
 versions pinned by the installed NIRUX release.
