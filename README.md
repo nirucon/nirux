@@ -215,6 +215,7 @@ nirux extras update
 | **NIRUFLOW** | Local maintenance and automation |
 | **NIRUSEC** | Firewall, ports, updates, firmware and security overview GUI |
 | **NIRUGAME** | Steam, RetroArch, native games and optional user-supplied SID music |
+| **NIRUREMOTE** | Graphical remote desktop over Tailscale and SSH |
 
 The music pair follows NPLAY's ownership model: **NPLAY is a complete standalone
 terminal player**, while **NIRUAMP is only the graphical frontend** and cannot
