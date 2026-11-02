@@ -12,7 +12,10 @@ Passwords stay out of command arguments and launcher history.
 | Standalone iwd | Native D-Bus device/station/network plus short-lived personal-secret agent | Native adapter/contract tests; live hardware combination not yet verified. Existing IP ownership is preserved. |
 | ConnMan | Native D-Bus technology/service plus short-lived personal-secret agent | Native adapter/contract tests; live hardware combination not yet verified. ConnMan retains IP/DNS ownership. |
 
-NIRUX does not install, enable or replace a network manager. NetworkManager's
+NIRUX does not install, enable or replace a network manager. Wired Ethernet
+follows the same rule: NIRU Launcher can show and, with NetworkManager,
+connect/disconnect one wired interface without touching Wi-Fi or global
+networking. Without NetworkManager the wired view is read-only. NetworkManager's
 own iwd/wpa_supplicant layer must not be independently controlled. Ambiguous or
 unmanaged devices do not grant permission to take over networking. A daemon or
 CLI merely being installed is not proof that it owns the adapter.

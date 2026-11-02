@@ -214,6 +214,7 @@ nirux extras update
 | **NIRUAMP** | Graphical Winamp-inspired frontend for NPLAY; requires NPLAY |
 | **NIRUFLOW** | Local maintenance and automation |
 | **NIRUSEC** | Firewall, ports, updates, firmware and security overview GUI |
+| **NIRUGAME** | Steam, RetroArch, native games and optional user-supplied SID music |
 
 The music pair follows NPLAY's ownership model: **NPLAY is a complete standalone
 terminal player**, while **NIRUAMP is only the graphical frontend** and cannot
