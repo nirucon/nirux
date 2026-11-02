@@ -13,7 +13,7 @@ explicit request, and never pulled in by a core `nirux update`.
 | niruamp | 0.3.3 | Graphical frontend for NPLAY with themed fullscreen visual mode; requires NPLAY 1.7.3+ |
 | niruflow | 0.6.0 | Local maintenance and automation |
 | nirusec | 0.1.8 | Firewall, ports, updates, firmware and security overview GUI |
-| nirugame | 0.1.1 | Steam, RetroArch, native games and optional user-supplied SID music |
+| nirugame | 0.1.2 | Steam, RetroArch, native games and optional user-supplied SID music |
 
 ## Commands
 
