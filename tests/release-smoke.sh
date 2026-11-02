@@ -64,7 +64,8 @@ for arg in "\$@"; do
 done
 case "\$url" in
   https://github.com/nirucon/nirux/releases/download/v*)
-    cp "$TEST/release/\${url##*/}" "\$out" ;;
+    fixture_url=\${url%%\?*}
+    cp "$TEST/release/\${fixture_url##*/}" "\$out" ;;
   *) exec "$REAL_CURL" "\$@" ;;
 esac
 EOF
