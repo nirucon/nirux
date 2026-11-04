@@ -1290,10 +1290,28 @@ remove_managed_block() {
   chmod "$block_mode" "$block_tmp" || die "could not set permissions on $block_target"
   mv -f "$block_tmp" "$block_target" || die "could not update $block_target"
 }
+sounds_apps_block() {
+  cat <<'EOF'
+
+# Per-app notification sounds. The key is the app name a notification is sent
+# with (see `nirunotify --history`), compared case-insensitively. The value is
+# a sound name, which plays NAME.ogg from ~/.config/nirux/sounds or the NIRUX
+# sounds; a file path (absolute or ~/...); "default" for the normal
+# notification sound; or "off" to keep the notification silent.
+[sounds.apps]
+thunderbird = "mail"
+signal = "chat"
+EOF
+}
+
 sounds_ensure_config() {
-  [ -f "$SOUNDS_CONFIG" ] && return 0
+  if [ -f "$SOUNDS_CONFIG" ]; then
+    sounds_migrate_apps
+    return 0
+  fi
   mkdir -p "$NIRUX_CONFIG" || return 0
-  cat > "$SOUNDS_CONFIG.tmp.$$" <<'EOF'
+  {
+    cat <<'EOF'
 [sounds]
 enabled = true
 volume = 35
@@ -1305,21 +1323,56 @@ notification_cooldown_ms = 2500
 notification_exclude_apps = ["nplay", "spotify"]
 respect_mute = true
 EOF
+    sounds_apps_block
+  } > "$SOUNDS_CONFIG.tmp.$$"
   mv -f "$SOUNDS_CONFIG.tmp.$$" "$SOUNDS_CONFIG" 2>/dev/null || rm -f "$SOUNDS_CONFIG.tmp.$$"
 }
 
-sounds_value() {
-  sounds_key=$1
-  sounds_default=$2
-  if [ -f "$SOUNDS_CONFIG" ]; then
-    sounds_found=$(awk -F= -v k="$sounds_key" '
-      $1 ~ "^[[:space:]]*" k "[[:space:]]*$" {
-        v=$2; sub(/^[[:space:]]+/, "", v); sub(/[[:space:]]+$/, "", v)
-        gsub(/^"|"$/, "", v); print v; exit
-      }' "$SOUNDS_CONFIG" 2>/dev/null || :)
-    [ -n "${sounds_found:-}" ] && { say "$sounds_found"; return 0; }
+# Configurations written before per-app sounds have no [sounds.apps] table.
+# Add the default table once; an existing table, even an empty one, is the
+# user's choice and is never touched.
+sounds_migrate_apps() {
+  [ -f "$SOUNDS_CONFIG" ] || return 0
+  grep -q '^[[:space:]]*\[sounds\.apps\][[:space:]]*$' "$SOUNDS_CONFIG" 2>/dev/null && return 0
+  sounds_mig=$SOUNDS_CONFIG.tmp.$$
+  if { cat "$SOUNDS_CONFIG"; sounds_apps_block; } > "$sounds_mig" 2>/dev/null; then
+    mv -f "$sounds_mig" "$SOUNDS_CONFIG" 2>/dev/null || rm -f "$sounds_mig"
+  else
+    rm -f "$sounds_mig"
   fi
-  say "$sounds_default"
+}
+
+# Read KEY from TABLE ("sounds" or "sounds.apps"). Keys before the first table
+# header count as [sounds], so a hand-written file without a header still works.
+# Keys are compared case-insensitively and may be quoted; a quoted value keeps
+# everything between its quotes, an unquoted value ends at a # comment.
+sounds_table_value() {
+  [ -f "$SOUNDS_CONFIG" ] || return 0
+  awk -v want="$1" -v k="$2" '
+    function trim(s) { sub(/^[[:space:]]+/, "", s); sub(/[[:space:]]+$/, "", s); return s }
+    BEGIN { sec = "sounds"; k = tolower(k) }
+    /^[[:space:]]*\[/ {
+      s = $0; sub(/^[[:space:]]*\[/, "", s); sub(/\][[:space:]]*(#.*)?$/, "", s)
+      sec = trim(s); next
+    }
+    sec != want { next }
+    {
+      eq = index($0, "="); if (eq == 0) next
+      key = trim(substr($0, 1, eq - 1)); gsub(/^"|"$/, "", key)
+      if (tolower(key) != k) next
+      v = trim(substr($0, eq + 1))
+      if (substr(v, 1, 1) == "\"") {
+        v = substr(v, 2); q = index(v, "\""); if (q > 0) v = substr(v, 1, q - 1)
+      } else if (substr(v, 1, 1) != "[") {
+        sub(/[[:space:]]*#.*$/, "", v)
+      }
+      print v; exit
+    }' "$SOUNDS_CONFIG" 2>/dev/null || :
+}
+
+sounds_value() {
+  sounds_found=$(sounds_table_value sounds "$1")
+  if [ -n "$sounds_found" ]; then say "$sounds_found"; else say "$2"; fi
 }
 
 sounds_enabled() {
@@ -1338,13 +1391,18 @@ sounds_muted() {
   wpctl get-volume @DEFAULT_AUDIO_SINK@ 2>/dev/null | grep -q '\[MUTED\]'
 }
 
+# Each notification sound has its own rate limit, so a chat message right after
+# a mail still sounds. The plain notification keeps its historical stamp file.
 sounds_cooldown() {
   [ "$1" = notification ] || return 0
   sounds_cd=$(sounds_value notification_cooldown_ms 2500)
   case "$sounds_cd" in ''|*[!0-9]*) sounds_cd=2500 ;; esac
-  sounds_stamp=$SOUNDS_STATE/.notification-stamp
+  case "${2:-notification}" in
+    notification) sounds_stamp=$SOUNDS_STATE/.notification-stamp ;;
+    *) sounds_stamp=$SOUNDS_STATE/.notification-stamp-$(printf '%s' "$2" | tr -c 'A-Za-z0-9_-' '_') ;;
+  esac
   sounds_now=$(date +%s%3N 2>/dev/null || :)
-  [ -n "$sounds_now" ] || return 0
+  case "$sounds_now" in ''|*[!0-9]*) return 0 ;; esac
   if [ -f "$sounds_stamp" ]; then
     sounds_prev=$(cat "$sounds_stamp" 2>/dev/null || :)
     case "$sounds_prev" in ''|*[!0-9]*) sounds_prev=0 ;; esac
@@ -1354,10 +1412,14 @@ sounds_cooldown() {
   return 0
 }
 
+sounds_app_key() {
+  printf '%s' "$1" | tr '[:upper:]' '[:lower:]' | sed 's/^[[:space:]]*//; s/[[:space:]]*$//; s/\.desktop$//'
+}
+
 sounds_app_excluded() {
   sounds_app=$1
   [ -n "$sounds_app" ] || return 1
-  sounds_app=$(printf '%s' "$sounds_app" | tr '[:upper:]' '[:lower:]' | sed 's/^[[:space:]]*//; s/[[:space:]]*$//; s/\.desktop$//')
+  sounds_app=$(sounds_app_key "$sounds_app")
   sounds_excluded=$(sounds_value notification_exclude_apps '["nplay", "spotify"]')
   [ "$sounds_excluded" = "[]" ] && return 1
   for sounds_item in $(printf '%s' "$sounds_excluded" | tr -d '[]"' | tr ',' ' '); do
@@ -1368,14 +1430,61 @@ sounds_app_excluded() {
   return 1
 }
 
+# The configured choice for an app: empty when the app has no entry.
+sounds_app_choice() {
+  [ -n "$1" ] || return 0
+  sounds_table_value sounds.apps "$(sounds_app_key "$1")"
+}
+
+# Resolve a sound name or path to a readable file. A name is looked up in the
+# user's sound directory first, then in the NIRUX sounds.
+sounds_file_for() {
+  case "$1" in
+    \~/*) sounds_candidate=$HOME/${1#\~/}; [ -r "$sounds_candidate" ] && say "$sounds_candidate" ;;
+    /*) [ -r "$1" ] && say "$1" ;;
+    *[!A-Za-z0-9_-]*|'') : ;;
+    *)
+      if [ -r "$NIRUX_CONFIG/sounds/$1.ogg" ]; then say "$NIRUX_CONFIG/sounds/$1.ogg"
+      elif [ -r "$SOUNDS_STATE/$1.ogg" ]; then say "$SOUNDS_STATE/$1.ogg"
+      fi ;;
+  esac
+  return 0
+}
+
+# Print "NAME FILE" for a notification from APP, or nothing when the app is
+# silenced. A missing app sound falls back to the normal notification sound.
+sounds_notification_target() {
+  sounds_choice=$(sounds_app_choice "$1")
+  case "$sounds_choice" in
+    off|none|silent) return 0 ;;
+    ''|default|notification) say "notification $SOUNDS_STATE/notification.ogg"; return 0 ;;
+  esac
+  sounds_target=$(sounds_file_for "$sounds_choice")
+  if [ -n "$sounds_target" ]; then
+    case "$sounds_choice" in
+      */*) say "$(sounds_app_key "$1") $sounds_target" ;;
+      *) say "$sounds_choice $sounds_target" ;;
+    esac
+  else
+    say "notification $SOUNDS_STATE/notification.ogg"
+  fi
+}
+
 sounds_play() {
   sounds_event=$1
   sounds_app=${2:-}
   sounds_file=$SOUNDS_STATE/$sounds_event.ogg
+  sounds_name=$sounds_event
   sounds_event_enabled "$sounds_event" || return 0
-  [ "$sounds_event" = notification ] && sounds_app_excluded "$sounds_app" && return 0
-  sounds_cooldown "$sounds_event" || return 0
-  sounds_muted && { [ "$sounds_event" = notification ] && return 0 || return 0; }
+  if [ "$sounds_event" = notification ]; then
+    sounds_app_excluded "$sounds_app" && return 0
+    sounds_pick=$(sounds_notification_target "$sounds_app")
+    [ -n "$sounds_pick" ] || return 0
+    sounds_name=${sounds_pick%% *}
+    sounds_file=${sounds_pick#* }
+  fi
+  sounds_cooldown "$sounds_event" "$sounds_name" || return 0
+  sounds_muted && return 0
   [ -f "$sounds_file" ] || return 0
   sounds_vol=$(sounds_value volume 35)
   case "$sounds_vol" in ''|*[!0-9]*) sounds_vol=35 ;; esac
@@ -1392,20 +1501,46 @@ sounds_play() {
   return 0
 }
 
-sounds_set() {
+# Set KEY = VALUE inside TABLE, keeping every other line. A missing key is
+# added at the end of its table; a missing table is appended.
+sounds_table_set() {
   sounds_ensure_config
-  sounds_key=$1
-  sounds_val=$2
   sounds_tmp=$SOUNDS_CONFIG.tmp.$$
-  if awk -F= -v k="$sounds_key" -v v="$sounds_val" '
-    $1 ~ "^[[:space:]]*" k "[[:space:]]*$" { print k " = " v; done=1; next }
+  if awk -v want="$1" -v k="$2" -v line="$3" '
+    function trim(s) { sub(/^[[:space:]]+/, "", s); sub(/[[:space:]]+$/, "", s); return s }
+    function flush() { if (sec == want && !done && line != "") { print line; done = 1 } }
+    BEGIN { sec = "sounds"; lk = tolower(k) }
+    /^[[:space:]]*\[/ {
+      s = $0; sub(/^[[:space:]]*\[/, "", s); sub(/\][[:space:]]*(#.*)?$/, "", s)
+      flush(); sec = trim(s); if (sec == want) seen = 1; print; next
+    }
+    sec == want && index($0, "=") > 0 {
+      key = trim(substr($0, 1, index($0, "=") - 1)); gsub(/^"|"$/, "", key)
+      if (tolower(key) == lk) { if (!done && line != "") print line; done = 1; next }
+    }
     { print }
-    END { if (!done) print k " = " v }
-  ' "$SOUNDS_CONFIG" > "$sounds_tmp"; then
+    END {
+      flush()
+      if (!done && line != "") { if (!seen && want != "sounds") print "\n[" want "]"; print line }
+    }' "$SOUNDS_CONFIG" > "$sounds_tmp"; then
     mv -f "$sounds_tmp" "$SOUNDS_CONFIG"
   else
     rm -f "$sounds_tmp"; return 1
   fi
+}
+
+sounds_set() {
+  sounds_table_set sounds "$1" "$1 = $2"
+}
+
+sounds_app_list() {
+  [ -f "$SOUNDS_CONFIG" ] || return 0
+  awk '
+    function trim(s) { sub(/^[[:space:]]+/, "", s); sub(/[[:space:]]+$/, "", s); return s }
+    /^[[:space:]]*\[/ { s = $0; sub(/^[[:space:]]*\[/, "", s); sub(/\][[:space:]]*(#.*)?$/, "", s); sec = trim(s); next }
+    sec == "sounds.apps" && index($0, "=") > 0 && $0 !~ /^[[:space:]]*#/ {
+      key = trim(substr($0, 1, index($0, "=") - 1)); gsub(/^"|"$/, "", key); print key
+    }' "$SOUNDS_CONFIG" 2>/dev/null || :
 }
 
 sounds_status() {
@@ -1417,12 +1552,100 @@ sounds_status() {
     say "  $sounds_event: $sounds_on"
   done
   say "notification sound excluded for: $(sounds_value notification_exclude_apps '["nplay", "spotify"]')"
+  sounds_apps=$(sounds_app_list)
+  [ -n "$sounds_apps" ] || return 0
+  say "app sounds:"
+  for sounds_entry in $sounds_apps; do
+    sounds_choice=$(sounds_app_choice "$sounds_entry")
+    case "$sounds_choice" in
+      off|none|silent) sounds_note='silent' ;;
+      ''|default|notification) sounds_note='notification sound' ;;
+      *)
+        sounds_target=$(sounds_file_for "$sounds_choice")
+        if [ -n "$sounds_target" ]; then sounds_note=$sounds_target
+        else sounds_note='missing; plays the notification sound'; fi ;;
+    esac
+    say "  $sounds_entry = $sounds_choice ($sounds_note)"
+  done
+}
+
+sounds_json_string() {
+  printf '"%s"' "$(printf '%s' "$1" | sed 's/\\/\\\\/g; s/"/\\"/g' | tr -d '\000-\037')"
+}
+
+# Machine-readable status for NIRULAUNCHER and scripts. Schema 1.
+sounds_status_json() {
+  sounds_ensure_config
+  sounds_enabled && sounds_global=true || sounds_global=false
+  sounds_vol=$(sounds_value volume 35)
+  case "$sounds_vol" in ''|*[!0-9]*) sounds_vol=35 ;; esac
+  printf '{"schema":1,"enabled":%s,"volume":%s,"config":%s,"events":{' \
+    "$sounds_global" "$sounds_vol" "$(sounds_json_string "$SOUNDS_CONFIG")"
+  sounds_sep=
+  for sounds_event in startup notification update shutdown; do
+    [ "$(sounds_value "$sounds_event" true)" = true ] && sounds_on=true || sounds_on=false
+    printf '%s"%s":%s' "$sounds_sep" "$sounds_event" "$sounds_on"; sounds_sep=,
+  done
+  printf '},"exclude":['
+  sounds_sep=
+  for sounds_item in $(sounds_value notification_exclude_apps '["nplay", "spotify"]' | tr -d '[]"' | tr ',' ' '); do
+    printf '%s%s' "$sounds_sep" "$(sounds_json_string "$sounds_item")"; sounds_sep=,
+  done
+  printf '],"apps":['
+  sounds_sep=
+  for sounds_entry in $(sounds_app_list); do
+    sounds_choice=$(sounds_app_choice "$sounds_entry")
+    sounds_target=
+    case "$sounds_choice" in
+      off|none|silent) sounds_state=silent ;;
+      ''|default|notification) sounds_state=default ;;
+      *)
+        sounds_target=$(sounds_file_for "$sounds_choice")
+        if [ -n "$sounds_target" ]; then sounds_state=ok; else sounds_state=missing; fi ;;
+    esac
+    printf '%s{"app":%s,"sound":%s,"state":"%s","file":%s}' "$sounds_sep" \
+      "$(sounds_json_string "$sounds_entry")" "$(sounds_json_string "$sounds_choice")" \
+      "$sounds_state" "$(sounds_json_string "$sounds_target")"
+    sounds_sep=,
+  done
+  printf ']}\n'
+}
+
+sounds_app_command() {
+  [ "$#" -ge 1 ] && [ "$#" -le 2 ] || die 'usage: nirux sounds app APP [SOUND|PATH|default|off|remove]'
+  sounds_entry=$(sounds_app_key "$1")
+  case "$sounds_entry" in ''|*[!a-z0-9._-]*) die 'app name may contain letters, digits, ".", "_" and "-"' ;; esac
+  if [ "$#" = 1 ]; then
+    sounds_choice=$(sounds_app_choice "$sounds_entry")
+    say "$sounds_entry = ${sounds_choice:-default}"
+    return 0
+  fi
+  case "$2" in
+    remove) sounds_table_set sounds.apps "$sounds_entry" ''; say "$sounds_entry: removed"; return 0 ;;
+    off|none|silent|default|notification) sounds_value_new=$2 ;;
+    \~/*|/*)
+      case "$2" in *'"'*|*'\'*) die 'sound path must not contain quotes or backslashes' ;; esac
+      sounds_value_new=$2 ;;
+    *[!A-Za-z0-9_-]*|'') die 'sound must be a name (letters, digits, "_", "-"), a path, default, off or remove' ;;
+    *) sounds_value_new=$2 ;;
+  esac
+  sounds_table_set sounds.apps "$sounds_entry" "$sounds_entry = \"$sounds_value_new\""
+  say "$sounds_entry = $sounds_value_new"
+  case "$sounds_value_new" in
+    off|none|silent|default|notification) : ;;
+    *) [ -n "$(sounds_file_for "$sounds_value_new")" ] || say "note: no sound file found yet for $sounds_value_new; the notification sound plays until it exists" ;;
+  esac
 }
 
 sounds_command() {
   sounds_action=${1:-status}
   case "$sounds_action" in
-    status) sounds_status ;;
+    status)
+      case "${2:-}" in
+        '') sounds_status ;;
+        --json) sounds_status_json ;;
+        *) die 'usage: nirux sounds status [--json]' ;;
+      esac ;;
     on) sounds_set enabled true; say 'Sounds enabled' ;;
     off) sounds_set enabled false; say 'Sounds disabled' ;;
     toggle)
@@ -1431,6 +1654,7 @@ sounds_command() {
       sounds_event_enabled "$2" && sounds_next=false || sounds_next=true
       sounds_set "$2" "$sounds_next"
       say "$2: $([ "$sounds_next" = true ] && echo on || echo off)" ;;
+    app) shift; sounds_app_command "$@" ;;
     test|play)
       sounds_action=$sounds_action
       shift
@@ -1447,7 +1671,7 @@ sounds_command() {
       done
       [ "$sounds_action" = test ] && sounds_cooldown() { return 0; }
       sounds_play "$sounds_event" "$sounds_app" ;;
-    *) die 'usage: nirux sounds [status|on|off|toggle EVENT|test EVENT|play EVENT]' ;;
+    *) die 'usage: nirux sounds [status [--json]|on|off|toggle EVENT|app APP [SOUND]|test EVENT [--app NAME]|play EVENT [--app NAME]]' ;;
   esac
 }
 
