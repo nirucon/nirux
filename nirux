@@ -3596,7 +3596,9 @@ gc_generations() {
     sed -n "s#^\($gc_dir/[^/]*\)/.*#\1#p" | sort -u)
   gc_seen=0; gc_removed=0; gc_kept=0
   # Newest first by modification time; generation names never contain spaces.
-  for gc_gen in $(ls -1dt "$gc_dir"/*/ 2>/dev/null); do
+  # shellcheck disable=SC2012
+  gc_list=$(ls -1dt "$gc_dir"/*/ 2>/dev/null || :)
+  for gc_gen in $gc_list; do
     gc_gen=${gc_gen%/}
     case "$gc_gen" in "$gc_dir"/*/*|"$gc_dir"/.*) continue ;; esac
     [ -d "$gc_gen" ] && [ ! -L "$gc_gen" ] || continue
