@@ -2,7 +2,7 @@
 # NIRUX: install a complete X11 desktop, or maintain an existing installation.
 set -eu
 
-VERSION=0.12.206
+VERSION=0.12.207
 PREFIX=${NIRUX_PREFIX:-$HOME/.local}
 BIN=$PREFIX/bin
 STATE=$PREFIX/share/nirux
@@ -2219,9 +2219,9 @@ browser_addon_choose() {
 
 extras_table() {
   cat <<'EOF'
-niruorg niruorg 0.5.1 ac11439b8a3af945aedcfdbd3167941570bf796ac8aaa1f1be60a8115eee03e7
-nirunote nirunote 0.5.0 7cff905b9c05046a49a0a5dacca42b68e654a6ce6825b76df5a8680f0a8b4112
-nirupres nirupres 2.1.4 93abaf9b8d2e2d1419fc45ea1296e1b764b35a5baec462dcd1f0a7b4154b77d0
+niruorg niruorg 0.6.0 5f0fa152b48f36161242b1119eb568098ab8bd0983bc1c2e7695e23a207b2767
+nirunote nirunote 0.6.0 b82377f17d45cd12349f1def5de3445766c7c08266505741760c2c9f3f87940f
+nirupres nirupres 2.2.0 4d02ced63dc062fb3060c91731f744892eb578c570da30fb72c9174f24e20c54
 nplay nplay 1.8.0 aa1001462a08685768e9697c6cb384c3d696dd83b64f9e93dfa2dcd0b9045651
 niruamp niruamp 0.4.0 40c0ccc7c85cd9d9c59d3d5a73315dd746c57c626b0a65c483d9caca5760006b
 niruflow niruflow 0.6.0 814aa1429f5fd5a7ecbb95f68041fac347d453b03559f03fb4d7cc98efb670ad
