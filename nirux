@@ -2,7 +2,7 @@
 # NIRUX: install a complete X11 desktop, or maintain an existing installation.
 set -eu
 
-VERSION=0.12.208
+VERSION=0.12.209
 PREFIX=${NIRUX_PREFIX:-$HOME/.local}
 BIN=$PREFIX/bin
 STATE=$PREFIX/share/nirux
@@ -2269,6 +2269,35 @@ extras_list() {
     printf '%-10s %-9s %-12s %s\n' "$name" "$version" "${installed:--}" "$selected"
   done
 }
+# A vendor installer calls plain `sudo`. Without a terminal (a deployment
+# script, a graphical update) that sudo cannot ask, so when NIRUX already holds
+# the password it hands the installer a private `sudo` that answers through
+# askpass from the secret file. The password never reaches argv or the
+# environment; the shim lives in the extra's 0700 work directory and is removed
+# with it. With no held password nothing changes and sudo asks as usual.
+EXTRAS_SHIM_PATH=
+extras_sudo_shim() {
+  EXTRAS_SHIM_PATH=
+  [ "$(id -u)" != 0 ] || return 0
+  real_sudo=$(command -v sudo 2>/dev/null) || return 0
+  # No `sudo -n` shortcut: a timestamp NIRUX created can be keyed to its own
+  # process and still refuse the installer's sudo.
+  [ -n "${SUDO_SECRET:-}" ] || sudo_secret_file || return 0
+  if [ -z "${SUDO_SECRET_FILE:-}" ] || [ ! -f "$SUDO_SECRET_FILE" ]; then
+    sudo_secret_keep "$SUDO_SECRET" >/dev/null 2>&1 || return 0
+  fi
+  mkdir -p "$1/.sudo" && chmod 700 "$1/.sudo" || return 0
+  printf '#!/bin/sh\ncat "%s"\n' "$SUDO_SECRET_FILE" > "$1/.sudo/askpass" || return 0
+  cat > "$1/.sudo/sudo" <<EOF || return 0
+#!/bin/sh
+for a in "\$@"; do
+  case \$a in -S|--stdin|-A|--askpass) exec "$real_sudo" "\$@" ;; -*) ;; *) break ;; esac
+done
+SUDO_ASKPASS="$1/.sudo/askpass" exec "$real_sudo" -A "\$@"
+EOF
+  chmod 700 "$1/.sudo/sudo" "$1/.sudo/askpass" || return 0
+  EXTRAS_SHIM_PATH="$1/.sudo:"
+}
 extras_install_one() {
   name=$1
   row=$(extras_row "$name") || die "unknown extra: $name"
@@ -2295,7 +2324,8 @@ extras_install_one() {
   src=$(find "$tmp" -mindepth 1 -maxdepth 1 -type d | head -n 1)
   if [ -z "$src" ] || [ ! -f "$src/install.sh" ]; then rm -rf "$tmp"; die "$repo $version has no installer"; fi
   say "Installing $repo $version (the vendor installer may ask for confirmation)."
-  if ! ( cd "$src" && PATH="$HOME/.local/bin:$PATH" bash ./install.sh ); then rm -rf "$tmp"; die "$repo installer failed; existing data was not intentionally removed"; fi
+  extras_sudo_shim "$tmp"
+  if ! ( cd "$src" && PATH="$EXTRAS_SHIM_PATH$HOME/.local/bin:$PATH" bash ./install.sh ); then rm -rf "$tmp"; die "$repo installer failed; existing data was not intentionally removed"; fi
   installed=$(extras_installed_version "$name" 2>/dev/null || :)
   if [ -z "$installed" ]; then rm -rf "$tmp"; die "$repo installed without a working $name command"; fi
   rm -rf "$tmp"
