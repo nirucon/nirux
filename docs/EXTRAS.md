@@ -14,7 +14,7 @@ explicit request, and never pulled in by a core `nirux update`.
 | niruflow | 0.6.0 | Local maintenance and automation |
 | nirusec | 0.2.0 | Firewall, ports, updates, firmware and security overview GUI |
 | nirugame | 0.1.4 | Steam, RetroArch, native games and optional user-supplied SID music |
-| niruremote | 0.1.6 | Graphical remote desktop over Tailscale and SSH; Linux/X11 host, Windows/macOS clients |
+| niruremote | 0.2.0 | Graphical remote desktop over Tailscale and SSH (no open port); Linux/X11 host, Windows/macOS clients |
 
 ## Commands
 
