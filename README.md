@@ -293,6 +293,10 @@ the bar can normally be restarted with `niructl restart-bar`.
 Rollback restores the previous program generation; it is not a backup of
 personal files or operating-system packages.
 
+Old generations are pruned automatically after each update (current, previous,
+any still in use by a running session, and the five newest are kept); see
+`nirux gc --dry-run`.
+
 ### Update and power off or restart
 
 The power menu can launch a full system update in a terminal and then power off

@@ -1260,4 +1260,27 @@ sh "$SOURCE/tests/app-lifecycle.sh"
 sh "$SOURCE/tests/legacy-session.sh"
 sh "$SOURCE/tests/display-manager.sh"
 sh "$SOURCE/tests/runtime-state.sh"
-say 'PASS: install/update/rollback/purge on all three distro mappings, status purity, checksum failure, PAM includes, power rule, greeter themes, managed Helium policy, obsolete browser migration, target-owned apply'
+# I08: generation garbage collection keeps current, previous, running and the
+# newest N; nothing else under generations/ survives.
+PREFIX=$TEST/gc; STATE=$PREFIX/share/nirux
+mkdir -p "$STATE/generations"
+for gc_i in 1 2 3 4 5 6 7 8; do
+  mkdir -p "$STATE/generations/0.0.$gc_i-T/bin"
+  touch -d "2026-01-0$gc_i 12:00" "$STATE/generations/0.0.$gc_i-T"
+done
+ln -s "$STATE/generations/0.0.8-T" "$STATE/current"
+ln -s "$STATE/generations/0.0.2-T" "$STATE/previous"
+cp "$(command -v sleep)" "$STATE/generations/0.0.3-T/bin/sleep"
+"$STATE/generations/0.0.3-T/bin/sleep" 30 & gc_pid=$!
+sleep 0.3
+gc_generations 3 1 > "$TEST/gc-dry.log"
+[ "$(find "$STATE/generations" -mindepth 1 -maxdepth 1 | wc -l)" = 8 ] || fail 'gc --dry-run removed a generation'
+grep -q 'keep   0.0.3-T (running)' "$TEST/gc-dry.log" || fail 'gc does not protect a generation a program runs from'
+gc_generations 3 0 >/dev/null
+kill "$gc_pid" 2>/dev/null || :; wait "$gc_pid" 2>/dev/null || :
+gc_left=$(cd "$STATE/generations" && ls -1 | tr '\n' ' ')
+[ "$gc_left" = '0.0.2-T 0.0.3-T 0.0.6-T 0.0.7-T 0.0.8-T ' ] || fail "gc kept the wrong generations: $gc_left"
+[ -d "$(readlink -f "$STATE/current")" ] && [ -d "$(readlink -f "$STATE/previous")" ] || fail 'gc broke current or previous'
+rm -rf "$PREFIX"
+
+say 'PASS: install/update/rollback/purge, generation gc on all three distro mappings, status purity, checksum failure, PAM includes, power rule, greeter themes, managed Helium policy, obsolete browser migration, target-owned apply'

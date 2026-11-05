@@ -2,7 +2,7 @@
 # NIRUX: install a complete X11 desktop, or maintain an existing installation.
 set -eu
 
-VERSION=0.12.210
+VERSION=0.12.211
 PREFIX=${NIRUX_PREFIX:-$HOME/.local}
 BIN=$PREFIX/bin
 STATE=$PREFIX/share/nirux
@@ -104,7 +104,7 @@ usage() {
   say "       nirux extras [list|status|select NAME|unselect NAME|install [NAME...]|update]"
   say "       nirux update-shutdown [--yes] [--dry-run] [--no-power]"
   say "       nirux update-reboot [--yes] [--dry-run] [--no-power]"
-  say "       nirux rollback | status | doctor | uninstall [--purge] | --version | --help"
+  say "       nirux rollback | gc [--keep N] [--dry-run] | status | doctor | uninstall [--purge] | --version | --help"
   say "Default: keep an existing display manager; a fresh install uses NIRU Login, with startx/SDDM/LightDM available."
   say "Browser: a fresh install offers Helium (default Helium) and remembers the choice."
   say "         --browser none is a persistent opt-out; --browser keep preserves the current policy."
@@ -3578,6 +3578,65 @@ activate() {
   switch_link current "$generation"
   sync_front_links
   say "Activated NIRUX $RELEASE. Previous generation retained for nirux rollback."
+  gc_generations "${NIRUX_KEEP_GENERATIONS:-5}" 0 || :
+}
+# Remove old program generations. Kept no matter what: current, previous (the
+# rollback target) and any generation a running program still executes from,
+# such as a session that has not logged out since an update. Of the rest, the
+# KEEP newest stay. Only directories directly under generations/ are removed.
+gc_generations() {
+  gc_keep=$1; gc_dry=$2
+  [ -d "$STATE/generations" ] || return 0
+  # Physical path: /proc/PID/exe and readlink -f report resolved paths.
+  gc_dir=$(cd "$STATE/generations" && pwd -P) || return 0
+  case "$gc_keep" in ''|*[!0-9]*) die 'keep must be a number' ;; esac
+  gc_current=$(readlink -f "$STATE/current" 2>/dev/null || :)
+  gc_previous=$(readlink -f "$STATE/previous" 2>/dev/null || :)
+  gc_running=$(for gc_exe in /proc/[0-9]*/exe; do readlink "$gc_exe" 2>/dev/null || :; done |
+    sed -n "s#^\($gc_dir/[^/]*\)/.*#\1#p" | sort -u)
+  gc_seen=0; gc_removed=0; gc_kept=0
+  # Newest first by modification time; generation names never contain spaces.
+  for gc_gen in $(ls -1dt "$gc_dir"/*/ 2>/dev/null); do
+    gc_gen=${gc_gen%/}
+    case "$gc_gen" in "$gc_dir"/*/*|"$gc_dir"/.*) continue ;; esac
+    [ -d "$gc_gen" ] && [ ! -L "$gc_gen" ] || continue
+    gc_seen=$((gc_seen + 1))
+    gc_reason=
+    if [ "$gc_gen" = "$gc_current" ]; then gc_reason=current
+    elif [ "$gc_gen" = "$gc_previous" ]; then gc_reason=previous
+    elif printf '%s\n' "$gc_running" | grep -qxF "$gc_gen"; then gc_reason=running
+    elif [ "$gc_seen" -le "$gc_keep" ]; then gc_reason=recent
+    fi
+    if [ -n "$gc_reason" ]; then
+      gc_kept=$((gc_kept + 1))
+      [ "$gc_dry" = 1 ] && say "keep   ${gc_gen##*/} ($gc_reason)"
+      continue
+    fi
+    if [ "$gc_dry" = 1 ]; then
+      say "remove ${gc_gen##*/}"
+    else
+      rm -rf -- "$gc_gen"
+    fi
+    gc_removed=$((gc_removed + 1))
+  done
+  if [ "$gc_dry" = 1 ]; then
+    say "Would remove $gc_removed of $gc_seen generations; $gc_kept kept."
+  elif [ "$gc_removed" -gt 0 ]; then
+    say "Removed $gc_removed old program generations; $gc_kept kept (current, previous, running and the $gc_keep newest)."
+  fi
+}
+gc_command() {
+  gc_keep=${NIRUX_KEEP_GENERATIONS:-5}; gc_dry=0
+  while [ "$#" -gt 0 ]; do
+    case "$1" in
+      --keep) shift; [ "$#" -gt 0 ] || die 'missing --keep value'; gc_keep=$1 ;;
+      --dry-run|-n) gc_dry=1 ;;
+      *) die "usage: nirux gc [--keep N] [--dry-run]" ;;
+    esac
+    shift
+  done
+  lock
+  gc_generations "$gc_keep" "$gc_dry"
 }
 owned() {
   grep -qxF "# NIRUX owner: $PREFIX" "$1" 2>/dev/null ||
@@ -5315,6 +5374,7 @@ main() {
     remove) shift; [ "$#" = 1 ] || die 'remove needs helium, localsend or opencode'; lock; remove_app "$1" ;;
     uninstall) shift; uninstall "$@" ;;
     rollback) [ "$#" = 1 ] || die 'rollback takes no arguments'; rollback ;;
+    gc) shift; gc_command "$@" ;;
     login-wallpaper) shift; login_wallpaper "$@" ;;
     wallpapers) shift; wallpapers "$@" ;;
     layout) shift; layout "$@" ;;

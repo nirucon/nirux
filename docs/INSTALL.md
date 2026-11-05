@@ -532,6 +532,12 @@ Generations live in `~/.local/share/nirux/generations`; `~/.local/bin` points
 through one `current` link. Rollback restores program files, not OS packages or
 PAM configuration. Settings are not overwritten on update.
 
+Old generations are removed after every activation. NIRUX always keeps
+`current`, `previous` (the rollback target), any generation a running program
+still uses (a session that has not logged out since an update), and the five
+newest. `nirux gc --dry-run` shows what would go, `nirux gc --keep N` prunes by
+hand, and `NIRUX_KEEP_GENERATIONS=N` changes the number kept automatically.
+
 Use `nirux update --no-packages` to skip package provisioning. The window
 manager, idle daemon and session changes take effect after a new login;
 `niructl reload` reloads configuration and `niructl restart-bar` restarts the bar.
