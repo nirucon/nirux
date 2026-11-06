@@ -293,8 +293,19 @@ Display profiles use `xrandr` and `~/.config/niruwm/displays.toml`. Run
 `nirudisplay` for the graphical editor, or use the launcher's Displays view.
 `niructl display startup set NAME` opts into applying a profile once at login;
 `niructl display startup off` disables it.
-[displays.example.toml](../displays.example.toml) contains Laptop, Desk and
-Presentation templates.
+[displays.example.toml](../displays.example.toml) contains Laptop, Desk, Docked
+and Presentation templates. Profiles saved with NIRUWM 0.17 or later follow
+their screens by identity (make, model and serial). With `niructl display
+automatic on` (or the *Automatic* switch in NIRU Display), the session also
+switches automatically:
+
+- when screens are plugged in or out, to the profile that fits;
+- when the lid closes while another screen is connected, the built-in panel
+  turns off;
+- when no profile fits, to the layout those screens had last time, or the
+  current layout with new screens to the right.
+
+`niructl display doctor` shows what fits and why.
 
 ```sh
 niructl display save Laptop
