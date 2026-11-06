@@ -15,6 +15,7 @@ explicit request, and never pulled in by a core `nirux update`.
 | nirusec | 0.2.0 | Firewall, ports, updates, firmware and security overview GUI |
 | nirugame | 0.1.4 | Steam, RetroArch, native games and optional user-supplied SID music |
 | niruremote | 0.2.0 | Graphical remote desktop over Tailscale and SSH (no open port); Linux/X11 host, Windows/macOS clients |
+| nirudictate | 0.1.0 | Local speech-to-text dictation: Ctrl+Alt+Space, Swedish (KB-Whisper) by default, English; whisper.cpp on the CPU, nothing leaves the computer |
 
 ## Commands
 
@@ -43,6 +44,13 @@ NIRUAMP depends on NPLAY and is a frontend only. `nirux extras install niruamp`
 installs or updates the pinned NPLAY release first. NPLAY remains usable alone
 and NIRUAMP cannot run without it. The dependency is enforced by the NIRUX extras
 installer and by NIRUAMP's own installer check.
+
+NIRUDICTATE starts its background service in the running session when it is
+installed (also over SSH, from the session's environment), and the NIRUX
+session (NIRUWM 0.17.3+) starts it at every login. Models are downloaded from
+its own settings panel (`nirudictate settings`), not by NIRUX. NIRUBAR's
+`dictation` module shows a red dot while it records; the `dictation` sound
+category belongs to `nirux sounds`.
 
 ## Why outside the manifest
 

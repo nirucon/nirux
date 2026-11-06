@@ -60,6 +60,15 @@ displays = true
 bluetooth = false
 debounce_ms = 1500
 
+# NIRUDICTATE (an extra): start and stop of a dictation, the text being
+# inserted, and a dictation that failed. Silent without NIRUDICTATE.
+[sounds.dictation]
+enabled = true
+dictation-start = true
+dictation-stop = true
+dictation-done = false
+dictation-error = true
+
 # Per-app notification sounds. The key is the app name a notification is sent
 # with (see `nirunotify --history`), compared case-insensitively. The value is
 # a sound name, which plays NAME.ogg from ~/.config/nirux/sounds or the NIRUX

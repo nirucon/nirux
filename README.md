@@ -270,6 +270,7 @@ nirux extras update
 | **NIRUSEC** | Firewall, ports, updates, firmware and security overview GUI |
 | **NIRUGAME** | Steam, RetroArch, native games and optional user-supplied SID music |
 | **NIRUREMOTE** | Graphical remote desktop over Tailscale and SSH |
+| **NIRUDICTATE** | Local speech-to-text dictation (Swedish KB-Whisper, English Whisper) with Ctrl+Alt+Space |
 
 The music pair follows NPLAY's ownership model: **NPLAY is a complete standalone
 terminal player**, while **NIRUAMP is only the graphical frontend** and cannot

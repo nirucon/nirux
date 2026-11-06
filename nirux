@@ -2,7 +2,7 @@
 # NIRUX: install a complete X11 desktop, or maintain an existing installation.
 set -eu
 
-VERSION=0.12.220
+VERSION=0.12.221
 PREFIX=${NIRUX_PREFIX:-$HOME/.local}
 BIN=$PREFIX/bin
 STATE=$PREFIX/share/nirux
@@ -920,7 +920,7 @@ upgrade_default_bar_modules() {
   [ -n "$mig_modules" ] || return 0
   mig_add=""
   mig_tail=0
-  for mig_module in layout display quicksettings niruxupdate; do
+  for mig_module in layout display quicksettings niruxupdate dictation; do
     case "$mig_modules" in
       *"\"$mig_module\""*) continue ;;
     esac
@@ -1309,7 +1309,7 @@ EOF
 # category's `enabled` and its own key are all true. The event key is read
 # from the category table first, then from [sounds] (where startup, update,
 # shutdown and notification have always lived), then from the default.
-SOUNDS_CATEGORIES='system notifications feedback power devices'
+SOUNDS_CATEGORIES='system notifications feedback power devices dictation'
 
 sounds_category_events() {
   case "$1" in
@@ -1318,6 +1318,7 @@ sounds_category_events() {
     feedback) say 'volume-up volume-down volume-limit mute unmute brightness-up brightness-down screenshot' ;;
     power) say 'power-plug power-unplug battery-low battery-critical battery-full' ;;
     devices) say 'device-connect device-disconnect' ;;
+    dictation) say 'dictation-start dictation-stop dictation-done dictation-error' ;;
   esac
 }
 
@@ -1328,13 +1329,14 @@ sounds_category() {
     volume-up|volume-down|volume-limit|mute|unmute|brightness-up|brightness-down|screenshot) say feedback ;;
     power-plug|power-unplug|battery-low|battery-critical|battery-full) say power ;;
     device-connect|device-disconnect) say devices ;;
+    dictation-start|dictation-stop|dictation-done|dictation-error) say dictation ;;
     *) return 1 ;;
   esac
 }
 
 sounds_event_default() {
   case "$1" in
-    brightness-up|brightness-down|battery-full|lock|unlock) say false ;;
+    brightness-up|brightness-down|battery-full|lock|unlock|dictation-done) say false ;;
     *) say true ;;
   esac
 }
@@ -1409,6 +1411,18 @@ audio = true
 displays = true
 bluetooth = false
 debounce_ms = 1500
+EOF
+    ;;
+    dictation) cat <<'EOF'
+
+# NIRUDICTATE (an extra): start and stop of a dictation, the text being
+# inserted, and a dictation that failed. Silent without NIRUDICTATE.
+[sounds.dictation]
+enabled = true
+dictation-start = true
+dictation-stop = true
+dictation-done = false
+dictation-error = true
 EOF
     ;;
   esac
@@ -2526,6 +2540,7 @@ niruflow niruflow 0.6.0 814aa1429f5fd5a7ecbb95f68041fac347d453b03559f03fb4d7cc98
 nirusec nirusec 0.2.0 f3f7b85a1e0e3e91880721c060d24c50eadf843c602624eb8345bf8f3c5ae6d2
 nirugame nirugame 0.1.4 96288834f2ca08c08b062f6f28142c079ee6c9c9198b9cdf085143deac719e54
 niruremote niruremote 0.2.0 64571f661be436c1fb69b72439f7af69802d87c83ac1652c49b84f0cfd80f784
+nirudictate nirudictate 0.1.0 fe7816e53a9a865be642c23b42294f6b839ffe7cf992e7239ccfee857ff12aeb
 EOF
 }
 extras_row() {
@@ -2559,12 +2574,12 @@ extras_installed_version() {
   "$bin" --version 2>/dev/null | awk 'NF {v=$NF} END {print v}'
 }
 extras_list() {
-  printf '%-10s %-9s %-12s %s\n' NAME PINNED INSTALLED SELECTED
+  printf '%-12s %-9s %-12s %s\n' NAME PINNED INSTALLED SELECTED
   extras_table | while read -r name _repo version _sha; do
     installed=$(extras_installed_version "$name" 2>/dev/null || :)
     selected=no
     extras_selected "$name" && selected=yes
-    printf '%-10s %-9s %-12s %s\n' "$name" "$version" "${installed:--}" "$selected"
+    printf '%-12s %-9s %-12s %s\n' "$name" "$version" "${installed:--}" "$selected"
   done
 }
 # A vendor installer calls plain `sudo`. Without a terminal (a deployment

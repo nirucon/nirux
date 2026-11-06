@@ -720,6 +720,7 @@ mkdir -p "$extras_test/state" "$extras_test/home"
 HOME=$extras_test/home XDG_STATE_HOME=$extras_test/state "$SOURCE/nirux" extras list > "$extras_test/list"
 grep -q 'niruflow' "$extras_test/list" || fail 'extras list omitted niruflow'
 grep -q 'niruorg' "$extras_test/list" || fail 'extras list omitted niruorg'
+grep -q 'nirudictate' "$extras_test/list" || fail 'extras list omitted nirudictate'
 # NIRUAMP installs a stale NPLAY first through a recursive call; POSIX sh has no
 # locals, so the outer call must not reuse NPLAY's row afterwards (0.12.217 bug:
 # NPLAY was installed twice and NIRUAMP never).

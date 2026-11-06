@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
-"""Generate the short NIRUX system sounds (feedback, power, devices, security).
+"""Generate the short NIRUX system sounds (feedback, power, devices, security,
+dictation).
 
 The sounds are synthesised from scratch, deterministically, with the Python
 standard library only. ffmpeg (with libvorbis) encodes them to Ogg Vorbis.
@@ -335,6 +336,27 @@ def unlock():
     return two_notes(NOTE["G5"], NOTE["D6"], 0.070, 0.26, 0.070, fourth=0.0, glass=0.10)
 
 
+def dictation(up):
+    """Dictation start (D5 -> G5, "listening") and stop (G5 -> D5): two quick
+    glassy bars, short enough to be over before the first word."""
+    a, b = (NOTE["D5"], NOTE["G5"]) if up else (NOTE["G5"], NOTE["D5"])
+    return two_notes(a, b, 0.055, 0.13, 0.032, fourth=0.10, glass=0.08, second_gain=0.85)
+
+
+def dictation_done():
+    """The text is in place: one soft high bar with a faint upper fifth."""
+    out = bar(NOTE["B5"], 0.16, 0.040, attack=0.002, fourth=0.0, glass=0.12)
+    mix(out, bar(NOTE["E6"], 0.14, 0.030, attack=0.002, fourth=0.0, glass=0.08), at=0.018, gain=0.35)
+    return finish(out)
+
+
+def dictation_error():
+    """Nothing could be written: a falling B4 -> E4, darker than auth-fail's
+    thud so the two are not confused."""
+    out = two_notes(NOTE["B4"], NOTE["E4"], 0.075, 0.17, 0.045, fourth=0.22, glass=0.04)
+    return finish(biquad(out, "low", 2200.0), fade=0.010)
+
+
 # name -> (builder, target LUFS-M). The reference notification is ~-11.7.
 SOUNDS = {
     "volume-up": (lambda: tock(volume_pitch(40), 1), -25.0),
@@ -355,6 +377,10 @@ SOUNDS = {
     "auth-fail": (auth_fail, -19.0),
     "lock": (lock, -27.0),
     "unlock": (unlock, -27.0),
+    "dictation-start": (lambda: dictation(True), -23.0),
+    "dictation-stop": (lambda: dictation(False), -23.0),
+    "dictation-done": (dictation_done, -26.0),
+    "dictation-error": (dictation_error, -21.0),
 }
 
 # The volume tick follows the new level: levels/volume-up-NNN.ogg for every

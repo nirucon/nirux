@@ -1,7 +1,7 @@
 # Sounds
 
 NIRUX plays short, soft sounds for the session, notifications, the keys you
-press, the charger and battery, and devices that come and go. They are one
+press, the charger and battery, and devices that come and go, and NIRUDICTATE dictation. They are one
 family: the same voice (a soft attack, a near-sine bar with a quieter fourth
 partial that dies away quickly) and the same key as the startup and
 notification sounds (G major: the notification is a G4 + D5 fifth).
@@ -24,6 +24,9 @@ notification sounds (G major: the notification is a G4 + D5 fifth).
 | power | `battery-critical` | on | B4 → E4 twice, once per discharge at `battery_critical_percent` |
 | power | `battery-full` | off | G4 → B4 → D5 → G5 when a seen charge finishes |
 | devices | `device-connect`, `device-disconnect` | on | a double click, up / down |
+| dictation | `dictation-start`, `dictation-stop` | on | two quick glassy notes, D5 → G5 / G5 → D5 ([NIRUDICTATE](https://github.com/nirucon/nirudictate)) |
+| dictation | `dictation-done` | off | one soft high bar (B5 with E6) when the text is in place |
+| dictation | `dictation-error` | on | falling B4 → E4, a dictation that could not be written |
 
 Every sound starts at once (no leading silence) and is quieter than a
 notification; the feedback ticks are the quietest.
@@ -115,6 +118,9 @@ including a table you emptied on purpose, and the previous file is kept as
   for `debounce_ms`. Device sounds pause for five seconds after a resume.
 - **Startup, update, shutdown and notifications** play through `nirux sounds
   play`, as before.
+- **Dictation** sounds are played by NIRUDICTATE through `nirux sounds play
+  dictation-…` when a dictation starts, stops, is inserted or fails; they are
+  silent without NIRUDICTATE.
 
 Sounds are ordinary short playback streams on the default sink. Nothing
 changes volumes, routing, or other streams, so music is never paused or ducked

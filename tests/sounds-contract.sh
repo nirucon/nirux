@@ -17,7 +17,8 @@ LOG=$TEST/played
 mkdir -p "$HOME" "$SOUNDS" "$TEST/bin"
 for name in startup notification update shutdown mail chat auth-fail lock unlock \
   volume-up volume-down volume-limit mute unmute brightness-up brightness-down screenshot \
-  power-plug power-unplug battery-low battery-critical battery-full device-connect device-disconnect; do
+  power-plug power-unplug battery-low battery-critical battery-full device-connect device-disconnect \
+  dictation-start dictation-stop dictation-done dictation-error; do
   printf 'OggS %s\n' "$name" > "$SOUNDS/$name.ogg"
 done
 mkdir -p "$SOUNDS/levels"
@@ -199,7 +200,7 @@ PY
 # --- System, feedback, power and device sounds -----------------------------
 rm -f "$CONFIG" "$CONFIG.bak"
 nirux sounds status > "$TEST/status"
-for table in system notifications feedback power devices apps; do
+for table in system notifications feedback power devices dictation apps; do
   [ "$(grep -c "^\[sounds\.$table\]" "$CONFIG")" = 1 ] || fail "new config lacks exactly one [sounds.$table]"
 done
 grep -q '^feedback: on' "$TEST/status" || fail 'status does not show categories'
@@ -208,11 +209,15 @@ grep -q '^  volume-up: on' "$TEST/status" || fail 'status does not show feedback
 grep -q '^  brightness-up: off' "$TEST/status" || fail 'brightness is not off by default'
 grep -q '^  battery-full: off' "$TEST/status" || fail 'battery-full is not off by default'
 grep -q '^  lock: off' "$TEST/status" || fail 'lock is not off by default'
+grep -q '^dictation: on' "$TEST/status" || fail 'status does not show the dictation category'
+grep -q '^  dictation-start: on' "$TEST/status" || fail 'dictation-start is not on by default'
+grep -q '^  dictation-done: off' "$TEST/status" || fail 'dictation-done is not off by default'
 
 nirux sounds list > "$TEST/list"
 for event in startup update shutdown auth-fail lock unlock notification volume-up volume-down \
   volume-limit mute unmute brightness-up brightness-down screenshot power-plug power-unplug \
-  battery-low battery-critical battery-full device-connect device-disconnect; do
+  battery-low battery-critical battery-full device-connect device-disconnect \
+  dictation-start dictation-stop dictation-done dictation-error; do
   grep -q " $event " "$TEST/list" || fail "list lacks $event"
   nirux sounds test "$event" > /dev/null
   expect "test $event" "$SOUNDS/$event.ogg"
@@ -224,6 +229,8 @@ nirux sounds play brightness-up; nothing 'brightness off by default'
 nirux sounds play battery-full; nothing 'battery-full off by default'
 nirux sounds play power-plug; expect 'power-plug' "$SOUNDS/power-plug.ogg"
 nirux sounds play auth-fail; expect 'auth-fail' "$SOUNDS/auth-fail.ogg"
+nirux sounds play dictation-start; expect 'dictation-start' "$SOUNDS/dictation-start.ogg"
+nirux sounds play dictation-done; nothing 'dictation-done off by default'
 
 # The volume tick follows the level, rounded to the nearest 10 % step.
 nirux sounds play volume-up --level 47; expect 'tick at 47 %' "$SOUNDS/levels/volume-up-050.ogg"
@@ -344,10 +351,12 @@ python3 - "$TEST/status.json" <<'PY' || fail 'status --json categories are wrong
 import json, sys
 data = json.load(open(sys.argv[1]))
 assert data["schema"] == 1, data
-assert set(data["categories"]) == {"system", "notifications", "feedback", "power", "devices"}, data
+assert set(data["categories"]) == {"system", "notifications", "feedback", "power", "devices", "dictation"}, data
+assert data["categories"]["dictation"]["events"] == ["dictation-start", "dictation-stop", "dictation-done", "dictation-error"], data
+assert data["events"]["dictation-done"] is False and data["events"]["dictation-start"] is True, data
 assert "volume-up" in data["categories"]["feedback"]["events"], data
 assert data["events"]["volume-up"] is False and data["events"]["volume-down"] is True, data
 assert data["events"]["brightness-up"] is False and data["events"]["startup"] is True, data
 PY
 
-printf 'PASS: event, feedback, power, device and per-app sounds\n'
+printf 'PASS: event, feedback, power, device, dictation and per-app sounds\n'

@@ -295,8 +295,10 @@ position = "top"
 # GitHub once a day, keeps the answer in ~/.cache/nirubar, and is silent when
 # there is nothing newer. It never installs anything: click it for the command,
 # which you run when you can log out afterwards.
+# "dictation" shows NIRUDICTATE (an extra): a red dot while it records, an
+# accent mark while it transcribes; nothing otherwise or when not installed.
 # Weather settings live in ~/.config/nirubar/config.toml; see weather.example.toml.
-modules = ["workspaces", "layout", "media", "volume", "brightness", "display", "tailscale", "network", "wifi", "mode", "battery", "agent", "dnd", "quicksettings", "updates", "clock"]
+modules = ["workspaces", "layout", "media", "volume", "brightness", "display", "tailscale", "network", "wifi", "mode", "battery", "agent", "dnd", "dictation", "quicksettings", "updates", "clock"]
 # Missing input/provider stays visible even with "muted" visibility.
 microphone_visibility = "always" # "always" or "muted"
 # Left: information. Right: mute. Scroll: gain (never unmutes).
