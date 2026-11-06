@@ -744,6 +744,7 @@ done
     printf 'niruamp niruamp 2.0.0 %s\n' "$(sha256sum "$extras_fixture/niruamp.tar.gz" | awk '{print $1}')"
   }
   fetch() { cp "$extras_fixture/$(basename "$(dirname "$(dirname "$(dirname "$(dirname "$1")")")")").tar.gz" "$2"; }
+  # shellcheck disable=SC2034 # read by extras_install_one in the sourced installer
   extras_sudo_shim() { EXTRAS_SHIM_PATH=; }
   extras_install_one niruamp >/dev/null 2>&1
 ) || fail 'installing NIRUAMP with a stale NPLAY failed'
