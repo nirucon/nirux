@@ -175,20 +175,44 @@ Driver and firmware problems belong to the distribution, not to NIRUX.
 
 ### Event sounds
 
-NIRUX has four short audio cues: startup, notification, NIRUX update and
-shutdown. They are enabled by default at 35% volume and are easy to change:
+NIRUX has one family of short, soft sounds in the same key as the startup and
+notification sounds. They are grouped in five categories, each with its own
+switch and a switch per event:
+
+| Category | Events (default on, *off*) |
+|---|---|
+| system | startup, update, shutdown, auth-fail (wrong password in NIRULOCK), *lock*, *unlock* |
+| notifications | notification, plus per-app sounds |
+| feedback | volume-up, volume-down, volume-limit, mute, unmute, screenshot, *brightness-up*, *brightness-down* |
+| power | power-plug, power-unplug, battery-low (20 %), battery-critical (5 %), *battery-full* |
+| devices | device-connect, device-disconnect (USB, audio devices, monitors; Bluetooth optional) |
 
 ```sh
-nirux sounds status
-nirux sounds off
-nirux sounds on
-nirux sounds toggle notification
-nirux sounds test startup
+nirux sounds status            # categories, events, app sounds
+nirux sounds list              # every event and the file it plays
+nirux sounds off | on
+nirux sounds toggle feedback   # a whole category
+nirux sounds toggle brightness-up
+nirux sounds test battery-low  # any event, even one that is off
 ```
 
-Configuration lives in `~/.config/nirux/sounds.toml`. Sounds respect system mute;
-notification sounds are rate-limited per sound. Apps in `notification_exclude_apps` still
-show their text notifications and history but do not play the notification cue.
+Configuration lives in `~/.config/nirux/sounds.toml`; an older file gains the
+new category tables once, keeps every existing choice and leaves a `.bak`
+copy. Sounds respect system mute (the unmute confirmation plays right after
+unmuting). Do Not Disturb silences notification sounds and nothing else.
+Any event can be replaced: `~/.config/nirux/sounds/EVENT.ogg` wins over the
+NIRUX sound, startup and notification included. Thresholds, the volume per
+category, Bluetooth and the debounce are in [docs/SOUNDS.md](docs/SOUNDS.md).
+
+The volume tick plays at the new volume, so you hear how loud it now is, and
+its pitch rises a little with the level; a held key plays at most one tick per
+80 ms. NIRUNOTIFY plays the feedback, power and device sounds itself, from
+kernel events and the volume/brightness keys, without a shell or a timer. It
+never changes volumes, routing or other streams.
+
+Notification sounds are rate-limited per sound. Apps in
+`notification_exclude_apps` still show their text notifications and history
+but do not play the notification cue.
 
 Apps can have their own notification sound. By default Thunderbird mail plays
 `mail` and Signal messages play `chat`; every other app plays the normal
@@ -347,6 +371,7 @@ a lossless undo of every change.
 - [Installation, session choices and troubleshooting](docs/INSTALL.md)
 - [NIRU Actions, tasks and optional OpenCode](docs/ACTIONS.md)
 - [Input settings](docs/INPUT.md)
+- [Sounds: events, settings and how they play](docs/SOUNDS.md)
 - [Wi-Fi backends and limitations](docs/WIFI.md)
 - [Theme and additional wallpaper packs](docs/WALLPAPERS.md)
 - [Browser addons](docs/BROWSER-ADDONS.md)

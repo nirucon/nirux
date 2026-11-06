@@ -1304,9 +1304,119 @@ signal = "chat"
 EOF
 }
 
+# Sound events and their categories. Every event can be replaced by
+# ~/.config/nirux/sounds/EVENT.ogg. An event is on when [sounds] enabled, its
+# category's `enabled` and its own key are all true. The event key is read
+# from the category table first, then from [sounds] (where startup, update,
+# shutdown and notification have always lived), then from the default.
+SOUNDS_CATEGORIES='system notifications feedback power devices'
+
+sounds_category_events() {
+  case "$1" in
+    system) say 'startup update shutdown auth-fail lock unlock' ;;
+    notifications) say 'notification' ;;
+    feedback) say 'volume-up volume-down volume-limit mute unmute brightness-up brightness-down screenshot' ;;
+    power) say 'power-plug power-unplug battery-low battery-critical battery-full' ;;
+    devices) say 'device-connect device-disconnect' ;;
+  esac
+}
+
+sounds_category() {
+  case "$1" in
+    startup|update|shutdown|auth-fail|lock|unlock) say system ;;
+    notification) say notifications ;;
+    volume-up|volume-down|volume-limit|mute|unmute|brightness-up|brightness-down|screenshot) say feedback ;;
+    power-plug|power-unplug|battery-low|battery-critical|battery-full) say power ;;
+    device-connect|device-disconnect) say devices ;;
+    *) return 1 ;;
+  esac
+}
+
+sounds_event_default() {
+  case "$1" in
+    brightness-up|brightness-down|battery-full|lock|unlock) say false ;;
+    *) say true ;;
+  esac
+}
+
+sounds_all_events() {
+  for sounds_ae_cat in $SOUNDS_CATEGORIES; do sounds_category_events "$sounds_ae_cat"; done | tr '\n' ' '
+}
+
+sounds_category_block() {
+  case "$1" in
+    system) cat <<'EOF'
+
+# System sounds. startup, update and shutdown are switched in [sounds] above.
+[sounds.system]
+enabled = true
+auth-fail = true
+lock = false
+unlock = false
+EOF
+    ;;
+    notifications) cat <<'EOF'
+
+# Notification sounds (the notification key in [sounds] above and the app
+# sounds in [sounds.apps]). Do Not Disturb silences these and nothing else.
+[sounds.notifications]
+enabled = true
+EOF
+    ;;
+    feedback) cat <<'EOF'
+
+# Feedback for keys you press. Volume ticks play on the new level, so you
+# hear how loud it is; holding a key plays at most one tick per rate_limit_ms.
+[sounds.feedback]
+enabled = true
+volume-up = true
+volume-down = true
+volume-limit = true
+mute = true
+unmute = true
+brightness-up = false
+brightness-down = false
+screenshot = true
+rate_limit_ms = 80
+EOF
+    ;;
+    power) cat <<'EOF'
+
+# Charger and battery. battery-low and battery-critical sound once per
+# discharge when the battery falls to the given percentage.
+[sounds.power]
+enabled = true
+power-plug = true
+power-unplug = true
+battery-low = true
+battery-critical = true
+battery-full = false
+battery_low_percent = 20
+battery_critical_percent = 5
+battery_full_percent = 100
+EOF
+    ;;
+    devices) cat <<'EOF'
+
+# Devices that come and go: USB, audio devices, monitors and, if you want,
+# Bluetooth links. A burst (a dock) is one sound per debounce_ms.
+[sounds.devices]
+enabled = true
+device-connect = true
+device-disconnect = true
+usb = true
+audio = true
+displays = true
+bluetooth = false
+debounce_ms = 1500
+EOF
+    ;;
+  esac
+}
+
 sounds_ensure_config() {
   if [ -f "$SOUNDS_CONFIG" ]; then
-    sounds_migrate_apps
+    sounds_migrate
     return 0
   fi
   mkdir -p "$NIRUX_CONFIG" || return 0
@@ -1323,19 +1433,35 @@ notification_cooldown_ms = 2500
 notification_exclude_apps = ["nplay", "spotify"]
 respect_mute = true
 EOF
+    for sounds_cat in $SOUNDS_CATEGORIES; do sounds_category_block "$sounds_cat"; done
     sounds_apps_block
   } > "$SOUNDS_CONFIG.tmp.$$"
   mv -f "$SOUNDS_CONFIG.tmp.$$" "$SOUNDS_CONFIG" 2>/dev/null || rm -f "$SOUNDS_CONFIG.tmp.$$"
 }
 
-# Configurations written before per-app sounds have no [sounds.apps] table.
-# Add the default table once; an existing table, even an empty one, is the
-# user's choice and is never touched.
-sounds_migrate_apps() {
+sounds_has_table() {
+  grep -q "^[[:space:]]*\[$(printf '%s' "$1" | sed 's/\./\\./g')\][[:space:]]*\(#.*\)\{0,1\}$" "$SOUNDS_CONFIG" 2>/dev/null
+}
+
+# Older configurations lack [sounds.apps] and the category tables. Each
+# missing table is appended once with its defaults; a table that exists, even
+# an empty one, is the user's choice and is never touched. Keys already in
+# [sounds] keep their meaning, because they are read before the defaults.
+sounds_migrate() {
   [ -f "$SOUNDS_CONFIG" ] || return 0
-  grep -q '^[[:space:]]*\[sounds\.apps\][[:space:]]*$' "$SOUNDS_CONFIG" 2>/dev/null && return 0
+  sounds_missing=
+  for sounds_cat in $SOUNDS_CATEGORIES; do
+    sounds_has_table "sounds.$sounds_cat" || sounds_missing="$sounds_missing $sounds_cat"
+  done
+  sounds_has_table sounds.apps && sounds_need_apps=0 || sounds_need_apps=1
+  [ -n "$sounds_missing" ] || [ "$sounds_need_apps" = 1 ] || return 0
   sounds_mig=$SOUNDS_CONFIG.tmp.$$
-  if { cat "$SOUNDS_CONFIG"; sounds_apps_block; } > "$sounds_mig" 2>/dev/null; then
+  if {
+    cat "$SOUNDS_CONFIG"
+    for sounds_cat in $sounds_missing; do sounds_category_block "$sounds_cat"; done
+    [ "$sounds_need_apps" = 0 ] || sounds_apps_block
+  } > "$sounds_mig" 2>/dev/null; then
+    cp -p "$SOUNDS_CONFIG" "$SOUNDS_CONFIG.bak" 2>/dev/null || :
     mv -f "$sounds_mig" "$SOUNDS_CONFIG" 2>/dev/null || rm -f "$sounds_mig"
   else
     rm -f "$sounds_mig"
@@ -1380,9 +1506,36 @@ sounds_enabled() {
   [ "$(sounds_value enabled true)" = true ]
 }
 
+sounds_category_enabled() {
+  [ "$(sounds_table_value "sounds.$1" enabled)" != false ]
+}
+
+# The event's own switch, true or false, ignoring the category and [sounds].
+sounds_event_setting() {
+  sounds_es_cat=$(sounds_category "$1") || { say false; return 0; }
+  sounds_es=$(sounds_table_value "sounds.$sounds_es_cat" "$1")
+  [ -n "$sounds_es" ] || sounds_es=$(sounds_table_value sounds "$1")
+  [ -n "$sounds_es" ] || sounds_es=$(sounds_event_default "$1")
+  say "$sounds_es"
+}
+
 sounds_event_enabled() {
   sounds_enabled || return 1
-  [ "$(sounds_value "$1" true)" = true ]
+  sounds_ee_cat=$(sounds_category "$1") || return 1
+  sounds_category_enabled "$sounds_ee_cat" || return 1
+  [ "$(sounds_event_setting "$1")" = true ]
+}
+
+# A category table may set its own volume; otherwise [sounds] volume applies.
+sounds_volume_for() {
+  sounds_vf=
+  sounds_vf_cat=$(sounds_category "$1" 2>/dev/null || :)
+  [ -z "$sounds_vf_cat" ] || sounds_vf=$(sounds_table_value "sounds.$sounds_vf_cat" volume)
+  [ -n "$sounds_vf" ] || sounds_vf=$(sounds_value volume 35)
+  case "$sounds_vf" in ''|*[!0-9]*) sounds_vf=35 ;; esac
+  [ "$sounds_vf" -ge 1 ] || sounds_vf=1
+  [ "$sounds_vf" -le 100 ] || sounds_vf=100
+  say "$sounds_vf"
 }
 
 sounds_muted() {
@@ -1391,25 +1544,47 @@ sounds_muted() {
   wpctl get-volume @DEFAULT_AUDIO_SINK@ 2>/dev/null | grep -q '\[MUTED\]'
 }
 
-# Each notification sound has its own rate limit, so a chat message right after
-# a mail still sounds. The plain notification keeps its historical stamp file.
-sounds_cooldown() {
-  [ "$1" = notification ] || return 0
-  sounds_cd=$(sounds_value notification_cooldown_ms 2500)
-  case "$sounds_cd" in ''|*[!0-9]*) sounds_cd=2500 ;; esac
-  case "${2:-notification}" in
-    notification) sounds_stamp=$SOUNDS_STATE/.notification-stamp ;;
-    *) sounds_stamp=$SOUNDS_STATE/.notification-stamp-$(printf '%s' "$2" | tr -c 'A-Za-z0-9_-' '_') ;;
-  esac
+sounds_now_ms() {
   sounds_now=$(date +%s%3N 2>/dev/null || :)
-  case "$sounds_now" in ''|*[!0-9]*) return 0 ;; esac
+  case "$sounds_now" in ''|*[!0-9]*) sounds_now= ;; esac
+  say "$sounds_now"
+}
+
+# True when STAMP is older than MS milliseconds (or missing); then renew it.
+sounds_stamp_ok() {
+  sounds_stamp=$1
+  sounds_cd=$2
+  sounds_now=$(sounds_now_ms)
+  [ -n "$sounds_now" ] || return 0
   if [ -f "$sounds_stamp" ]; then
     sounds_prev=$(cat "$sounds_stamp" 2>/dev/null || :)
     case "$sounds_prev" in ''|*[!0-9]*) sounds_prev=0 ;; esac
     [ $((sounds_now - sounds_prev)) -lt "$sounds_cd" ] && return 1
   fi
+  mkdir -p "$(dirname "$sounds_stamp")" 2>/dev/null || :
   printf '%s\n' "$sounds_now" > "$sounds_stamp" 2>/dev/null || :
   return 0
+}
+
+# Each notification sound has its own rate limit, so a chat message right after
+# a mail still sounds. The plain notification keeps its historical stamp file.
+# Held keys are limited per event by [sounds.feedback] rate_limit_ms.
+sounds_cooldown() {
+  case "$1" in
+    notification)
+      sounds_cd=$(sounds_value notification_cooldown_ms 2500)
+      case "$sounds_cd" in ''|*[!0-9]*) sounds_cd=2500 ;; esac
+      case "${2:-notification}" in
+        notification) sounds_stamp=$SOUNDS_STATE/.notification-stamp ;;
+        *) sounds_stamp=$SOUNDS_STATE/.notification-stamp-$(printf '%s' "$2" | tr -c 'A-Za-z0-9_-' '_') ;;
+      esac
+      sounds_stamp_ok "$sounds_stamp" "$sounds_cd" ;;
+    volume-up|volume-down|volume-limit|mute|unmute|brightness-up|brightness-down)
+      sounds_cd=$(sounds_table_value sounds.feedback rate_limit_ms)
+      case "$sounds_cd" in ''|*[!0-9]*) sounds_cd=80 ;; esac
+      sounds_stamp_ok "$SOUNDS_STATE/.feedback-stamp-$1" "$sounds_cd" ;;
+    *) return 0 ;;
+  esac
 }
 
 sounds_app_key() {
@@ -1451,13 +1626,34 @@ sounds_file_for() {
   return 0
 }
 
+# The file for EVENT: the user's EVENT.ogg, then (for the volume ticks with a
+# LEVEL) the NIRUX tick for the nearest 10 % step, then the NIRUX EVENT.ogg.
+sounds_event_file() {
+  if [ -r "$NIRUX_CONFIG/sounds/$1.ogg" ]; then say "$NIRUX_CONFIG/sounds/$1.ogg"; return 0; fi
+  case "$1:${2:-}" in
+    volume-up:[0-9]*|volume-down:[0-9]*)
+      case "$2" in *[!0-9]*) : ;; *)
+        sounds_lv=${2#"${2%%[!0]*}"}
+        case "$sounds_lv" in '') sounds_lv=0 ;; ????*) sounds_lv=100 ;; esac
+        sounds_step=$(( (sounds_lv + 5) / 10 * 10 ))
+        [ "$sounds_step" -le 100 ] || sounds_step=100
+        sounds_level_file=$SOUNDS_STATE/levels/$1-$(printf '%03d' "$sounds_step").ogg
+        if [ -r "$sounds_level_file" ]; then say "$sounds_level_file"; return 0; fi ;;
+      esac ;;
+  esac
+  [ -r "$SOUNDS_STATE/$1.ogg" ] && say "$SOUNDS_STATE/$1.ogg"
+  return 0
+}
+
 # Print "NAME FILE" for a notification from APP, or nothing when the app is
 # silenced. A missing app sound falls back to the normal notification sound.
 sounds_notification_target() {
+  sounds_default_file=$(sounds_event_file notification)
+  [ -n "$sounds_default_file" ] || sounds_default_file=$SOUNDS_STATE/notification.ogg
   sounds_choice=$(sounds_app_choice "$1")
   case "$sounds_choice" in
     off|none|silent) return 0 ;;
-    ''|default|notification) say "notification $SOUNDS_STATE/notification.ogg"; return 0 ;;
+    ''|default|notification) say "notification $sounds_default_file"; return 0 ;;
   esac
   sounds_target=$(sounds_file_for "$sounds_choice")
   if [ -n "$sounds_target" ]; then
@@ -1466,33 +1662,41 @@ sounds_notification_target() {
       *) say "$sounds_choice $sounds_target" ;;
     esac
   else
-    say "notification $SOUNDS_STATE/notification.ogg"
+    say "notification $sounds_default_file"
   fi
 }
 
+# Play EVENT [APP [LEVEL]]. SOUNDS_FORCE=1 (nirux sounds test) also plays an
+# event that is switched off; mute and the global switch still apply.
 sounds_play() {
   sounds_event=$1
   sounds_app=${2:-}
-  sounds_file=$SOUNDS_STATE/$sounds_event.ogg
+  sounds_level=${3:-}
   sounds_name=$sounds_event
-  sounds_event_enabled "$sounds_event" || return 0
+  sounds_category "$sounds_event" >/dev/null || return 0
+  if [ "${SOUNDS_FORCE:-0}" = 1 ]; then
+    sounds_enabled || return 0
+  else
+    sounds_event_enabled "$sounds_event" || return 0
+  fi
   if [ "$sounds_event" = notification ]; then
     sounds_app_excluded "$sounds_app" && return 0
     sounds_pick=$(sounds_notification_target "$sounds_app")
     [ -n "$sounds_pick" ] || return 0
     sounds_name=${sounds_pick%% *}
     sounds_file=${sounds_pick#* }
+  else
+    sounds_file=$(sounds_event_file "$sounds_event" "$sounds_level")
   fi
   sounds_cooldown "$sounds_event" "$sounds_name" || return 0
   sounds_muted && return 0
-  [ -f "$sounds_file" ] || return 0
-  sounds_vol=$(sounds_value volume 35)
-  case "$sounds_vol" in ''|*[!0-9]*) sounds_vol=35 ;; esac
-  [ "$sounds_vol" -ge 1 ] || sounds_vol=1
-  [ "$sounds_vol" -le 100 ] || sounds_vol=100
+  [ -n "$sounds_file" ] && [ -f "$sounds_file" ] || return 0
+  sounds_vol=$(sounds_volume_for "$sounds_event")
   sounds_vol01=$(awk -v v="$sounds_vol" 'BEGIN {printf "%.2f", v/100}')
   if command -v pw-play >/dev/null 2>&1; then
     pw-play --volume="$sounds_vol01" "$sounds_file" >/dev/null 2>&1 &
+  elif command -v paplay >/dev/null 2>&1; then
+    paplay --volume="$((sounds_vol * 65536 / 100))" "$sounds_file" >/dev/null 2>&1 &
   elif command -v ffplay >/dev/null 2>&1; then
     ffplay -nodisp -autoexit -loglevel quiet -volume "$sounds_vol" "$sounds_file" >/dev/null 2>&1 &
   elif command -v mpv >/dev/null 2>&1; then
@@ -1533,6 +1737,18 @@ sounds_set() {
   sounds_table_set sounds "$1" "$1 = $2"
 }
 
+# Switch EVENT to VALUE where its key already lives: the category table, or
+# [sounds] for the keys that were always there; a new key goes into the
+# category table.
+sounds_event_set() {
+  sounds_set_cat=$(sounds_category "$1")
+  if [ -z "$(sounds_table_value "sounds.$sounds_set_cat" "$1")" ] && [ -n "$(sounds_table_value sounds "$1")" ]; then
+    sounds_table_set sounds "$1" "$1 = $2"
+  else
+    sounds_table_set "sounds.$sounds_set_cat" "$1" "$1 = $2"
+  fi
+}
+
 sounds_app_list() {
   [ -f "$SOUNDS_CONFIG" ] || return 0
   awk '
@@ -1543,13 +1759,20 @@ sounds_app_list() {
     }' "$SOUNDS_CONFIG" 2>/dev/null || :
 }
 
+sounds_onoff() { if [ "$1" = true ]; then say on; else say off; fi; }
+
 sounds_status() {
   sounds_ensure_config
   sounds_enabled && sounds_global=on || sounds_global=off
   say "Sounds: $sounds_global · volume $(sounds_value volume 35)% · config $SOUNDS_CONFIG"
-  for sounds_event in startup notification update shutdown; do
-    sounds_event_enabled "$sounds_event" && sounds_on=on || sounds_on=off
-    say "  $sounds_event: $sounds_on"
+  for sounds_cat in $SOUNDS_CATEGORIES; do
+    sounds_category_enabled "$sounds_cat" && sounds_cat_on=on || sounds_cat_on=off
+    sounds_note=
+    [ "$sounds_cat" = notifications ] && sounds_note=' (silenced by Do Not Disturb)'
+    say "$sounds_cat: $sounds_cat_on$sounds_note"
+    for sounds_event in $(sounds_category_events "$sounds_cat"); do
+      say "  $sounds_event: $(sounds_onoff "$(sounds_event_setting "$sounds_event")")"
+    done
   done
   say "notification sound excluded for: $(sounds_value notification_exclude_apps '["nplay", "spotify"]')"
   sounds_apps=$(sounds_app_list)
@@ -1569,11 +1792,29 @@ sounds_status() {
   done
 }
 
+# Every event with its category, whether it plays, and the file it plays.
+sounds_list() {
+  sounds_ensure_config
+  printf '%-14s %-18s %-4s %s\n' CATEGORY EVENT ON FILE
+  for sounds_cat in $SOUNDS_CATEGORIES; do
+    for sounds_event in $(sounds_category_events "$sounds_cat"); do
+      sounds_event_enabled "$sounds_event" && sounds_on=on || sounds_on=off
+      sounds_file=$(sounds_event_file "$sounds_event")
+      case "$sounds_file" in
+        '') sounds_file='(missing)' ;;
+        "$NIRUX_CONFIG"/*) sounds_file="$sounds_file (yours)" ;;
+      esac
+      printf '%-14s %-18s %-4s %s\n' "$sounds_cat" "$sounds_event" "$sounds_on" "$sounds_file"
+    done
+  done
+}
+
 sounds_json_string() {
   printf '"%s"' "$(printf '%s' "$1" | sed 's/\\/\\\\/g; s/"/\\"/g' | tr -d '\000-\037')"
 }
 
-# Machine-readable status for NIRULAUNCHER and scripts. Schema 1.
+# Machine-readable status for NIRULAUNCHER and scripts. Schema 1; the
+# categories object and the events beyond the first four are additions.
 sounds_status_json() {
   sounds_ensure_config
   sounds_enabled && sounds_global=true || sounds_global=false
@@ -1582,9 +1823,20 @@ sounds_status_json() {
   printf '{"schema":1,"enabled":%s,"volume":%s,"config":%s,"events":{' \
     "$sounds_global" "$sounds_vol" "$(sounds_json_string "$SOUNDS_CONFIG")"
   sounds_sep=
-  for sounds_event in startup notification update shutdown; do
-    [ "$(sounds_value "$sounds_event" true)" = true ] && sounds_on=true || sounds_on=false
+  for sounds_event in $(sounds_all_events); do
+    [ "$(sounds_event_setting "$sounds_event")" = true ] && sounds_on=true || sounds_on=false
     printf '%s"%s":%s' "$sounds_sep" "$sounds_event" "$sounds_on"; sounds_sep=,
+  done
+  printf '},"categories":{'
+  sounds_sep=
+  for sounds_cat in $SOUNDS_CATEGORIES; do
+    sounds_category_enabled "$sounds_cat" && sounds_on=true || sounds_on=false
+    printf '%s"%s":{"enabled":%s,"events":[' "$sounds_sep" "$sounds_cat" "$sounds_on"; sounds_sep=,
+    sounds_sep2=
+    for sounds_event in $(sounds_category_events "$sounds_cat"); do
+      printf '%s"%s"' "$sounds_sep2" "$sounds_event"; sounds_sep2=,
+    done
+    printf ']}'
   done
   printf '},"exclude":['
   sounds_sep=
@@ -1637,6 +1889,13 @@ sounds_app_command() {
   esac
 }
 
+sounds_is_category() {
+  case " $SOUNDS_CATEGORIES " in *" $1 "*) return 0 ;; esac
+  return 1
+}
+
+SOUNDS_USAGE='usage: nirux sounds [status [--json]|list|on|off|toggle EVENT|CATEGORY|app APP [SOUND]|test EVENT [--app NAME] [--level N]|play EVENT [--app NAME] [--level N]]'
+
 sounds_command() {
   sounds_action=${1:-status}
   case "$sounds_action" in
@@ -1646,32 +1905,49 @@ sounds_command() {
         --json) sounds_status_json ;;
         *) die 'usage: nirux sounds status [--json]' ;;
       esac ;;
+    list) [ "$#" = 1 ] || die 'usage: nirux sounds list'; sounds_list ;;
     on) sounds_set enabled true; say 'Sounds enabled' ;;
     off) sounds_set enabled false; say 'Sounds disabled' ;;
     toggle)
-      [ "$#" = 2 ] || die 'usage: nirux sounds toggle startup|notification|update|shutdown'
-      case "$2" in startup|notification|update|shutdown) ;; *) die 'unknown sound event' ;; esac
-      sounds_event_enabled "$2" && sounds_next=false || sounds_next=true
-      sounds_set "$2" "$sounds_next"
-      say "$2: $([ "$sounds_next" = true ] && echo on || echo off)" ;;
+      [ "$#" = 2 ] || die "usage: nirux sounds toggle EVENT|CATEGORY (events: $(sounds_all_events)categories: $SOUNDS_CATEGORIES)"
+      sounds_ensure_config
+      if sounds_is_category "$2"; then
+        sounds_category_enabled "$2" && sounds_next=false || sounds_next=true
+        sounds_table_set "sounds.$2" enabled "enabled = $sounds_next"
+        say "$2: $(sounds_onoff "$sounds_next")"
+      elif sounds_category "$2" >/dev/null; then
+        [ "$(sounds_event_setting "$2")" = true ] && sounds_next=false || sounds_next=true
+        sounds_event_set "$2" "$sounds_next"
+        say "$2: $(sounds_onoff "$sounds_next")"
+      else
+        die "unknown sound event or category: $2"
+      fi ;;
     app) shift; sounds_app_command "$@" ;;
     test|play)
-      sounds_action=$sounds_action
       shift
-      [ "$#" -ge 1 ] || die "usage: nirux sounds $sounds_action EVENT [--app NAME]"
+      [ "$#" -ge 1 ] || die "usage: nirux sounds $sounds_action EVENT [--app NAME] [--level N]"
       sounds_event=$1
       shift
-      case "$sounds_event" in startup|notification|update|shutdown) ;; *) die 'unknown sound event' ;; esac
+      sounds_category "$sounds_event" >/dev/null || die "unknown sound event: $sounds_event (see nirux sounds list)"
       sounds_app=
+      sounds_level=
       while [ "$#" -gt 0 ]; do
         case "$1" in
           --app) [ "$#" -ge 2 ] || die '--app needs a name'; sounds_app=$2; shift 2 ;;
+          --level)
+            [ "$#" -ge 2 ] || die '--level needs a percentage'
+            case "$2" in ''|*[!0-9]*) die '--level needs a percentage' ;; esac
+            sounds_level=$2; shift 2 ;;
           *) die "unknown sound option: $1" ;;
         esac
       done
-      [ "$sounds_action" = test ] && sounds_cooldown() { return 0; }
-      sounds_play "$sounds_event" "$sounds_app" ;;
-    *) die 'usage: nirux sounds [status [--json]|on|off|toggle EVENT|app APP [SOUND]|test EVENT [--app NAME]|play EVENT [--app NAME]]' ;;
+      if [ "$sounds_action" = test ]; then
+        sounds_cooldown() { return 0; }
+        SOUNDS_FORCE=1
+        sounds_event_enabled "$sounds_event" || say "note: $sounds_event is off; it plays here as a test only"
+      fi
+      sounds_play "$sounds_event" "$sounds_app" "$sounds_level" ;;
+    *) die "$SOUNDS_USAGE" ;;
   esac
 }
 
@@ -1686,6 +1962,12 @@ install_sounds() {
   mkdir -p "$SOUNDS_STATE"
   cp -f "$sounds_unpack"/sounds/*.ogg "$SOUNDS_STATE"/ || die 'could not install sounds'
   chmod 644 "$SOUNDS_STATE"/*.ogg
+  # The volume ticks for each 10 % step, picked by nirunotify.
+  if [ -d "$sounds_unpack/sounds/levels" ]; then
+    mkdir -p "$SOUNDS_STATE/levels"
+    cp -f "$sounds_unpack"/sounds/levels/*.ogg "$SOUNDS_STATE/levels"/ || die 'could not install sounds'
+    chmod 644 "$SOUNDS_STATE"/levels/*.ogg
+  fi
   sounds_ensure_config
   rm -rf "$sounds_unpack"
 }
