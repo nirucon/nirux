@@ -2,7 +2,7 @@
 # NIRUX: install a complete X11 desktop, or maintain an existing installation.
 set -eu
 
-VERSION=0.12.217
+VERSION=0.12.218
 PREFIX=${NIRUX_PREFIX:-$HOME/.local}
 BIN=$PREFIX/bin
 STATE=$PREFIX/share/nirux
@@ -2300,16 +2300,20 @@ EOF
 }
 extras_install_one() {
   name=$1
-  row=$(extras_row "$name") || die "unknown extra: $name"
+  extras_row "$name" >/dev/null || die "unknown extra: $name"
   # NIRUAMP is a graphical frontend, not a player. Keep the music pair coherent
   # by installing/updating NPLAY first when NIRUAMP is requested.
+  # POSIX sh has no local variables: the recursive call below overwrites every
+  # variable of this function, so nothing may be read before it and used after.
   if [ "$name" = niruamp ]; then
     nplay_pin=$(extras_row nplay | awk '{print $3}')
     nplay_now=$(extras_installed_version nplay 2>/dev/null || :)
     if [ "$nplay_now" != "$nplay_pin" ]; then
       extras_install_one nplay || die 'NIRUAMP requires NPLAY; NPLAY installation failed'
     fi
+    name=niruamp
   fi
+  row=$(extras_row "$name") || die "unknown extra: $name"
   repo=$(printf '%s\n' "$row" | awk '{print $2}')
   version=$(printf '%s\n' "$row" | awk '{print $3}')
   expected=$(printf '%s\n' "$row" | awk '{print $4}')

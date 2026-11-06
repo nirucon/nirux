@@ -720,6 +720,35 @@ mkdir -p "$extras_test/state" "$extras_test/home"
 HOME=$extras_test/home XDG_STATE_HOME=$extras_test/state "$SOURCE/nirux" extras list > "$extras_test/list"
 grep -q 'niruflow' "$extras_test/list" || fail 'extras list omitted niruflow'
 grep -q 'niruorg' "$extras_test/list" || fail 'extras list omitted niruorg'
+# NIRUAMP installs a stale NPLAY first through a recursive call; POSIX sh has no
+# locals, so the outer call must not reuse NPLAY's row afterwards (0.12.217 bug:
+# NPLAY was installed twice and NIRUAMP never).
+for extra in nplay:1.0.0 niruamp:2.0.0; do
+  extra_name=${extra%:*}; extra_version=${extra#*:}
+  mkdir -p "$extras_test/src/$extra_name-$extra_version"
+  cat > "$extras_test/src/$extra_name-$extra_version/install.sh" <<EOF
+mkdir -p "\$HOME/.local/bin"
+printf '#!/bin/sh\necho "$extra_name $extra_version"\n' > "\$HOME/.local/bin/$extra_name"
+chmod +x "\$HOME/.local/bin/$extra_name"
+echo "$extra_name" >> "\$HOME/install-order"
+EOF
+  tar -czf "$extras_test/$extra_name.tar.gz" -C "$extras_test/src" "$extra_name-$extra_version"
+done
+(
+  HOME=$extras_test/home STATE=$extras_test/state
+  # shellcheck disable=SC2034 # read by extras_select in the sourced installer
+  EXTRAS_SELECTED=$STATE/extras-selected
+  extras_fixture=$extras_test
+  extras_table() {
+    printf 'nplay nplay 1.0.0 %s\n' "$(sha256sum "$extras_fixture/nplay.tar.gz" | awk '{print $1}')"
+    printf 'niruamp niruamp 2.0.0 %s\n' "$(sha256sum "$extras_fixture/niruamp.tar.gz" | awk '{print $1}')"
+  }
+  fetch() { cp "$extras_fixture/$(basename "$(dirname "$(dirname "$(dirname "$(dirname "$1")")")")").tar.gz" "$2"; }
+  extras_sudo_shim() { EXTRAS_SHIM_PATH=; }
+  extras_install_one niruamp >/dev/null 2>&1
+) || fail 'installing NIRUAMP with a stale NPLAY failed'
+[ "$(cat "$extras_test/home/install-order" 2>/dev/null | tr '\n' ' ')" = 'nplay niruamp ' ] || fail "NIRUAMP dependency install order wrong: $(cat "$extras_test/home/install-order" 2>/dev/null | tr '\n' ' ')"
+grep -qx niruamp "$extras_test/state/extras-selected" || fail 'NIRUAMP was not selected after installing'
 rm -rf "$extras_test"
 
 # I07: a new shared-library dependency is provisioned before staged components
