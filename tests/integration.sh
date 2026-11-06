@@ -723,6 +723,8 @@ grep -q 'niruorg' "$extras_test/list" || fail 'extras list omitted niruorg'
 # NIRUAMP installs a stale NPLAY first through a recursive call; POSIX sh has no
 # locals, so the outer call must not reuse NPLAY's row afterwards (0.12.217 bug:
 # NPLAY was installed twice and NIRUAMP never).
+# Extras installers run with bash; minimal CI images (Void) have none.
+if command -v bash >/dev/null 2>&1; then
 for extra in nplay:1.0.0 niruamp:2.0.0; do
   extra_name=${extra%:*}; extra_version=${extra#*:}
   mkdir -p "$extras_test/src/$extra_name-$extra_version"
@@ -750,6 +752,7 @@ done
 ) || fail 'installing NIRUAMP with a stale NPLAY failed'
 [ "$(cat "$extras_test/home/install-order" 2>/dev/null | tr '\n' ' ')" = 'nplay niruamp ' ] || fail "NIRUAMP dependency install order wrong: $(cat "$extras_test/home/install-order" 2>/dev/null | tr '\n' ' ')"
 grep -qx niruamp "$extras_test/state/extras-selected" || fail 'NIRUAMP was not selected after installing'
+fi
 rm -rf "$extras_test"
 
 # I07: a new shared-library dependency is provisioned before staged components
