@@ -2,7 +2,7 @@
 # NIRUX: install a complete X11 desktop, or maintain an existing installation.
 set -eu
 
-VERSION=0.12.219
+VERSION=0.12.220
 PREFIX=${NIRUX_PREFIX:-$HOME/.local}
 BIN=$PREFIX/bin
 STATE=$PREFIX/share/nirux
@@ -1761,6 +1761,18 @@ sounds_app_list() {
 
 sounds_onoff() { if [ "$1" = true ]; then say on; else say off; fi; }
 
+# Whether NIRUNOTIFY's Do Not Disturb is on right now; off when it cannot tell.
+sounds_dnd_on() {
+  command -v nirunotify >/dev/null 2>&1 || return 1
+  if command -v timeout >/dev/null 2>&1; then
+    sounds_dnd=$(timeout 1 nirunotify --dnd status 2>/dev/null) || return 1
+  else
+    sounds_dnd=$(nirunotify --dnd status 2>/dev/null) || return 1
+  fi
+  case "$sounds_dnd" in *' on'*|on) return 0 ;; esac
+  return 1
+}
+
 sounds_status() {
   sounds_ensure_config
   sounds_enabled && sounds_global=on || sounds_global=off
@@ -1768,7 +1780,11 @@ sounds_status() {
   for sounds_cat in $SOUNDS_CATEGORIES; do
     sounds_category_enabled "$sounds_cat" && sounds_cat_on=on || sounds_cat_on=off
     sounds_note=
-    [ "$sounds_cat" = notifications ] && sounds_note=' (silenced by Do Not Disturb)'
+    if [ "$sounds_cat" = notifications ]; then
+      if sounds_dnd_on; then sounds_note=' · silent now: Do Not Disturb is on'
+      else sounds_note=' · silent while Do Not Disturb is on'
+      fi
+    fi
     say "$sounds_cat: $sounds_cat_on$sounds_note"
     for sounds_event in $(sounds_category_events "$sounds_cat"); do
       say "  $sounds_event: $(sounds_onoff "$(sounds_event_setting "$sounds_event")")"

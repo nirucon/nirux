@@ -37,7 +37,13 @@ cat > "$TEST/bin/wpctl" <<'EOF'
 #!/bin/sh
 printf 'Volume: 0.50\n'
 EOF
-chmod +x "$TEST/bin/pw-play" "$TEST/bin/wpctl"
+# A fake NIRUNOTIFY answers `--dnd status` from $FAKE_DND (default off).
+cat > "$TEST/bin/nirunotify" <<'FAKE'
+#!/bin/sh
+[ "$1 $2" = "--dnd status" ] && printf 'dnd %s\n' "${FAKE_DND:-off}"
+exit 0
+FAKE
+chmod +x "$TEST/bin/pw-play" "$TEST/bin/wpctl" "$TEST/bin/nirunotify"
 PATH=$TEST/bin:$PATH
 PLAYED_LOG=$LOG
 export PATH PLAYED_LOG
@@ -73,6 +79,9 @@ grep -q '^\[sounds\.apps\]' "$CONFIG" || fail 'new config has no [sounds.apps]'
 grep -q '^thunderbird = "mail"' "$CONFIG" || fail 'new config has no Thunderbird mapping'
 grep -q '^signal = "chat"' "$CONFIG" || fail 'new config has no Signal mapping'
 grep -q 'signal = chat' "$TEST/status" || fail 'status does not list app sounds'
+# The notifications note follows the real Do Not Disturb state.
+grep -q '^notifications: on · silent while Do Not Disturb is on$' "$TEST/status" || fail 'status notes DND wrongly while it is off'
+FAKE_DND=on nirux sounds status | grep -q '^notifications: on · silent now: Do Not Disturb is on$' || fail 'status does not say DND silences notifications now'
 
 # App names are matched case-insensitively, as nirunotify sends them.
 nirux sounds play notification --app Thunderbird; expect thunderbird "$SOUNDS/mail.ogg"
