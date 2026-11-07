@@ -2,7 +2,7 @@
 # NIRUX: install a complete X11 desktop, or maintain an existing installation.
 set -eu
 
-VERSION=0.12.228
+VERSION=0.12.229
 PREFIX=${NIRUX_PREFIX:-$HOME/.local}
 BIN=$PREFIX/bin
 STATE=$PREFIX/share/nirux
@@ -2230,8 +2230,8 @@ install_config() {
   cfg_before=$(sha256sum "$cfg_candidate" | cut -d ' ' -f1)
   add_missing_sections "$cfg_candidate" "$cfg_example"
   add_missing_top_key "$cfg_candidate" restore_session false
-  add_missing_top_key "$cfg_candidate" weather_latitude 58.22
-  add_missing_top_key "$cfg_candidate" weather_longitude 11.93
+  add_missing_top_key "$cfg_candidate" weather_latitude 59.33
+  add_missing_top_key "$cfg_candidate" weather_longitude 18.07
   add_missing_key "$cfg_candidate" nightlight mode '"manual"'
   add_missing_key "$cfg_candidate" nightlight on '"20:00"'
   add_missing_key "$cfg_candidate" nightlight off '"07:00"'
