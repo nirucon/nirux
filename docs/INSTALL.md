@@ -572,10 +572,24 @@ nirux uninstall
 nirux uninstall --purge
 ```
 
+Remove extras first (`nirux extras uninstall NAME`, see
+[Optional extras](EXTRAS.md)); `nirux uninstall` removes the `nirux` command and
+lists any extra that is still installed.
+
 A normal uninstall removes NIRUX-owned links, managed Helium, LocalSend and
 OpenCode files, generated session files and owned system integration, and
-restores backed-up system files. Browser profiles, app settings and wallpaper
-pictures are kept.
+restores backed-up system files. That includes the root-only files: the
+Wi-Fi and login-wallpaper sudoers rules, the polkit power rules, the PAM
+service, the backlight udev rule and the session entries. Browser profiles,
+app settings and wallpaper pictures are kept.
+
+NIRU Login: the greeter, its greetd configuration and its X wrapper policy are
+removed. A greetd configuration from before NIRU Login is restored and greetd
+stays enabled. When there was none (NIRUX installed greetd for NIRU Login),
+greetd is disabled; a display manager recorded before NIRU Login (LightDM,
+SDDM, GDM) is enabled again. The running login screen keeps working until the
+next boot; after that, log in on a text console or enable the display manager
+you want. The greetd package itself stays installed.
 
 `--purge` additionally removes unmodified NIRUX wallpapers and these documented
 suite-owned configuration directories:
@@ -585,6 +599,7 @@ suite-owned configuration directories:
 - `~/.local/state/niruwm`, `~/.local/state/nirulock`,
   `~/.local/state/niruscreensaver`
 - `~/.cache/nirubar`
+- `~/.local/share/nirux` (remembered choices, extras selection, sound pack)
 
 Normal uninstall keeps user themes in `~/.config/niruwm/themes/`. An explicit
 `--purge` removes suite configuration directories, including user theme files;

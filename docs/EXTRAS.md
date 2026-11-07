@@ -6,12 +6,12 @@ explicit request, and never pulled in by a core `nirux update`.
 
 | Extra | Release | Role |
 |---|---|---|
-| niruorg | 0.6.0 | File and folder management |
-| nirunote | 0.6.0 | Markdown editor |
-| nirupres | 2.2.0 | Presentation studio |
-| nplay | 1.8.1 | Terminal music, radio and podcast player; standalone |
+| niruorg | 0.6.1 | File and folder management |
+| nirunote | 0.6.1 | Markdown editor |
+| nirupres | 2.2.1 | Presentation studio |
+| nplay | 1.8.2 | Terminal music, radio and podcast player; standalone |
 | niruamp | 0.5.2 | Graphical frontend for NPLAY with themed fullscreen visual mode; requires NPLAY 1.7.3+ (1.8.0+ recommended for the visualization stream) |
-| niruflow | 0.6.0 | Local maintenance and automation |
+| niruflow | 0.6.1 | Local maintenance and automation |
 | nirusec | 0.2.0 | Firewall, ports, updates, firmware and security overview GUI |
 | nirugame | 0.1.4 | Steam, RetroArch, native games and optional user-supplied SID music |
 | niruremote | 0.2.0 | Graphical remote desktop over Tailscale and SSH (no open port); Linux/X11 host, Windows/macOS clients |
@@ -25,6 +25,8 @@ nirux extras select niruflow
 nirux extras install niruflow
 nirux extras update
 nirux extras unselect niruflow
+nirux extras uninstall niruflow          # the extra's own uninstaller; keeps its data
+nirux extras uninstall niruflow --purge  # also its data, where the extra supports it
 ```
 
 `select` records a preference in
@@ -37,8 +39,16 @@ runs that project's own installer. `update` updates only selected extras to the
 versions pinned by the installed NIRUX release.
 
 Vendor installers can ask for sudo and may install runtime packages; review their
-output. NIRUX never deletes an extra's user data as part of unselecting it. Use
-the project's own uninstaller when one is available.
+output. In a terminal they ask before installing packages as usual. Without a
+terminal (a deployment script, a graphical update) nobody can answer, so NIRUX
+sets `NIRUX_ASSUME_YES=1` for the installer: asking NIRUX for the extra is the
+consent. NIRUX never deletes an extra's user data as part of unselecting it.
+
+`uninstall` downloads the same pinned source, runs the extra's own
+`uninstall.sh` and unselects it. Every extra keeps its user data on a normal
+uninstall; `--purge` is passed on to the uninstallers that support it (NPLAY,
+NIRUAMP, NIRUPRES, NIRUFLOW, NIRUREMOTE, NIRUDICTATE). Uninstall extras before
+`nirux uninstall`, which removes the `nirux` command itself.
 
 NIRUAMP depends on NPLAY and is a frontend only. `nirux extras install niruamp`
 installs or updates the pinned NPLAY release first. NPLAY remains usable alone

@@ -51,10 +51,12 @@ export PATH PLAYED_LOG
 
 nirux() { sh "$SOURCE/nirux" "$@"; }
 
-# The player runs in the background; wait briefly for its line.
+# The player runs in the background; wait for its line. A loaded CI runner can
+# take well over two seconds to start it, which made this test flaky ("got
+# 'silence'"), so the wait is generous: it only lasts long when a test fails.
 played() {
   i=0
-  while [ "$i" -lt 40 ]; do
+  while [ "$i" -lt 300 ]; do
     [ -s "$LOG" ] && break
     i=$((i + 1)); sleep 0.05
   done
@@ -234,13 +236,13 @@ nirux sounds play dictation-done; nothing 'dictation-done off by default'
 
 # The volume tick follows the level, rounded to the nearest 10 % step.
 nirux sounds play volume-up --level 47; expect 'tick at 47 %' "$SOUNDS/levels/volume-up-050.ogg"
-sleep 0.1
+sleep 0.25
 nirux sounds play volume-down --level 08; expect 'tick at 08 %' "$SOUNDS/levels/volume-down-010.ogg"
-sleep 0.1
+sleep 0.25
 nirux sounds play volume-up --level 100; expect 'tick at 100 %' "$SOUNDS/levels/volume-up-100.ogg"
-sleep 0.1
+sleep 0.25
 nirux sounds play volume-up --level 9999; expect 'tick above 100 %' "$SOUNDS/levels/volume-up-100.ogg"
-sleep 0.1
+sleep 0.25
 nirux sounds play volume-up; expect 'tick without level' "$SOUNDS/volume-up.ogg"
 
 # Held keys: one tick per rate_limit_ms per event.

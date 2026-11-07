@@ -753,8 +753,80 @@ done
 ) || fail 'installing NIRUAMP with a stale NPLAY failed'
 [ "$(cat "$extras_test/home/install-order" 2>/dev/null | tr '\n' ' ')" = 'nplay niruamp ' ] || fail "NIRUAMP dependency install order wrong: $(cat "$extras_test/home/install-order" 2>/dev/null | tr '\n' ' ')"
 grep -qx niruamp "$extras_test/state/extras-selected" || fail 'NIRUAMP was not selected after installing'
+# Without a terminal the vendor installer is told that asking for the extra
+# was the consent; `extras uninstall` runs the extra's own uninstaller with
+# --purge passed on, then forgets the selection.
+mkdir -p "$extras_test/src/nirugame-3.0.0"
+cat > "$extras_test/src/nirugame-3.0.0/install.sh" <<'EOS'
+mkdir -p "$HOME/.local/bin"; printf '#!/bin/sh\necho "nirugame 3.0.0"\n' > "$HOME/.local/bin/nirugame"; chmod +x "$HOME/.local/bin/nirugame"
+echo "consent=${NIRUX_ASSUME_YES:-unset}" > "$HOME/consent"
+EOS
+cat > "$extras_test/src/nirugame-3.0.0/uninstall.sh" <<'EOS'
+rm -f "$HOME/.local/bin/nirugame"; echo "args=$*" > "$HOME/uninstall-args"
+EOS
+tar -czf "$extras_test/nirugame.tar.gz" -C "$extras_test/src" nirugame-3.0.0
+(
+  HOME=$extras_test/home STATE=$extras_test/state
+  # shellcheck disable=SC2034 # read by extras_select in the sourced installer
+  EXTRAS_SELECTED=$STATE/extras-selected
+  extras_fixture=$extras_test
+  extras_table() { printf 'nirugame nirugame 3.0.0 %s\n' "$(sha256sum "$extras_fixture/nirugame.tar.gz" | awk '{print $1}')"; }
+  fetch() { cp "$extras_fixture/nirugame.tar.gz" "$2"; }
+  # shellcheck disable=SC2034 # read by extras_install_one in the sourced installer
+  extras_sudo_shim() { EXTRAS_SHIM_PATH=; }
+  extras_install_one nirugame < /dev/null >/dev/null 2>&1
+  grep -qx nirugame "$EXTRAS_SELECTED"
+  extras_uninstall nirugame --purge < /dev/null >/dev/null 2>&1
+) || fail 'extras install/uninstall round trip failed'
+[ "$(cat "$extras_test/home/consent")" = consent=1 ] || fail 'an unattended extras install did not pass NIRUX_ASSUME_YES'
+[ "$(cat "$extras_test/home/uninstall-args")" = args=--purge ] || fail 'extras uninstall did not pass --purge'
+[ ! -e "$extras_test/home/.local/bin/nirugame" ] || fail 'extras uninstall left the program'
+if grep -qx nirugame "$extras_test/state/extras-selected"; then fail 'extras uninstall kept the selection'; fi
 fi
 rm -rf "$extras_test"
+
+# Uninstall removes root-only NIRUX files (sudoers, polkit rules), never brings
+# back a backed-up older NIRUX rule, restores greetd's own configuration and
+# the X wrapper policy, and disables a greetd that only NIRU Login used.
+un=$TEST/uninstall-root
+(
+  ROOT=$un PREFIX=$TEST/uninstall-prefix
+  mkdir -p "$ROOT/etc/sudoers.d" "$ROOT/etc/polkit-1/rules.d" "$ROOT/etc/greetd" "$ROOT/etc/X11" \
+    "$ROOT/etc/systemd/system" "$ROOT/usr/local/bin" "$ROOT/var/service"
+  printf '# NIRUX owner: %s\nniru ALL=(root) NOPASSWD: /usr/libexec/nirux-wifi\n' "$PREFIX" > "$ROOT/etc/sudoers.d/49-nirux-wifi"
+  printf '# NIRUX owner: %s\nniru ALL=(root) NOPASSWD: /old/unsafe login-wallpaper sync\n' "$PREFIX" > "$ROOT/etc/sudoers.d/49-nirux-login-wallpaper.nirux-backup"
+  printf '# NIRUX owner: %s\nniru ALL=(root) NOPASSWD: /usr/bin/install x\n' "$PREFIX" > "$ROOT/etc/sudoers.d/49-nirux-login-wallpaper"
+  printf 'admin rule\n' > "$ROOT/etc/sudoers.d/00_admin"
+  printf '// NIRUX owner: %s\npolkit.addRule(function(){});\n' "$PREFIX" > "$ROOT/etc/polkit-1/rules.d/49-nirux-power.rules"
+  printf 'polkit.addRule(function(){});\n' > "$ROOT/etc/polkit-1/rules.d/49-nirulogin-power.rules"
+  printf '# NIRULOGIN owner: %s\n[default_session]\n' "$PREFIX" > "$ROOT/etc/greetd/config.toml"
+  printf 'allowed_users=anybody\nneeds_root_rights=yes\n' > "$ROOT/etc/X11/Xwrapper.config"
+  printf 'allowed_users=anybody\nneeds_root_rights=yes\n' > "$ROOT/etc/X11/Xwrapper.config.before-nirulogin"
+  : > "$ROOT/usr/local/bin/nirulogin"
+  ln -s /lib/systemd/system/greetd.service "$ROOT/etc/systemd/system/display-manager.service"
+  printf '/lib/systemd/system/greetd.service\n' > "$ROOT/etc/nirulogin-previous-display-manager"
+  ln -s /etc/sv/greetd "$ROOT/var/service/greetd"
+  remove_greeters > "$TEST/uninstall-greeters.log"
+  for f in sudoers.d/49-nirux-wifi sudoers.d/49-nirux-login-wallpaper sudoers.d/49-nirux-login-wallpaper.nirux-backup \
+    polkit-1/rules.d/49-nirux-power.rules polkit-1/rules.d/49-nirulogin-power.rules greetd/config.toml \
+    X11/Xwrapper.config X11/Xwrapper.config.before-nirulogin systemd/system/display-manager.service nirulogin-previous-display-manager; do
+    if [ -e "$ROOT/etc/$f" ] || [ -L "$ROOT/etc/$f" ]; then fail "uninstall left /etc/$f"; fi
+  done
+  [ -f "$ROOT/etc/sudoers.d/00_admin" ] || fail 'uninstall removed an administrator sudoers rule'
+  [ ! -L "$ROOT/var/service/greetd" ] || fail 'uninstall left greetd enabled on runit without a configuration'
+  grep -q 'greetd disabled' "$TEST/uninstall-greeters.log" || fail 'uninstall did not say that greetd was disabled'
+  # A greetd configured before NIRU Login gets its configuration back and stays enabled.
+  printf '# NIRULOGIN owner: %s\n' "$PREFIX" > "$ROOT/etc/greetd/config.toml"
+  printf '[default_session]\ncommand = "agreety --cmd /bin/sh"\n' > "$ROOT/etc/greetd/config.toml.before-nirulogin"
+  printf '# NIRUX owner: %s\nallowed_users=anybody\nneeds_root_rights=yes\n' "$PREFIX" > "$ROOT/etc/X11/Xwrapper.config"
+  printf 'allowed_users=console\n' > "$ROOT/etc/X11/Xwrapper.config.before-nirulogin"
+  ln -s /lib/systemd/system/greetd.service "$ROOT/etc/systemd/system/display-manager.service"
+  remove_greeters >/dev/null
+  grep -q agreety "$ROOT/etc/greetd/config.toml" || fail 'uninstall did not restore the previous greetd configuration'
+  [ -L "$ROOT/etc/systemd/system/display-manager.service" ] || fail 'uninstall disabled a greetd that had its own configuration'
+  [ "$(cat "$ROOT/etc/X11/Xwrapper.config")" = allowed_users=console ] || fail 'uninstall did not restore the X wrapper policy'
+) || fail 'uninstall cleanup checks failed'
+rm -rf "$un"
 
 # I07: a new shared-library dependency is provisioned before staged components
 # are executed. The synthetic component fails its version check without it.

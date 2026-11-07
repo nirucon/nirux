@@ -2,7 +2,7 @@
 # NIRUX: install a complete X11 desktop, or maintain an existing installation.
 set -eu
 
-VERSION=0.12.222
+VERSION=0.12.223
 PREFIX=${NIRUX_PREFIX:-$HOME/.local}
 BIN=$PREFIX/bin
 STATE=$PREFIX/share/nirux
@@ -101,7 +101,8 @@ usage() {
   say "       nirux repair-session | repair-wallpaper"
   say "       nirux remove helium|localsend|opencode"
   say "       nirux browser-addon bonjourr|none|status"
-  say "       nirux extras [list|status|select NAME|unselect NAME|install [NAME...]|update]"
+  say "       nirux extras [list|status|select NAME|unselect NAME|install [NAME...]|uninstall NAME... [--purge]|update]"
+  say "       nirux sounds [status|list|on|off|toggle|test|app ...] (see docs/SOUNDS.md)"
   say "       nirux update-shutdown [--yes] [--dry-run] [--no-power]"
   say "       nirux update-reboot [--yes] [--dry-run] [--no-power]"
   say "       nirux rollback | gc [--keep N] [--dry-run] | status | doctor | uninstall [--purge] | --version | --help"
@@ -2531,12 +2532,12 @@ browser_addon_choose() {
 
 extras_table() {
   cat <<'EOF'
-niruorg niruorg 0.6.0 5f0fa152b48f36161242b1119eb568098ab8bd0983bc1c2e7695e23a207b2767
-nirunote nirunote 0.6.0 b82377f17d45cd12349f1def5de3445766c7c08266505741760c2c9f3f87940f
-nirupres nirupres 2.2.0 4d02ced63dc062fb3060c91731f744892eb578c570da30fb72c9174f24e20c54
-nplay nplay 1.8.1 346a2dd1ce194950aa96e0acc5f2bef400f61d6130671e87e83a814d48f389e8
+niruorg niruorg 0.6.1 d012b5802fdf1253bb887c50395a2d611cd4958c43cad57650a0752bdefd1138
+nirunote nirunote 0.6.1 0536232532476e539b812a34b3382bc5468baf943b78127787155f9668ef3cb7
+nirupres nirupres 2.2.1 7914b467191b80c7807a7ed3ab536873c1316d98410591fdd122755ed09b3cb5
+nplay nplay 1.8.2 5bd6dc17095648017ccf5922e342574ed596cc845ada78adbc5d5ff312d433d8
 niruamp niruamp 0.5.2 d6623c81a23959eb3eb350e34f7203651b84a818a9896296d217ceaae55b65fe
-niruflow niruflow 0.6.0 814aa1429f5fd5a7ecbb95f68041fac347d453b03559f03fb4d7cc98efb670ad
+niruflow niruflow 0.6.1 8c5611a3d719fb0ec6f0dc8f296ffde1b22e5d4aa9e6f600b5d5c76e8934a26e
 nirusec nirusec 0.2.0 f3f7b85a1e0e3e91880721c060d24c50eadf843c602624eb8345bf8f3c5ae6d2
 nirugame nirugame 0.1.4 96288834f2ca08c08b062f6f28142c079ee6c9c9198b9cdf085143deac719e54
 niruremote niruremote 0.2.0 64571f661be436c1fb69b72439f7af69802d87c83ac1652c49b84f0cfd80f784
@@ -2611,6 +2612,59 @@ EOF
   chmod 700 "$1/.sudo/sudo" "$1/.sudo/askpass" || return 0
   EXTRAS_SHIM_PATH="$1/.sudo:"
 }
+# Download the pinned source of an extra and verify it against the pin. Sets
+# repo, version, tmp (the work directory to remove) and src (the unpacked tree).
+extras_fetch() {
+  row=$(extras_row "$1") || die "unknown extra: $1"
+  repo=$(printf '%s\n' "$row" | awk '{print $2}')
+  version=$(printf '%s\n' "$row" | awk '{print $3}')
+  expected=$(printf '%s\n' "$row" | awk '{print $4}')
+  tmp=$(mktemp -d "${TMPDIR:-/tmp}/nirux-extra.XXXXXX") || die 'could not create extras work directory'
+  archive=$tmp/$repo.tar.gz
+  url="https://github.com/nirucon/$repo/archive/refs/tags/v$version.tar.gz"
+  say "Downloading $repo $version ..."
+  if ! fetch "$url" "$archive"; then rm -rf "$tmp"; die "could not download $repo $version"; fi
+  actual=$(sha256sum "$archive" | awk '{print $1}')
+  if [ "$actual" != "$expected" ]; then rm -rf "$tmp"; die "checksum mismatch for $repo $version; nothing changed"; fi
+  if ! tar -xzf "$archive" -C "$tmp"; then rm -rf "$tmp"; die "could not unpack $repo $version"; fi
+  src=$(find "$tmp" -mindepth 1 -maxdepth 1 -type d | head -n 1)
+  [ -n "$src" ] || { rm -rf "$tmp"; die "$repo $version is empty"; }
+}
+# Asking for an extra is the consent to install its packages. With a terminal
+# the vendor installer still asks as usual; without one (a deployment, a
+# graphical update) it cannot ask, so it is told that the answer is yes.
+extras_consent() {
+  if [ -t 0 ]; then unset NIRUX_ASSUME_YES; else NIRUX_ASSUME_YES=1; export NIRUX_ASSUME_YES; fi
+}
+# Remove an extra with its own uninstaller from the pinned source, then forget
+# the selection. `--purge` is passed on; an uninstaller without purge support
+# keeps its data, as its README describes.
+extras_uninstall() {
+  purge=
+  names=
+  for argument in "$@"; do
+    case "$argument" in
+      --purge) purge=--purge ;;
+      -*) die "unknown option: $argument" ;;
+      *) names="$names $argument" ;;
+    esac
+  done
+  [ -n "$names" ] || die 'usage: nirux extras uninstall NAME... [--purge]'
+  for name in $names; do
+    extras_row "$name" >/dev/null || die "unknown extra: $name"
+    extras_fetch "$name"
+    [ -f "$src/uninstall.sh" ] || { rm -rf "$tmp"; die "$repo $version has no uninstaller; see its README"; }
+    say "Removing $name with its $version uninstaller${purge:+ (purge)}."
+    extras_sudo_shim "$tmp"
+    # shellcheck disable=SC2086 # purge is empty or one fixed word
+    if ! ( cd "$src" && extras_consent && PATH="$EXTRAS_SHIM_PATH$HOME/.local/bin:$PATH" bash ./uninstall.sh $purge ); then
+      rm -rf "$tmp"; die "$name uninstaller failed"
+    fi
+    rm -rf "$tmp"
+    extras_unselect "$name"
+    say "Removed $name; it is no longer selected for updates."
+  done
+}
 extras_install_one() {
   name=$1
   extras_row "$name" >/dev/null || die "unknown extra: $name"
@@ -2626,23 +2680,11 @@ extras_install_one() {
     fi
     name=niruamp
   fi
-  row=$(extras_row "$name") || die "unknown extra: $name"
-  repo=$(printf '%s\n' "$row" | awk '{print $2}')
-  version=$(printf '%s\n' "$row" | awk '{print $3}')
-  expected=$(printf '%s\n' "$row" | awk '{print $4}')
-  tmp=$(mktemp -d "${TMPDIR:-/tmp}/nirux-extra.XXXXXX") || die 'could not create extras work directory'
-  archive=$tmp/$repo.tar.gz
-  url="https://github.com/nirucon/$repo/archive/refs/tags/v$version.tar.gz"
-  say "Downloading $repo $version ..."
-  if ! fetch "$url" "$archive"; then rm -rf "$tmp"; die "could not download $repo $version"; fi
-  actual=$(sha256sum "$archive" | awk '{print $1}')
-  if [ "$actual" != "$expected" ]; then rm -rf "$tmp"; die "checksum mismatch for $repo $version; nothing installed"; fi
-  if ! tar -xzf "$archive" -C "$tmp"; then rm -rf "$tmp"; die "could not unpack $repo $version"; fi
-  src=$(find "$tmp" -mindepth 1 -maxdepth 1 -type d | head -n 1)
-  if [ -z "$src" ] || [ ! -f "$src/install.sh" ]; then rm -rf "$tmp"; die "$repo $version has no installer"; fi
+  extras_fetch "$name"
+  [ -f "$src/install.sh" ] || { rm -rf "$tmp"; die "$repo $version has no installer"; }
   say "Installing $repo $version (the vendor installer may ask for confirmation)."
   extras_sudo_shim "$tmp"
-  if ! ( cd "$src" && PATH="$EXTRAS_SHIM_PATH$HOME/.local/bin:$PATH" bash ./install.sh ); then rm -rf "$tmp"; die "$repo installer failed; existing data was not intentionally removed"; fi
+  if ! ( cd "$src" && extras_consent && PATH="$EXTRAS_SHIM_PATH$HOME/.local/bin:$PATH" bash ./install.sh ); then rm -rf "$tmp"; die "$repo installer failed; existing data was not intentionally removed"; fi
   installed=$(extras_installed_version "$name" 2>/dev/null || :)
   if [ -z "$installed" ]; then rm -rf "$tmp"; die "$repo installed without a working $name command"; fi
   rm -rf "$tmp"
@@ -2679,7 +2721,8 @@ extras_command() {
       extras_unselect "$2"; say "unselected $2" ;;
     install) shift; extras_install "$@" ;;
     update) shift; extras_update ;;
-    *) die 'usage: nirux extras [list|status|select NAME|unselect NAME|install [NAME...]|update]' ;;
+    uninstall|remove) shift; extras_uninstall "$@" ;;
+    *) die 'usage: nirux extras [list|status|select NAME|unselect NAME|install [NAME...]|uninstall NAME... [--purge]|update]' ;;
   esac
 }
 
@@ -4716,7 +4759,9 @@ install_nirulogin() {
      ! as_root test -f "$ROOT/etc/X11/Xwrapper.config.before-nirulogin"; then
     as_root cp -a "$ROOT/etc/X11/Xwrapper.config" "$ROOT/etc/X11/Xwrapper.config.before-nirulogin"
   fi
-  { say 'allowed_users=anybody'; say 'needs_root_rights=yes'; } > "$WORK/Xwrapper.config"
+  # Xorg.wrap skips comment lines, so the file carries the owner line that lets
+  # uninstall recognise and remove it.
+  { say "# NIRUX owner: $PREFIX"; say 'allowed_users=anybody'; say 'needs_root_rights=yes'; } > "$WORK/Xwrapper.config"
   write_system "$ROOT/etc/X11/Xwrapper.config" "$WORK/Xwrapper.config"
   if as_root test -f "$ROOT/etc/greetd/config.toml" &&
      ! as_root test -f "$ROOT/etc/greetd/config.toml.before-nirulogin" &&
@@ -4841,20 +4886,77 @@ install_greeters() {
   rm -rf "$unpack"
 }
 
+# Restore the X wrapper policy NIRU Login replaced. A saved copy that only
+# holds NIRUX's own policy came from an earlier release and is dropped; the
+# distribution default (console users only) then applies again.
+restore_xwrapper() {
+  xwrapper=$ROOT/etc/X11/Xwrapper.config
+  for saved in "$xwrapper.before-nirulogin" "$xwrapper.nirux-backup"; do
+    as_root test -f "$saved" || continue
+    if nirux_xwrapper "$saved"; then
+      as_root rm -f "$saved"
+    elif as_root test -f "$xwrapper" && { owned_system "$xwrapper" || nirux_xwrapper "$xwrapper"; }; then
+      as_root mv -f "$saved" "$xwrapper"
+    fi
+  done
+  if as_root test -f "$xwrapper" && { owned_system "$xwrapper" || nirux_xwrapper "$xwrapper"; }; then
+    as_root rm -f "$xwrapper"
+  fi
+}
+# The X wrapper policy NIRU Login writes, also as releases before the owner
+# line wrote it: exactly these two settings and nothing else.
+nirux_xwrapper() {
+  [ "$(as_root grep -v '^#' "$1" 2>/dev/null | grep -c .)" = 2 ] &&
+    as_root grep -qx 'allowed_users=anybody' "$1" 2>/dev/null &&
+    as_root grep -qx 'needs_root_rights=yes' "$1" 2>/dev/null
+}
+
 remove_greeters() {
+  dm_link=$ROOT/etc/systemd/system/display-manager.service
+  nirulogin_installed=0
+  if { [ -f "$ROOT/etc/greetd/config.toml" ] && owned "$ROOT/etc/greetd/config.toml"; } ||
+     [ -f "$ROOT/usr/local/bin/nirulogin" ]; then
+    nirulogin_installed=1
+  fi
+  # Give greetd back the configuration it had before NIRU Login. When there is
+  # none, NIRUX installed greetd only to run NIRU Login: an enabled greetd with
+  # no configuration cannot start, so it is disabled below.
+  greetd_restored=0
+  if [ -f "$ROOT/etc/greetd/config.toml" ] && owned "$ROOT/etc/greetd/config.toml"; then
+    if as_root test -f "$ROOT/etc/greetd/config.toml.before-nirulogin"; then
+      as_root mv -f "$ROOT/etc/greetd/config.toml.before-nirulogin" "$ROOT/etc/greetd/config.toml"
+      greetd_restored=1
+    else
+      as_root rm -f "$ROOT/etc/greetd/config.toml"
+    fi
+  fi
+  previous_dm=
   if [ -f "$ROOT/etc/nirulogin-previous-display-manager" ]; then
     previous_dm=$(as_root cat "$ROOT/etc/nirulogin-previous-display-manager" 2>/dev/null || :)
-    case "$previous_dm" in
-      */lightdm.service|*/sddm.service|*/gdm.service|*/greetd.service)
-        as_root rm -f "$ROOT/etc/systemd/system/display-manager.service"
-        as_root ln -s "$previous_dm" "$ROOT/etc/systemd/system/display-manager.service"
-        ;;
-    esac
   fi
+  case "$previous_dm" in
+    */lightdm.service|*/sddm.service|*/gdm.service|*/gdm3.service)
+      as_root rm -f "$dm_link"
+      as_root ln -s "$previous_dm" "$dm_link"
+      ;;
+    *)
+      if [ "$nirulogin_installed" = 1 ] && [ "$greetd_restored" = 0 ]; then
+        if [ -L "$dm_link" ] && [ "$(basename "$(readlink "$dm_link")")" = greetd.service ]; then
+          as_root rm -f "$dm_link"
+        fi
+        if [ -z "$ROOT" ] && command -v systemctl >/dev/null 2>&1 && [ -d /run/systemd/system ]; then
+          as_root systemctl disable greetd.service >/dev/null 2>&1 || :
+        fi
+        if [ -L "$ROOT/var/service/greetd" ]; then as_root rm -f "$ROOT/var/service/greetd"; fi
+        say 'NIRU Login removed and greetd disabled; the current login screen keeps running until the next boot.'
+        say 'After that, log in on a text console or enable the display manager you want.'
+      elif [ "$greetd_restored" = 1 ]; then
+        say 'Restored the previous greetd configuration.'
+      fi
+      ;;
+  esac
   as_root rm -f "$ROOT/etc/nirulogin-previous-display-manager"
-  if [ -f "$ROOT/etc/greetd/config.toml" ] && owned "$ROOT/etc/greetd/config.toml"; then
-    as_root rm -f "$ROOT/etc/greetd/config.toml"
-  fi
+  if [ "$nirulogin_installed" = 1 ]; then restore_xwrapper; fi
   if [ -f "$ROOT/usr/local/bin/nirulogin" ]; then as_root rm -f "$ROOT/usr/local/bin/nirulogin"; fi
   if [ -f "$ROOT/usr/local/bin/nirulogin-session" ]; then as_root rm -f "$ROOT/usr/local/bin/nirulogin-session"; fi
   as_root rm -rf "$ROOT/var/lib/nirulogin"
@@ -4862,7 +4964,8 @@ remove_greeters() {
     as_root rm -f "$ROOT/etc/nirulogin/layouts"
     as_root rmdir "$ROOT/etc/nirulogin" 2>/dev/null || :
   fi
-  if [ -f "$ROOT/etc/polkit-1/rules.d/49-nirulogin-power.rules" ]; then as_root rm -f "$ROOT/etc/polkit-1/rules.d/49-nirulogin-power.rules"; fi
+  # The rules directory is 0750 root:polkitd, so only root can see the file.
+  if as_root test -f "$ROOT/etc/polkit-1/rules.d/49-nirulogin-power.rules"; then as_root rm -f "$ROOT/etc/polkit-1/rules.d/49-nirulogin-power.rules"; fi
   remove_system "$ROOT/etc/polkit-1/rules.d/49-nirux-power.rules"
   remove_system "$ROOT/etc/sudoers.d/49-nirux-login-wallpaper"
   remove_system "$ROOT/etc/sudoers.d/49-nirux-wifi"
@@ -5384,11 +5487,25 @@ doctor() {
   fi
   return "$result"
 }
+# Root-only files (sudoers rules, polkit rules in a 0750 directory) cannot be
+# read or even tested by the desktop user, so ownership is also checked through
+# the privilege boundary that installed them. Without this, uninstall silently
+# kept every NIRUX sudoers and polkit rule.
+owned_system() {
+  owned "$1" && return 0
+  as_root grep -qxF "# NIRUX owner: $PREFIX" "$1" 2>/dev/null ||
+    as_root grep -qxF "// NIRUX owner: $PREFIX" "$1" 2>/dev/null ||
+    as_root grep -q '^# NIRULOGIN owner:' "$1" 2>/dev/null
+}
 remove_system() {
-  if [ -f "$1" ] && owned "$1"; then
-    if [ -f "$1.nirux-backup" ]; then as_root mv -f "$1.nirux-backup" "$1"
-    else as_root rm -f "$1"
-    fi
+  as_root test -f "$1" 2>/dev/null || return 0
+  owned_system "$1" || return 0
+  # A backup that is itself a NIRUX file came from an earlier release (for
+  # example the withdrawn login-wallpaper sudoers rule) and must not return.
+  if as_root test -f "$1.nirux-backup" && ! owned_system "$1.nirux-backup"; then
+    as_root mv -f "$1.nirux-backup" "$1"
+  else
+    as_root rm -f "$1" "$1.nirux-backup"
   fi
 }
 remove_app() {
@@ -5418,6 +5535,11 @@ uninstall() {
   purge=0
   for option in "$@"; do case "$option" in --purge) purge=1 ;; *) die "unknown option: $option" ;; esac; done
   lock
+  extras_left=
+  if [ -f "$EXTRAS_SELECTED" ]; then
+    extras_left=$(extras_table | while read -r name _repo _version _sha; do
+      extras_installed_version "$name" >/dev/null 2>&1 && printf '%s ' "$name"; done)
+  fi
   remove_system "$ROOT/usr/share/xsessions/niruwm.desktop"
   remove_wallpaper_app
   remove_display_app
@@ -5447,7 +5569,14 @@ uninstall() {
   fi
   rm -rf "$STATE/generations"
   rm -f "$STATE/current" "$STATE/previous"
+  # Purge also forgets every remembered choice (browser, apps, icons,
+  # wallpapers, extras selection) and the installed sound pack.
+  if [ "$purge" = 1 ]; then rm -rf "$STATE"; fi
   say 'NIRU removed. OS packages retained. An already running session exits normally on logout.'
+  if [ -n "$extras_left" ]; then
+    say "Extras are separate and still installed: $extras_left"
+    say 'Remove them from a NIRUX checkout with ./nirux extras uninstall NAME, or with their own uninstall.sh.'
+  fi
 }
 repair_session() {
   lock

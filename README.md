@@ -221,6 +221,11 @@ session choices, desktop integration and upgrading from NIRUPI/dwm.
 
 Log out and choose the NIRUWM session (or reboot into NIRU Login).
 
+NIRUX installs its commands in `~/.local/bin`. A NIRUWM session puts that on
+`PATH`; in the terminal you installed from it may not be there yet (Arch and
+Void do not add it by default), so use `~/.local/bin/nirux` there until you
+have logged in to NIRUWM.
+
 ### Extras
 
 ```sh
@@ -230,7 +235,11 @@ nirux extras install niruflow  # download the pinned version, verify, run its in
 nirux extras select niruflow   # remember it for updates without installing
 nirux extras update            # update the selected extras to their pins
 nirux extras unselect niruflow
+nirux extras uninstall niruflow  # run its own uninstaller; --purge also removes its data
 ```
+
+Without a terminal (a script, a graphical update) the extras' installers cannot
+ask before installing packages, so NIRUX tells them the answer is yes.
 
 NIRUAMP is only a frontend and needs NPLAY: `nirux extras install niruamp`
 installs or updates the pinned NPLAY first. NPLAY alone is fully supported, with
@@ -396,7 +405,10 @@ including user themes; back them up first. OS packages and the chosen display
 manager are kept. Purge is not a lossless undo of every change; see
 [INSTALL.md](docs/INSTALL.md#uninstall).
 
-Extras are removed with each project's own uninstaller.
+Uninstall extras first with `nirux extras uninstall NAME` (their own
+uninstallers; user data is kept unless `--purge`). NIRU Login's greetd
+configuration and X wrapper policy are restored or removed, and a greetd that
+only NIRU Login used is disabled; see [INSTALL.md](docs/INSTALL.md#uninstall).
 
 ## Building from source
 
