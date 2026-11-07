@@ -104,6 +104,12 @@ grep -q 'signal = chat' "$TEST/status" || fail 'status does not list app sounds'
 grep -q '^notifications: on · silent while Do Not Disturb is on$' "$TEST/status" || fail 'status notes DND wrongly while it is off'
 FAKE_DND=on nirux sounds status | grep -q '^notifications: on · silent now: Do Not Disturb is on$' || fail 'status does not say DND silences notifications now'
 
+# Cooldown checks must not depend on how fast the runner is: a slow GitHub
+# runner took longer than the 2.5 s default between two plays ("same sound
+# within cooldown ... played"). Expiry is tested by removing the stamps.
+grep -q '^notification_cooldown_ms' "$CONFIG" || fail 'new config has no notification_cooldown_ms'
+sed -i 's/^notification_cooldown_ms = .*/notification_cooldown_ms = 60000/' "$CONFIG"
+
 # App names are matched case-insensitively, as nirunotify sends them.
 nirux sounds play notification --app Thunderbird; expect thunderbird "$SOUNDS/mail.ogg"
 nirux sounds play notification --app Signal; expect 'signal right after mail' "$SOUNDS/chat.ogg"
@@ -169,7 +175,7 @@ cat > "$CONFIG" <<'EOF'
 enabled = true
 volume = 35
 notification = true
-notification_cooldown_ms = 2500
+notification_cooldown_ms = 60000
 respect_mute = true
 EOF
 nirux sounds status > /dev/null
@@ -268,11 +274,16 @@ printf '%s\n' 99999999999999 > "$SOUNDS/.feedback-stamp-volume-up"
 sleep 0.25
 nirux sounds play volume-up; expect 'tick after a clock step back' "$SOUNDS/volume-up.ogg"
 
-# Held keys: one tick per rate_limit_ms per event.
-sleep 0.1
+# Held keys: one tick per rate_limit_ms per event (a long limit here, so a
+# slow runner cannot let the second tick through by taking longer than 80 ms).
+sed -i 's/^rate_limit_ms = .*/rate_limit_ms = 60000/' "$CONFIG"
+rm -f "$SOUNDS"/.feedback-stamp-*
 nirux sounds play volume-down; nirux sounds play volume-down
 sleep 0.3
+i=0; while [ ! -s "$LOG" ] && [ "$i" -lt 300 ]; do i=$((i + 1)); sleep 0.05; done; sleep 0.3
 [ "$(wc -l < "$LOG")" = 1 ] || fail 'rate limit let a second tick through'
+sed -i 's/^rate_limit_ms = .*/rate_limit_ms = 80/' "$CONFIG"
+rm -f "$SOUNDS"/.feedback-stamp-*
 : > "$LOG"
 nirux sounds toggle feedback > /dev/null
 grep -q '^enabled = false' "$CONFIG" || fail 'category toggle did not write enabled = false'
@@ -333,7 +344,7 @@ startup = false
 notification = true
 update = true
 shutdown = true
-notification_cooldown_ms = 2500
+notification_cooldown_ms = 60000
 respect_mute = true
 
 [sounds.apps]
