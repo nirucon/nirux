@@ -2,7 +2,7 @@
 # NIRUX: install a complete X11 desktop, or maintain an existing installation.
 set -eu
 
-VERSION=0.12.225
+VERSION=0.12.226
 PREFIX=${NIRUX_PREFIX:-$HOME/.local}
 BIN=$PREFIX/bin
 STATE=$PREFIX/share/nirux
@@ -4799,8 +4799,16 @@ install_nirulogin() {
      ! as_root grep -q '^# NIRULOGIN owner:' "$ROOT/etc/greetd/config.toml" 2>/dev/null; then
     as_root cp -a "$ROOT/etc/greetd/config.toml" "$ROOT/etc/greetd/config.toml.before-nirulogin"
   fi
-  if [ "$OS" = arch ] && [ "$greeter_user" = greeter ]; then
-    as_root install -d -o greeter -g greeter -m 700 "$ROOT/var/lib/greetd"
+  # The greeter runs startx with HOME=/var/lib/greetd, so xauth must be able to
+  # write there. A greetd package that was purged and installed again gets a
+  # new greeter uid while the old home stays behind with the old owner; xauth
+  # then waits forever for its lock and no login screen appears (seen on
+  # Debian). Make the home exist and belong to the current greeter account.
+  greeter_home=$ROOT/var/lib/greetd
+  as_root install -d -m 700 "$greeter_home"
+  if greeter_uid=$(id -u "$greeter_user" 2>/dev/null) &&
+     [ "$(as_root stat -c %u "$greeter_home" 2>/dev/null || :)" != "$greeter_uid" ]; then
+    as_root chown -R "$greeter_user:$(id -gn "$greeter_user")" "$greeter_home"
   fi
   { say "# NIRULOGIN owner: $PREFIX"; say '[terminal]'; say 'vt = 7'; say ''; say '[general]'; say 'source_profile = false'; say ''; say '[default_session]'; say "command = \"env HOME=/var/lib/greetd /usr/bin/startx /usr/local/bin/nirulogin -- :0 vt7\""; say "user = \"$greeter_user\""; } > "$WORK/nirulogin-greetd.toml"
   write_system "$ROOT/etc/greetd/config.toml" "$WORK/nirulogin-greetd.toml"

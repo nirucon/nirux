@@ -848,6 +848,23 @@ un=$TEST/uninstall-root
 ) || fail 'uninstall cleanup checks failed'
 rm -rf "$un"
 
+# NIRU Login: a greetd home left behind by a purged package (old greeter uid)
+# is handed to the current greeter account, so startx/xauth can write there.
+gl=$TEST/greeter-home
+(
+  ROOT=$gl/root WORK=$gl/work OS=debian PREFIX=$TEST/greeter-prefix
+  mkdir -p "$WORK/generation/bin" "$ROOT/var/lib/greetd" "$ROOT/etc/systemd/system" "$ROOT/lib/systemd/system" "$ROOT/usr/local/bin"
+  printf '#!/bin/sh\n' > "$WORK/generation/bin/nirulogin"; chmod +x "$WORK/generation/bin/nirulogin"
+  getent() { [ "$1 $2" = "passwd _greetd" ]; }
+  id() { case "$1" in -u) echo 4242 ;; -gn) echo _greetd ;; *) command id "$@" ;; esac; }
+  chown() { printf '%s\n' "$*" >> "$gl/chown.log"; }
+  # shellcheck disable=SC2086 # test paths have no spaces
+  install() { args=; while [ "$#" -gt 0 ]; do case "$1" in -o|-g) shift 2 ;; *) args="$args $1"; shift ;; esac; done; command install $args; }
+  install_nirulogin >/dev/null
+  grep -qx -- "-R _greetd:_greetd $ROOT/var/lib/greetd" "$gl/chown.log"
+) || fail 'NIRU Login did not hand a stale greetd home to the current greeter account'
+rm -rf "$gl"
+
 # I07: a new shared-library dependency is provisioned before staged components
 # are executed. The synthetic component fails its version check without it.
 TEST_OS=debian; PREFIX=$TEST/libdep; BIN=$PREFIX/bin; STATE=$PREFIX/share/nirux
