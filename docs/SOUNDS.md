@@ -99,6 +99,42 @@ table once, with the defaults. Existing keys and tables are never changed,
 including a table you emptied on purpose, and the previous file is kept as
 `sounds.toml.bak`.
 
+## Per-app notification sounds
+
+Apps can have their own notification sound. By default Thunderbird mail plays
+`mail` and Signal messages play `chat`; every other app plays the normal
+notification sound:
+
+```toml
+[sounds.apps]
+thunderbird = "mail"          # mail.ogg
+signal = "chat"               # chat.ogg
+discord = "~/Music/ping.ogg"  # any file
+teams = "off"                 # notification shown, no sound
+```
+
+The key is the app name the notification is sent with, as listed by
+`nirunotify --history`; case does not matter. A name plays `NAME.ogg` from
+`~/.config/nirux/sounds/` first and then from the NIRUX sounds, so a file there
+replaces a bundled sound. A missing file falls back to the notification sound.
+Manage entries without editing the file:
+
+```sh
+nirux sounds app signal chat
+nirux sounds app discord ~/Music/ping.ogg
+nirux sounds app teams off
+nirux sounds app signal remove
+nirux sounds test notification --app Signal
+```
+
+Notification sounds are rate-limited per sound. Apps in
+`notification_exclude_apps` still show their text notifications and history
+but do not play the notification cue. Do Not Disturb silences notification
+sounds and nothing else. Thunderbird can play its own new-mail sound as well;
+turn that off in Thunderbird (Settings → General → Incoming Mails → Play a
+sound) to hear only the NIRUX one. Startup and shutdown sounds are part of the
+session and need a new login after an update.
+
 ## How it plays
 
 - **NIRUNOTIFY** plays the feedback, power, device and lock-screen sounds. It

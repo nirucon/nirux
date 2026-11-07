@@ -9,8 +9,8 @@ explicit request, and never pulled in by a core `nirux update`.
 | niruorg | 0.6.0 | File and folder management |
 | nirunote | 0.6.0 | Markdown editor |
 | nirupres | 2.2.0 | Presentation studio |
-| nplay | 1.8.0 | Terminal music, radio and podcast player; standalone |
-| niruamp | 0.4.0 | Graphical frontend for NPLAY with themed fullscreen visual mode; requires NPLAY 1.7.3+, 1.8.0 for the visualization stream |
+| nplay | 1.8.1 | Terminal music, radio and podcast player; standalone |
+| niruamp | 0.5.2 | Graphical frontend for NPLAY with themed fullscreen visual mode; requires NPLAY 1.7.3+ (1.8.0+ recommended for the visualization stream) |
 | niruflow | 0.6.0 | Local maintenance and automation |
 | nirusec | 0.2.0 | Firewall, ports, updates, firmware and security overview GUI |
 | nirugame | 0.1.4 | Steam, RetroArch, native games and optional user-supplied SID music |
@@ -28,7 +28,7 @@ nirux extras unselect niruflow
 ```
 
 `select` records a preference in
-`~/.local/state/nirux/extras-selected` without installing anything. Use
+`~/.local/share/nirux/extras-selected` without installing anything. Use
 `nirux extras status` to see pinned, installed and selected versions. NIRUBAR's
 suite-update module intentionally tracks the core generation only; it does not
 poll each extra's GitHub repository. `install`
