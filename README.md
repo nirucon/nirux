@@ -73,7 +73,7 @@ verified generation, at the versions pinned in [manifest](manifest).
 | [nirulogin](https://github.com/nirucon/nirulogin) | Minimal greetd/X11 login for NIRUWM | alpha |
 | [niruwebapp](https://github.com/nirucon/niruwebapp) | Web apps in their own windows with isolated or shared profiles | alpha |
 | [nirufetch](https://github.com/nirucon/nirufetch) | NIRU-styled system summary for the terminal | beta |
-| [nirushare](https://github.com/nirucon/nirushare) | Trusted text and image sharing over Tailscale | alpha |
+| [nirushare](https://github.com/nirucon/nirushare) | Trusted text and image sharing over Tailscale, and to your own Discord webhooks (preview first, Undo) | alpha |
 
 ### Extras
 
