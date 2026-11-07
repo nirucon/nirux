@@ -113,6 +113,12 @@ Driver and firmware problems belong to the distribution, not to NIRUX.
   fibonacci, floating and Scroll.
 - Per-monitor workspaces and per-workspace layouts.
 - Floating windows, fullscreen, scratchpad, gaps, master count and master ratio.
+- **Scratchpads:** `Super+Shift+S` shows or hides a terminal above whatever you
+  are doing; `Super+Alt+1…9` are nine more, and `Super+Alt+Shift+1…9` sends any
+  window to one of them (the same key on that window takes it back). One is shown
+  at a time, it follows you across workspaces and screens, and it never moves or
+  resizes the windows underneath. Slots can start their own program, e.g. btop,
+  in `[[scratchpad.slot]]`. The bar's `scratchpad` module lists them.
 - **Sticky windows:** `Super+Alt+S` keeps the focused window visible on every
   workspace of its monitor. The same key turns sticky off again.
 - Window rules for floating, centered, workspace, sticky and compositor opacity.
@@ -292,7 +298,9 @@ first. Installing NPLAY alone is fully supported, with or without NIRUX.
 | `Super+Ctrl+Shift+S` | Toggle Scroll columns |
 | `Super+Shift+Space` | Toggle floating |
 | `Super+Shift+E` | Toggle fullscreen |
-| `Super+Shift+S` | Scratchpad |
+| `Super+Shift+S` | Show / hide the default scratchpad |
+| `Super+Alt+1…9` | Show / hide scratchpad 1…9 |
+| `Super+Alt+Shift+1…9` | Send the focused window to scratchpad 1…9 (again: take it back) |
 | `Super+Shift+R` | Reload configuration |
 
 The launcher’s keybinding view always shows the effective shortcuts, including

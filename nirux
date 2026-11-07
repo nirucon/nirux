@@ -2,7 +2,7 @@
 # NIRUX: install a complete X11 desktop, or maintain an existing installation.
 set -eu
 
-VERSION=0.12.221
+VERSION=0.12.222
 PREFIX=${NIRUX_PREFIX:-$HOME/.local}
 BIN=$PREFIX/bin
 STATE=$PREFIX/share/nirux
@@ -920,7 +920,7 @@ upgrade_default_bar_modules() {
   [ -n "$mig_modules" ] || return 0
   mig_add=""
   mig_tail=0
-  for mig_module in layout display quicksettings niruxupdate dictation; do
+  for mig_module in layout display quicksettings niruxupdate scratchpad dictation; do
     case "$mig_modules" in
       *"\"$mig_module\""*) continue ;;
     esac

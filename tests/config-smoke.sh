@@ -38,9 +38,17 @@ for f in plain multi; do
   grep -q '"layout"' "$MODTEST/$f.toml" || fail "bar module layout was not added to $f"
   grep -q '"display"' "$MODTEST/$f.toml" || fail "bar module display was not added to $f"
   grep -q '"dictation"' "$MODTEST/$f.toml" || fail "bar module dictation was not added to $f"
+  grep -q '"scratchpad"' "$MODTEST/$f.toml" || fail "bar module scratchpad was not added to $f"
 done
 # Status modules go before the clock.
-grep -q '"dictation", "clock"' "$MODTEST/plain.toml" || fail 'dictation was not placed before the clock'
+grep -q '"scratchpad", "dictation", "clock"' "$MODTEST/plain.toml" || fail 'scratchpad and dictation were not placed before the clock'
+# A 0.12.221 list that already has dictation gains scratchpad once.
+printf '[bar]\nmodules = ["workspaces", "layout", "display", "quicksettings", "niruxupdate", "dictation", "clock"]\n' > "$MODTEST/v221.toml"
+for _ in 1 2; do
+  ( NIRUX_LIBRARY=1 && export NIRUX_LIBRARY; . "$SOURCE/nirux"; upgrade_default_bar_modules "$MODTEST/v221.toml" ) >/dev/null 2>&1 || :
+done
+[ "$(grep -o '"scratchpad"' "$MODTEST/v221.toml" | wc -l)" -eq 1 ] ||
+  fail 'scratchpad was not added exactly once to a 0.12.221 module list'
 
 # A custom list that already has the modules must not gain duplicates.
 printf '[bar]\nmodules = ["workspaces", "layout", "display", "clock"]\n' > "$MODTEST/custom.toml"

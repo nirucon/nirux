@@ -295,10 +295,13 @@ position = "top"
 # GitHub once a day, keeps the answer in ~/.cache/nirubar, and is silent when
 # there is nothing newer. It never installs anything: click it for the command,
 # which you run when you can log out afterwards.
+# "scratchpad" shows NIRUWM scratchpads (Super+Shift+S, Super+Alt+1-9): a
+# terminal mark while any exist; click it to list, show and hide them. It draws
+# nothing while there is no scratchpad.
 # "dictation" shows NIRUDICTATE (an extra): a red dot while it records, an
 # accent mark while it transcribes; nothing otherwise or when not installed.
 # Weather settings live in ~/.config/nirubar/config.toml; see weather.example.toml.
-modules = ["workspaces", "layout", "media", "volume", "brightness", "display", "tailscale", "network", "wifi", "mode", "battery", "agent", "dnd", "dictation", "quicksettings", "updates", "clock"]
+modules = ["workspaces", "layout", "media", "volume", "brightness", "display", "tailscale", "network", "wifi", "mode", "battery", "agent", "dnd", "scratchpad", "dictation", "quicksettings", "updates", "clock"]
 # Missing input/provider stays visible even with "muted" visibility.
 microphone_visibility = "always" # "always" or "muted"
 # Left: information. Right: mute. Scroll: gain (never unmutes).
@@ -370,6 +373,38 @@ update_check_minutes = 30
 # Let the bar own a system tray. Applications that show a tray icon appear in
 # the bar without any other program. Set false if another tray is running.
 tray = true
+
+# ── Scratchpads ─────────────────────────────────────────────────────────────
+# A scratchpad is a floating window you show and hide with one key, above
+# whatever workspace you are on. Showing one hides the one that was shown; the
+# key of the shown one hides it again. It is never part of a workspace, so it
+# never moves or resizes your other windows.
+#
+#   Super+Shift+S            the default scratchpad below
+#   Super+Alt+1 ... 9        scratchpad 1 ... 9
+#   Super+Alt+Shift+1 ... 9  send the focused window to scratchpad 1 ... 9
+#                            (on the window already there: take it back out)
+#   Super+Shift+Space        on a scratchpad: make it a normal window again
+#
+# The default scratchpad (Super+Shift+S). `command` is started the first time
+# and must give its window a class (--class, -class, --name or --app-id), which
+# is how the window is recognised. width/height: share of the screen,
+# 0.1 to 0.95, default 0.6.
+[scratchpad]
+command = ["kitty", "--class", "scratchpad"]
+width = 0.6
+height = 0.6
+
+# Numbered scratchpads need no settings: any window can be sent to any slot
+# with Super+Alt+Shift+N. Add a [[scratchpad.slot]] to give a slot a program
+# that starts the first time you press Super+Alt+N, or its own size. Each
+# command needs its own class. Unset width/height use the values above.
+#
+# [[scratchpad.slot]]     # Super+Alt+1
+# number = 1
+# command = ["kitty", "--class", "scratch-btop", "-e", "btop"]
+# width = 0.8
+# height = 0.8
 
 # ── Window rules ────────────────────────────────────────────────────────────
 # [[rules]]
