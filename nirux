@@ -2,7 +2,7 @@
 # NIRUX: install a complete X11 desktop, or maintain an existing installation.
 set -eu
 
-VERSION=0.12.224
+VERSION=0.12.225
 PREFIX=${NIRUX_PREFIX:-$HOME/.local}
 BIN=$PREFIX/bin
 STATE=$PREFIX/share/nirux
@@ -396,6 +396,18 @@ refresh_runtime_state() {
   fi
 }
 
+# Leave out what is already installed: pacman --needed and xbps-install print a
+# warning or an "ERROR: ... already installed" line for each of them, which
+# buried the real messages of a fresh install under ~40 alarming lines.
+not_installed() {
+  for package in "$@"; do
+    case "$OS" in
+      arch) command pacman -Qq "$package" >/dev/null 2>&1 || printf '%s ' "$package" ;;
+      void) command xbps-query "$package" >/dev/null 2>&1 || printf '%s ' "$package" ;;
+      *) printf '%s ' "$package" ;;
+    esac
+  done
+}
 install_packages() {
   install_only=0
   if [ "$#" -gt 0 ]; then
@@ -434,9 +446,13 @@ install_packages() {
   fi
   # Package names are fixed above; splitting this list is intentional.
   # shellcheck disable=SC2086
+  case "$OS" in arch|void) pkgs=$(not_installed $pkgs) ;; esac
+  # shellcheck disable=SC2086
   case "$OS" in
     arch)
-      if [ "$install_only" = 1 ]; then
+      if [ "$install_only" = 1 ] && [ -z "$pkgs" ]; then
+        :
+      elif [ "$install_only" = 1 ]; then
         # Never refresh the sync database without upgrading Arch. Use the
         # current database; if its packages expired, pacman fails and the user
         # can explicitly run pacman -Syu before retrying the update.
@@ -471,7 +487,9 @@ install_packages() {
       [ "$apt_status" = 0 ] || return "$apt_status"
       ;;
     void)
-      if [ "$install_only" = 1 ]; then
+      if [ -z "$pkgs" ]; then
+        :
+      elif [ "$install_only" = 1 ]; then
         as_root xbps-install -Sy $pkgs
       else
         # Install the requested runtime packages without forcing a full kernel
@@ -4994,7 +5012,9 @@ remove_greeters() {
      owned "$ROOT/usr/share/themes/NIRU/index.theme"; then
     as_root rm -rf "$ROOT/usr/share/themes/NIRU"
   fi
-  for file in rooted-in-less.png login.png; do
+  # /usr/share/nirux is NIRUX's own directory; saved copies of earlier greeter
+  # pictures go with it.
+  for file in rooted-in-less.png login.png rooted-in-less.png.nirux-backup login.png.nirux-backup; do
     if [ -f "$ROOT/usr/share/nirux/greeter/$file" ]; then
       as_root rm -f "$ROOT/usr/share/nirux/greeter/$file"
     fi
@@ -5512,12 +5532,25 @@ owned_system() {
     as_root grep -qxF "// NIRUX owner: $PREFIX" "$1" 2>/dev/null ||
     as_root grep -q '^# NIRULOGIN owner:' "$1" 2>/dev/null
 }
+# A saved copy written by any NIRUX installation (another prefix, a test
+# candidate, an older release) is NIRUX's own and is never restored. Seen on a
+# Debian host: uninstall put back a broad passwordless wpa_cli rule.
+nirux_written() {
+  as_root grep -qE '^(# |// |/\* )NIRUX owner:|^# NIRULOGIN owner:|^# Installed by nirux\.' "$1" 2>/dev/null
+}
 remove_system() {
-  as_root test -f "$1" 2>/dev/null || return 0
+  if ! as_root test -f "$1" 2>/dev/null; then
+    # An older release could leave its own rule saved as a backup with no
+    # file beside it; that backup is NIRUX's and goes too.
+    if as_root test -f "$1.nirux-backup" && nirux_written "$1.nirux-backup"; then
+      as_root rm -f "$1.nirux-backup"
+    fi
+    return 0
+  fi
   owned_system "$1" || return 0
   # A backup that is itself a NIRUX file came from an earlier release (for
   # example the withdrawn login-wallpaper sudoers rule) and must not return.
-  if as_root test -f "$1.nirux-backup" && ! owned_system "$1.nirux-backup"; then
+  if as_root test -f "$1.nirux-backup" && ! nirux_written "$1.nirux-backup"; then
     as_root mv -f "$1.nirux-backup" "$1"
   else
     as_root rm -f "$1" "$1.nirux-backup"

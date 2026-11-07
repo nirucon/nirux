@@ -801,12 +801,27 @@ un=$TEST/uninstall-root
   printf '# NIRUX owner: %s\nniru ALL=(root) NOPASSWD: /old/unsafe login-wallpaper sync\n' "$PREFIX" > "$ROOT/etc/sudoers.d/49-nirux-login-wallpaper.nirux-backup"
   printf '# NIRUX owner: %s\nniru ALL=(root) NOPASSWD: /usr/bin/install x\n' "$PREFIX" > "$ROOT/etc/sudoers.d/49-nirux-login-wallpaper"
   printf 'admin rule\n' > "$ROOT/etc/sudoers.d/00_admin"
+  # An orphaned backup of an older NIRUX rule (seen on a Void host).
+  mkdir -p "$ROOT/etc/sudoers.d/orphan"
+  printf '# NIRUX owner: %s\nold rule\n' "$PREFIX" > "$ROOT/etc/sudoers.d/orphan/rule.nirux-backup"
+  remove_system "$ROOT/etc/sudoers.d/orphan/rule"
+  [ ! -e "$ROOT/etc/sudoers.d/orphan/rule.nirux-backup" ] || fail 'uninstall left an orphaned NIRUX backup'
+  # A rule saved from another NIRUX installation is never put back.
+  printf '# NIRUX owner: %s\nniru ALL=(root) NOPASSWD: NEW\n' "$PREFIX" > "$ROOT/etc/sudoers.d/orphan/wifi"
+  printf '# NIRUX owner: temporary candidate test\nniru ALL=(root) NOPASSWD: /usr/sbin/wpa_cli\n' > "$ROOT/etc/sudoers.d/orphan/wifi.nirux-backup"
+  remove_system "$ROOT/etc/sudoers.d/orphan/wifi"
+  if [ -e "$ROOT/etc/sudoers.d/orphan/wifi" ] || [ -e "$ROOT/etc/sudoers.d/orphan/wifi.nirux-backup" ]; then fail 'uninstall restored a rule saved from another NIRUX installation'; fi
+  printf 'admin original\n' > "$ROOT/etc/sudoers.d/orphan/keep.nirux-backup"
+  remove_system "$ROOT/etc/sudoers.d/orphan/keep"
+  [ -f "$ROOT/etc/sudoers.d/orphan/keep.nirux-backup" ] || fail 'uninstall removed an administrator backup'
+  rm -rf "$ROOT/etc/sudoers.d/orphan"
   printf '// NIRUX owner: %s\npolkit.addRule(function(){});\n' "$PREFIX" > "$ROOT/etc/polkit-1/rules.d/49-nirux-power.rules"
   printf 'polkit.addRule(function(){});\n' > "$ROOT/etc/polkit-1/rules.d/49-nirulogin-power.rules"
   printf '# NIRULOGIN owner: %s\n[default_session]\n' "$PREFIX" > "$ROOT/etc/greetd/config.toml"
   printf 'allowed_users=anybody\nneeds_root_rights=yes\n' > "$ROOT/etc/X11/Xwrapper.config"
   printf 'allowed_users=anybody\nneeds_root_rights=yes\n' > "$ROOT/etc/X11/Xwrapper.config.before-nirulogin"
   : > "$ROOT/usr/local/bin/nirulogin"
+  mkdir -p "$ROOT/usr/share/nirux/greeter"; : > "$ROOT/usr/share/nirux/greeter/login.png.nirux-backup"
   ln -s /lib/systemd/system/greetd.service "$ROOT/etc/systemd/system/display-manager.service"
   printf '/lib/systemd/system/greetd.service\n' > "$ROOT/etc/nirulogin-previous-display-manager"
   ln -s /etc/sv/greetd "$ROOT/var/service/greetd"
@@ -817,6 +832,7 @@ un=$TEST/uninstall-root
     if [ -e "$ROOT/etc/$f" ] || [ -L "$ROOT/etc/$f" ]; then fail "uninstall left /etc/$f"; fi
   done
   [ -f "$ROOT/etc/sudoers.d/00_admin" ] || fail 'uninstall removed an administrator sudoers rule'
+  [ ! -e "$ROOT/usr/share/nirux" ] || fail 'uninstall left /usr/share/nirux with a saved greeter picture'
   [ ! -L "$ROOT/var/service/greetd" ] || fail 'uninstall left greetd enabled on runit without a configuration'
   grep -q 'greetd disabled' "$TEST/uninstall-greeters.log" || fail 'uninstall did not say that greetd was disabled'
   # A greetd configured before NIRU Login gets its configuration back and stays enabled.
