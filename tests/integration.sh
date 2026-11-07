@@ -559,7 +559,11 @@ for TEST_OS in arch debian void; do
     "$XDG_STATE_HOME/nirulock" "$XDG_STATE_HOME/niruscreensaver" \
     "$HOME/.cache/nirubar"
   say stale > "$HOME/.cache/nirubar/updates"
+  # A remembered extras selection (normal on a real machine) must not stop
+  # uninstall: 0.12.223 exited there when the last listed extra was missing.
+  mkdir -p "$(dirname "$EXTRAS_SELECTED")"; printf 'niruflow\n' > "$EXTRAS_SELECTED"
   operation uninstall
+  rm -f "$EXTRAS_SELECTED"
   [ ! -e "$BIN/niruwm" ] || fail 'program still installed'
   [ ! -e "$ROOT/etc/pam.d/nirulock" ] || fail 'owned PAM service remained'
   [ ! -e "$ROOT/usr/share/applications/niruwallpaper.desktop" ] || fail 'wallpaper app entry remained after uninstall'
