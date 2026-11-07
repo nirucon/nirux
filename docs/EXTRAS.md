@@ -15,7 +15,7 @@ explicit request, and never pulled in by a core `nirux update`.
 | nirusec | 0.2.0 | Firewall, ports, updates, firmware and security overview GUI |
 | nirugame | 0.1.4 | Steam, RetroArch, native games and optional user-supplied SID music |
 | niruremote | 0.2.0 | Graphical remote desktop over Tailscale and SSH (no open port); Linux/X11 host, Windows/macOS clients |
-| nirudictate | 0.1.0 | Local speech-to-text dictation: Ctrl+Alt+Space, Swedish (KB-Whisper) by default, English; whisper.cpp on the CPU, nothing leaves the computer |
+| nirudictate | 0.2.0 | Local speech-to-text dictation: Ctrl+Alt+Space, Swedish (KB-Whisper) by default, English; whisper.cpp on the CPU, nothing leaves the computer. Agent mode: Shift+Alt+Space sends what you say to opencode (scratchpad 9) |
 
 ## Commands
 
@@ -63,8 +63,13 @@ NIRUDICTATE starts its background service in the running session when it is
 installed (also over SSH, from the session's environment), and the NIRUX
 session (NIRUWM 0.17.3+) starts it at every login. Models are downloaded from
 its own settings panel (`nirudictate settings`), not by NIRUX. NIRUBAR's
-`dictation` module shows a red dot while it records; the `dictation` sound
-category belongs to `nirux sounds`.
+`dictation` module shows a red dot while it records (`● AI` in agent mode);
+the `dictation` sound category belongs to `nirux sounds`.
+
+NIRUDICTATE 0.2's agent mode (Shift+Alt+Space) needs opencode, which NIRUX
+does not install; without it the agent shortcut is simply not taken. The
+opencode window it opens lives in NIRUWM scratchpad 9 (Super+Alt+9, NIRUWM
+0.17.9+), so keep slot 9 free for it.
 
 ## Why outside the manifest
 

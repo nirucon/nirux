@@ -2,7 +2,7 @@
 # NIRUX: install a complete X11 desktop, or maintain an existing installation.
 set -eu
 
-VERSION=0.12.231
+VERSION=0.12.232
 PREFIX=${NIRUX_PREFIX:-$HOME/.local}
 BIN=$PREFIX/bin
 STATE=$PREFIX/share/nirux
@@ -2575,7 +2575,7 @@ niruflow niruflow 0.6.1 8c5611a3d719fb0ec6f0dc8f296ffde1b22e5d4aa9e6f600b5d5c76e
 nirusec nirusec 0.2.0 f3f7b85a1e0e3e91880721c060d24c50eadf843c602624eb8345bf8f3c5ae6d2
 nirugame nirugame 0.1.4 96288834f2ca08c08b062f6f28142c079ee6c9c9198b9cdf085143deac719e54
 niruremote niruremote 0.2.0 64571f661be436c1fb69b72439f7af69802d87c83ac1652c49b84f0cfd80f784
-nirudictate nirudictate 0.1.0 fe7816e53a9a865be642c23b42294f6b839ffe7cf992e7239ccfee857ff12aeb
+nirudictate nirudictate 0.2.0 941d05b801a0b1d8338a1a4d4e507e15ddd54b32e769a898c9b3fef69b7c916f
 EOF
 }
 extras_row() {

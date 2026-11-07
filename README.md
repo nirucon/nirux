@@ -92,7 +92,7 @@ by `nirux install` or `nirux update`; install only the ones you want with
 | [nirusec](https://github.com/nirucon/nirusec) | Firewall, ports, updates, firmware and security overview | alpha |
 | [nirugame](https://github.com/nirucon/nirugame) | Steam, RetroArch and native games, with optional user-supplied SID music | alpha |
 | [niruremote](https://github.com/nirucon/niruremote) | Graphical remote desktop over Tailscale and SSH | alpha |
-| [nirudictate](https://github.com/nirucon/nirudictate) | Local speech-to-text dictation with `Ctrl+Alt+Space` | alpha |
+| [nirudictate](https://github.com/nirucon/nirudictate) | Local speech-to-text dictation with `Ctrl+Alt+Space`; `Shift+Alt+Space` talks to the opencode agent | alpha |
 
 ### Accessories
 
