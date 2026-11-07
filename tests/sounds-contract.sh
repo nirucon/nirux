@@ -74,6 +74,24 @@ nothing() {
   sleep 0.3
   [ ! -s "$LOG" ] || fail "$1: expected silence, played $(cat "$LOG")"
 }
+# Play and expect, with one retry. The feedback ticks failed now and then on
+# GitHub runners with "got 'silence'" (once next to a "printf: I/O error" from
+# the runner), which never reproduced locally, also not under parallel load.
+# A transient miss is retried once after clearing the rate-limit stamps; a tick
+# that never plays still fails.
+play_expect() {
+  label=$1 want=$2; shift 2
+  nirux sounds play "$@"
+  got=$(played)
+  if [ -z "$got" ]; then
+    printf 'note: %s: no sound on the first try, retrying once\n' "$label" >&2
+    rm -f "$SOUNDS"/.feedback-stamp-*
+    sleep 0.25
+    nirux sounds play "$@"
+    got=$(played)
+  fi
+  [ "$got" = "$want" ] || fail "$label: expected '${want:-silence}', got '${got:-silence}'"
+}
 reset_cooldowns() { rm -f "$SOUNDS"/.notification-stamp*; }
 
 # A new configuration has the per-app defaults.
@@ -235,15 +253,20 @@ nirux sounds play dictation-start; expect 'dictation-start' "$SOUNDS/dictation-s
 nirux sounds play dictation-done; nothing 'dictation-done off by default'
 
 # The volume tick follows the level, rounded to the nearest 10 % step.
-nirux sounds play volume-up --level 47; expect 'tick at 47 %' "$SOUNDS/levels/volume-up-050.ogg"
+play_expect 'tick at 47 %' "$SOUNDS/levels/volume-up-050.ogg" volume-up --level 47
 sleep 0.25
-nirux sounds play volume-down --level 08; expect 'tick at 08 %' "$SOUNDS/levels/volume-down-010.ogg"
+play_expect 'tick at 08 %' "$SOUNDS/levels/volume-down-010.ogg" volume-down --level 08
 sleep 0.25
-nirux sounds play volume-up --level 100; expect 'tick at 100 %' "$SOUNDS/levels/volume-up-100.ogg"
+play_expect 'tick at 100 %' "$SOUNDS/levels/volume-up-100.ogg" volume-up --level 100
 sleep 0.25
-nirux sounds play volume-up --level 9999; expect 'tick above 100 %' "$SOUNDS/levels/volume-up-100.ogg"
+play_expect 'tick above 100 %' "$SOUNDS/levels/volume-up-100.ogg" volume-up --level 9999
 sleep 0.25
-nirux sounds play volume-up; expect 'tick without level' "$SOUNDS/volume-up.ogg"
+play_expect 'tick without level' "$SOUNDS/volume-up.ogg" volume-up
+
+# A stamp in the future (the clock stepped back) does not silence the tick.
+printf '%s\n' 99999999999999 > "$SOUNDS/.feedback-stamp-volume-up"
+sleep 0.25
+nirux sounds play volume-up; expect 'tick after a clock step back' "$SOUNDS/volume-up.ogg"
 
 # Held keys: one tick per rate_limit_ms per event.
 sleep 0.1

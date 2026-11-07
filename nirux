@@ -1605,7 +1605,10 @@ sounds_stamp_ok() {
   if [ -f "$sounds_stamp" ]; then
     sounds_prev=$(cat "$sounds_stamp" 2>/dev/null || :)
     case "$sounds_prev" in ''|*[!0-9]*) sounds_prev=0 ;; esac
-    [ $((sounds_now - sounds_prev)) -lt "$sounds_cd" ] && return 1
+    # A clock that stepped back (NTP, a VM, resume) leaves a stamp in the
+    # future; that must not silence every sound until the clock catches up.
+    sounds_age=$((sounds_now - sounds_prev))
+    [ "$sounds_age" -ge 0 ] && [ "$sounds_age" -lt "$sounds_cd" ] && return 1
   fi
   mkdir -p "$(dirname "$sounds_stamp")" 2>/dev/null || :
   printf '%s\n' "$sounds_now" > "$sounds_stamp" 2>/dev/null || :
