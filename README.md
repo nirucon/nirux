@@ -88,7 +88,7 @@ by `nirux install` or `nirux update`; install only the ones you want with
 | [nirupres](https://github.com/nirucon/nirupres) | Presentation studio | beta |
 | [nplay](https://github.com/nirucon/nplay) | Terminal music, radio and podcast player; also fully standalone | beta |
 | [niruamp](https://github.com/nirucon/niruamp) | Graphical, Winamp-inspired frontend for NPLAY (requires NPLAY) | alpha |
-| [niruflow](https://github.com/nirucon/niruflow) | Local maintenance and automation | beta |
+| [niruflow](https://github.com/nirucon/niruflow) | Local maintenance and automation | alpha |
 | [nirusec](https://github.com/nirucon/nirusec) | Firewall, ports, updates, firmware and security overview | alpha |
 | [nirugame](https://github.com/nirucon/nirugame) | Steam, RetroArch and native games, with optional user-supplied SID music | alpha |
 | [niruremote](https://github.com/nirucon/niruremote) | Graphical remote desktop over Tailscale and SSH | alpha |
