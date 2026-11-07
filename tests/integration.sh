@@ -838,11 +838,13 @@ un=$TEST/uninstall-root
   # A greetd configured before NIRU Login gets its configuration back and stays enabled.
   printf '# NIRULOGIN owner: %s\n' "$PREFIX" > "$ROOT/etc/greetd/config.toml"
   printf '[default_session]\ncommand = "agreety --cmd /bin/sh"\n' > "$ROOT/etc/greetd/config.toml.before-nirulogin"
+  cp "$ROOT/etc/greetd/config.toml.before-nirulogin" "$ROOT/etc/greetd/config.toml.nirux-backup"
   printf '# NIRUX owner: %s\nallowed_users=anybody\nneeds_root_rights=yes\n' "$PREFIX" > "$ROOT/etc/X11/Xwrapper.config"
   printf 'allowed_users=console\n' > "$ROOT/etc/X11/Xwrapper.config.before-nirulogin"
   ln -s /lib/systemd/system/greetd.service "$ROOT/etc/systemd/system/display-manager.service"
   remove_greeters >/dev/null
   grep -q agreety "$ROOT/etc/greetd/config.toml" || fail 'uninstall did not restore the previous greetd configuration'
+  [ ! -e "$ROOT/etc/greetd/config.toml.nirux-backup" ] || fail 'uninstall left a duplicate greetd backup'
   [ -L "$ROOT/etc/systemd/system/display-manager.service" ] || fail 'uninstall disabled a greetd that had its own configuration'
   [ "$(cat "$ROOT/etc/X11/Xwrapper.config")" = allowed_users=console ] || fail 'uninstall did not restore the X wrapper policy'
 ) || fail 'uninstall cleanup checks failed'

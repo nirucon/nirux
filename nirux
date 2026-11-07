@@ -2,7 +2,7 @@
 # NIRUX: install a complete X11 desktop, or maintain an existing installation.
 set -eu
 
-VERSION=0.12.226
+VERSION=0.12.227
 PREFIX=${NIRUX_PREFIX:-$HOME/.local}
 BIN=$PREFIX/bin
 STATE=$PREFIX/share/nirux
@@ -4045,7 +4045,9 @@ owned_binary() {
   [ -f "$1" ] || return 1
   [ -f "$own_record" ] || return 1
   current=$(sha256sum "$1" | cut -d ' ' -f1)
-  grep -qxF "$current" "$own_record"
+  # The record is written by root; with a strict umask (077) it is not
+  # readable by the user, so read it the same way it was written.
+  grep -qxF "$current" "$own_record" 2>/dev/null || as_root grep -qxF "$current" "$own_record"
 }
 write_binary() {
   target=$1; source=$2
@@ -4063,7 +4065,8 @@ write_binary() {
   as_root install -d -m 755 "$(dirname "$target")"
   as_root install -m 644 "$source" "$target"
   as_root install -d -m 755 "$(dirname "$own_record")"
-  { sha256sum "$source" | cut -d ' ' -f1 | as_root tee "$own_record" >/dev/null; }
+  sha256sum "$source" | cut -d ' ' -f1 > "$WORK/own-record"
+  as_root install -m 644 "$WORK/own-record" "$own_record"
 }
 remove_binary() {
   target=$1
@@ -4965,9 +4968,15 @@ remove_greeters() {
     if as_root test -f "$ROOT/etc/greetd/config.toml.before-nirulogin"; then
       as_root mv -f "$ROOT/etc/greetd/config.toml.before-nirulogin" "$ROOT/etc/greetd/config.toml"
       greetd_restored=1
+    elif as_root test -f "$ROOT/etc/greetd/config.toml.nirux-backup" &&
+         ! nirux_written "$ROOT/etc/greetd/config.toml.nirux-backup"; then
+      as_root mv -f "$ROOT/etc/greetd/config.toml.nirux-backup" "$ROOT/etc/greetd/config.toml"
+      greetd_restored=1
     else
       as_root rm -f "$ROOT/etc/greetd/config.toml"
     fi
+    # write_system kept a second copy of the same original.
+    as_root rm -f "$ROOT/etc/greetd/config.toml.nirux-backup"
   fi
   previous_dm=
   if [ -f "$ROOT/etc/nirulogin-previous-display-manager" ]; then
