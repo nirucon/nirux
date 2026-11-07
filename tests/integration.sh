@@ -867,6 +867,23 @@ gl=$TEST/greeter-home
 ) || fail 'NIRU Login did not hand a stale greetd home to the current greeter account'
 rm -rf "$gl"
 
+# Unattended without a password: the extras get a sudo that refuses at once
+# instead of real sudo failing (and counting toward pam_faillock) per call.
+if command -v sudo >/dev/null 2>&1 && [ "$(id -u)" != 0 ]; then
+  shim=$TEST/shim-test
+  mkdir -p "$shim"
+  (
+    # shellcheck disable=SC2034 # read by the sourced installer
+    SUDO_SECRET=''
+    # shellcheck disable=SC2034 # read by the sourced installer
+    SUDO_SECRET_FILE=''
+    extras_sudo_shim "$shim" < /dev/null
+    [ "$EXTRAS_SHIM_PATH" = "$shim/.sudo:" ]
+  ) || fail 'no refusing sudo for an unattended extra without a password'
+  grep -q 'no terminal to ask for the password' "$shim/.sudo/sudo" || fail 'refusing sudo has no explanation'
+  rm -rf "$shim"
+fi
+
 # I07: a new shared-library dependency is provisioned before staged components
 # are executed. The synthetic component fails its version check without it.
 TEST_OS=debian; PREFIX=$TEST/libdep; BIN=$PREFIX/bin; STATE=$PREFIX/share/nirux

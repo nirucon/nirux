@@ -2,7 +2,7 @@
 # NIRUX: install a complete X11 desktop, or maintain an existing installation.
 set -eu
 
-VERSION=0.12.227
+VERSION=0.12.228
 PREFIX=${NIRUX_PREFIX:-$HOME/.local}
 BIN=$PREFIX/bin
 STATE=$PREFIX/share/nirux
@@ -2627,7 +2627,25 @@ extras_sudo_shim() {
   real_sudo=$(command -v sudo 2>/dev/null) || return 0
   # No `sudo -n` shortcut: a timestamp NIRUX created can be keyed to its own
   # process and still refuse the installer's sudo.
-  [ -n "${SUDO_SECRET:-}" ] || sudo_secret_file || return 0
+  if [ -z "${SUDO_SECRET:-}" ] && ! sudo_secret_file; then
+    # No terminal and no password: every sudo the vendor installer runs fails
+    # with "a terminal is required", and pam_faillock counts each of them.
+    # Three extras in a row locked the account for ten minutes, the lock
+    # screen included (seen on Arch). Answer such a sudo here instead, unless
+    # sudo works without a password for this user.
+    [ -t 0 ] && return 0
+    mkdir -p "$1/.sudo" && chmod 700 "$1/.sudo" || return 0
+    {
+      printf '#!/bin/sh\n'
+      printf '"%s" -n "$@" 2>/dev/null && exit 0\n' "$real_sudo"
+      printf 'echo "nirux: this extra needs sudo, and there is no terminal to ask for the password." >&2\n'
+      printf 'echo "nirux: run nirux extras install in a terminal." >&2\n'
+      printf 'exit 1\n'
+    } > "$1/.sudo/sudo" || return 0
+    chmod 700 "$1/.sudo/sudo" || return 0
+    EXTRAS_SHIM_PATH="$1/.sudo:"
+    return 0
+  fi
   if [ -z "${SUDO_SECRET_FILE:-}" ] || [ ! -f "$SUDO_SECRET_FILE" ]; then
     sudo_secret_keep "$SUDO_SECRET" >/dev/null 2>&1 || return 0
   fi

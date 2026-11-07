@@ -42,7 +42,11 @@ Vendor installers can ask for sudo and may install runtime packages; review thei
 output. In a terminal they ask before installing packages as usual. Without a
 terminal (a deployment script, a graphical update) nobody can answer, so NIRUX
 sets `NIRUX_ASSUME_YES=1` for the installer: asking NIRUX for the extra is the
-consent. NIRUX never deletes an extra's user data as part of unselecting it.
+consent. When there is no terminal and NIRUX holds no password either, an
+extra that needs `sudo` fails at once with a clear message instead of trying
+sudo (each failed attempt counts toward `pam_faillock`, and three lock the
+account, screen lock included, for ten minutes). NIRUX never deletes an
+extra's user data as part of unselecting it.
 
 `uninstall` downloads the same pinned source, runs the extra's own
 `uninstall.sh` and unselects it. Every extra keeps its user data on a normal
