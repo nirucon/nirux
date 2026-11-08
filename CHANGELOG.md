@@ -2,8 +2,11 @@
 
 Earlier releases are described in their release notes and commit messages.
 
-## 0.12.239 (2026-11-08)
+## 0.12.240 (2026-11-08)
 
+- Supersedes 0.12.239, which was tagged but not published: NIRUWM bundles
+  NIRUBAR, so the new NIRUBAR needs NIRUWM 0.18.3 (bundles NIRUBAR 0.18.91;
+  no window manager changes).
 - **NIRUCLIP 0.4.0: the camera works properly.** It used to record whatever
   mode the camera driver last used, YUYV 640x480 on most webcams (camera-only
   clips were 640x480 at about 40 kb/s with many repeated frames). It now asks
