@@ -15,7 +15,7 @@ explicit request, and never pulled in by a core `nirux update`.
 | nirusec | 0.2.0 | Firewall, ports, updates, firmware and security overview GUI |
 | nirugame | 0.1.4 | Steam, RetroArch, native games and optional user-supplied SID music |
 | niruremote | 0.2.0 | Graphical remote desktop over Tailscale and SSH (no open port); Linux/X11 host, Windows/macOS clients |
-| nirudictate | 0.2.0 | Local speech-to-text dictation: Ctrl+Alt+Space, Swedish (KB-Whisper) by default, English; whisper.cpp on the CPU, nothing leaves the computer. Agent mode: Shift+Alt+Space sends what you say to opencode (scratchpad 9) |
+| nirudictate | 0.2.1 | Local speech-to-text dictation: Ctrl+Alt+Space, Swedish (KB-Whisper) by default, English; whisper.cpp on the CPU, nothing leaves the computer. Agent mode: Shift+Alt+Space sends what you say to opencode (scratchpad 9) |
 
 ## Commands
 

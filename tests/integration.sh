@@ -321,6 +321,92 @@ done
 ) > "$TEST/arch-packages.log"
 grep -qx -- '-S --needed --noconfirm kitty' "$TEST/arch-packages.log" || fail 'unsafe Arch missing-package command'
 
+# NIRULOCK's pause music needs sidplayfp: a distribution package on Debian and
+# Void, AUR only on Arch, where it is built and never fatal.
+for os in debian void; do
+  ( OS=$os; packages_for "$OS" ) | grep -qw sidplayfp || fail "sidplayfp missing from $os package list"
+done
+( OS=arch; packages_for "$OS" ) | grep -qw sidplayfp && fail 'sidplayfp is not an Arch repository package'
+if command -v sidplayfp >/dev/null 2>&1; then
+  say 'skip: sidplayfp is installed on this machine; AUR provisioning tests need it absent'
+else
+  aur=$TEST/aur
+  mkdir -p "$aur"
+  (
+    OS=debian; SIDPLAYFP_AUR_MARKER=$aur/marker
+    as_root() { printf 'root %s\n' "$*" >> "$aur/debian.log"; }
+    provision_sidplayfp_aur
+  )
+  [ ! -s "$aur/debian.log" ] || fail 'sidplayfp AUR provisioning ran on Debian'
+  # makepkg as the user in a login shell, then pacman -U as root.
+  (
+    OS=arch; SIDPLAYFP_AUR_MARKER=$aur/marker
+    distribution_package_present() { return 1; }
+    id() { say 1000; } # the distro CI containers run as root
+    as_root() { printf 'root %s\n' "$*" >> "$aur/makepkg.log"; }
+    git() { printf 'git %s\n' "$*" >> "$aur/makepkg.log"; mkdir -p "$6"; }
+    bash() {
+      printf 'bash %s\n' "$1" >> "$aur/makepkg.log"
+      : > "$4/sidplayfp-3.2.3-1-x86_64.pkg.tar.zst"
+      : > "$4/sidplayfp-debug-3.2.3-1-x86_64.pkg.tar.zst"
+    }
+    provision_sidplayfp_aur
+  ) > "$aur/makepkg.out" 2>&1 || fail 'sidplayfp makepkg provisioning failed'
+  grep -q '^root pacman -S --needed --noconfirm base-devel git libsidplayfp .* perl$' "$aur/makepkg.log" ||
+    fail 'sidplayfp build dependencies (perl included) were not installed'
+  grep -q '^git clone --quiet --depth 1 https://aur.archlinux.org/sidplayfp.git ' "$aur/makepkg.log" ||
+    fail 'sidplayfp was not cloned from the AUR'
+  grep -qx 'bash -lc' "$aur/makepkg.log" || fail 'makepkg did not run in a login shell'
+  grep -q '^root pacman -U --needed --noconfirm .*/sidplayfp-3.2.3-1-x86_64.pkg.tar.zst$' "$aur/makepkg.log" ||
+    fail 'the built sidplayfp package was not installed'
+  grep -q 'sidplayfp-debug' "$aur/makepkg.log" && fail 'the debug package was installed'
+  # An installed AUR helper is used instead of makepkg.
+  (
+    OS=arch; SIDPLAYFP_AUR_MARKER=$aur/marker
+    distribution_package_present() { return 1; }
+    id() { say 1000; } # the distro CI containers run as root
+    as_root() { printf 'root %s\n' "$*" >> "$aur/helper.log"; }
+    paru() { printf 'paru %s\n' "$*" >> "$aur/helper.log"; }
+    provision_sidplayfp_aur
+  ) > /dev/null 2>&1
+  grep -qx 'paru -S --needed --noconfirm sidplayfp' "$aur/helper.log" || fail 'the AUR helper was not used'
+  grep -q '^root' "$aur/helper.log" && fail 'makepkg ran although the AUR helper succeeded'
+  # A failed build warns, is not fatal and is not retried by every update.
+  (
+    OS=arch; SIDPLAYFP_AUR_MARKER=$aur/marker
+    distribution_package_present() { return 1; }
+    id() { say 1000; } # the distro CI containers run as root
+    as_root() { :; }
+    yay() { return 1; }
+    git() { return 1; }
+    provision_sidplayfp_aur
+    say "status $?"
+    git() { printf 'retried\n' >> "$aur/retry.log"; return 1; }
+    provision_sidplayfp_aur
+  ) > "$aur/fail.out" 2>&1 || fail 'a failed sidplayfp build was fatal'
+  grep -q 'status 0' "$aur/fail.out" || fail 'a failed sidplayfp build returned an error'
+  grep -q 'warning: sidplayfp could not be installed from the AUR' "$aur/fail.out" || fail 'a failed sidplayfp build did not warn'
+  [ -f "$aur/marker" ] || fail 'a failed sidplayfp build was not remembered'
+  [ ! -e "$aur/retry.log" ] || fail 'a failed sidplayfp build was retried by the next update'
+  (
+    OS=arch; SIDPLAYFP_AUR_MARKER=$aur/root-marker
+    distribution_package_present() { return 1; }
+    id() { say 0; }
+    git() { printf 'built as root\n' >> "$aur/root.log"; return 1; }
+    provision_sidplayfp_aur
+  ) > "$aur/root.out" 2>&1 || fail 'sidplayfp provisioning as root was fatal'
+  [ ! -e "$aur/root.log" ] || fail 'makepkg was run as root'
+  grep -q 'makepkg does not run as root' "$aur/root.out" || fail 'root sidplayfp provisioning did not warn'
+  (
+    OS=arch
+    # shellcheck disable=SC2034 # read by sidplayfp_aur_marker
+    SIDPLAYFP_AUR_MARKER=$aur/none
+    distribution_package_present() { return 1; }
+    id() { say 1000; } # the distro CI containers run as root
+    NIRUX_PACKAGES_DRY_RUN=1 provision_sidplayfp_aur
+  ) | grep -qx 'would build sidplayfp from the AUR' || fail 'dry run did not report the sidplayfp AUR build'
+fi
+
 # TOML keys are scoped to tables. A same-named key in a different table must
 # neither suppress a new setting nor be overwritten. Accept indented headers
 # with comments and preserve private config permissions and idempotence.

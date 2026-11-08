@@ -163,6 +163,17 @@ Themes, artwork and small shared pieces.
   Bluetooth, displays, power, themes, sound, input, screenshots and recording.
   Deterministic phrases such as "lock", "focus mode" or "volume up" resolve to
   native actions with no account, model or network request.
+- **Keybinding cheat sheet** on `Super+/`: every key in effect, including your
+  own overrides and keys that programs such as NIRUDICTATE register, grouped and
+  searchable by words or by key. Enter runs one, Ctrl+R tells what a pressed key
+  does, and clashes are flagged.
+- **Emoji and symbols** on `Super+.` (or `:name` in the launcher): color emoji
+  with English and Swedish keywords, recents first, Tab for skin tone, plus ©,
+  ™, arrows, °, ±, currency and typographic quotes. Enter pastes and restores
+  your clipboard; Shift+Enter only copies.
+- **Color picker** on `Super+Ctrl+C` (`nirushot pick`): a frozen frame with a
+  magnifier, arrow keys for 1 px steps (Shift: 10 px), Tab for hex/rgb/hsl. The
+  color is copied, and the last ten are in the launcher's Colors view.
 - **Clipboard history** on `Super+V`, stored locally in
   `~/.local/state/niru/clipboard.json`, capped at 200 entries, filtered for
   obvious secrets and never uploaded.
@@ -172,7 +183,10 @@ Themes, artwork and small shared pieces.
   groups, profiles and safe preview transactions.
 - **Notifications, lock and idle:** native notifications with DND and history,
   a PAM lock screen and an idle screensaver, both with CAVA, minimal, terminal,
-  runic and corner layouts that follow the theme.
+  runic and corner layouts that follow the theme. Optional pause music on the
+  lock screen: Commodore 64 SID tunes from `~/Music/SID` through `sidplayfp`
+  when nothing else is playing (`[pause_music] enabled = true` in
+  `~/.config/niruui/lock.toml`; Esc stops it).
 - **Capture:** NIRUSHOT for full-screen, region and window screenshots with
   review and annotation; NIRUCLIP for screen, region and camera recording.
 - **Event sounds:** one family of short, soft sounds in five categories, each
@@ -191,6 +205,9 @@ Themes, artwork and small shared pieces.
   runtime packages, not an operating system or GPU drivers; driver and firmware
   problems belong to the distribution.
 - Released binaries do not support Wayland, Void musl or other architectures.
+- On Arch, `sidplayfp` (the lock screen's optional pause music) is only in the
+  AUR. NIRUX installs it with your AUR helper (paru or yay) or builds it with
+  `makepkg`; if that fails it warns and the lock simply plays no music.
 
 ## Installation
 
@@ -266,6 +283,9 @@ selected with `niructl theme ID`. See [Wallpapers and packs](docs/WALLPAPERS.md)
 | `Super+P` | Applications |
 | `Super+A` | NIRU Actions |
 | `Super+Shift+P` | Applications, windows, actions and settings in one view |
+| `Super+/` | Keybinding cheat sheet |
+| `Super+.` | Emoji and symbols |
+| `Super+Ctrl+C` | Pick a color from the screen |
 | `Super+S` | Web search |
 | `Super+V` | Clipboard history |
 | `Alt+Tab`, `Super+W`, `Super+grave` | Window switcher |
@@ -275,6 +295,7 @@ selected with `niructl theme ID`. See [Wallpapers and packs](docs/WALLPAPERS.md)
 | `Super+Ctrl+S` | Scroll layout |
 | `Super+Ctrl+Shift+S` | Toggle one or two Scroll columns |
 | `Super+Shift+Space` | Toggle floating |
+| `Super+Alt+.` / `Super+,` (or `Super+Alt+,`) | Focus the next / previous screen (next screen was `Super+.` before NIRUWM 0.18) |
 | `Super+Shift+E` | Toggle fullscreen |
 | `Super+Alt+S` | Toggle sticky for the focused window |
 | `Super+Shift+S` | Show / hide the default scratchpad |
@@ -286,8 +307,8 @@ selected with `niructl theme ID`. See [Wallpapers and packs](docs/WALLPAPERS.md)
 | `Super+Shift+R` | Reload configuration |
 
 The full list is in the [NIRUWM README](https://github.com/nirucon/niruwm), and
-the launcher's keybinding view always shows the effective shortcuts, including
-your own overrides.
+the cheat sheet (`Super+/`) always shows the effective shortcuts, including
+your own overrides and the keys of other programs.
 
 ### The `nirux` command
 

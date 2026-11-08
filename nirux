@@ -2,7 +2,7 @@
 # NIRUX: install a complete X11 desktop, or maintain an existing installation.
 set -eu
 
-VERSION=0.12.232
+VERSION=0.12.233
 PREFIX=${NIRUX_PREFIX:-$HOME/.local}
 BIN=$PREFIX/bin
 STATE=$PREFIX/share/nirux
@@ -312,8 +312,8 @@ distribution_packages_for() {
   case "$1" in arch) say python ;; debian|void) say python3 ;; esac
   case "$1" in
     arch) say "xorg-server xorg-xinit xorg-xauth xorg-xrandr xorg-xset xorg-xprop xorg-xdpyinfo xorg-xwininfo xorg-xrdb xorg-xsetroot xorg-setxkbmap xorg-xinput xf86-input-libinput libinput-tools xkeyboard-config noto-fonts-emoji ttf-liberation noto-fonts udisks2 gvfs gvfs-mtp gvfs-smb gvfs-afc gvfs-nfs gvfs-dnssd glib2 xarchiver 7zip unzip zip unrar-free exfatprogs dbus pam pipewire pipewire-audio pipewire-pulse pipewire-alsa wireplumber alsa-utils alsa-ucm-conf rtkit fontconfig libglvnd ttf-dejavu ttf-jetbrains-mono-nerd kitty fish polkit-gnome libayatana-appindicator libayatana-indicator ayatana-ido bluez bluez-utils power-profiles-daemon dunst picom feh maim slop xdotool xclip ffmpeg v4l-utils xorg-xrandr xorg-xprop pcmanfm playerctl libnotify brightnessctl gammastep iproute2 iw xdg-utils xdg-user-dirs unzip procps-ng util-linux" ;;
-    debian) say "xserver-xorg xserver-xorg-input-libinput xinput libinput-tools xinit xauth x11-xserver-utils x11-utils x11-xkb-utils xkb-data fonts-liberation fonts-noto-core udisks2 gvfs gvfs-backends gvfs-fuse libglib2.0-bin xarchiver 7zip unzip zip unrar-free exfatprogs dbus-x11 dbus-user-session libpam0g pipewire pipewire-pulse pipewire-alsa wireplumber alsa-utils alsa-ucm-conf rtkit fontconfig libgles2 fonts-dejavu-core fonts-font-awesome fonts-jetbrains-mono fonts-noto-color-emoji kitty fish lxpolkit libayatana-appindicator3-1 libayatana-indicator3-7 libayatana-ido3-0.4-0 bluez libspa-0.2-bluetooth power-profiles-daemon dunst picom feh maim slop xdotool xclip ffmpeg v4l-utils x11-utils pcmanfm playerctl libnotify-bin brightnessctl gammastep iproute2 iw rfkill xdg-utils xdg-user-dirs unzip procps util-linux" ;;
-    void) say "xorg-minimal xinit xauth xrandr xset xprop xdpyinfo xwininfo xrdb xsetroot setxkbmap xinput libinput xkeyboard-config liberation-fonts-ttf noto-fonts-ttf udisks2 gvfs gvfs-mtp gvfs-smb gvfs-afc glib xarchiver 7zip unzip zip exfatprogs dbus elogind pam pam-base pipewire wireplumber alsa-utils alsa-ucm-conf rtkit fontconfig libglvnd dejavu-fonts-ttf nerd-fonts-symbols-ttf noto-fonts-emoji kitty fish-shell polkit-gnome libayatana-appindicator libayatana-indicator ayatana-ido bluez libspa-bluetooth power-profiles-daemon dunst picom feh maim slop xdotool xclip ffmpeg v4l-utils xrandr xprop pcmanfm playerctl libnotify brightnessctl gammastep iproute2 iw xdg-utils xdg-user-dirs unzip procps-ng util-linux" ;;
+    debian) say "xserver-xorg xserver-xorg-input-libinput xinput libinput-tools xinit xauth x11-xserver-utils x11-utils x11-xkb-utils xkb-data fonts-liberation fonts-noto-core udisks2 gvfs gvfs-backends gvfs-fuse libglib2.0-bin xarchiver 7zip unzip zip unrar-free exfatprogs dbus-x11 dbus-user-session libpam0g pipewire pipewire-pulse pipewire-alsa wireplumber alsa-utils alsa-ucm-conf rtkit fontconfig libgles2 fonts-dejavu-core fonts-font-awesome fonts-jetbrains-mono fonts-noto-color-emoji kitty fish lxpolkit libayatana-appindicator3-1 libayatana-indicator3-7 libayatana-ido3-0.4-0 bluez libspa-0.2-bluetooth power-profiles-daemon dunst picom feh maim slop xdotool xclip ffmpeg sidplayfp v4l-utils x11-utils pcmanfm playerctl libnotify-bin brightnessctl gammastep iproute2 iw rfkill xdg-utils xdg-user-dirs unzip procps util-linux" ;;
+    void) say "xorg-minimal xinit xauth xrandr xset xprop xdpyinfo xwininfo xrdb xsetroot setxkbmap xinput libinput xkeyboard-config liberation-fonts-ttf noto-fonts-ttf udisks2 gvfs gvfs-mtp gvfs-smb gvfs-afc glib xarchiver 7zip unzip zip exfatprogs dbus elogind pam pam-base pipewire wireplumber alsa-utils alsa-ucm-conf rtkit fontconfig libglvnd dejavu-fonts-ttf nerd-fonts-symbols-ttf noto-fonts-emoji kitty fish-shell polkit-gnome libayatana-appindicator libayatana-indicator ayatana-ido bluez libspa-bluetooth power-profiles-daemon dunst picom feh maim slop xdotool xclip ffmpeg sidplayfp v4l-utils xrandr xprop pcmanfm playerctl libnotify brightnessctl gammastep iproute2 iw xdg-utils xdg-user-dirs unzip procps-ng util-linux" ;;
   esac
 }
 # Runtime libraries and extraction tools for the pinned Helium archive. These
@@ -506,6 +506,78 @@ install_packages() {
   refresh_runtime_state
 }
 
+# NIRULOCK's pause music plays SID tunes through sidplayfp. Debian and Void
+# package it (see distribution_packages_for); on Arch it is only in the AUR, on
+# top of libsidplayfp from extra. Build it with an installed AUR helper, or
+# else with makepkg as this user. This is never fatal: without sidplayfp the
+# lock simply plays no music. A failed build is remembered so that every later
+# update does not rebuild; remove the marker to try again.
+SIDPLAYFP_AUR_MARKER=
+sidplayfp_aur_marker() { say "${SIDPLAYFP_AUR_MARKER:-$STATE/sidplayfp-aur-failed}"; }
+sidplayfp_aur_warn() {
+  say "nirux: warning: sidplayfp could not be installed from the AUR ($1); NIRULOCK plays no pause music." >&2
+  say "nirux: install the AUR package sidplayfp yourself, then remove $(sidplayfp_aur_marker) so updates try again." >&2
+  mkdir -p "$(dirname "$(sidplayfp_aur_marker)")" 2>/dev/null && : > "$(sidplayfp_aur_marker)" 2>/dev/null || :
+}
+# An AUR helper asks sudo itself. A supplied password goes to it through
+# askpass, as as_root does, never in its arguments.
+sidplayfp_aur_helper() {
+  aur_tool=$1
+  if [ -n "${SUDO_SECRET_FILE:-}" ] && [ -f "$SUDO_SECRET_FILE" ]; then
+    aur_askpass=$(mktemp "${TMPDIR:-/tmp}/.nirux-askpass.XXXXXX") || return 1
+    chmod 700 "$aur_askpass" 2>/dev/null || :
+    printf '#!/bin/sh\ncat %s\n' "$SUDO_SECRET_FILE" > "$aur_askpass" || { rm -f "$aur_askpass"; return 1; }
+    SUDO_ASKPASS=$aur_askpass "$aur_tool" -S --needed --noconfirm --sudoflags -A sidplayfp < /dev/null
+    aur_status=$?
+    rm -f "$aur_askpass"
+    return "$aur_status"
+  fi
+  "$aur_tool" -S --needed --noconfirm sidplayfp
+}
+sidplayfp_aur_makepkg() {
+  # The PKGBUILD lists neither perl (pod2man) nor the autotools it runs.
+  as_root pacman -S --needed --noconfirm base-devel git libsidplayfp alsa-lib mpg123 libpulse autoconf automake gettext pkgconf perl || return 1
+  aur_build=$(mktemp -d "${TMPDIR:-/tmp}/nirux-sidplayfp.XXXXXX") || return 1
+  # A login shell puts /usr/bin/core_perl (pod2man) on PATH.
+  if git clone --quiet --depth 1 https://aur.archlinux.org/sidplayfp.git "$aur_build/sidplayfp" &&
+    bash -lc 'cd "$1" && makepkg --noconfirm' sh "$aur_build/sidplayfp"; then
+    aur_pkg=
+    for aur_file in "$aur_build"/sidplayfp/sidplayfp-[0-9]*.pkg.tar.*; do
+      [ -f "$aur_file" ] && aur_pkg=$aur_file
+    done
+    if [ -n "$aur_pkg" ]; then
+      as_root pacman -U --needed --noconfirm "$aur_pkg"
+      aur_status=$?
+    else
+      aur_status=1
+    fi
+  else
+    aur_status=1
+  fi
+  rm -rf "$aur_build"
+  return "$aur_status"
+}
+provision_sidplayfp_aur() {
+  [ "$OS" = arch ] || return 0
+  if distribution_package_present sidplayfp || command -v sidplayfp >/dev/null 2>&1; then return 0; fi
+  if [ -f "$(sidplayfp_aur_marker)" ]; then
+    say "sidplayfp is not installed (an earlier AUR build failed); NIRULOCK plays no pause music."
+    return 0
+  fi
+  if [ "${NIRUX_PACKAGES_DRY_RUN:-0}" = 1 ]; then say 'would build sidplayfp from the AUR'; return 0; fi
+  if [ "$(id -u)" = 0 ]; then sidplayfp_aur_warn 'makepkg does not run as root'; return 0; fi
+  say 'Installing sidplayfp from the AUR (NIRULOCK pause music).'
+  for aur_tool in paru yay; do
+    command -v "$aur_tool" >/dev/null 2>&1 || continue
+    if sidplayfp_aur_helper "$aur_tool"; then return 0; fi
+    say "$aur_tool could not install sidplayfp; building it with makepkg."
+    break
+  done
+  if sidplayfp_aur_makepkg; then return 0; fi
+  sidplayfp_aur_warn 'the build failed'
+  return 0
+}
+
 # The package query itself, overridable by the test suite: a plain shell
 # function cannot be redefined and used by code loaded from another file.
 NIRUX_PACKAGE_QUERY=
@@ -569,8 +641,9 @@ provision_packages() {
   BROWSER_EFFECTIVE=${NIRUX_PROVISION_BROWSER:-keep}
   case "$mode" in
     full)
-      if [ "${NIRUX_PACKAGES_DRY_RUN:-0}" = 1 ]; then say "would install: $(packages_for "$OS")"; return; fi
-      install_packages
+      if [ "${NIRUX_PACKAGES_DRY_RUN:-0}" = 1 ]; then say "would install: $(packages_for "$OS")"; provision_sidplayfp_aur; return; fi
+      install_packages || return $?
+      provision_sidplayfp_aur
       ;;
     missing)
       # Renames (Debian trixie's *t64 libraries) come from this machine's own
@@ -579,12 +652,13 @@ provision_packages() {
         NIRUX_PACKAGE_MAP=$(required_package_map)
       fi
       missing=$(resolved_missing_packages)
-      if [ -z "$missing" ]; then say 'OS runtime packages are present'; return; fi
-      if [ "${NIRUX_PACKAGES_DRY_RUN:-0}" = 1 ]; then say "would install missing: $missing"; return; fi
+      if [ -z "$missing" ]; then say 'OS runtime packages are present'; provision_sidplayfp_aur; return; fi
+      if [ "${NIRUX_PACKAGES_DRY_RUN:-0}" = 1 ]; then say "would install missing: $missing"; provision_sidplayfp_aur; return; fi
       # One argument on purpose: install_packages splits this fixed package
       # list, exactly as it does for the full list.
       # shellcheck disable=SC2086
-      install_packages "$missing"
+      install_packages "$missing" || return $?
+      provision_sidplayfp_aur
       ;;
     *) die "unknown provisioning mode: $mode" ;;
   esac
@@ -2575,7 +2649,7 @@ niruflow niruflow 0.6.1 8c5611a3d719fb0ec6f0dc8f296ffde1b22e5d4aa9e6f600b5d5c76e
 nirusec nirusec 0.2.0 f3f7b85a1e0e3e91880721c060d24c50eadf843c602624eb8345bf8f3c5ae6d2
 nirugame nirugame 0.1.4 96288834f2ca08c08b062f6f28142c079ee6c9c9198b9cdf085143deac719e54
 niruremote niruremote 0.2.0 64571f661be436c1fb69b72439f7af69802d87c83ac1652c49b84f0cfd80f784
-nirudictate nirudictate 0.2.0 941d05b801a0b1d8338a1a4d4e507e15ddd54b32e769a898c9b3fef69b7c916f
+nirudictate nirudictate 0.2.1 f7996be0595daaee334ab8c0b6cf92489a96155103e656ac8d786a6eb359f9ac
 EOF
 }
 extras_row() {

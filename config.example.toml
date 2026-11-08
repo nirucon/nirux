@@ -425,7 +425,8 @@ hide_on_focus_loss = false
 #
 # Every default binding is listed below, so changing one is a single edit.
 # An entry with the same keys replaces the default; a new keys entry adds a
-# binding. Use action = "unbind" to disable a default binding.
+# binding. Use action = "unbind" to disable a default binding. An optional
+# description = "..." is what the cheat sheet (Super+/) shows for the key.
 #
 # Modifiers: super, shift, ctrl, alt.
 # Keys: Return, space, Tab, Escape, Left/Right/Up/Down, Print, comma, period,
@@ -433,6 +434,7 @@ hide_on_focus_loss = false
 #
 # Actions:
 #   terminal, terminal_alt, browser, launcher, launcher_unified,
+#   launcher_keys (cheat sheet), launcher_emoji (emoji and symbols),
 #   window_switcher, lock, start CMD, shell CMD,
 #   focus_next, focus_prev, move_next, move_prev,
 #   tag N, movetotag N, toggletag N, togglemovetotag N, tag_next, tag_prev,
@@ -465,6 +467,51 @@ action = "launcher"
 [[keys]]
 keys = "super+shift+p"
 action = "launcher_unified"
+
+# The keybinding cheat sheet: every key in effect (programs such as
+# NIRUDICTATE register theirs in ~/.local/share/niru/keys.d), searchable by
+# words or by key. Enter runs one; Ctrl+R tells what a pressed key does.
+[[keys]]
+keys = "super+slash"
+action = "launcher_keys"
+
+# Emoji and symbols (©, →, °, €, typographic quotes). Enter pastes into the
+# window you were using and restores the clipboard; Shift+Enter only copies;
+# Tab changes the skin tone. `:name` in the launcher finds them too.
+[[keys]]
+keys = "super+period"
+action = "launcher_emoji"
+
+# Pick a color from the screen (arrows move 1 px, Shift 10 px; Tab switches
+# hex/rgb/hsl; Esc cancels). The color is copied; the last 10 are in the
+# launcher's Colors view.
+[[keys]]
+keys = "super+ctrl+c"
+action = "shell nirushot pick"
+
+# Screens. "Focus the next screen" moved from Super+period (now the emoji
+# picker) to Super+Alt+period in NIRUWM 0.18, with Super+Alt+comma as its
+# pair. Super+comma still focuses the previous screen; with two screens
+# either key reaches the other one.
+[[keys]]
+keys = "super+alt+period"
+action = "focusmon 1"
+
+[[keys]]
+keys = "super+alt+comma"
+action = "focusmon -1"
+
+[[keys]]
+keys = "super+comma"
+action = "focusmon -1"
+
+[[keys]]
+keys = "super+shift+period"
+action = "tagmon 1"
+
+[[keys]]
+keys = "super+shift+comma"
+action = "tagmon -1"
 
 # Remember every open window (workspace, screen, floating) so the next login
 # can start them again. Logging out saves too. Needs `restore_session = true`
