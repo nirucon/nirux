@@ -2,6 +2,27 @@
 
 Earlier releases are described in their release notes and commit messages.
 
+## 0.12.239 (2026-11-08)
+
+- **NIRUCLIP 0.4.0: the camera works properly.** It used to record whatever
+  mode the camera driver last used, YUYV 640x480 on most webcams (camera-only
+  clips were 640x480 at about 40 kb/s with many repeated frames). It now asks
+  for MJPEG 1280x720 for the overlay and 1920x1080 for camera-only, skips
+  infrared and metadata nodes, and keeps camera, screen and microphone on one
+  clock, so the overlay face no longer lags the voice by about 0.3 s.
+  A camera that shows its privacy image (such as HP's crossed-out camera),
+  freezes, stops delivering frames or is in use by another program is
+  detected during the countdown and while recording, and reported in a
+  notification, `niruclip --status`, NIRUBAR and NIRU Launcher. The overlay
+  is sized from the video height with the camera's aspect, rounded (or
+  circle/rect) with a thin theme-coloured border, and can be mirrored. New:
+  `--check-camera`, `--preview`, `--export mp4|gif` and `--share`.
+- **NIRU Launcher 0.5.1:** the capture view (`--clip`) has Check camera,
+  Camera preview, Last recording to MP4/GIF and Share last recording, and
+  shows a camera problem while recording.
+- **NIRUBAR 0.18.91:** the recording timer shows `· cam off` or `· cam !`
+  when NIRUCLIP reports a camera problem.
+
 ## 0.12.238 (2026-11-08)
 
 - **NIRULOCK 0.23.1 and NIRUSCREENSAVER 0.14.1:** includes everything listed
