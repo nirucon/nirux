@@ -2,6 +2,16 @@
 
 Earlier releases are described in their release notes and commit messages.
 
+## 0.12.238 (2026-11-08)
+
+- **NIRULOCK 0.23.1 and NIRUSCREENSAVER 0.14.1:** includes everything listed
+  for 0.12.237, which was tagged but never published because GitHub's
+  release downloads failed (504) during its release check. Also, Esc during
+  the pause music now brings the quote back within about a second. Before,
+  a flat spectrum stayed for about six seconds while the audio detector's
+  silence window ran out. Other music that is really playing keeps the
+  spectrum.
+
 ## 0.12.237 (2026-11-08)
 
 - **NIRULOCK 0.23.0 and NIRUSCREENSAVER 0.14.0:** a cleaner, properly centred
