@@ -2,6 +2,13 @@
 
 Earlier releases are described in their release notes and commit messages.
 
+## 0.12.236 (2026-11-08)
+
+- **NIRULOCK 0.22.2:** pause music was silent on sessions started from a text
+  console (void), although the lock showed the tune: sidplayfp's own
+  `/dev/tty` keyboard handling got it stopped by SIGTTOU as a background
+  process group. The player now runs in its own session without a terminal.
+
 ## 0.12.235 (2026-11-08)
 
 - **NIRULOCK 0.22.1 and NIRUSCREENSAVER 0.13.1:** the CAVA spectrum is smooth
