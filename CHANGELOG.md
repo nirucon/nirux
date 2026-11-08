@@ -2,6 +2,18 @@
 
 Earlier releases are described in their release notes and commit messages.
 
+## 0.12.237 (2026-11-08)
+
+- **NIRULOCK 0.23.0 and NIRUSCREENSAVER 0.14.0:** a cleaner, properly centred
+  lock and idle screen, with the same elements, colours and fonts. Every
+  line is centred by its glyph ink; before, the clock sat 5–8 px right of
+  centre and "password:" 3 px left. The `cava` layout is one evenly spaced
+  column at the optical centre of the prompt output. Rows for a failure or
+  PAM message, Caps Lock and the pause-music line are reserved, so the entry
+  never moves, and typing no longer slides it. Long PAM messages wrap to two
+  lines, the music line is cut to the panel, quotes wrap evenly, and the
+  spectrum lines up with its bars. CAVA pacing is unchanged.
+
 ## 0.12.236 (2026-11-08)
 
 - **NIRULOCK 0.22.2:** pause music was silent on sessions started from a text
