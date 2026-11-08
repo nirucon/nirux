@@ -163,7 +163,8 @@ Themes, artwork and small shared pieces.
   Bluetooth, displays, power, themes, sound, input, screenshots and recording.
   Deterministic phrases such as "lock", "focus mode" or "volume up" resolve to
   native actions with no account, model or network request.
-- **Keybinding cheat sheet** on `Super+/`: every key in effect, including your
+- **Keybinding cheat sheet** on `Super+/` or `Super+F1` (on Swedish and other
+  layouts where `/` is Shift+7, use `Super+F1`): every key in effect, including your
   own overrides and keys that programs such as NIRUDICTATE register, grouped and
   searchable by words or by key. Enter runs one, Ctrl+R tells what a pressed key
   does, and clashes are flagged.
@@ -283,7 +284,7 @@ selected with `niructl theme ID`. See [Wallpapers and packs](docs/WALLPAPERS.md)
 | `Super+P` | Applications |
 | `Super+A` | NIRU Actions |
 | `Super+Shift+P` | Applications, windows, actions and settings in one view |
-| `Super+/` | Keybinding cheat sheet |
+| `Super+F1` (or `Super+/` where `/` is its own key) | Keybinding cheat sheet |
 | `Super+.` | Emoji and symbols |
 | `Super+Ctrl+C` | Pick a color from the screen |
 | `Super+S` | Web search |
@@ -307,7 +308,7 @@ selected with `niructl theme ID`. See [Wallpapers and packs](docs/WALLPAPERS.md)
 | `Super+Shift+R` | Reload configuration |
 
 The full list is in the [NIRUWM README](https://github.com/nirucon/niruwm), and
-the cheat sheet (`Super+/`) always shows the effective shortcuts, including
+the cheat sheet (`Super+F1`) always shows the effective shortcuts, including
 your own overrides and the keys of other programs.
 
 ### The `nirux` command

@@ -2,6 +2,16 @@
 
 Earlier releases are described in their release notes and commit messages.
 
+## 0.12.234 (2026-11-08)
+
+- **NIRUWM 0.18.1:** on Swedish, German and other layouts where `/` is
+  Shift+7, the new Super+/ cheat-sheet key took over Super+7, which opened the
+  cheat sheet instead of workspace 7. Now the binding for what a key types
+  without Shift wins, so Super+7 is workspace 7 again, and **Super+F1** opens
+  the cheat sheet on every layout. The dropped key is named in the session
+  log.
+- `config.example.toml` and the README list Super+F1.
+
 ## 0.12.233 (2026-11-08)
 
 New keys, a color picker and pause music on the lock screen.
