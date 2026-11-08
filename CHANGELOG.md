@@ -2,6 +2,16 @@
 
 Earlier releases are described in their release notes and commit messages.
 
+## 0.12.235 (2026-11-08)
+
+- **NIRULOCK 0.22.1 and NIRUSCREENSAVER 0.13.1:** the CAVA spectrum is smooth
+  now, like NIRUAMP's. It was repainted on a 30 fps timer of its own that
+  drifted against CAVA's clock, so a frame was shown twice and another skipped
+  every second or so (in bursts lasting several seconds) and each frame was up
+  to 34 ms late. Each CAVA frame is now painted the moment it arrives: no
+  repeated or skipped frames and 0.1 ms from arrival to paint. Silence pause,
+  display-off stop and pause music are unchanged.
+
 ## 0.12.234 (2026-11-08)
 
 - **NIRUWM 0.18.1:** on Swedish, German and other layouts where `/` is
