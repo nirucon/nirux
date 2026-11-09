@@ -2,7 +2,15 @@
 
 Earlier releases are described in their release notes and commit messages.
 
-## Unreleased
+## 0.12.245 (2026-11-09)
+
+- **The lock screen plays SID music only when you lock it yourself
+  (NIRULOCK 0.25.0, NIRUWM 0.22.1, NIRU Launcher 0.9.0).** Super+Escape, the
+  launcher, Quick Settings and `niructl lock` typed in a terminal are manual
+  locks; idle locks, suspend, lid and scripts (`niructl lock --silent`) lock
+  silently. Esc still returns to the quotes. `[pause_music] on = [...]`
+  changes which locks play.
+- **Super+Ctrl+O** copies the text in a screen region (`nirushot ocr`).
 
 - **Text from the screen (NIRUSHOT 0.7.0).** `nirushot ocr` reads the text in
   a selected region (Swedish and English) and copies it. tesseract with Swedish

@@ -5,6 +5,7 @@
 # transfers, the theme key, exclusions, and hosts without access.
 set -eu
 SOURCE=$(CDPATH='' cd -- "$(dirname "$0")/.." && pwd)
+NX_VERSION=$(sed -n 's/^VERSION=//p' "$SOURCE/nirux" | head -n 1)
 TEST=$(mktemp -d)
 trap 'rm -rf "$TEST"' EXIT HUP INT TERM
 FAKE=$TEST/fake
@@ -94,7 +95,7 @@ row() { awk -v i="$1" '$1 == i && $2 ~ /^[0-9]+$/ { sub(/^ +/, ""); print }' "$T
 # --- status --------------------------------------------------------------------
 nirux sync status alpha > "$TEST/out" 2>&1 || { cat "$TEST/out"; fail 'status failed'; }
 grep -q '^Note: NIRUX is not installed on this machine' "$TEST/out" || fail 'non-NIRUX note'
-grep -q '^== alpha (NIRUX 0.12.244, transfer: ' "$TEST/out" || { cat "$TEST/out"; fail 'status header'; }
+grep -q "^== alpha (NIRUX $NX_VERSION, transfer: " "$TEST/out" || { cat "$TEST/out"; fail 'status header'; }
 grep -q '^  ITEM  *SAME  *CHANGED  *ONLY HERE  *ONLY THERE  *EXCLUDED  *HERE  *THERE$' "$TEST/out" || fail 'table header'
 row quotes | grep -q '^quotes  *0  *1  *0  *1  *0 ' || { cat "$TEST/out"; fail "quotes row: $(row quotes)"; }
 row keys.d | grep -q '^keys.d  *0  *0  *1  *0  *0 ' || fail "keys.d row: $(row keys.d)"
@@ -113,7 +114,7 @@ grep -q '^== bravo (NIRUX 0.12.200' "$TEST/out" && grep -q '^== carol: no SSH ke
   grep -q '^== golf: not reachable' "$TEST/out" && grep -q '^== nowhere: not reachable' "$TEST/out" || { cat "$TEST/out"; fail 'problem hosts'; }
 # From a machine without NIRUX, two hosts are compared with each other.
 nirux sync status alpha bravo quotes > "$TEST/out" 2>&1 || fail 'two-host status failed'
-grep -q 'comparing with alpha instead' "$TEST/out" && grep -q '^== bravo compared with alpha (NIRUX 0.12.200 and 0.12.244)' "$TEST/out" &&
+grep -q 'comparing with alpha instead' "$TEST/out" && grep -q "^== bravo compared with alpha (NIRUX 0.12.200 and $NX_VERSION)" "$TEST/out" &&
   ! grep -q '^== alpha' "$TEST/out" && row quotes | grep -q '^quotes  *1  *0  *1  *0  *0 ' || { cat "$TEST/out"; fail 'two-host comparison'; }
 nirux sync status alpha quotes > "$TEST/out" 2>&1
 grep -q '^Items: quotes$' "$TEST/out" && [ -z "$(row sid)" ] || fail 'item selection'
