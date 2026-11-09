@@ -317,6 +317,7 @@ your own overrides and the keys of other programs.
 |---|---|
 | `nirux install` / `nirux update` | Install, or update to the newest release (`--release VERSION` for a specific one) |
 | `nirux status` / `nirux doctor` | Check programs, integration, PAM and permissions; `doctor` also checks the live session |
+| `nirux manual [TOPIC]` | Open the installed manual (`--list` chapters, `--path` its directory); see [the manual](docs/manual/README.md) |
 | `nirux rollback` | Switch back to the previous program generation |
 | `nirux snapshot [--note TEXT]` / `nirux snapshot list` | Save or list snapshots of your configuration (one is also taken before every update) |
 | `nirux restore [ID\|latest] [--dry-run]` | Restore a configuration snapshot, after a preview and a safety snapshot |
@@ -519,6 +520,9 @@ values, and invalid files are rejected before anything changes.
 
 Further reading:
 
+- **[The NIRUX manual](docs/manual/README.md)**: task-oriented chapters, the
+  configuration reference and every key binding (`nirux manual` opens the
+  installed copy)
 - [Installation, session choices and suite features](docs/INSTALL.md)
 - [NIRU Actions, tasks and optional OpenCode](docs/ACTIONS.md)
 - [Input settings](docs/INPUT.md)
@@ -588,6 +592,7 @@ repositories and published as release assets. Tests:
 ```sh
 sh tests/integration.sh
 sh tests/sounds-contract.sh
+sh tests/manual.sh          # the manual: generated sections, commands, links
 python3 tests/terminal-theme.py
 ```
 

@@ -20,9 +20,11 @@ jobs:
           sh -n nirux
           sh -n terminal/nirux-theme-hook
           for script in tests/*.sh; do sh -n "$script"; done
-          shellcheck -S warning -s sh nirux tests/integration.sh tests/display-manager.sh tests/runtime-state.sh tests/config-smoke.sh tests/startx-smoke.sh tests/release-smoke.sh tests/browser-smoke.sh terminal/nirux-theme-hook
+          shellcheck -S warning -s sh nirux tests/integration.sh tests/display-manager.sh tests/runtime-state.sh tests/config-smoke.sh tests/startx-smoke.sh tests/release-smoke.sh tests/browser-smoke.sh tests/manual.sh tools/manual-gen.sh terminal/nirux-theme-hook
       - run: python3 tests/terminal-theme.py
       - run: sh tests/integration.sh
+      - name: Manual is current (generated sections, commands, links)
+        run: sh tests/manual.sh
       - name: Verify release identity
         run: |
           test "$(./nirux --version | awk '{print $2}')" = "${GITHUB_REF_NAME#v}"
@@ -95,6 +97,8 @@ jobs:
             wallpaper/nirux-wallpaper-noir-8k.png
           tar -cJf nirux-terminal.tar.xz terminal
           tar -cJf nirux-sounds.tar.xz sounds
+          # The manual of this release, installed into the program generation.
+          tar -cJf nirux-manual.tar.xz -C docs manual
           rm -rf integration-build
           mkdir -p integration-build/polkit
           cp -R greeters/. integration-build/
@@ -106,7 +110,7 @@ jobs:
           cp /tmp/release-assets/niruwallpaper/niruwallpaper.desktop /tmp/release-assets/niruwallpaper/niruwallpaper.png .
           cp /tmp/release-assets/nirudisplay/nirudisplay.desktop /tmp/release-assets/nirudisplay/nirudisplay.png .
           cp /tmp/release-assets/niruthemeselector/niruthemeselector.desktop /tmp/release-assets/niruthemeselector/niruthemeselector.png .
-          sha256sum nirux manifest config.example.toml appearance.example.toml nirux-wallpapers.tar.xz nirux-terminal.tar.xz nirux-sounds.tar.xz nirux-integration.tar.xz niruwallpaper.desktop niruwallpaper.png nirudisplay.desktop nirudisplay.png niruthemeselector.desktop niruthemeselector.png > SHA256SUMS
+          sha256sum nirux manifest config.example.toml appearance.example.toml nirux-wallpapers.tar.xz nirux-terminal.tar.xz nirux-sounds.tar.xz nirux-manual.tar.xz nirux-integration.tar.xz niruwallpaper.desktop niruwallpaper.png nirudisplay.desktop nirudisplay.png niruthemeselector.desktop niruthemeselector.png > SHA256SUMS
       - uses: softprops/action-gh-release@v2
         with:
           files: |
@@ -117,6 +121,7 @@ jobs:
             nirux-wallpapers.tar.xz
             nirux-terminal.tar.xz
             nirux-sounds.tar.xz
+            nirux-manual.tar.xz
             nirux-integration.tar.xz
             niruwallpaper.desktop
             niruwallpaper.png

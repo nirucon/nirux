@@ -2,6 +2,30 @@
 
 Earlier releases are described in their release notes and commit messages.
 
+## Unreleased
+
+- **The NIRUX manual.** An English manual in `docs/manual/` (16 chapters:
+  getting started, windows and layouts, workspaces and scratchpads, the bar,
+  the launcher, lock and screensaver, capture, themes, displays, sound and
+  notifications, updates, extras, troubleshooting, and generated configuration,
+  key binding and command references). It ships with every release as
+  `nirux-manual.tar.xz` and is installed read-only into the program generation
+  (`~/.local/share/nirux/current/manual`), so it matches the installed
+  programs, works offline and follows a rollback.
+- **`nirux manual [TOPIC]`** opens it: the index, or a chapter or heading by
+  number, name, heading text, `CHAPTER#ANCHOR` or a Swedish word (`lås`,
+  `skärmdump`, `studioläge`). It uses NIRUNOTE when installed, else `xdg-open`,
+  else `less` at the heading. `--list` lists the chapters, `--path` prints the
+  directory, `--where TOPIC` prints the file and line. `nirux status` names the
+  installed manual.
+- **Generated sections stay current.** `tools/manual-gen.sh` regenerates the
+  key bindings (`niructl keys --markdown` for a fresh NIRUX configuration), the
+  niructl command list and the configuration reference from vendored inputs in
+  `tools/manual-inputs/`; `--refresh` fetches them for the versions pinned in
+  `manifest`. `tests/manual.sh` (CI and the release workflow) fails on a stale
+  section or input, a `nirux` command without an entry, a broken link or
+  anchor, or a long dash.
+
 ## 0.12.245 (2026-11-09)
 
 - **The lock screen plays SID music only when you lock it yourself

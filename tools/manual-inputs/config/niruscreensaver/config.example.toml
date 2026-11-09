@@ -1,0 +1,54 @@
+# ~/.config/niruui/screensaver.toml; every setting is optional.
+# font_path = "/usr/share/fonts/truetype/dejavu/DejaVuSansMono.ttf"
+font_size = 22.0
+clock_size = 88.0
+
+# minimal | terminal | runic | corner | cava
+# cava uses the active NIRUX theme and visualises system audio through CAVA.
+layout = "cava"
+visualizer = true
+# What the cava layout shows where the spectrum is drawn:
+#   "auto"   the CAVA spectrum only while music or radio plays, otherwise a
+#            quote from ~/.config/niru/quotes/ (the default)
+#   "cava"   the spectrum alone, as before 0.19 (CAVA runs whenever the display is on)
+#   "quotes" quotes alone; CAVA never starts
+#   "none"   neither (visualizer = false also means this)
+visual = "auto"
+# Which quote collections (~/.config/niru/quotes/NAME.txt) to show, by name;
+# "*" matches anything, "?" one character. One pattern or an array:
+#   quotes = ["*"]                       every collection (the default)
+#   quotes = "havamal-sv"                one collection
+#   quotes = ["havamal-*", "stoic-en"]   several
+# Built-in: havamal-en, havamal-sv, stoic-en, stoic-sv. See the README.
+quotes = ["*"]
+# Show "Artist – Title" of the playing MPRIS player under the spectrum
+# (needs playerctl; followed only while the spectrum is live).
+show_media = true
+
+# Optional: use a specific runic font. Missing rune fonts simply omit the
+# ornament; the saver never draws missing-glyph boxes.
+# rune_font_path = "/usr/share/fonts/truetype/noto/NotoSansRunic-Regular.ttf"
+
+idle_minutes = 10
+lock_after_minutes = 5
+dpms_off_minutes = 0
+show_away_after_seconds = 60
+
+# A key or click always dismisses the screen. Pointer motion does not, so a
+# bumped desk does not wake it; set this to dismiss after the pointer has
+# moved more than 24 px since the screen appeared.
+dismiss_on_motion = false
+
+# The screen fades in from black over 300 ms; true shows it at once.
+reduced_motion = false
+
+# Show the machine's hostname under the clock. Off by default, so a screen in
+# a shared place does not name the machine.
+show_hostname = false
+
+[palette]
+background = "000000"
+foreground = "e5e5e5"
+muted = "a8a8a8"
+border = "2a2a2d"
+focus = "5a5a60"

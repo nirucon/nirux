@@ -1,0 +1,99 @@
+# NIRULAUNCHER settings.
+# Location: ~/.config/nirulauncher/config.toml (or $XDG_CONFIG_HOME/nirulauncher/)
+#
+# Colours come from the suite theme selected in ~/.config/niruwm/config.toml.
+# A user theme file in ~/.config/niruwm/themes/NAME.toml takes precedence.
+
+# Window width in pixels. Clamped to the selected monitor.
+width = 640
+# Maximum visible result rows. The window grows with fewer results.
+max_rows = 12
+# One result row, in pixels.
+row_height = 26
+# Inner padding, in pixels.
+padding = 12
+# Font size. Use font_path for a specific font file.
+font_size = 15.0
+# font_path = "/usr/share/fonts/truetype/dejavu/DejaVuSansMono.ttf"
+
+# Applications with Terminal=true are started through this argv array.
+terminal = ["kitty"]
+
+# How a web search opens: the program, then the address.
+# Leave empty to use NIRUWM's `browser` from ~/.config/niruwm/config.toml,
+# then $BROWSER, then xdg-open (the desktop's default browser).
+# browser = ["brave"]
+
+# Web search engines, shown by Super+S. Every enabled engine is listed before
+# anything is typed, and the first character already searches. Seventeen are
+# built in and need no configuration:
+# duckduckgo, brave, google, wikipedia, wikipedia-sv, youtube, github,
+# archwiki, crates, docsrs, chatgpt, gemini, grok, copilot, discogs,
+# musicbrainz, metal-archives. `nirulauncher --list-search` prints their ids,
+# labels, templates and hosts.
+#
+# Add or override an engine with a `[[search.sources]]` entry. An id that
+# matches a built-in replaces it in place; a new id is appended. `{query}` is
+# replaced by the percent-encoded text (`{}` works too; a template with
+# neither gets `?q=` appended). Only http(s) addresses are opened, so a typo
+# cannot start a local program. `alias` selects the engine with
+# "alias phrase" in the search field.
+#
+# [[search.sources]]
+# id = "searx"
+# label = "SearXNG (home)"
+# url = "https://searx.example/search?q={query}"
+# alias = "sx"
+#
+# [[search.sources]]
+# id = "google"
+# label = "Google (no tracking)"
+# url = "https://www.google.com/search?q={query}&pws=0"
+#
+# To leave an engine out, turn it off by id:
+#
+# [[search.sources]]
+# id = "grok"
+# enabled = false
+
+# Search preferences. `order` lists the ids shown first; the rest keep their
+# built-in order. `default` is selected when the field is empty. `aliases`
+# overrides a built-in alias without redefining the engine.
+#
+# [search]
+# default = "duckduckgo"
+# order = ["duckduckgo", "github", "archwiki", "wikipedia"]
+# aliases = { gh = "github", aw = "archwiki", yt = "youtube" }
+
+# A typed http:// or https:// address is offered as "Open address" above the
+# engine rows. Enter on an empty field keeps the launcher open.
+
+# Desktop-file IDs or action names pinned above search rank.
+# favorites = ["firefox.desktop", "Lock screen"]
+
+# Order equal search matches by how often and how recently they were launched
+# (local history in ~/.local/state/nirulauncher/usage.tsv), and show up to five
+# recent rows after the favourites when the field is empty. A better text
+# match always wins over frequent use.
+# rank_by_usage = true
+
+# File search: `--files`, "Find files" in NIRU Actions, or `/ name` in the
+# unified view. Every key is optional. Results come from plocate/locate when
+# its database covers the roots, else fd/fdfind, else a bounded built-in walk
+# (backend = "auto"); "plocate", "locate", "fd" and "builtin" choose one.
+# Recently used files (~/.local/share/recently-used.xbel) come first.
+#
+# [files]
+# enabled = true
+# roots = ["~"]
+# backend = "auto"
+# max_results = 50
+# show_hidden = false
+# A plocate/locate database to search instead of the system one (-d), e.g.
+# one built without root: updatedb.plocate -o ~/.cache/files.db -U ~ -l no
+# locate_db = "~/.cache/files.db"
+# `exclude` replaces this built-in list: names anywhere, or paths below a
+# root when they contain a slash; `*` and `?` match like a shell glob.
+# exclude = [".cache", ".local/share/Trash", ".git", "node_modules", "target",
+#            "__pycache__", ".venv", ".mypy_cache", ".pytest_cache", ".tox",
+#            ".gradle", ".npm", ".cargo", ".rustup"]
