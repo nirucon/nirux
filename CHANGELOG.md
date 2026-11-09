@@ -2,7 +2,23 @@
 
 Earlier releases are described in their release notes and commit messages.
 
-## Unreleased
+## 0.12.244 (2026-11-09)
+
+- **Studio mode (NIRUWM 0.20.0, NIRUBAR 0.20.0, NIRU Launcher 0.8.0).**
+  `niructl studio on|off|toggle`, a Quick Settings row, the `studio_toggle`
+  action and the phrases "studio mode"/"studioläge": pauses idle locking for
+  the session, turns on Do Not Disturb, stops the compositor and sets the
+  performance power profile; off restores exactly what it changed. The bar
+  shows it. Optional `[studio]` settings, including auto-enable for REAPER
+  (off by default).
+- **NIRU Launcher 0.8.0:** a window swallowing toggle in Quick Settings and
+  NIRU Actions; no "/ for files" hint when file search is off; optional
+  `[files] locate_db`, and real plocate verified.
+- **NIRUCLIP 0.5.1: the camera recovers.** A camera that is unplugged or
+  stalls during a recording is reattached when it returns (the screen keeps
+  recording meanwhile); the camera check always runs before a recording, also
+  with a short countdown; the HP "camera off" placeholder makes NIRUCLIP reopen
+  the camera in another mode.
 
 - **`nirux fleet`: see and update all your NIRUX machines.** `nirux fleet`
   (or `fleet status`, `--json`) lists the Linux Tailscale peers that have
