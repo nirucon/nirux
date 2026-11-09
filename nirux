@@ -2,7 +2,7 @@
 # NIRUX: install a complete X11 desktop, or maintain an existing installation.
 set -eu
 
-VERSION=0.12.242
+VERSION=0.12.243
 PREFIX=${NIRUX_PREFIX:-$HOME/.local}
 BIN=$PREFIX/bin
 STATE=$PREFIX/share/nirux
@@ -2385,23 +2385,37 @@ choose_dm() {
 }
 fetch() {
   if command -v curl >/dev/null 2>&1; then
-    case "$1" in
-      *api.github.com*) curl -fsSL --connect-timeout 20 --max-time 300 --retry 3 -o "$2" "$1" ;;
-      *github.com/*/releases/download/*)
-        # GitHub's release CDN can serve a stale asset for a new tag when a
-        # release is republished within its short cache window. A unique query
-        # keeps the asset path but bypasses the stale cached object.
-        asset_url="$1?nirux=$(date +%s)-$$"
-        curl -fsSL --connect-timeout 20 --max-time 300 --retry 3 -o "$2" "$asset_url"
-        ;;
-      *)
-        if [ -t 2 ]; then
-          curl -fL --progress-bar --connect-timeout 20 --max-time 300 --retry 3 -o "$2" "$1"
-        else
-          curl -fsSL --connect-timeout 20 --max-time 300 --retry 3 -o "$2" "$1"
-        fi
-        ;;
-    esac
+    fetch_try=1
+    while :; do
+      case "$1" in
+        *api.github.com*|*github.com/*/releases/download/*|*github.com/*/archive/*)
+          # GitHub's API and CDN cache a response per URL: a stale asset when
+          # a release is republished within the cache window, and also a 504
+          # from an overloaded edge, so retrying the same URL gets the same
+          # failure for minutes. Every attempt asks with its own query; the
+          # path, and so the asset and its checksum, stay the same.
+          fetch_url="$1?nirux=$(date +%s)-$$-$fetch_try"
+          fetch_quiet=1
+          ;;
+        *)
+          fetch_url=$1
+          if [ -t 2 ]; then fetch_quiet=; else fetch_quiet=1; fi
+          ;;
+      esac
+      if [ -n "$fetch_quiet" ]; then
+        curl -fsSL --connect-timeout 20 --max-time 300 -o "$2" "$fetch_url" && return 0
+      else
+        curl -fL --progress-bar --connect-timeout 20 --max-time 300 -o "$2" "$fetch_url" && return 0
+      fi
+      if [ "$fetch_try" -ge "${NIRUX_FETCH_ATTEMPTS:-8}" ]; then
+        printf 'nirux: download failed after %s attempts: %s\n' "$fetch_try" "$1" >&2
+        rm -f "$2"
+        return 1
+      fi
+      printf 'nirux: download failed (attempt %s), retrying: %s\n' "$fetch_try" "${1##*/}" >&2
+      sleep $((fetch_try < 5 ? fetch_try * 2 : 10))
+      fetch_try=$((fetch_try + 1))
+    done
   elif command -v wget >/dev/null 2>&1; then
     if [ -t 2 ]; then wget --show-progress -T 60 -t 3 -O "$2" "$1"
     else wget -q -T 60 -t 3 -O "$2" "$1"; fi

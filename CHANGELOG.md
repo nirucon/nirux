@@ -2,6 +2,15 @@
 
 Earlier releases are described in their release notes and commit messages.
 
+## 0.12.243 (2026-11-09)
+
+- **`nirux update` survives GitHub 504s.** GitHub caches a failed response
+  per URL, so retrying the same download failed the same way for minutes and
+  updates stopped with a 504. Every attempt now asks with its own query (same
+  asset, same checksum), up to eight attempts with a short backoff
+  (`NIRUX_FETCH_ATTEMPTS` changes the count). A failed download leaves no
+  partial file. New test `tests/fetch-retry.sh`.
+
 ## 0.12.242 (2026-11-09)
 
 - **NIRUWM 0.19.1: tiles stay below floating windows.** A tiled window that
