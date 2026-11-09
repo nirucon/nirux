@@ -219,6 +219,7 @@ Recovery settings, at the top of `~/.config/niruclip/config.toml`:
 | `camera_stall_seconds` | `2` | No new frame for this long counts as lost (0.5 to 30) |
 | `camera_reopen_attempts` | `2` | Reopens on a placeholder or frozen picture; `0` only warns |
 | `camera_reopen_autosuspend` | `true` | Keep USB autosuspend off while reopening, when allowed without root |
+| `camera_steady_framerate` | `false` | Turn the camera's dynamic exposure framerate off for a steady 30 fps in low light; leave off on HP 5MP laptop cameras, which then show their privacy image |
 
 ## Profiles
 

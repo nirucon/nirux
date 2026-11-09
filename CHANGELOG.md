@@ -2,6 +2,13 @@
 
 Earlier releases are described in their release notes and commit messages.
 
+## 0.12.247 (2026-11-09)
+
+- **NIRUCLIP 0.6.1: the HP laptop camera no longer switches off after a
+  second.** NIRUCLIP turned the camera's dynamic exposure framerate off for a
+  steady 30 fps; the HP 5MP camera answers that with its privacy image. The
+  setting is now opt-in (`camera_steady_framerate = true`).
+
 ## 0.12.246 (2026-11-09)
 
 - **The NIRUX manual.** A thorough English manual ships with every release
