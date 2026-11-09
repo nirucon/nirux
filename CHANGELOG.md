@@ -4,6 +4,12 @@ Earlier releases are described in their release notes and commit messages.
 
 ## Unreleased
 
+- **GitLab mirror as a fallback source.** When GitHub still fails after its
+  retries, a NIRUX release asset (and the latest-release lookup) comes from the
+  public backup mirror on GitLab.com (`gitlab.com/rudolfsson/<repo>`, generic
+  packages at the same repo/version/file). SHA256SUMS still has to match.
+  `NIRUX_MIRROR=none` turns it off.
+
 - **Configuration snapshots: `nirux snapshot` and `nirux restore`.** Every
   `nirux update` first saves the suite configuration to
   `~/.local/state/nirux/snapshots/<time>-<from>-to-<to>.tar.gz` with a
