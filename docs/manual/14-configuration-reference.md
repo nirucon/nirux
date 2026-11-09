@@ -45,17 +45,17 @@ These are not generated from an example file. The chapters describe them.
 
 <!-- generated: config (tools/manual-gen.sh; do not edit by hand) -->
 
-The example configuration files of NIRUX 0.12.247 and its components, with every
+The example configuration files of NIRUX 0.12.248 and its components, with every
 key they set or show. A value marked *commented example* is off by default:
 remove the `#` to use it. The full annotated file follows each table.
 
 | File | Read by | Example from |
 |---|---|---|
-| [`~/.config/niruwm/config.toml`](#configniruwmconfigtoml) | niruwm, nirubar, niruidle, niructl | nirux 0.12.247 `config.example.toml` |
-| [`~/.config/niruwm/appearance.toml`](#configniruwmappearancetoml) | the whole suite | nirux 0.12.247 `appearance.example.toml` |
-| [`~/.config/nirux/sounds.toml`](#configniruxsoundstoml) | nirux, nirunotify | nirux 0.12.247 `sounds.example.toml` |
-| [`~/.config/niruwm/displays.toml`](#configniruwmdisplaystoml) | niruwm, niructl, nirudisplay | nirux 0.12.247 `displays.example.toml` |
-| [`~/.config/nirubar/config.toml`](#confignirubarconfigtoml) | nirubar | nirubar 0.21.0 `weather.example.toml` |
+| [`~/.config/niruwm/config.toml`](#configniruwmconfigtoml) | niruwm, nirubar, niruidle, niructl | nirux 0.12.248 `config.example.toml` |
+| [`~/.config/niruwm/appearance.toml`](#configniruwmappearancetoml) | the whole suite | nirux 0.12.248 `appearance.example.toml` |
+| [`~/.config/nirux/sounds.toml`](#configniruxsoundstoml) | nirux, nirunotify | nirux 0.12.248 `sounds.example.toml` |
+| [`~/.config/niruwm/displays.toml`](#configniruwmdisplaystoml) | niruwm, niructl, nirudisplay | nirux 0.12.248 `displays.example.toml` |
+| [`~/.config/nirubar/config.toml`](#confignirubarconfigtoml) | nirubar | nirubar 0.22.1 `weather.example.toml` |
 | [`~/.config/nirulauncher/config.toml`](#confignirulauncherconfigtoml) | nirulauncher | nirulauncher 0.10.0 `config.example.toml` |
 | [`~/.config/nirunotify/config.toml`](#confignirunotifyconfigtoml) | nirunotify | nirunotify 0.4.2 `config.example.toml` |
 | [`~/.config/niruui/lock.toml`](#configniruuilocktoml) | nirulock | nirulock 0.25.0 `config.example.toml` |
@@ -1326,11 +1326,13 @@ primary = true
 | `[calendar]` | `refresh_minutes` | `15` (commented example) |  |
 | `[calendar]` | `days_ahead` | `7` (commented example) |  |
 | `[calendar]` | `show_in_bar` | `false` (commented example) |  |
+| `[popup_timeout]` | `calendar` | `0` (commented example) |  |
+| `[popup_timeout]` | `volume` | `2` (commented example) |  |
 
 <details><summary>The annotated example file (weather.example.toml)</summary>
 
 ```toml
-# NIRUBAR weather settings.
+# NIRUBAR's own settings: weather, calendar options and panel timeouts.
 # Location: ~/.config/nirubar/config.toml (or $XDG_CONFIG_HOME/nirubar/).
 # Add "weather" to [bar] modules in the shared niruwm config to show it.
 
@@ -1348,6 +1350,15 @@ refresh_minutes = 30
 # refresh_minutes = 15   # 5 to 1440
 # days_ahead = 7         # agenda: today and the next N days (0 to 31)
 # show_in_bar = false    # next event within 12 h before the clock
+
+# Per-panel timeouts in seconds, by [bar] modules name ("calendar" is the
+# clock's panel, "tray" tray menus, "overflow" the +N list). 0 keeps a panel
+# open until dismissed. Without an entry, reading panels (clock, weather,
+# tasks, pulse, notifications) stay open and the rest use
+# [bar] popup_timeout_seconds from the shared niruwm config.
+# [popup_timeout]
+# calendar = 0
+# volume = 2
 ```
 
 </details>

@@ -2,6 +2,17 @@
 
 Earlier releases are described in their release notes and commit messages.
 
+## 0.12.248 (2026-11-09)
+
+- **Panels you read stay open (NIRUBAR 0.22.1, NIRUWM 0.22.4).** The calendar,
+  weather, tasks, pulse and notifications panels stay until you close them
+  (click or Escape); quick-glance panels still close after
+  `popup_timeout_seconds`. Per-panel timeouts in `[popup_timeout]` of
+  `~/.config/nirubar/config.toml`.
+- **Calendar changes apply by themselves.** `calendars.toml` is re-read when
+  it changes and on `niructl reload`; new calendars are fetched at once.
+- The manual (chapter 4) describes calendar events and panel timeouts.
+
 ## 0.12.247 (2026-11-09)
 
 - **NIRUCLIP 0.6.1: the HP laptop camera no longer switches off after a

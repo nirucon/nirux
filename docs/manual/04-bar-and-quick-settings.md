@@ -15,7 +15,7 @@ The mouse works the same way in every module:
 | Scroll | Change a value (volume, microphone gain, previous/next track). |
 | Middle click | Opens the keyboard-first control view where one exists. |
 
-Only one panel is open at a time. `Escape`, a click elsewhere, a second click on the same module or `popup_timeout_seconds` (default 4) closes it. The panel footer says whether it is informational or has controls; press `Enter` or click the footer to open the control view (usually a NIRU Launcher view).
+Only one panel is open at a time. `Escape`, a click elsewhere or a second click on the same module closes it. Quick-glance panels (volume, microphone, network, battery, Bluetooth, media, power profile, brightness, updates, uptime, display and the rest) also close by themselves after `popup_timeout_seconds` (default 4). Panels you read stay open until you close them: the calendar (clock), weather, tasks, pulse and notifications. See [Panel timeouts](#panel-timeouts). The panel footer says whether it is informational or has controls; press `Enter` or click the footer to open the control view (usually a NIRU Launcher view).
 
 A few modules skip the panel and act on a left click: `wifi`, `agent`, `share`, `nirusec` and `dnd`.
 
@@ -102,6 +102,55 @@ Click the `clock` module. The panel shows a month with Monday first and ISO week
 | `Escape` | Close |
 
 Set the clock text with `date_format` and `time_format` (strftime, defaults `%Y-%m-%d` and `%H:%M`). `show_date = false` or `show_time = false` shows only one of them.
+
+### Calendar events (Google Calendar and other iCal feeds)
+
+The calendar panel can show events from one or more calendars, read only. Days with events get a dot in each calendar's colour, and the panel lists today and the next days (`days_ahead`, default 7). A click on a day or an event opens the calendar in the browser on that date.
+
+To add a Google calendar:
+
+1. Open calendar.google.com, then the gear, **Settings**.
+2. Under **Settings for my calendars**, pick the calendar, then **Integrate calendar**.
+3. Copy **Secret address in iCal format**. Anyone with this address can read the calendar, so keep it private.
+4. Create the file so only you can read it, and add one block per calendar:
+
+```sh
+install -m 600 /dev/null ~/.config/nirubar/calendars.toml
+```
+
+```toml
+[[calendar]]
+name = "Private"
+url = "https://calendar.google.com/calendar/ical/.../basic.ics"
+color = "#7aa2f7"   # optional
+# open = "https://calendar.google.com/calendar/r/day/{yyyy}/{m}/{d}"  # default for Google feeds
+```
+
+5. Run `nirubar --check-config`. NIRUBAR refuses the file unless its mode is 600.
+
+After adding, removing or editing a calendar you don't need to do anything else: the bar notices the change within a few seconds and fetches the new calendar at once. `niructl reload` (or `Super+R`) applies it immediately. Logging out is not needed.
+
+Feeds are refreshed every 15 minutes and cached in `~/.cache/nirubar/calendar/` (mode 600), so the events stay visible offline. The address never appears in process lists, logs or error messages, and `nirux sync` and snapshots never copy `calendars.toml`. Other iCal feeds (Nextcloud, iCloud, Outlook) work too; give them an `open` address to make clicks work.
+
+Options go in a `[calendar]` table in `~/.config/nirubar/config.toml`:
+
+| Key | Default | Meaning |
+|---|---|---|
+| `refresh_minutes` | `15` | How often feeds are fetched (5 to 1440) |
+| `days_ahead` | `7` | Days listed below the month (0 to 31) |
+| `show_in_bar` | `false` | Show the next event within 12 hours before the clock |
+
+### Panel timeouts
+
+Quick-glance panels close after `popup_timeout_seconds` in `[bar]` of `~/.config/niruwm/config.toml` (default 4; 0 keeps them open). The calendar, weather, tasks, pulse and notifications panels stay open until you close them. To give any panel its own timeout, add a table to NIRUBAR's own file `~/.config/nirubar/config.toml`, not the shared NIRUWM file:
+
+```toml
+[popup_timeout]
+calendar = 0   # until dismissed
+volume = 2     # seconds
+```
+
+Use the module names from `[bar] modules`, plus `calendar` for the clock's panel, `tray` for tray menus and `overflow` for the `+N` list. An entry here beats both the reading-panel default and `popup_timeout_seconds`. Run `niructl reload` after editing; `nirubar --check-config` lists the timeouts and any ignored entries.
 
 ## Use the system tray
 
@@ -219,7 +268,7 @@ All keys live in `[bar]` in `~/.config/niruwm/config.toml`. The file is strict: 
 | `separator` | `"\|"` | Drawn between status groups |
 | `icons` | `true` | Nerd Font glyphs; `false` for plain ASCII labels |
 | `popups` | `true` | Left click opens panels |
-| `popup_timeout_seconds` | `4` | Panel closes after this; `0` keeps it until dismissed |
+| `popup_timeout_seconds` | `4` | Quick-glance panels close after this; `0` keeps them until dismissed. Per panel: [Panel timeouts](#panel-timeouts) |
 | `media_width` | `32` | Characters of the media title |
 | `graph_width` | `24` | Width of the `pulse` graph, characters |
 | `update_check_minutes` | `30` | Minutes between package update checks |
