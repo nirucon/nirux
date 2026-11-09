@@ -60,6 +60,7 @@ directory may not be on your `PATH` (Arch and Void do not add it), so use
 | `Super+Shift+P` | Applications, windows, actions and settings in one view |
 | `Super+A` | NIRU Actions: settings, maintenance and diagnostics by name |
 | `Super+F1` | Cheat sheet of all keys (`Super+/` where `/` is its own key) |
+| `Super+Shift+F1` | This manual: search chapters and headings |
 | `Super+Q` | Close the focused window |
 | `Super+1` to `Super+9`, `Super+0` | Go to workspace 1 to 10 |
 | `Super+Shift+1` to `Super+Shift+9` | Move the window to a workspace |
@@ -106,7 +107,7 @@ one view. See [The bar and Quick Settings](04-bar-and-quick-settings.md).
 ## Read this manual
 
 ```sh
-nirux manual             # the table of contents
+nirux manual             # the table of contents (or Super+Shift+F1)
 nirux manual lock        # a chapter
 nirux manual scratchpads # a heading
 nirux manual --list      # all chapters

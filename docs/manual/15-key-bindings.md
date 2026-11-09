@@ -28,7 +28,7 @@ entries in `config.example.toml`; see
 
 <!-- generated: keys (tools/manual-gen.sh; do not edit by hand) -->
 
-The key bindings of a fresh NIRUX installation: NIRUWM 0.22.1 defaults with
+The key bindings of a fresh NIRUX installation: NIRUWM 0.22.3 defaults with
 the `[[keys]]` of the NIRUX `config.example.toml`. Your own `[[keys]]` and the keys
 that extras register are added on top; `Super+F1` shows the keys in effect.
 
@@ -39,6 +39,7 @@ that extras register are added on top; `Super+F1` shows the keys in effect.
 | `Super+A` | NIRU Actions: maintenance, diagnostics, contexts and OpenCode |
 | `Super+S` | Web search: type a phrase, Enter opens it |
 | `Super+V` | Clipboard history |
+| `Super+Shift+F1` | The NIRUX manual (search and read) |
 | `Super+O` | Find files in the home folder |
 | `Super+Shift+B` / `Super+Shift+M` / `Super+Shift+P` / `Super+Shift+Q` / `Super+Ctrl+T` | Unified launcher: apps, windows, actions and settings |
 | `Alt+Tab` / `` Super+` `` / `Super+W` | Window switcher |
@@ -115,8 +116,8 @@ that extras register are added on top; `Super+F1` shows the keys in effect.
 
 | Keys | Action |
 |---|---|
-| `Super+Ctrl+1…9` / `Super+Ctrl+0` | Show workspace 1…9 / 10 too (toggle) |
-| `Super+Ctrl+Shift+1…9` / `Super+Ctrl+Shift+0` | Put the window on workspace 1…9 / 10 too (toggle) |
+| `Super+Ctrl+1…9` / `Super+Ctrl+0` | Go to workspace 1…9 / 10 |
+| `Super+Ctrl+Shift+1…9` / `Super+Ctrl+Shift+0` | Move the window to workspace 1…9 / 10 and follow it |
 | `Super+Shift+1…9` / `Super+Shift+0` | Move the window to workspace 1…9 / 10 |
 | `Super+1…9` / `Super+0` | Go to workspace 1…9 / 10 |
 | `Super+Tab` | Next workspace |

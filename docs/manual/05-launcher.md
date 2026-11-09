@@ -14,6 +14,7 @@ NIRU Launcher (`nirulauncher`) is the keyboard entry point to NIRUX: application
 | `Super+O` | Find files in the home folder | `nirulauncher --files` |
 | `Super+.` | Emoji and symbols | `nirulauncher --emoji` |
 | `Super+/` or `Super+F1` | Keybinding cheat sheet | `nirulauncher --keys` |
+| `Super+Shift+F1` | The NIRUX manual | `nirulauncher --manual` |
 | `Super+W`, `Alt+Tab`, `` Super+` `` | Window switcher | `nirulauncher --windows` |
 
 On Swedish, German and similar layouts `/` is `Shift+7`, so `Super+/` is the workspace 7 key there; use `Super+F1` for the cheat sheet.

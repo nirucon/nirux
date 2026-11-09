@@ -2,7 +2,19 @@
 
 Earlier releases are described in their release notes and commit messages.
 
-## Unreleased
+## 0.12.246 (2026-11-09)
+
+- **The NIRUX manual.** A thorough English manual ships with every release
+  and matches the installed version: `nirux manual [TOPIC]`, Super+Shift+F1 or
+  the launcher's Manual view (NIRU Launcher 0.10.0, NIRUWM 0.22.3). Key
+  bindings, niructl commands and the configuration reference are generated
+  and checked before each release.
+- **Calendar events in the clock popup (NIRUBAR 0.21.0).** Read-only Google
+  Calendar (or any iCal) feeds from `~/.config/nirubar/calendars.toml` (mode
+  600): dots on days with events, the next days listed, a click opens the
+  calendar on that date. See the manual, chapter 4.
+- **NIRUCLIP 0.6.0:** `--mic SOURCE` and `--list-mics` record from a chosen
+  microphone without changing the system default; `mic = "..."` per profile.
 
 - **The NIRUX manual.** An English manual in `docs/manual/` (16 chapters:
   getting started, windows and layouts, workspaces and scratchpads, the bar,
