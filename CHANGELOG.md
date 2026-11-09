@@ -2,6 +2,26 @@
 
 Earlier releases are described in their release notes and commit messages.
 
+## 0.12.241 (2026-11-09)
+
+- **NIRUWM 0.19.0: urgent windows and window swallowing.**
+  - A window that asks for attention (the urgency hint or
+    `_NET_WM_STATE_DEMANDS_ATTENTION`) gets the theme's attention colour on its
+    border and its workspace cell in NIRUBAR. `Super+Shift+U` jumps to the most
+    recent one, switching screen, workspace or scratchpad as needed;
+    `niructl urgent` lists them.
+  - A graphical program started from a terminal takes the terminal's place, and
+    the terminal comes back when the program closes. On by default for common
+    terminals; `[swallow]` in `config.toml` changes it and
+    `niructl swallow on|off|toggle` switches it for the session. Existing
+    configuration files need no changes.
+- **NIRUBAR 0.19.0** paints urgent workspace cells and marks an urgent
+  scratchpad. NIRUWM 0.19.0 bundles it.
+- **NIRU Launcher 0.6.0: file search.** Type `/` and a query in the launcher,
+  or choose *Find files* in NIRU Actions. Searches the home folder (hidden
+  folders, caches and build folders skipped) with recent files first; Enter
+  opens, Ctrl+Enter opens the folder, Shift+Enter copies the path.
+
 ## 0.12.240 (2026-11-08)
 
 - Supersedes 0.12.239, which was tagged but not published: NIRUWM bundles
