@@ -2,6 +2,24 @@
 
 Earlier releases are described in their release notes and commit messages.
 
+## Unreleased
+
+- **`nirux fleet`: see and update all your NIRUX machines.** `nirux fleet`
+  (or `fleet status`, `--json`) lists the Linux Tailscale peers that have
+  NIRUX, asked in parallel with a short timeout: online/offline, version,
+  behind the latest release, relogin needed (running NIRUWM/NIRUBAR not the
+  active generation's binary), locked, distribution, uptime and last update.
+  Offline machines seen before are listed with their last version; machines
+  without SSH key access show *no access*. `nirux fleet update HOST...|--all|--behind`
+  runs `nirux update` (and `nirux extras update` when extras are selected)
+  host by host over `ssh -t`, so sudo asks in your terminal, and never logs
+  anyone out. `nirux fleet setup` is a one-time, confirmed helper that creates
+  an ed25519 key if needed, runs `ssh-copy-id` and verifies key login; it
+  changes no Tailscale, sshd or PAM settings. Hosts can be fixed with
+  `[fleet] hosts`/`exclude` in `~/.config/nirux/fleet.toml`. Remote commands
+  are `sh -s` with the script on standard input, so a fish login shell works.
+  New test `tests/fleet.sh`.
+
 ## 0.12.243 (2026-11-09)
 
 - **`nirux update` survives GitHub 504s.** GitHub caches a failed response

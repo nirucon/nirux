@@ -321,6 +321,7 @@ your own overrides and the keys of other programs.
 | `nirux gc [--keep N] [--dry-run]` | Prune old generations (also done after every update) |
 | `nirux update-shutdown` / `nirux update-reboot` | Update everything in a terminal, then power off / restart on success |
 | `nirux extras ...` | Optional extras, see above |
+| `nirux fleet [status\|update\|setup]` | See and update your other NIRUX machines over SSH, see below |
 | `nirux sounds ...` | Event sounds: `status`, `list`, `on`, `off`, `toggle`, `test`, `play`, `app` |
 | `nirux wallpapers ...` | Download, inspect or remove optional wallpapers |
 | `nirux login-wallpaper list\|set FILE\|reset\|sync` | Wallpaper of the login screen |
@@ -357,6 +358,49 @@ included. See [Update and power off / restart](docs/UPDATE-POWER.md).
 The NIRUBAR update indicator follows the core suite only; extras are updated
 with `nirux extras update`.
 
+### Several machines: `nirux fleet`
+
+```sh
+nirux fleet                  # status of every NIRUX machine (same as: nirux fleet status)
+nirux fleet status --json    # the same, machine-readable
+nirux fleet update othala    # update named hosts one at a time
+nirux fleet update --behind  # ... or every host older than the latest release (--all: every online host)
+nirux fleet setup            # one time: let this machine log in to the others with an SSH key
+```
+
+The machines are the Linux peers of your Tailscale network that have NIRUX
+(`~/.local/bin/nirux`). They are asked in parallel with a short timeout; an
+offline machine is shown as offline (with the version it had when it was last
+seen) instead of holding up the list, and one that does not accept this
+machine's SSH key as *no access (run nirux fleet setup)*. The table shows the
+NIRUX version, whether it is behind the latest release, whether a **relogin**
+is needed (the running NIRUWM or NIRUBAR is not the binary of the active
+generation), whether the screen is locked, the distribution, the uptime and
+how long ago NIRUX was updated.
+
+`nirux fleet update` runs `nirux update`, and `nirux extras update` when extras
+are selected there, on each host in turn over `ssh -t`, so each host's sudo
+prompt appears in your terminal. It reports the new version and whether a
+relogin is needed; it never logs anyone out or locks a session.
+
+`nirux fleet setup` shows what it will do, creates `~/.ssh/id_ed25519` if you
+have no such key, runs `ssh-copy-id` to each host that has no access yet (it
+asks for that host's password once) and checks that key login then works. It
+does not change Tailscale, sshd or PAM settings. Run it on the machine you
+want to run `nirux fleet` from.
+
+Without Tailscale, or to choose the hosts yourself, use
+`~/.config/nirux/fleet.toml`:
+
+```toml
+[fleet]
+hosts = ["othala", "niruxwork"]   # replaces Tailscale discovery
+exclude = ["proxmox"]             # never listed
+```
+
+Absent keys keep the defaults. `NIRUX_FLEET_TIMEOUT` sets the SSH connect
+timeout in seconds (default 5).
+
 ## Configuration
 
 | File | Purpose |
@@ -366,6 +410,7 @@ with `nirux extras update`.
 | `~/.config/niruwm/themes/NAME.toml` | User themes (take precedence over the appearance file) |
 | `~/.config/nirux/sounds.toml` | Event sounds; see [sounds.example.toml](sounds.example.toml) and [SOUNDS.md](docs/SOUNDS.md) |
 | `~/.config/nirux/sounds/EVENT.ogg` | Your own sound for any event |
+| `~/.config/nirux/fleet.toml` | Optional `[fleet]` `hosts` and `exclude` for `nirux fleet` |
 | [displays.example.toml](displays.example.toml) | Example display profiles |
 
 Updates add new defaults to an existing configuration without rewriting your
@@ -392,6 +437,7 @@ Further reading:
 | `~/.local/share/nirux/generations/` | Installed program generations |
 | `~/.local/share/nirux/current` | Link to the active generation |
 | `~/.local/share/nirux/extras-selected` | Extras remembered for `nirux extras update` |
+| `~/.local/share/nirux/fleet-known` | Hosts `nirux fleet` has seen with NIRUX (lists them while offline) |
 | `~/.config/niruwm/`, `~/.config/nirux/` | Configuration (see above) |
 | `~/.local/state/niruwm/`, `~/.local/state/niru/` | Session state and clipboard history |
 | `~/Pictures/Wallpapers/NIRU/` | Theme wallpapers (under your XDG Pictures directory) |
