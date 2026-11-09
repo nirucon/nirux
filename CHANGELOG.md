@@ -2,6 +2,15 @@
 
 Earlier releases are described in their release notes and commit messages.
 
+## 0.12.242 (2026-11-09)
+
+- **NIRUWM 0.19.1: tiles stay below floating windows.** A tiled window that
+  took the focus (the pointer crossing into it, a click, a new window) went to
+  the very top, so a NIRUSHOT review window or an Open/Save dialog that
+  overlapped two tiles ended up half under one of them. A focused tile now
+  stays below every floating window; only its own dialogs go on top.
+- **Super+O** opens the NIRU Launcher file search.
+
 ## 0.12.241 (2026-11-09)
 
 - **NIRUWM 0.19.0: urgent windows and window swallowing.**
