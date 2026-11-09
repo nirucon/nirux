@@ -318,15 +318,18 @@ your own overrides and the keys of other programs.
 | `nirux install` / `nirux update` | Install, or update to the newest release (`--release VERSION` for a specific one) |
 | `nirux status` / `nirux doctor` | Check programs, integration, PAM and permissions; `doctor` also checks the live session |
 | `nirux rollback` | Switch back to the previous program generation |
+| `nirux snapshot [--note TEXT]` / `nirux snapshot list` | Save or list snapshots of your configuration (one is also taken before every update) |
+| `nirux restore [ID\|latest] [--dry-run]` | Restore a configuration snapshot, after a preview and a safety snapshot |
 | `nirux gc [--keep N] [--dry-run]` | Prune old generations (also done after every update) |
 | `nirux update-shutdown` / `nirux update-reboot` | Update everything in a terminal, then power off / restart on success |
 | `nirux extras ...` | Optional extras, see above |
 | `nirux fleet [status\|update\|setup]` | See and update your other NIRUX machines over SSH, see below |
+| `nirux sync [status\|push\|pull\|items]` | Compare and copy settings such as quotes, themes and lock settings between your machines |
 | `nirux sounds ...` | Event sounds: `status`, `list`, `on`, `off`, `toggle`, `test`, `play`, `app` |
 | `nirux wallpapers ...` | Download, inspect or remove optional wallpapers |
 | `nirux login-wallpaper list\|set FILE\|reset\|sync` | Wallpaper of the login screen |
 | `nirux layout list\|save NAME\|apply NAME\|rotate OUTPUT DIR` | Display layouts from the command line |
-| `nirux reset-config` | Reset `~/.config/niruwm/config.toml` to the current example (keeps a `.nirux-backup` copy) |
+| `nirux reset-config` | Reset `~/.config/niruwm/config.toml` to the current example (keeps a `.nirux-backup` copy and takes a snapshot) |
 | `nirux repair-session` / `nirux repair-wallpaper` | Repair the session files or the wallpaper setup |
 | `nirux browser-addon bonjourr\|none\|status` | Optional browser start page add-on |
 | `nirux remove helium\|localsend\|opencode` | Remove an optional app NIRUX installed |
@@ -343,7 +346,8 @@ nirux rollback
 Updates keep the previous program generation for rollback; settings and your
 own content are preserved. **Log out and back in when WM or session programs
 change**: restarting the bar (`niructl restart-bar`) does not replace a running
-window manager. Rollback restores programs, not personal files or OS packages.
+window manager. Rollback restores programs, not personal files or OS packages; configuration
+has its own snapshots (see below).
 Old generations are pruned after each update (current, previous, any still used
 by a running session and the five newest are kept).
 
@@ -357,6 +361,50 @@ included. See [Update and power off / restart](docs/UPDATE-POWER.md).
 
 The NIRUBAR update indicator follows the core suite only; extras are updated
 with `nirux extras update`.
+
+### Configuration snapshots: `nirux snapshot` and `nirux restore`
+
+```sh
+nirux snapshot --note "before trying a new theme"   # save one now
+nirux snapshot list                                   # what is there
+nirux restore latest --dry-run                        # show what a restore would change
+nirux restore 20261109-153000-0.12.243-to-0.12.244    # restore one, after a y/N question
+```
+
+Before every `nirux update` NIRUX saves your suite configuration to
+`~/.local/state/nirux/snapshots/<time>-<from>-to-<to>.tar.gz` (a newer release
+does this itself when the running installer is older). `nirux extras update`
+does the same when it installs something, and so does `nirux reset-config`.
+The newest three snapshots are kept. Each holds a `MANIFEST` (when, why, the
+NIRUX version, and every file with its size and SHA-256) and the files.
+
+A snapshot holds `~/.config/niruwm` (with themes and display profiles),
+`niruui` (lock and screensaver), `nirubar`, `nirulauncher`, `nirunotify`,
+`nirulock`, `niruscreensaver`, `niruclip`, `nirushot`, `niruwallpaper`,
+`nirudisplay`, `niruthemeselector`, `nirux`, `niru` (quotes and keys),
+`NIRU` and the extras' config directories, `picom.conf`, `kitty/kitty.conf`,
+`fish/config.fish`, the registered keys in `~/.local/share/niru/keys.d` and
+the launcher favourites. It leaves out `~/.config/nirushare` (it holds an
+upload token), any file whose name or content looks like a token, password or
+key (the snapshot says which), files over 16 MiB, caches, other state and your
+music.
+
+`nirux restore` lists each file it would bring back (with added and removed
+lines), and files that are newer than the snapshot, which it keeps. After you
+answer y it first takes a safety snapshot of the current state, so a restore
+can itself be undone with `nirux restore`. It then says what to reload: most
+changes need `niructl reload`, lock settings apply at the next lock.
+
+`~/.config/nirux/snapshots.toml`:
+
+```toml
+[snapshots]
+keep = 3          # how many snapshots to keep
+strict = false    # true: an update stops when its snapshot fails
+```
+
+A failed snapshot (a full disk, for example) does not stop an update: it warns
+and goes on, unless `strict = true` (or `NIRUX_SNAPSHOT_STRICT=1`).
 
 ### Several machines: `nirux fleet`
 
@@ -401,6 +449,56 @@ exclude = ["proxmox"]             # never listed
 Absent keys keep the defaults. `NIRUX_FLEET_TIMEOUT` sets the SSH connect
 timeout in seconds (default 5).
 
+### Share settings between machines: `nirux sync`
+
+```sh
+nirux sync status                  # what differs between this machine and every fleet host
+nirux sync status othala --files   # one host, every differing file
+nirux sync push othala quotes      # copy this machine's quotes to othala
+nirux sync push --all theme lock   # ... or to every online NIRUX host
+nirux sync pull othala sid         # copy othala's SID tunes here
+nirux sync items                   # the items and their paths
+```
+
+`nirux sync` uses the SSH access of `nirux fleet` (run `nirux fleet setup`
+first). `status` compares by content hash and shows per item what is the same,
+changed, only here and only there, with sizes. `push` and `pull` show what
+they will copy and ask y/N (`--yes` for scripts, `--dry-run` for the preview
+only). The receiving machine always takes a snapshot first; an older NIRUX
+there without snapshots gets a backup of the files that will be replaced in
+`~/.local/state/nirux/sync-backups/`. Nothing is deleted: files only the
+receiving machine has are kept. rsync is used when both ends have it,
+otherwise tar over SSH.
+
+| Item | What |
+|---|---|
+| `quotes` | `~/.config/niru/quotes.txt` and `~/.config/niru/quotes/` |
+| `keys.d` | Registered keys for the cheat sheet (`~/.local/share/niru/keys.d`, `~/.config/niru/keys.d`) |
+| `theme` | The `theme = "..."` key of NIRUWM's `config.toml`, `~/.config/niruwm/themes/` and `theme-preferences.toml` |
+| `lock` | `~/.config/niruui/lock.toml`, `screensaver.toml`, `~/.config/nirulock`, `~/.config/niruscreensaver` |
+| `launcher` | `~/.config/nirulauncher` and the launcher favourites |
+| `sounds` | `~/.config/nirux/sounds.toml` and your own sounds in `~/.config/nirux/sounds/` |
+| `sid` | `~/Music/SID` with `Songlengths.md5` (the size is shown before copying) |
+
+NIRUWM's `config.toml` is never copied as a whole: it holds each machine's
+monitors, display profiles, brightness device and autostart. Only its
+top-level `theme` key travels, with the `theme` item. Display profiles,
+secrets (token or password like files), state and caches are never synced.
+
+`~/.config/nirux/sync.toml` changes the default set:
+
+```toml
+[sync]
+items = ["quotes", "theme", "lock"]   # default: all items
+exclude = ["sid", "~/.config/niru/quotes/"]  # item names, or paths under your home
+```
+
+Named items on the command line are used even when excluded; excluded paths
+never are. Sync uses the standard layout (`~/.config`, `~/.local/share`,
+`~/.local/state`) on both ends. Run from a machine without NIRUX (a server
+with keys to the fleet), `nirux sync status HOST1 HOST2` compares the hosts
+with the first one.
+
 ## Configuration
 
 | File | Purpose |
@@ -411,6 +509,8 @@ timeout in seconds (default 5).
 | `~/.config/nirux/sounds.toml` | Event sounds; see [sounds.example.toml](sounds.example.toml) and [SOUNDS.md](docs/SOUNDS.md) |
 | `~/.config/nirux/sounds/EVENT.ogg` | Your own sound for any event |
 | `~/.config/nirux/fleet.toml` | Optional `[fleet]` `hosts` and `exclude` for `nirux fleet` |
+| `~/.config/nirux/snapshots.toml` | Optional `[snapshots]` `keep` and `strict` |
+| `~/.config/nirux/sync.toml` | Optional `[sync]` `items` and `exclude` for `nirux sync` |
 | [displays.example.toml](displays.example.toml) | Example display profiles |
 
 Updates add new defaults to an existing configuration without rewriting your
@@ -439,6 +539,8 @@ Further reading:
 | `~/.local/share/nirux/extras-selected` | Extras remembered for `nirux extras update` |
 | `~/.local/share/nirux/fleet-known` | Hosts `nirux fleet` has seen with NIRUX (lists them while offline) |
 | `~/.config/niruwm/`, `~/.config/nirux/` | Configuration (see above) |
+| `~/.local/state/nirux/snapshots/` | Configuration snapshots (`nirux snapshot list`) |
+| `~/.local/state/nirux/sync-backups/` | Backups an older NIRUX received before a `nirux sync push` |
 | `~/.local/state/niruwm/`, `~/.local/state/niru/` | Session state and clipboard history |
 | `~/Pictures/Wallpapers/NIRU/` | Theme wallpapers (under your XDG Pictures directory) |
 

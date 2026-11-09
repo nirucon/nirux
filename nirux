@@ -104,6 +104,8 @@ usage() {
   say "       nirux extras [list|status|select NAME|unselect NAME|install [NAME...]|uninstall NAME... [--purge]|update]"
   say "       nirux sounds [status|list|on|off|toggle|test|app ...] (see docs/SOUNDS.md)"
   say "       nirux fleet [status [--json]|update HOST...|--all|--behind|setup [HOST...]]"
+  say "       nirux sync status [HOST...] | push HOST...|--all [ITEM...] | pull HOST [ITEM...] | items"
+  say "       nirux snapshot [--note TEXT] | snapshot list | restore [ID|latest] [--dry-run]"
   say "       nirux update-shutdown [--yes] [--dry-run] [--no-power]"
   say "       nirux update-reboot [--yes] [--dry-run] [--no-power]"
   say "       nirux rollback | gc [--keep N] [--dry-run] | status | doctor | uninstall [--purge] | --version | --help"
@@ -114,6 +116,7 @@ usage() {
   say "Papirus: --icons papirus installs Papirus-Dark with grey folders per user (~112-190 MB); none opts out."
   say "--minimal/--no-packages: binaries and integration only; required OS packages must already exist."
   say "Updates check and install missing runtime packages from the downloaded release unless --no-packages is given."
+  say "Every update first saves a snapshot of your configuration (nirux snapshot list; nirux restore)."
 }
 cleanup() {
   if [ -n "${SUDO_KEEPALIVE_PID:-}" ]; then
@@ -2842,6 +2845,15 @@ extras_install() {
 }
 extras_update() {
   [ -f "$EXTRAS_SELECTED" ] || die 'no extras selected'
+  # Vendor installers may write their config and keys.d entries, so a round
+  # that installs anything starts with a snapshot.
+  extras_pending=
+  while read -r name; do
+    row=$(extras_row "$name" 2>/dev/null) || continue
+    pinned=$(printf '%s\n' "$row" | awk '{print $3}')
+    [ "$(extras_installed_version "$name" 2>/dev/null || :)" = "$pinned" ] || extras_pending="$extras_pending $name $pinned"
+  done < "$EXTRAS_SELECTED"
+  [ -z "$extras_pending" ] || snapshot_guard extras '' '' "extras update:$extras_pending"
   while read -r name; do
     [ -n "$name" ] || continue
     row=$(extras_row "$name") || continue
@@ -3858,6 +3870,12 @@ apply_restore_config() {
   rm -rf "$WORK/apply-backup"
   say 'Target apply failed; original configuration restored.' >&2
 }
+# A running installer from before snapshots hands over without one; the
+# target then takes it before it changes anything.
+apply_snapshot() {
+  [ "$operation" = update ] && [ "${NIRUX_APPLY_SNAPSHOT:-}" != taken ] || return 0
+  snapshot_guard update "$(installed_version)" "$RELEASE" ''
+}
 apply_target_release() {
   [ "$1" = 2 ] || die "unsupported apply protocol: $1"
   [ -n "${NIRUX_STAGE_WORK:-}" ] || die 'target apply work directory is missing'
@@ -3907,6 +3925,7 @@ apply_target_release() {
   fi
   [ -n "$wallpapers_policy" ] || wallpapers_policy=keep
   say "Applying NIRUX $RELEASE..."
+  apply_snapshot
   apply_prepare_backup
   APPLY_OK=0
   trap 'apply_restore_config' EXIT INT TERM HUP
@@ -5766,6 +5785,7 @@ repair_wallpaper() {
   source=$STATE/config.example.toml
   [ -f "$source" ] || source=$(dirname "$0")/config.example.toml
   [ -f "$source" ] || die "config example not found: $source (run nirux update)"
+  snapshot_guard reset-config '' '' 'before reset-config'
   target=$CONFDIR/config.toml
   [ -f "$target" ] || die "config not found: $target"
   wallpaper_dir=$(config_picture_paths | sed -n '1p')
@@ -5802,6 +5822,7 @@ reset_config() {
     source=$(dirname "$0")/config.example.toml
   fi
   [ -f "$source" ] || die "config example not found: $source (run nirux update)"
+  snapshot_guard reset-config '' '' 'before reset-config'
   target=$CONFDIR/config.toml
   if [ -L "$target" ]; then
     resolved=$(readlink -f "$target" 2>/dev/null || :)
@@ -5847,6 +5868,7 @@ rollback() {
   fi
   say 'Previous program generation restored. System packages and PAM configuration are not rolled back.'
   say 'Log out and back in to use the restored WM and session.'
+  say 'Configuration files are not part of a rollback: see nirux snapshot list and nirux restore.'
 }
 install_or_update() {
   operation=$1; shift
@@ -5904,6 +5926,9 @@ install_or_update() {
   # its own package list below.
   if [ "$operation" = install ] && [ "$packages" = 1 ]; then install_packages; fi
   stage_release
+  # The configuration as it was before this update. The target installer of a
+  # newer release takes it itself when the running one predates snapshots.
+  if [ "$operation" = update ]; then snapshot_guard update "$(installed_version)" "$RELEASE" ''; fi
   # The wallpaper set is a question for this terminal, so the running
   # installer asks it and the staged target carries out the answer. It is asked
   # when the target can read the staged wallpaper files (an install or a
@@ -5921,7 +5946,7 @@ install_or_update() {
       NIRUX_APPLY_OPERATION=$operation NIRUX_APPLY_WALLPAPERS="${wallpaper_decision:-}" \
       NIRUX_APPLY_ICONS="${ICONS_EFFECTIVE:-none}" \
       NIRUX_APPLY_BROWSER_ADDON="${BROWSER_ADDON_EFFECTIVE:-none}" \
-      NIRUX_APPLY_PACKAGES="$packages" \
+      NIRUX_APPLY_PACKAGES="$packages" NIRUX_APPLY_SNAPSHOT=taken \
       NIRUX_SUDO_SECRET_FILE=${SUDO_SECRET_FILE:-} \
       sh "$WORK/download/nirux/nirux" _apply 2; then
       die 'target installer apply failed; current installation kept'
@@ -5991,11 +6016,12 @@ fleet_work() {
 fleet_valid_host() {
   case "$1" in ''|-*|*[!A-Za-z0-9._@-]*) return 1 ;; *) return 0 ;; esac
 }
-# The strings of array $1 in the [fleet] table, one per line. Arrays may span
-# lines; an absent file or key prints nothing (the default).
-fleet_config_list() {
-  [ -f "$FLEET_CONFIG" ] || return 0
-  awk -v want="$1" '
+# The strings of array KEY ($3) in table [$2] of TOML file $1, one per line.
+# Arrays may span lines; an absent file or key prints nothing (the default).
+fleet_config_list() { toml_list "$FLEET_CONFIG" fleet "$1"; }
+toml_list() {
+  [ -f "$1" ] || return 0
+  awk -v table="$2" -v want="$3" '
     function trim(s) { sub(/^[[:space:]]+/, "", s); sub(/[[:space:]]+$/, "", s); return s }
     function emit(v) {
       while (match(v, /"[^"]*"|\047[^\047]*\047/)) {
@@ -6005,14 +6031,14 @@ fleet_config_list() {
     { line = $0; sub(/#.*/, "", line) }
     collecting { buf = buf " " line; if (index(line, "]")) { emit(buf); collecting = 0 }; next }
     line ~ /^[[:space:]]*\[/ { s = line; gsub(/[][[:space:]]/, "", s); sec = s; next }
-    sec != "fleet" { next }
+    sec != table { next }
     {
       eq = index(line, "="); if (eq == 0) next
       key = trim(substr(line, 1, eq - 1)); gsub(/"/, "", key)
       if (key != want) next
       buf = substr(line, eq + 1)
       if (index(buf, "]")) emit(buf); else collecting = 1
-    }' "$FLEET_CONFIG" 2>/dev/null || :
+    }' "$1" 2>/dev/null || :
 }
 # Linux peers as "peer NAME ONLINE" and this machine as "self NAME 1".
 # FLEET_NOTE says why Tailscale could not be used.
@@ -6477,6 +6503,936 @@ fleet_command() {
     *) die "unknown fleet command: $fleet_action (status, update or setup)" ;;
   esac
 }
+# nirux snapshot / restore: the user's suite configuration as a tarball in
+# ~/.local/state/nirux/snapshots, taken before every update and on request.
+# A snapshot holds MANIFEST (metadata, roots and one line per file with its
+# hash and size) and home/ (the files, by path relative to $HOME). Programs are
+# not part of it: nirux rollback switches program generations.
+SNAPSHOT_DIR=${XDG_STATE_HOME:-$HOME/.local/state}/nirux/snapshots
+SNAPSHOT_CONFIG=$NIRUX_CONFIG/snapshots.toml
+SYNC_CONFIG=$NIRUX_CONFIG/sync.toml
+SNAPSHOT_MAX_BYTES=16777216
+SNAPSHOT_KEEP_DEFAULT=3
+TAB=$(printf '\t')
+# Scalar KEY of [SECTION] in FILE, unquoted; nothing when absent.
+toml_value() {
+  [ -f "$1" ] || return 0
+  awk -v table="$2" -v want="$3" '
+    { line = $0; sub(/^[[:space:]]*#.*/, "", line); sub(/[[:space:]]+#[^"\047]*$/, "", line) }
+    line ~ /^[[:space:]]*\[/ { s = line; gsub(/[][[:space:]]/, "", s); sec = s; next }
+    sec != table { next }
+    {
+      eq = index(line, "="); if (eq == 0) next
+      key = substr(line, 1, eq - 1); gsub(/[[:space:]"]/, "", key)
+      if (key != want) next
+      v = substr(line, eq + 1); sub(/^[[:space:]]+/, "", v); sub(/[[:space:]]+$/, "", v)
+      if (v ~ /^".*"$/ || v ~ /^\047.*\047$/) v = substr(v, 2, length(v) - 2)
+      print v; exit
+    }' "$1" 2>/dev/null || :
+}
+# A path below $HOME as a relative path, for the snapshot layout.
+home_rel() {
+  case "$1" in "$HOME"/?*) say "${1#"$HOME"/}" ;; *) return 1 ;; esac
+}
+snapshot_keep() {
+  snap_keep=$(toml_value "$SNAPSHOT_CONFIG" snapshots keep)
+  case "$snap_keep" in
+    ''|*[!0-9]*|0) say "$SNAPSHOT_KEEP_DEFAULT" ;;
+    *) say "$snap_keep" ;;
+  esac
+}
+snapshot_strict() {
+  [ "${NIRUX_SNAPSHOT_STRICT:-}" = 1 ] || [ "$(toml_value "$SNAPSHOT_CONFIG" snapshots strict)" = true ]
+}
+# What a snapshot covers: "snapshot<TAB>PATH" relative to $HOME. Every config
+# directory of the suite and of the extras NIRUX installs, the files NIRUX
+# writes into (picom, kitty, fish), registered keys and launcher favourites.
+# nirushare is left out: its config holds an upload token.
+snapshot_roots() {
+  snap_c=$(home_rel "${XDG_CONFIG_HOME:-$HOME/.config}" || say .config)
+  snap_d=$(home_rel "${XDG_DATA_HOME:-$HOME/.local/share}" || say .local/share)
+  snap_s=$(home_rel "${XDG_STATE_HOME:-$HOME/.local/state}" || say .local/state)
+  for snap_p in niruwm niruui nirubar nirulauncher nirunotify nirulock niruscreensaver niruclip nirushot \
+    niruwallpaper nirudisplay niruthemeselector nirux niru NIRU \
+    $(extras_table | awk '{ print $1 }'); do
+    printf 'snapshot\t%s/%s\n' "$snap_c" "$snap_p"
+  done
+  for snap_p in picom.conf kitty/kitty.conf fish/config.fish; do printf 'snapshot\t%s/%s\n' "$snap_c" "$snap_p"; done
+  printf 'snapshot\t%s/niru/keys.d\n' "$snap_d"
+  printf 'snapshot\t%s/nirulauncher/favorites.tsv\n' "$snap_s"
+  printf 'snapshot\t%s/nirulauncher/favorites-removed.tsv\n' "$snap_s"
+}
+# A shell script, for `sh -s` here or on another host, that lists the regular
+# files under the roots in $1 (ITEM<TAB>PATH relative to $HOME) as
+#   f<TAB>ITEM<TAB>SHA256<TAB>BYTES<TAB>PATH   or   x<TAB>ITEM<TAB>REASON<TAB>PATH
+# A file is excluded (x) when a prefix in $2 matches, when its name or content
+# looks like a secret, or when it is larger than $3 bytes (0: no limit; item
+# "include" has none). With $4 = 1 it adds t<TAB>theme<TAB>NAME, the theme key
+# of niruwm's config.toml. First come nirux=, snapshot=, rsync= and host= lines.
+# Hashing is batched with find -exec ... +, so a large music folder is cheap.
+scan_script() {
+  printf 'max=%s\ntheme=%s\n' "$3" "$4"
+  cat <<'SCAN'
+cd "$HOME" || exit 1
+t=$(mktemp -d "${TMPDIR:-/tmp}/nirux-scan.XXXXXX") || exit 1
+trap 'rm -rf "$t"' EXIT
+if [ -e .local/bin/nirux ]; then
+  echo "nirux=$(sed -n 's/^VERSION=//p' .local/bin/nirux 2>/dev/null | head -n 1)"
+  if .local/bin/nirux snapshot --help >/dev/null 2>&1; then echo snapshot=1; else echo snapshot=0; fi
+else
+  echo nirux=absent
+fi
+if command -v rsync >/dev/null 2>&1; then echo rsync=1; else echo rsync=0; fi
+echo "host=$(uname -n)"
+cat > "$t/roots" <<'NIRUX_ROOTS_END'
+SCAN
+  cat "$1"
+  say NIRUX_ROOTS_END
+  say "cat > \"\$t/exclude\" <<'NIRUX_EXCLUDE_END'"
+  cat "$2"
+  say NIRUX_EXCLUDE_END
+  cat <<'SCAN'
+tab=$(printf '\t')
+: > "$t/sha"; : > "$t/size"; : > "$t/secret"
+while IFS="$tab" read -r item path; do
+  [ -e "$path" ] || continue
+  find -H "$path" -type f -exec sha256sum {} + >> "$t/sha" 2>/dev/null
+  find -H "$path" -type f -exec wc -c {} + >> "$t/size" 2>/dev/null
+  find -H "$path" -type f -size -1024k -exec grep -liE '(token|secret|passw(or)?d|api[_-]?key|private[_-]?key).?[[:space:]]*[:=][[:space:]]*.?[A-Za-z0-9+/_.=-]{8,}' {} + >> "$t/secret" 2>/dev/null
+done < "$t/roots"
+awk -F "$tab" -v max="$max" -v tab="$tab" '
+  FILENAME == ARGV[1] { if ($2 != "") { n++; root[n] = $2; ritem[n] = $1 }; next }
+  FILENAME == ARGV[2] { if ($0 != "") { ne++; ex[ne] = $0 }; next }
+  FILENAME == ARGV[3] { secret[$0] = 1; next }
+  FILENAME == ARGV[4] {
+    l = $0; sub(/^[[:space:]]+/, "", l); sp = index(l, " ")
+    if (sp) size[substr(l, sp + 1)] = substr(l, 1, sp - 1)
+    next
+  }
+  {
+    if (substr($0, 1, 1) == "\\") next
+    h = substr($0, 1, 64); p = substr($0, 67)
+    if (p == "" || index(p, tab) || seen[p]++) next
+    best = 0; bl = 0
+    for (i = 1; i <= n; i++) {
+      r = root[i]
+      if ((p == r || index(p, r "/") == 1) && length(r) > bl) { best = i; bl = length(r) }
+    }
+    if (!best) next
+    it = ritem[best]; why = ""
+    for (i = 1; i <= ne; i++) if (p == ex[i] || index(p, ex[i] "/") == 1) why = "excluded"
+    b = p; sub(/.*\//, "", b); b = tolower(b)
+    if (why == "" && (b ~ /token|secret|credential|password|passwd/ || b ~ /\.(pem|key|gpg|kdbx|p12)$/ || b ~ /^id_(rsa|dsa|ecdsa|ed25519)/)) why = "secret"
+    if (why == "" && (p in secret)) why = "secret"
+    if (why == "" && max > 0 && it != "include" && size[p] + 0 > max) why = "large"
+    if (why != "") print "x" tab it tab why tab p
+    else print "f" tab it tab h tab (size[p] + 0) tab p
+  }' "$t/roots" "$t/exclude" "$t/secret" "$t/size" "$t/sha"
+if [ "$theme" = 1 ] && [ -f .config/niruwm/config.toml ]; then
+  v=$(awk '/^[[:space:]]*\[/ { exit } /^[[:space:]]*theme[[:space:]]*=/ { sub(/^[^=]*=[[:space:]]*"/, ""); sub(/".*/, ""); print; exit }' .config/niruwm/config.toml)
+  printf 't\ttheme\t%s\n' "$v"
+fi
+SCAN
+}
+snapshot_human() {
+  awk -v b="${1:-0}" 'BEGIN {
+    if (b < 1024) printf "%d B\n", b
+    else if (b < 1048576) printf "%.1f KiB\n", b / 1024
+    else if (b < 1073741824) printf "%.1f MiB\n", b / 1048576
+    else printf "%.1f GiB\n", b / 1073741824 }'
+}
+# "SEQ<TAB>ID" for every snapshot, oldest first.
+snapshot_index() {
+  for snap_a in "$SNAPSHOT_DIR"/*.tar.gz; do
+    [ -f "$snap_a" ] || continue
+    snap_i=${snap_a##*/}; snap_i=${snap_i%.tar.gz}
+    snap_q=$(sed -n 's/^seq //p' "$SNAPSHOT_DIR/$snap_i.manifest" 2>/dev/null | head -n 1)
+    case "$snap_q" in ''|*[!0-9]*) snap_q=0 ;; esac
+    printf '%s\t%s\n' "$snap_q" "$snap_i"
+  done | LC_ALL=C sort -t "$TAB" -k1,1n -k2,2
+}
+snapshot_rotate() {
+  snap_keep=$(snapshot_keep)
+  snap_total=$(snapshot_index | grep -c . || :)
+  [ "$snap_total" -gt "$snap_keep" ] || return 0
+  snapshot_index | head -n "$((snap_total - snap_keep))" | while IFS="$TAB" read -r _snap_seq snap_old; do
+    rm -f "$SNAPSHOT_DIR/$snap_old.tar.gz" "$SNAPSHOT_DIR/$snap_old.manifest"
+    say "Removed old snapshot $snap_old (keeping $snap_keep)."
+  done
+}
+# snapshot_create REASON FROM TO NOTE [INCLUDE-FILE]: take a snapshot and print
+# "Snapshot: ID". INCLUDE-FILE lists extra paths relative to $HOME (sync uses
+# it for the files it is about to overwrite, music included). Runs in a
+# subshell and returns 1 on failure; it never ends the caller.
+snapshot_create() (
+  snap_fail() { say "nirux: snapshot failed: $*" >&2; exit 1; }
+  snap_reason=$1 snap_from=$2 snap_to=$3 snap_note=$4 snap_include=${5:-}
+  for snap_tool in tar gzip sha256sum find; do
+    command -v "$snap_tool" >/dev/null 2>&1 || snap_fail "$snap_tool is missing"
+  done
+  snap_t=$(mktemp -d "${TMPDIR:-/tmp}/nirux-snapshot.XXXXXX") || snap_fail 'no temporary directory'
+  trap 'rm -rf "$snap_t"' EXIT
+  trap 'exit 130' INT
+  trap 'exit 143' TERM HUP
+  snapshot_roots > "$snap_t/roots"
+  if [ -n "$snap_include" ]; then
+    while IFS= read -r snap_p; do
+      case "/$snap_p/" in //|*/../*|*/./*|///*) snap_fail "invalid include path: $snap_p" ;; esac
+      printf 'include\t%s\n' "$snap_p" >> "$snap_t/roots"
+    done < "$snap_include"
+  fi
+  : > "$snap_t/exclude"
+  scan_script "$snap_t/roots" "$snap_t/exclude" "$SNAPSHOT_MAX_BYTES" 0 | sh -s > "$snap_t/scan" ||
+    snap_fail 'could not list the configuration files'
+  awk -F '\t' '$1 == "f" { print $5 }' "$snap_t/scan" > "$snap_t/files"
+  snap_files=$(grep -c . "$snap_t/files" || :)
+  if [ "$snap_files" = 0 ]; then
+    say 'Snapshot: none (no NIRUX configuration files here)'
+    exit 0
+  fi
+  mkdir -p "$snap_t/stage/home" || snap_fail 'no staging directory'
+  while IFS= read -r snap_p; do
+    mkdir -p "$snap_t/stage/home/${snap_p%/*}" && cp -p "$HOME/$snap_p" "$snap_t/stage/home/$snap_p" ||
+      snap_fail "could not copy $snap_p"
+  done < "$snap_t/files"
+  snap_bytes=$(awk -F '\t' '$1 == "f" { s += $4 } END { print s + 0 }' "$snap_t/scan")
+  snap_ts=$(date +%Y%m%d-%H%M%S)
+  snap_from=$(printf '%s' "$snap_from" | tr -cd 'A-Za-z0-9._-')
+  snap_to=$(printf '%s' "$snap_to" | tr -cd 'A-Za-z0-9._-')
+  case "$snap_reason" in
+    update) snap_base="$snap_ts-${snap_from:-unknown}-to-${snap_to:-unknown}" ;;
+    manual) snap_base="$snap_ts-manual" ;;
+    restore) snap_base="$snap_ts-before-restore" ;;
+    sync) snap_base="$snap_ts-before-sync" ;;
+    *) snap_base="$snap_ts-$(printf '%s' "$snap_reason" | tr -cd 'a-z0-9-')" ;;
+  esac
+  ( umask 077; mkdir -p "$SNAPSHOT_DIR" ) || snap_fail "could not create $SNAPSHOT_DIR"
+  snap_id=$snap_base snap_n=1
+  while [ -e "$SNAPSHOT_DIR/$snap_id.tar.gz" ]; do snap_n=$((snap_n + 1)); snap_id=$snap_base-$snap_n; done
+  snap_seq=$(cat "$SNAPSHOT_DIR/.seq" 2>/dev/null || :)
+  case "$snap_seq" in ''|*[!0-9]*) snap_seq=$(snapshot_index | tail -n 1 | cut -f 1) ;; esac
+  snap_seq=$((${snap_seq:-0} + 1))
+  say "$snap_seq" > "$SNAPSHOT_DIR/.seq" || snap_fail "could not write $SNAPSHOT_DIR/.seq"
+  {
+    say 'nirux-snapshot 1'
+    say "id $snap_id"
+    say "seq $snap_seq"
+    say "created $(date '+%Y-%m-%d %H:%M:%S %z')"
+    say "host $(uname -n)"
+    say "nirux $VERSION"
+    say "reason $snap_reason"
+    say "from $snap_from"
+    say "to $snap_to"
+    say "note $(printf '%s' "$snap_note" | tr -d '\000-\037')"
+    say "files $snap_files"
+    say "bytes $snap_bytes"
+    awk -F '\t' '{ print "root " $2 }' "$snap_t/roots"
+    grep "^[fx]$TAB" "$snap_t/scan" || :
+  } > "$snap_t/stage/MANIFEST" || snap_fail 'could not write the manifest'
+  ( umask 077; tar -czf "$SNAPSHOT_DIR/.$snap_id.tmp" -C "$snap_t/stage" MANIFEST home ) ||
+    { rm -f "$SNAPSHOT_DIR/.$snap_id.tmp"; snap_fail 'could not write the archive (disk full?)'; }
+  mv -f "$SNAPSHOT_DIR/.$snap_id.tmp" "$SNAPSHOT_DIR/$snap_id.tar.gz" || snap_fail 'could not store the archive'
+  snap_archive=$(wc -c < "$SNAPSHOT_DIR/$snap_id.tar.gz" | tr -d ' ')
+  { cat "$snap_t/stage/MANIFEST"; say "archive_bytes $snap_archive"; } > "$SNAPSHOT_DIR/$snap_id.manifest" ||
+    snap_fail 'could not write the manifest'
+  chmod 600 "$SNAPSHOT_DIR/$snap_id.tar.gz" "$SNAPSHOT_DIR/$snap_id.manifest" 2>/dev/null || :
+  say "Snapshot: $snap_id"
+  say "  $snap_files files, $(snapshot_human "$snap_bytes") ($(snapshot_human "$snap_archive") compressed): $SNAPSHOT_DIR/$snap_id.tar.gz"
+  awk -F '\t' '$1 == "x" { print "  not included (" $3 "): " $4 }' "$snap_t/scan"
+  snap_share=${XDG_CONFIG_HOME:-$HOME/.config}/nirushare
+  [ ! -d "$snap_share" ] || say "  not included (holds an upload token): $snap_share"
+  snapshot_rotate
+)
+# Before an update: a failed snapshot warns and the update goes on, unless
+# [snapshots] strict = true (or NIRUX_SNAPSHOT_STRICT=1) makes it stop.
+snapshot_guard() {
+  say 'Saving a snapshot of your NIRUX configuration...'
+  if snapshot_create "$@"; then return 0; fi
+  if snapshot_strict; then
+    die "the configuration snapshot failed and snapshots are strict ($SNAPSHOT_CONFIG); nothing was changed"
+  fi
+  say "nirux: warning: no configuration snapshot was taken; continuing. To stop instead, set [snapshots] strict = true in $SNAPSHOT_CONFIG." >&2
+}
+installed_version() {
+  inst_v=$(sed -n 's/^VERSION=//p' "$BIN/nirux" 2>/dev/null | head -n 1)
+  say "${inst_v:-$VERSION}"
+}
+snapshot_usage() {
+  say 'Usage: nirux snapshot [--note TEXT]'
+  say '       nirux snapshot list'
+  say '       nirux restore [ID|latest] [--dry-run] [--yes]'
+  say "Snapshots: $SNAPSHOT_DIR (keep $(snapshot_keep); [snapshots] keep = N and strict = true in $SNAPSHOT_CONFIG)."
+}
+snapshot_list() {
+  snapshot_index > "${TMPDIR:-/tmp}/.nirux-snapshots.$$" || :
+  if [ ! -s "${TMPDIR:-/tmp}/.nirux-snapshots.$$" ]; then
+    rm -f "${TMPDIR:-/tmp}/.nirux-snapshots.$$"
+    say "No snapshots in $SNAPSHOT_DIR."; return 0
+  fi
+  {
+    printf 'ID\tCREATED\tFILES\tSIZE\tNOTE\n'
+    while IFS="$TAB" read -r _snap_seq snap_i; do
+      snap_m=$SNAPSHOT_DIR/$snap_i.manifest
+      snap_note=$(sed -n 's/^note //p' "$snap_m" 2>/dev/null | head -n 1)
+      [ -n "$snap_note" ] || snap_note=$(sed -n 's/^reason //p' "$snap_m" 2>/dev/null | head -n 1)
+      printf '%s\t%s\t%s\t%s\t%s\n' "$snap_i" \
+        "$(sed -n 's/^created \([^ ]* [0-9:]*\).*/\1/p' "$snap_m" 2>/dev/null | head -n 1)" \
+        "$(sed -n 's/^files //p' "$snap_m" 2>/dev/null | head -n 1)" \
+        "$(snapshot_human "$(wc -c < "$SNAPSHOT_DIR/$snap_i.tar.gz" | tr -d ' ')")" "${snap_note:--}"
+    done < "${TMPDIR:-/tmp}/.nirux-snapshots.$$"
+  } | awk -F '\t' '
+    { for (i = 1; i <= NF; i++) { c[NR, i] = $i; if (length($i) > w[i]) w[i] = length($i) } n = NR }
+    END { for (r = 1; r <= n; r++) { line = ""
+      for (i = 1; i <= 5; i++) line = line (i < 5 ? sprintf("%-" (w[i] + 2) "s", c[r, i]) : c[r, i])
+      print line } }'
+  rm -f "${TMPDIR:-/tmp}/.nirux-snapshots.$$"
+  say "Restore with: nirux restore ID|latest [--dry-run]"
+}
+snapshot_command() {
+  case "${1:-}" in
+    list) [ "$#" = 1 ] || die 'usage: nirux snapshot list'; snapshot_list; return ;;
+    --help|-h|help) snapshot_usage; return 0 ;;
+  esac
+  snap_note='' snap_reason=manual snap_inc=''
+  while [ "$#" -gt 0 ]; do
+    case "$1" in
+      --note) [ "$#" -ge 2 ] || die 'missing --note text'; snap_note=$2; shift ;;
+      --reason) [ "$#" -ge 2 ] || die 'missing --reason word'; snap_reason=$2; shift
+        case "$snap_reason" in ''|*[!a-z-]*) die 'reason must be lower-case letters' ;; esac ;;
+      --include-from) [ "$#" -ge 2 ] || die 'missing --include-from file'; snap_inc=$2; shift
+        [ -f "$snap_inc" ] || die "no such file: $snap_inc" ;;
+      *) die "unknown snapshot option: $1 (see nirux snapshot --help)" ;;
+    esac
+    shift
+  done
+  snapshot_create "$snap_reason" '' '' "$snap_note" "$snap_inc" || die 'snapshot failed'
+}
+# Ask a y/N question; without a terminal the answer comes from standard input
+# and is not echoed, so the next output starts on a new line.
+nirux_confirm() {
+  printf '%s' "$1"
+  read -r confirm_answer || confirm_answer=
+  [ -t 0 ] || say ''
+  case "$confirm_answer" in y|Y|yes|YES) return 0 ;; *) return 1 ;; esac
+}
+# What to reload after configuration files changed; paths on standard input.
+config_reload_advice() {
+  awk '
+    /(^|\/)(niruwm|nirubar)\// || /niru\/keys\.d\// { a["Window manager, bar, theme: run niructl reload in the NIRU session (or log out and in)."] = 1; next }
+    /(^|\/)(niruui|nirulock|niruscreensaver)\// || /niru\/quotes/ || /(^|\/)Music\/SID\// { a["Lock and screensaver: used from the next lock or screensaver start."] = 1; next }
+    /nirulauncher\// { a["Launcher: used the next time it opens."] = 1; next }
+    /nirunotify\// { a["Notifications: log out and in (nirunotify reads its config at start)."] = 1; next }
+    /picom\.conf$/ { a["Compositor: log out and in to restart picom."] = 1; next }
+    /(^|\/)(kitty|fish)\// || /(^|\/)nirux\/(theme|fish)\// { a["Terminal: open a new kitty window."] = 1; next }
+    /(^|\/)nirux\/sounds/ { a["Sounds: used from the next sound."] = 1; next }
+    { a["Other programs: restart them to read the restored files."] = 1 }
+    END { for (k in a) print "  " k }' | LC_ALL=C sort
+}
+snapshot_resolve() {
+  [ -d "$SNAPSHOT_DIR" ] || die "no snapshots yet ($SNAPSHOT_DIR); take one with: nirux snapshot"
+  case "$1" in
+    ''|latest) snap_id=$(snapshot_index | tail -n 1 | cut -f 2) ;;
+    *[!A-Za-z0-9._-]*) die "invalid snapshot id: $1" ;;
+    *)
+      if [ -f "$SNAPSHOT_DIR/$1.tar.gz" ]; then snap_id=$1
+      else
+        snap_id=$(snapshot_index | cut -f 2 | grep -F -- "$1" || :)
+        [ "$(printf '%s\n' "$snap_id" | grep -c . || :)" -le 1 ] || die "several snapshots match $1; give the full id (nirux snapshot list)"
+      fi ;;
+  esac
+  [ -n "$snap_id" ] && [ -f "$SNAPSHOT_DIR/$snap_id.tar.gz" ] || die "no snapshot ${1:-latest} (nirux snapshot list)"
+}
+# Compare scans $1 (here, or the snapshot) and $2 (there, or now). One line per
+# path: same|changed|here|there<TAB>ITEM<TAB>BYTES-HERE<TAB>BYTES-THERE<TAB>PATH,
+# xhere|xthere<TAB>ITEM<TAB>REASON<TAB>-<TAB>PATH, and theme<TAB>theme<TAB>HERE<TAB>THERE.
+sync_compare() {
+  awk -F '\t' '
+    FNR == 1 { side++ }
+    side == 1 && $1 == "f" { lh[$5] = $3; ls[$5] = $4; li[$5] = $2; next }
+    side == 1 && $1 == "x" { lx[$4] = $2 "\t" $3; next }
+    side == 1 && $1 == "t" { lt = $3; ht = 1; next }
+    side == 2 && $1 == "f" { rh[$5] = $3; rs[$5] = $4; ri[$5] = $2; next }
+    side == 2 && $1 == "x" { rx[$4] = $2 "\t" $3; next }
+    side == 2 && $1 == "t" { rt = $3; ht = 1; next }
+    END {
+      for (p in lh) {
+        if (p in rh) st = (lh[p] == rh[p]) ? "same" : "changed"; else st = "here"
+        print st "\t" li[p] "\t" ls[p] "\t" ((p in rs) ? rs[p] : 0) "\t" p
+      }
+      for (p in rh) if (!(p in lh)) print "there\t" ri[p] "\t0\t" rs[p] "\t" p
+      for (p in lx) print "xhere\t" lx[p] "\t-\t" p
+      for (p in rx) if (!(p in lx)) print "xthere\t" rx[p] "\t-\t" p
+      if (ht) print "theme\ttheme\t" lt "\t" rt "\t-"
+    }' "$1" "$2" | LC_ALL=C sort -t "$TAB" -k2,2 -k5,5
+}
+restore_command() {
+  rest_id='' rest_dry=0 rest_yes=0
+  while [ "$#" -gt 0 ]; do
+    case "$1" in
+      --dry-run|-n) rest_dry=1 ;;
+      --yes|-y) rest_yes=1 ;;
+      --help|-h) snapshot_usage; return 0 ;;
+      -*) die "unknown restore option: $1" ;;
+      *) [ -z "$rest_id" ] || die 'restore takes one snapshot id'; rest_id=$1 ;;
+    esac
+    shift
+  done
+  snapshot_resolve "$rest_id"
+  rest_id=$snap_id
+  lock
+  rest_dir=$WORK/restore
+  mkdir -p "$rest_dir" || die 'could not create a work directory'
+  tar -xzf "$SNAPSHOT_DIR/$rest_id.tar.gz" -C "$rest_dir" || die "could not read snapshot $rest_id"
+  [ "$(head -n 1 "$rest_dir/MANIFEST" 2>/dev/null)" = 'nirux-snapshot 1' ] || die "$rest_id is not a NIRUX snapshot"
+  # The current state of the same roots, scanned the same way.
+  sed -n 's/^root //p' "$rest_dir/MANIFEST" | awk '{ print "now\t" $0 }' > "$WORK/restore-roots"
+  : > "$WORK/restore-exclude"
+  scan_script "$WORK/restore-roots" "$WORK/restore-exclude" 0 0 | sh -s > "$WORK/restore-now" || die 'could not read the current configuration'
+  grep "^f$TAB" "$rest_dir/MANIFEST" > "$WORK/restore-snap" || :
+  sync_compare "$WORK/restore-snap" "$WORK/restore-now" > "$WORK/restore-diff"
+  say "Snapshot $rest_id"
+  sed -n 's/^created /  created: /p; s/^reason /  reason:  /p; s/^note \(..*\)/  note:    \1/p' "$rest_dir/MANIFEST"
+  awk -F '\t' '$1 == "changed" || $1 == "here" { print $5 }' "$WORK/restore-diff" > "$WORK/restore-list"
+  rest_n=$(grep -c . "$WORK/restore-list" || :)
+  rest_same=$(grep -c "^same$TAB" "$WORK/restore-diff" || :)
+  rest_new=$(grep -c "^there$TAB" "$WORK/restore-diff" || :)
+  while IFS="$TAB" read -r rest_st _rest_item _rest_a _rest_b rest_p; do
+    case "$rest_st" in
+      changed)
+        rest_diff=
+        if command -v diff >/dev/null 2>&1; then
+          rest_plus=$(diff "$HOME/$rest_p" "$rest_dir/home/$rest_p" 2>/dev/null | grep -c '^>' || :)
+          rest_minus=$(diff "$HOME/$rest_p" "$rest_dir/home/$rest_p" 2>/dev/null | grep -c '^<' || :)
+          rest_diff=" (+$rest_plus -$rest_minus lines)"
+        fi
+        say "  restore   $rest_p$rest_diff" ;;
+      here)
+        if [ -e "$HOME/$rest_p" ]; then say "  restore   $rest_p"
+        else say "  recreate  $rest_p (missing now)"; fi ;;
+      there) say "  keep      $rest_p (newer than the snapshot; kept)" ;;
+    esac
+  done < "$WORK/restore-diff"
+  say "$rest_n to restore, $rest_same unchanged, $rest_new newer files kept."
+  if [ "$rest_n" = 0 ]; then say "Your configuration already matches $rest_id; nothing to restore."; return 0; fi
+  if [ "$rest_dry" = 1 ]; then say 'Dry run: nothing was changed.'; return 0; fi
+  if [ "$rest_yes" != 1 ]; then
+    nirux_confirm 'Restore these files? A snapshot of the current state is taken first. [y/N] ' || { say 'Cancelled; nothing was changed.'; return 1; }
+  fi
+  snapshot_create restore '' '' "before restoring $rest_id" || die 'could not take the safety snapshot; nothing was restored'
+  rest_failed=0
+  while IFS= read -r rest_p; do
+    mkdir -p "$(dirname "$HOME/$rest_p")" && cp -p "$rest_dir/home/$rest_p" "$HOME/$rest_p" ||
+      { say "nirux: could not restore $rest_p" >&2; rest_failed=1; }
+  done < "$WORK/restore-list"
+  [ "$rest_failed" = 0 ] || die 'some files were not restored; the safety snapshot above has the state before'
+  say "Restored $rest_n files from $rest_id. Undo with: nirux restore (the safety snapshot is the latest)."
+  say 'To use them:'
+  config_reload_advice < "$WORK/restore-list"
+}
+
+# nirux sync: compare and copy user settings between NIRUX machines over the
+# SSH access of nirux fleet. Items are named groups of paths relative to
+# $HOME (default XDG layout on both ends). A transfer never deletes: files that
+# only the receiving machine has are kept. niruwm's config.toml is never copied
+# whole (it holds per-machine monitors and display settings); the theme item
+# carries only its top-level `theme` key.
+SYNC_ITEMS_ALL='quotes keys.d theme lock launcher sounds sid'
+sync_item_roots() {
+  case "$1" in
+    quotes) say .config/niru/quotes.txt; say .config/niru/quotes ;;
+    keys.d) say .config/niru/keys.d; say .local/share/niru/keys.d ;;
+    theme) say .config/niruwm/themes; say .config/niruwm/theme-preferences.toml ;;
+    lock) say .config/niruui/lock.toml; say .config/niruui/screensaver.toml; say .config/nirulock; say .config/niruscreensaver ;;
+    launcher) say .config/nirulauncher; say .local/state/nirulauncher/favorites.tsv; say .local/state/nirulauncher/favorites-removed.tsv ;;
+    sounds) say .config/nirux/sounds.toml; say .config/nirux/sounds ;;
+    sid) say Music/SID ;;
+    *) return 1 ;;
+  esac
+}
+sync_usage() {
+  say 'Usage: nirux sync status [HOST...] [--files]'
+  say '       nirux sync push HOST...|--all [ITEM...] [--yes] [--dry-run]'
+  say '       nirux sync pull HOST [ITEM...] [--yes] [--dry-run]'
+  say '       nirux sync items'
+  say "Items: $SYNC_ITEMS_ALL. Change the default set with [sync] items = [...] and"
+  say "exclude = [...] (item names or paths relative to ~) in $SYNC_CONFIG."
+  say 'Hosts and SSH access come from nirux fleet (nirux fleet setup).'
+}
+sync_items_list() {
+  for sync_i in $SYNC_ITEMS_ALL; do
+    printf '%-9s %s\n' "$sync_i" "$(sync_item_roots "$sync_i" | sed 's|^|~/|' | tr '\n' ' ')"
+  done
+  say 'theme     also the theme = "..." key of ~/.config/niruwm/config.toml (nothing else from that file)'
+  say "Default: $(sync_default_items)"
+  say 'Never synced: niruwm config.toml as a whole, display profiles (displays.toml, nirudisplay),'
+  say 'secrets (token/password-like files), nirushare, state and caches.'
+}
+sync_default_items() {
+  sync_cfg=$(toml_list "$SYNC_CONFIG" sync items | tr '\n' ' ')
+  [ -n "$sync_cfg" ] || sync_cfg=$SYNC_ITEMS_ALL
+  sync_out=
+  for sync_i in $sync_cfg; do
+    sync_item_roots "$sync_i" >/dev/null || { say "nirux sync: ignoring unknown item in $SYNC_CONFIG: $sync_i" >&2; continue; }
+    toml_list "$SYNC_CONFIG" sync exclude | grep -qxF -- "$sync_i" && continue
+    sync_out="$sync_out $sync_i"
+  done
+  say "${sync_out# }"
+}
+# Write the roots and path excludes of items $* to $FLEET_WORK/sync.roots and
+# sync.exclude; SYNC_THEME=1 when the theme item is part of it.
+sync_prepare() {
+  : > "$FLEET_WORK/sync.roots"
+  SYNC_THEME=0
+  for sync_i in "$@"; do
+    [ "$sync_i" != theme ] || SYNC_THEME=1
+    sync_item_roots "$sync_i" | awk -v i="$sync_i" '{ print i "\t" $0 }' >> "$FLEET_WORK/sync.roots"
+  done
+  toml_list "$SYNC_CONFIG" sync exclude | awk '/\// { sub(/^~\//, ""); sub(/\/$/, ""); print }' > "$FLEET_WORK/sync.exclude"
+}
+sync_ssh() { ssh -o BatchMode=yes -o ConnectTimeout="${NIRUX_FLEET_TIMEOUT:-5}" "$@"; }
+# Scan host $1 (LOCAL $2 = 1: this machine) into $FLEET_WORK/scan.$1.
+sync_scan() {
+  sync_o=$FLEET_WORK/scan.$1
+  sync_rc=0
+  if [ "$2" = 1 ]; then
+    scan_script "$FLEET_WORK/sync.roots" "$FLEET_WORK/sync.exclude" 0 "$SYNC_THEME" | sh -s > "$sync_o" 2> "$sync_o.err" || sync_rc=$?
+  else
+    scan_script "$FLEET_WORK/sync.roots" "$FLEET_WORK/sync.exclude" 0 "$SYNC_THEME" |
+      fleet_timeout "${NIRUX_SYNC_TIMEOUT:-600}" ssh -o BatchMode=yes -o ConnectTimeout="${NIRUX_FLEET_TIMEOUT:-5}" "$1" sh -s > "$sync_o" 2> "$sync_o.err" || sync_rc=$?
+  fi
+  echo "rc=$sync_rc" >> "$sync_o"
+}
+sync_field() { sed -n "s/^$2=//p" "$FLEET_WORK/scan.$1" 2>/dev/null | head -n 1; }
+# The state of a scanned remote host: ok, nonirux, noaccess or offline.
+sync_host_state() {
+  sync_nx=$(sync_field "$1" nirux)
+  if [ -n "$sync_nx" ] && [ "$(sync_field "$1" rc)" = 0 ]; then
+    if [ "$sync_nx" = absent ]; then say nonirux; else say ok; fi
+  elif grep -qiE 'permission denied|host key verification failed|too many authentication' "$FLEET_WORK/scan.$1.err" 2>/dev/null; then
+    say noaccess
+  else
+    say offline
+  fi
+}
+sync_host_problem() {
+  case "$2" in
+    nonirux) say "$1: NIRUX is not installed there" ;;
+    noaccess) say "$1: no SSH key access (run nirux fleet setup $1)" ;;
+    offline) say "$1: not reachable ($(grep -v '^$' "$FLEET_WORK/scan.$1.err" 2>/dev/null | tail -n 1))" ;;
+  esac
+}
+sync_self_names() {
+  uname -n
+  [ -z "${FLEET_SELF:-}" ] || say "$FLEET_SELF"
+}
+sync_is_self() { sync_self_names | grep -qxF -- "${1#*@}"; }
+# Host and item arguments: an argument naming an item is an item.
+sync_args() {
+  SYNC_HOSTS='' SYNC_ITEMS='' SYNC_YES=0 SYNC_DRY=0 SYNC_ALL=0 SYNC_FILES=0
+  for sync_a in "$@"; do
+    case "$sync_a" in
+      --yes|-y) SYNC_YES=1 ;;
+      --dry-run|-n) SYNC_DRY=1 ;;
+      --all) SYNC_ALL=1 ;;
+      --files) SYNC_FILES=1 ;;
+      --help|-h) sync_usage; exit 0 ;;
+      -*) die "unknown sync option: $sync_a" ;;
+      *)
+        if sync_item_roots "$sync_a" >/dev/null; then SYNC_ITEMS="$SYNC_ITEMS $sync_a"
+        else fleet_valid_host "$sync_a" || die "invalid host name: $sync_a"; SYNC_HOSTS="$SYNC_HOSTS $sync_a"; fi ;;
+    esac
+  done
+  SYNC_ITEMS=${SYNC_ITEMS# }
+  [ -n "$SYNC_ITEMS" ] || SYNC_ITEMS=$(sync_default_items)
+  [ -n "$SYNC_ITEMS" ] || die "no sync items selected (see $SYNC_CONFIG)"
+}
+# Online NIRUX fleet hosts other than this machine.
+sync_fleet_hosts() {
+  fleet_collect
+  fleet_note >&2
+  awk -F '|' '$2 != 1 && $3 == "online" { print $1 }' "$FLEET_WORK/rows" | tr '\n' ' '
+  awk -F '|' '$2 != 1 && $3 != "online" { print $1 "|" $3 }' "$FLEET_WORK/rows" > "$FLEET_WORK/sync.skipped"
+}
+sync_local_note() {
+  [ "$(sync_field "$SYNC_LOCAL" nirux)" = absent ] || return 0
+  say "Note: NIRUX is not installed on this machine ($(uname -n)); its side of the comparison is empty,"
+  say '      so everything on the other machine shows as only there. Pull would copy it here.'
+}
+# Print the status table for host $1 from $FLEET_WORK/diff.$1.
+sync_print_status() {
+  sync_d=$FLEET_WORK/diff.$1
+  sync_how=tar; [ "$(sync_method "$1")" = rsync ] && sync_how=rsync
+  if [ "${SYNC_HERE_NAME:-here}" = here ]; then say "== $1 (NIRUX $(sync_field "$1" nirux), transfer: $sync_how)"
+  else say "== $1 compared with $SYNC_HERE_NAME (NIRUX $(sync_field "$1" nirux) and $(sync_field "$SYNC_HERE_NAME" nirux))"; fi
+  {
+    printf 'ITEM\tSAME\tCHANGED\tONLY HERE\tONLY THERE\tEXCLUDED\tHERE\tTHERE\n'
+    for sync_i in $SYNC_ITEMS; do
+      awk -F '\t' -v i="$sync_i" '
+        $2 != i { next }
+        $1 == "same" { s++; hb += $3; tb += $4 } $1 == "changed" { c++; hb += $3; tb += $4 }
+        $1 == "here" { h++; hb += $3 } $1 == "there" { t++; tb += $4 } $1 ~ /^x/ { x++ }
+        $1 == "theme" { if ($3 != $4) c++; else s++ }
+        END { printf "%s\t%d\t%d\t%d\t%d\t%d\t%d\t%d\n", i, s, c, h, t, x, hb, tb }' "$sync_d"
+    done
+  } | while IFS="$TAB" read -r c1 c2 c3 c4 c5 c6 c7 c8; do
+    if [ "$c1" = ITEM ]; then printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' "$c1" "$c2" "$c3" "$c4" "$c5" "$c6" "$c7" "$c8"
+    else printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' "$c1" "$c2" "$c3" "$c4" "$c5" "$c6" "$(snapshot_human "$c7")" "$(snapshot_human "$c8")"; fi
+  done | awk -F '\t' '
+    { for (i = 1; i <= NF; i++) { c[NR, i] = $i; if (length($i) > w[i]) w[i] = length($i) } n = NR; if (NF > m) m = NF }
+    END { for (r = 1; r <= n; r++) { line = ""
+      for (i = 1; i <= m; i++) line = line (i < m ? sprintf("%-" (w[i] + 2) "s", c[r, i]) : c[r, i])
+      print "  " line } }'
+  awk -F '\t' -v here="${SYNC_HERE_NAME:-here}" '$1 == "theme" && $3 != $4 { print "  theme: " here " " ($3 == "" ? "(none)" : $3) ", there " ($4 == "" ? "(none)" : $4) }' "$sync_d"
+  awk -F '\t' -v all="$SYNC_FILES" '
+    $1 == "changed" { l = "changed    " } $1 == "here" { l = "only here  " } $1 == "there" { l = "only there " }
+    $1 == "xhere" { l = "excluded   " } $1 == "xthere" { l = "excluded   " }
+    $1 == "same" || $1 == "theme" { next }
+    { n[$2]++; if (all || n[$2] <= 8) print "  " $2 "\t" l $5 (($1 ~ /^x/) ? " (" $3 ")" : "") ; else more[$2]++ }
+    END { for (i in more) print "  " i "\t... and " more[i] " more (--files lists all)" }' "$sync_d" |
+    awk -F '\t' '{ printf "%-11s %s\n", $1, $2 }'
+}
+# rsync when both ends have it and NIRUX_SYNC_TRANSFER is not tar.
+sync_method() {
+  case "${NIRUX_SYNC_TRANSFER:-auto}" in
+    tar) say tar; return ;;
+    rsync|auto) ;;
+    *) die 'NIRUX_SYNC_TRANSFER must be auto, rsync or tar' ;;
+  esac
+  if command -v rsync >/dev/null 2>&1 && [ "$(sync_field "$1" rsync)" = 1 ]; then say rsync
+  elif [ "${NIRUX_SYNC_TRANSFER:-auto}" = rsync ]; then die "rsync is missing on $1 or here"
+  else say tar; fi
+}
+sync_status() {
+  sync_args "$@"
+  fleet_work
+  sync_prepare $SYNC_ITEMS
+  : > "$FLEET_WORK/sync.skipped"
+  if [ -z "$SYNC_HOSTS" ]; then
+    say 'Checking the fleet...'
+    SYNC_HOSTS=$(sync_fleet_hosts)
+  else
+    fleet_tailscale >/dev/null 2>&1 && FLEET_SELF=$(awk -F '\t' '$1 == "self" { print $2; exit }' "$FLEET_WORK/peers") || :
+  fi
+  SYNC_LOCAL=_here
+  sync_scan "$SYNC_LOCAL" 1 &
+  for sync_h in $SYNC_HOSTS; do
+    if sync_is_self "$sync_h"; then say "$sync_h: this machine, skipped"; continue; fi
+    sync_scan "$sync_h" 0 &
+  done
+  wait
+  [ "$(sync_field "$SYNC_LOCAL" rc)" = 0 ] || die "could not scan this machine: $(cat "$FLEET_WORK/scan.$SYNC_LOCAL.err")"
+  say "Items: $SYNC_ITEMS"
+  # A machine without NIRUX (a server with SSH keys to the fleet) has nothing
+  # to compare; with two or more hosts, they are compared with the first one.
+  sync_ref=$SYNC_LOCAL SYNC_HERE_NAME=here
+  if [ "$(sync_field "$SYNC_LOCAL" nirux)" = absent ]; then
+    sync_ok_hosts=
+    for sync_h in $SYNC_HOSTS; do
+      sync_is_self "$sync_h" || [ "$(sync_host_state "$sync_h")" != ok ] || sync_ok_hosts="$sync_ok_hosts $sync_h"
+    done
+    # shellcheck disable=SC2086 # one word per host
+    set -- $sync_ok_hosts
+    if [ "$#" -ge 2 ]; then
+      sync_ref=$1 SYNC_HERE_NAME=$1
+      say "Note: NIRUX is not installed on this machine ($(uname -n)); comparing with $1 instead"
+      say "      (ONLY HERE means only on $1). Push and pull always use this machine's files."
+    else
+      sync_local_note
+    fi
+  fi
+  sync_found=0
+  for sync_h in $SYNC_HOSTS; do
+    sync_is_self "$sync_h" && continue
+    [ "$sync_h" != "$sync_ref" ] || continue
+    sync_st=$(sync_host_state "$sync_h")
+    if [ "$sync_st" != ok ]; then say "== $(sync_host_problem "$sync_h" "$sync_st")"; continue; fi
+    sync_found=1
+    sync_compare "$FLEET_WORK/scan.$sync_ref" "$FLEET_WORK/scan.$sync_h" > "$FLEET_WORK/diff.$sync_h"
+    sync_print_status "$sync_h"
+  done
+  while IFS='|' read -r sync_h sync_st; do
+    [ -n "$sync_h" ] || continue
+    case "$sync_st" in noaccess) sync_st="no SSH key access (run nirux fleet setup $sync_h)" ;; nonirux) sync_st='no NIRUX' ;; esac
+    say "== $sync_h: $sync_st, skipped"
+  done < "$FLEET_WORK/sync.skipped"
+  [ "$sync_found" = 1 ] || [ -n "$SYNC_HOSTS" ] || say 'No other NIRUX host found (nirux fleet status).'
+  return 0
+}
+# List what direction $2 (push|pull) would copy for host $1 into
+# $FLEET_WORK/send.$1 and print the preview. Returns 1 when nothing differs.
+sync_plan() {
+  sync_d=$FLEET_WORK/diff.$1
+  sync_compare "$FLEET_WORK/scan.$SYNC_LOCAL" "$FLEET_WORK/scan.$1" > "$sync_d"
+  if [ "$2" = push ]; then sync_want='changed|here' sync_col=3; else sync_want='changed|there' sync_col=4; fi
+  awk -F '\t' -v w="^($sync_want)\$" '$1 ~ w { print $5 }' "$sync_d" > "$FLEET_WORK/send.$1"
+  awk -F '\t' '$1 == "changed" { print $5 }' "$sync_d" > "$FLEET_WORK/overwrite.$1"
+  SYNC_THEME_VALUE=
+  if [ "$2" = push ]; then
+    SYNC_THEME_VALUE=$(awk -F '\t' '$1 == "theme" && $3 != $4 { print $3 }' "$sync_d")
+  else
+    SYNC_THEME_VALUE=$(awk -F '\t' '$1 == "theme" && $3 != $4 { print $4 }' "$sync_d")
+  fi
+  case "$SYNC_THEME_VALUE" in *[!A-Za-z0-9._-]*) say "  theme: ignoring an unusual theme name: $SYNC_THEME_VALUE"; SYNC_THEME_VALUE= ;; esac
+  if [ ! -s "$FLEET_WORK/send.$1" ] && [ -z "$SYNC_THEME_VALUE" ]; then
+    say "== $1: already in sync for: $SYNC_ITEMS"
+    return 1
+  fi
+  if [ "$2" = push ]; then say "== push to $1 ($(sync_method "$1")):"; else say "== pull from $1 ($(sync_method "$1")):"; fi
+  for sync_i in $SYNC_ITEMS; do
+    awk -F '\t' -v i="$sync_i" -v w="^($sync_want)\$" -v col="$sync_col" '
+      $2 == i && $1 ~ w { n++; b += $col; if ($1 == "changed") c++; else a++ }
+      END { if (n) printf "%s\t%d\t%d\t%d\n", i, n, c, b }' "$sync_d"
+  done | while IFS="$TAB" read -r sync_i sync_n sync_c sync_b; do
+    say "  $sync_i: $sync_n files, $(snapshot_human "$sync_b") ($sync_c replace a different file, $((sync_n - sync_c)) new)"
+  done
+  if [ -n "$SYNC_THEME_VALUE" ]; then
+    awk -F '\t' -v d="$2" '$1 == "theme" { print "  theme: set theme = \"" (d == "push" ? $3 : $4) "\" (now " ((d == "push" ? $4 : $3) == "" ? "none" : (d == "push" ? $4 : $3)) ") in niruwm config.toml; nothing else in that file changes" }' "$sync_d"
+  fi
+  head -n 12 "$FLEET_WORK/send.$1" | sed 's/^/    /'
+  sync_total=$(grep -c . "$FLEET_WORK/send.$1" || :)
+  [ "$sync_total" -le 12 ] || say "    ... and $((sync_total - 12)) more"
+  sync_x=$(awk -F '\t' '$1 ~ /^x/ { n++ } END { print n + 0 }' "$sync_d")
+  [ "$sync_x" = 0 ] || say "  not synced: $sync_x excluded files (secrets or [sync] exclude)"
+  return 0
+}
+# The script that takes a snapshot on the receiving host before files are
+# written: `nirux snapshot` with the overwritten paths included, or, with an
+# older NIRUX there, a tarball of those paths. Paths come on lines after it.
+sync_receiver_script() {
+  cat <<SCRIPT
+note='sync $2 $(uname -n | tr -cd 'A-Za-z0-9._-')'
+SCRIPT
+  cat <<'SCRIPT'
+cd "$HOME" || exit 1
+t=$(mktemp "${TMPDIR:-/tmp}/nirux-sync.XXXXXX") || exit 1
+trap 'rm -f "$t" "$t.e"' EXIT
+cat > "$t" <<'NIRUX_LIST_END'
+SCRIPT
+  cat "$1"
+  cat <<'SCRIPT'
+NIRUX_LIST_END
+n=.local/bin/nirux
+if [ -x "$n" ] && "$n" snapshot --help >/dev/null 2>&1; then
+  if out=$("$n" snapshot --reason sync --note "$note" --include-from "$t" 2>&1); then
+    echo "snapshot=$(printf '%s\n' "$out" | sed -n 's/^Snapshot: //p' | head -n 1)"
+  else
+    printf '%s\n' "$out" >&2; echo snapshot=failed
+  fi
+else
+  while IFS= read -r p; do [ ! -f "$p" ] || printf '%s\n' "$p"; done < "$t" > "$t.e"
+  if [ ! -s "$t.e" ]; then echo snapshot=none; exit 0; fi
+  d=${XDG_STATE_HOME:-$HOME/.local/state}/nirux/sync-backups
+  f=$d/$(date +%Y%m%d-%H%M%S)-before-sync.tar.gz
+  if (umask 077; mkdir -p "$d" && tar -czf "$f" -T "$t.e"); then echo "snapshot=backup $f"; else echo snapshot=failed; fi
+fi
+SCRIPT
+}
+# Set the top-level theme key of niruwm's config.toml to $1, keeping the file,
+# its link and its mode; the rest of the file is not touched.
+theme_set_script() {
+  printf "v='%s'\n" "$1"
+  cat <<'SCRIPT'
+cd "$HOME" || exit 1
+f=.config/niruwm/config.toml
+[ -f "$f" ] || { echo theme=noconfig; exit 0; }
+awk -v v="$v" '
+  !done && /^[[:space:]]*\[/ { print "theme = \"" v "\""; done = 1 }
+  !done && /^[[:space:]]*theme[[:space:]]*=/ { print "theme = \"" v "\""; done = 1; next }
+  { print }
+  END { if (!done) print "theme = \"" v "\"" }' "$f" > "$f.nirux-sync.$$" &&
+  cat "$f.nirux-sync.$$" > "$f" && rm -f "$f.nirux-sync.$$" && echo theme=ok || { rm -f "$f.nirux-sync.$$"; echo theme=failed; }
+SCRIPT
+}
+sync_items_of() { # paths on stdin -> item names
+  awk -F '\t' 'NR == FNR { r[$2] = $1; next }
+    { for (p in r) if ($0 == p || index($0, p "/") == 1) print r[p] }' "$FLEET_WORK/sync.roots" - | LC_ALL=C sort -u
+}
+sync_item_advice() {
+  for sync_i in $(cat); do
+    case "$sync_i" in
+      theme) say '  theme: run niructl reload in the NIRU session there (or log out and in)' ;;
+      lock) say '  lock: used from the next lock or screensaver start' ;;
+      quotes) say '  quotes: shown from the next lock or screensaver start' ;;
+      launcher) say '  launcher: used the next time it opens' ;;
+      sounds) say '  sounds: used from the next sound' ;;
+      keys.d) say '  keys.d: shown the next time the key cheat sheet opens' ;;
+      sid) say '  sid: available to the SID player right away' ;;
+    esac
+  done
+}
+# Hash check of the received files against the sender's scan.
+sync_verify() { # SENDER-SCAN RECEIVER-SCAN LIST
+  awk -F '\t' 'FNR == 1 { side++ } side == 1 && $1 == "f" { a[$5] = $3; next }
+    side == 2 && $1 == "f" { b[$5] = $3; next }
+    side == 3 { n++; if (!($0 in b) || a[$0] != b[$0]) { bad++; print "  not received: " $0 | "cat 1>&2" } }
+    END { exit bad ? 1 : 0 }' "$1" "$2" "$3"
+}
+sync_push() {
+  sync_args "$@"
+  [ -n "$SYNC_HOSTS" ] || [ "$SYNC_ALL" = 1 ] || die 'usage: nirux sync push HOST...|--all [ITEM...]'
+  [ -z "$SYNC_HOSTS" ] || [ "$SYNC_ALL" = 0 ] || die 'give host names or --all, not both'
+  fleet_work
+  sync_prepare $SYNC_ITEMS
+  if [ "$SYNC_ALL" = 1 ]; then
+    say 'Checking the fleet...'
+    SYNC_HOSTS=$(sync_fleet_hosts)
+    [ -n "$SYNC_HOSTS" ] || { say 'No other online NIRUX host to push to.'; return 0; }
+  else
+    fleet_tailscale >/dev/null 2>&1 && FLEET_SELF=$(awk -F '\t' '$1 == "self" { print $2; exit }' "$FLEET_WORK/peers") || :
+  fi
+  SYNC_LOCAL=_here
+  sync_scan "$SYNC_LOCAL" 1 &
+  for sync_h in $SYNC_HOSTS; do sync_is_self "$sync_h" || sync_scan "$sync_h" 0 & done
+  wait
+  [ "$(sync_field "$SYNC_LOCAL" rc)" = 0 ] || die 'could not scan this machine'
+  say "Items: $SYNC_ITEMS"
+  sync_targets='' sync_failed=''
+  for sync_h in $SYNC_HOSTS; do
+    if sync_is_self "$sync_h"; then say "== $sync_h: this machine, skipped"; continue; fi
+    sync_st=$(sync_host_state "$sync_h")
+    if [ "$sync_st" != ok ]; then say "== $(sync_host_problem "$sync_h" "$sync_st"), skipped"; continue; fi
+    if sync_plan "$sync_h" push; then
+      sync_targets="$sync_targets $sync_h"
+      say "$SYNC_THEME_VALUE" > "$FLEET_WORK/theme.$sync_h"
+    fi
+  done
+  [ -n "$sync_targets" ] || { say 'Nothing to push.'; return 0; }
+  say 'Files that only the receiving machine has are kept. Each receiver takes a snapshot first.'
+  if [ "$SYNC_DRY" = 1 ]; then say 'Dry run: nothing was copied.'; return 0; fi
+  if [ "$SYNC_YES" != 1 ]; then
+    nirux_confirm 'Push now? [y/N] ' || { say 'Cancelled; nothing was copied.'; return 1; }
+  fi
+  sync_done=
+  for sync_h in $sync_targets; do
+    sync_theme=$(cat "$FLEET_WORK/theme.$sync_h")
+    sync_overwrite=$FLEET_WORK/overwrite.$sync_h
+    [ -z "$sync_theme" ] || say .config/niruwm/config.toml >> "$sync_overwrite"
+    sync_receiver_script "$sync_overwrite" from | sync_ssh "$sync_h" sh -s > "$FLEET_WORK/recv.$sync_h" 2>&1 || :
+    sync_snap=$(sed -n 's/^snapshot=//p' "$FLEET_WORK/recv.$sync_h" | head -n 1)
+    case "$sync_snap" in
+      ''|failed) say "== $sync_h: FAILED: could not take a snapshot there; nothing was copied"
+        sed 's/^/   /' "$FLEET_WORK/recv.$sync_h" | grep -v '^   snapshot=' || :
+        sync_failed="$sync_failed $sync_h"; continue ;;
+      none) say "== $sync_h: nothing there to back up (only new files)" ;;
+      backup\ *) say "== $sync_h: older NIRUX without snapshots; backed up the files to replace: ${sync_snap#backup }" ;;
+      *) say "== $sync_h: snapshot $sync_snap" ;;
+    esac
+    sync_ok=1
+    if [ -s "$FLEET_WORK/send.$sync_h" ]; then
+      if [ "$(sync_method "$sync_h")" = rsync ]; then
+        ( cd "$HOME" && rsync -a --files-from="$FLEET_WORK/send.$sync_h" \
+            -e "ssh -o BatchMode=yes -o ConnectTimeout=${NIRUX_FLEET_TIMEOUT:-5}" ./ "$sync_h:" ) || sync_ok=0
+      else
+        ( cd "$HOME" && tar -czf - -T "$FLEET_WORK/send.$sync_h" ) | sync_ssh "$sync_h" tar -xzf - || sync_ok=0
+      fi
+    fi
+    if [ -n "$sync_theme" ]; then
+      sync_t=$(theme_set_script "$sync_theme" | sync_ssh "$sync_h" sh -s 2>/dev/null | sed -n 's/^theme=//p')
+      case "$sync_t" in
+        ok) say "== $sync_h: theme set to $sync_theme" ;;
+        noconfig) say "== $sync_h: no niruwm config.toml there; theme not set" ;;
+        *) say "== $sync_h: could not set the theme"; sync_ok=0 ;;
+      esac
+    fi
+    if [ -s "$FLEET_WORK/send.$sync_h" ]; then
+      sync_scan "$sync_h" 0
+      sync_verify "$FLEET_WORK/scan.$SYNC_LOCAL" "$FLEET_WORK/scan.$sync_h" "$FLEET_WORK/send.$sync_h" || sync_ok=0
+    fi
+    if [ "$sync_ok" = 1 ]; then
+      say "== $sync_h: pushed $(grep -c . "$FLEET_WORK/send.$sync_h" || :) files"
+      sync_done="$sync_done $sync_h"
+      { cat "$FLEET_WORK/send.$sync_h"; [ -z "$sync_theme" ] || say .config/niruwm/themes; } | sync_items_of | sync_item_advice
+    else
+      say "== $sync_h: FAILED (the snapshot there has the state before)"
+      sync_failed="$sync_failed $sync_h"
+    fi
+  done
+  say "Sync push: done:${sync_done:- none}; failed:${sync_failed:- none}"
+  [ -z "$sync_failed" ]
+}
+sync_pull() {
+  sync_args "$@"
+  [ "$SYNC_ALL" = 0 ] || die 'pull takes one host, not --all'
+  set -- $SYNC_HOSTS
+  [ "$#" = 1 ] || die 'usage: nirux sync pull HOST [ITEM...]'
+  sync_h=$1
+  fleet_work
+  sync_prepare $SYNC_ITEMS
+  fleet_tailscale >/dev/null 2>&1 && FLEET_SELF=$(awk -F '\t' '$1 == "self" { print $2; exit }' "$FLEET_WORK/peers") || :
+  sync_is_self "$sync_h" && die "$sync_h is this machine"
+  SYNC_LOCAL=_here
+  sync_scan "$SYNC_LOCAL" 1 &
+  sync_scan "$sync_h" 0 &
+  wait
+  [ "$(sync_field "$SYNC_LOCAL" rc)" = 0 ] || die 'could not scan this machine'
+  sync_st=$(sync_host_state "$sync_h")
+  [ "$sync_st" = ok ] || die "$(sync_host_problem "$sync_h" "$sync_st")"
+  say "Items: $SYNC_ITEMS"
+  sync_local_note
+  sync_plan "$sync_h" pull || return 0
+  sync_theme=$SYNC_THEME_VALUE
+  say 'Files that only this machine has are kept. A snapshot of this machine is taken first.'
+  if [ "$SYNC_DRY" = 1 ]; then say 'Dry run: nothing was copied.'; return 0; fi
+  if [ "$SYNC_YES" != 1 ]; then
+    nirux_confirm 'Pull now? [y/N] ' || { say 'Cancelled; nothing was copied.'; return 1; }
+  fi
+  sync_overwrite=$FLEET_WORK/overwrite.$sync_h
+  [ -z "$sync_theme" ] || say .config/niruwm/config.toml >> "$sync_overwrite"
+  snapshot_create sync '' '' "sync pull from $sync_h" "$sync_overwrite" || die 'could not take a snapshot here; nothing was copied'
+  sync_stage=$FLEET_WORK/stage
+  mkdir -p "$sync_stage"
+  if [ -s "$FLEET_WORK/send.$sync_h" ]; then
+    if [ "$(sync_method "$sync_h")" = rsync ]; then
+      rsync -a --files-from="$FLEET_WORK/send.$sync_h" \
+        -e "ssh -o BatchMode=yes -o ConnectTimeout=${NIRUX_FLEET_TIMEOUT:-5}" "$sync_h:" "$sync_stage/" || die "could not copy from $sync_h; nothing was changed here"
+    else
+      { cat <<'SCRIPT'
+cd "$HOME" || exit 1
+t=$(mktemp "${TMPDIR:-/tmp}/nirux-sync.XXXXXX") || exit 1
+trap 'rm -f "$t"' EXIT
+cat > "$t" <<'NIRUX_LIST_END'
+SCRIPT
+        cat "$FLEET_WORK/send.$sync_h"
+        say NIRUX_LIST_END
+        say 'tar -czf - -T "$t"'
+      } | sync_ssh "$sync_h" sh -s | tar -xzf - -C "$sync_stage" || die "could not copy from $sync_h; nothing was changed here"
+    fi
+    # Only the planned files leave the staging directory, after a hash check.
+    while IFS= read -r sync_p; do
+      [ -f "$sync_stage/$sync_p" ] || die "$sync_p did not arrive; nothing was changed here"
+      sync_sum=$(sha256sum < "$sync_stage/$sync_p" | cut -c 1-64)
+      awk -F '\t' -v p="$sync_p" -v s="$sync_sum" '$1 == "f" && $5 == p { ok = ($3 == s) } END { exit !ok }' "$FLEET_WORK/scan.$sync_h" ||
+        die "$sync_p changed during the copy; nothing was changed here (run the pull again)"
+    done < "$FLEET_WORK/send.$sync_h"
+    sync_failed=0
+    while IFS= read -r sync_p; do
+      mkdir -p "$(dirname "$HOME/$sync_p")" && cp -p "$sync_stage/$sync_p" "$HOME/$sync_p" ||
+        { say "nirux: could not write $sync_p" >&2; sync_failed=1; }
+    done < "$FLEET_WORK/send.$sync_h"
+    [ "$sync_failed" = 0 ] || die 'some files were not written; nirux restore brings back the state before'
+  fi
+  if [ -n "$sync_theme" ]; then
+    case "$(theme_set_script "$sync_theme" | sh -s | sed -n 's/^theme=//p')" in
+      ok) say "Theme set to $sync_theme." ;;
+      noconfig) say 'No niruwm config.toml here; theme not set.' ;;
+      *) die 'could not set the theme' ;;
+    esac
+  fi
+  say "Pulled $(grep -c . "$FLEET_WORK/send.$sync_h" || :) files from $sync_h. Undo with: nirux restore (the snapshot above)."
+  { cat "$FLEET_WORK/send.$sync_h"; [ -z "$sync_theme" ] || say .config/niruwm/themes; } | sync_items_of | sync_item_advice
+}
+sync_command() {
+  sync_action=${1:-status}
+  [ "$#" = 0 ] || shift
+  case "$sync_action" in
+    status) sync_status "$@" ;;
+    push) sync_push "$@" ;;
+    pull) sync_pull "$@" ;;
+    items) sync_items_list ;;
+    --help|-h|help) sync_usage ;;
+    *) die "unknown sync command: $sync_action (status, push, pull or items)" ;;
+  esac
+}
 main() {
   # The bootstrap keeps the one sudo password in a private file, never in the
   # environment: a program NIRUX starts can read its own environment, and a
@@ -6529,6 +7485,9 @@ main() {
       esac ;;
     extras) shift; extras_command "$@" ;;
     fleet) shift; fleet_command "$@" ;;
+    sync) shift; sync_command "$@" ;;
+    snapshot) shift; snapshot_command "$@" ;;
+    restore) shift; restore_command "$@" ;;
     update-shutdown) shift; update_power_command shutdown "$@" ;;
     update-reboot) shift; update_power_command reboot "$@" ;;
     status|doctor) [ "$#" = 1 ] || die "$1 takes no arguments"; "$1" ;;

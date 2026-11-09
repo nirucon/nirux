@@ -2,6 +2,38 @@
 
 Earlier releases are described in their release notes and commit messages.
 
+## Unreleased
+
+- **Configuration snapshots: `nirux snapshot` and `nirux restore`.** Every
+  `nirux update` first saves the suite configuration to
+  `~/.local/state/nirux/snapshots/<time>-<from>-to-<to>.tar.gz` with a
+  manifest (file list, sizes, SHA-256). A newer target installer takes it
+  when the running installer predates snapshots. `nirux extras update` (when
+  it installs something) and `nirux reset-config` take one too. Included: the
+  suite's and the extras' config directories, picom/kitty/fish files NIRUX
+  writes, registered keys and launcher favourites. Left out: nirushare (upload
+  token), token/password-like files (reported), files over 16 MiB, caches,
+  state and music. `[snapshots] keep = 3` and `strict = false` in
+  `~/.config/nirux/snapshots.toml`; a failed snapshot warns and the update
+  goes on unless strict. `nirux snapshot [--note TEXT]`, `nirux snapshot list`,
+  `nirux restore [ID|latest] [--dry-run] [--yes]`: a file list with line
+  counts, y/N, a safety snapshot first, and what to reload afterwards.
+  `nirux rollback` now points to restore for configuration.
+- **`nirux sync`: share settings between your NIRUX machines.** Over the
+  `nirux fleet` SSH access: `sync status [HOST...]` (same, changed, only here,
+  only there and excluded per item, by content hash), `sync push HOST...|--all
+  [ITEM...]` and `sync pull HOST [ITEM...]` with a preview, y/N (`--yes`,
+  `--dry-run`) and a snapshot on the receiving machine first (a backup tarball
+  on an older NIRUX). Items: quotes, keys.d, theme, lock, launcher, sounds and
+  sid; `[sync] items`/`exclude` in `~/.config/nirux/sync.toml`. NIRUWM's
+  `config.toml` is never copied whole (monitors and displays are per machine);
+  only its `theme` key travels. Display profiles, secrets, state and caches
+  are never synced, and nothing is deleted on the receiver. rsync when both
+  ends have it, else tar over SSH; no new dependencies. From a machine
+  without NIRUX, `sync status HOST1 HOST2` compares the hosts with each other.
+- New tests `tests/snapshot.sh` and `tests/sync.sh` (fake ssh, remote homes
+  as local directories) run in CI and are shellchecked.
+
 ## 0.12.244 (2026-11-09)
 
 - **Studio mode (NIRUWM 0.20.0, NIRUBAR 0.20.0, NIRU Launcher 0.8.0).**
