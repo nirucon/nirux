@@ -4,6 +4,10 @@ Earlier releases are described in their release notes and commit messages.
 
 ## Unreleased
 
+- **Text from the screen (NIRUSHOT 0.7.0).** `nirushot ocr` reads the text in
+  a selected region (Swedish and English) and copies it. tesseract with Swedish
+  and English data is now installed with NIRUX on Debian, Arch and Void.
+
 - **GitLab mirror as a fallback source.** When GitHub still fails after its
   retries, a NIRUX release asset (and the latest-release lookup) comes from the
   public backup mirror on GitLab.com (`gitlab.com/rudolfsson/<repo>`, generic
