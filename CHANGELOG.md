@@ -2,6 +2,17 @@
 
 Earlier releases are described in their release notes and commit messages.
 
+## 0.12.250 (2026-11-10)
+
+- **Locking works while the screensaver is up (NIRUWM 0.23.1).** A manual
+  lock, `Super+Shift+Escape` or the lock before a lid-close suspend failed
+  while NIRUSCREENSAVER held the pointer; the screensaver is now closed first.
+- **The display no longer goes dark before the lock.** The X server's own
+  10-minute blank and DPMS timers are kept at zero, so the idle ladder
+  (screensaver, lock, display off) runs as configured.
+- Manual chapter 6: these fixes, lid behaviour when docked, and how to make
+  the idle lock come sooner.
+
 ## 0.12.249 (2026-11-10)
 
 - **Updates without logging out (NIRUWM 0.23.0).** `nirux update` inside a

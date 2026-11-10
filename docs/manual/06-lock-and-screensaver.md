@@ -54,6 +54,10 @@ Only PAM authentication of the process owner unlocks. NIRUX installs the PAM ser
 
 For other suspends (lid close, a suspend from elsewhere) the session's sleep-lock helper locks first with reason `suspend`. It runs by default; `START_SLEEP_LOCK=0` in `~/.config/niruwm/session.conf` turns it off (restart the session after changing it).
 
+A lock started while the screensaver is up (`niructl lock`, `Super+Shift+Escape`, a lid close) closes the screensaver first. Before NIRUWM 0.23.1 the screensaver kept the pointer, so such a lock failed.
+
+With external monitors connected, logind usually ignores the lid (`HandleLidSwitchDocked=ignore` in `/etc/systemd/logind.conf`), so closing the lid neither suspends nor locks. Lock with `Super+Escape` before you close it.
+
 ## The idle ladder
 
 `niruidle` (part of NIRUWM) watches X idle time and runs three steps:
@@ -62,7 +66,7 @@ For other suspends (lid close, a suspend from elsewhere) the session's sleep-loc
 2. After `lock_after_screensaver` more minutes: the lock (reason `idle`).
 3. After `dpms_off_after_lock` more minutes, only while locked: display off.
 
-Any input before the lock resets the ladder. The timers live in `[idle]` in `~/.config/niruwm/config.toml`:
+Any input before the lock resets the ladder. NIRUIDLE keeps the X server's own blank and DPMS timers (`xset q`) at zero, so the display is not turned off before the ladder gets there; before NIRUWM 0.23.1 the server's defaults switched the display off after 10 minutes, which looked like a lock but was not one. The timers live in `[idle]` in `~/.config/niruwm/config.toml`:
 
 ```toml
 [idle]
@@ -261,6 +265,7 @@ nirulock --version
 - **The screensaver never appears.** Run `niructl timing show` and `niructl idle status`; keep awake or studio mode stops it.
 - **No spectrum.** CAVA is not installed, `visual` is `quotes` or `none`, or (with `auto`) nothing plays loud enough.
 - **No pause music.** Check `enabled = true`, the reason in `on`, `sidplayfp` and the `.sid` files, then read `~/.local/state/nirulock/trace.log`.
+- **The screen does not lock by itself.** The lock comes `screensaver_timeout` + `lock_after_screensaver` minutes after the last input (30 with the defaults). Shorten it with `niructl timing set lock_after_screensaver 5`, or lock as the screensaver starts with `0`. Video players and calls can keep the session awake.
 - **Suspend does not happen after `Super+Shift+Escape`.** The lock could not prove it holds the keyboard, so suspend was refused.
 - X11 cannot fully isolate a lock screen from hostile programs on the same display.
 
