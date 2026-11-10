@@ -2,6 +2,14 @@
 
 Earlier releases are described in their release notes and commit messages.
 
+## 0.12.251 (2026-11-10)
+
+- **An update waiting for the unlock is not lost (NIRUWM 0.23.2).** When the
+  screen was locked again within seconds of an unlock, the in-place restart
+  gave up until the next login; it now waits for the next unlock.
+- The sound rate limit no longer depends on a printf in a command
+  substitution (a held volume key could tick twice).
+
 ## 0.12.250 (2026-11-10)
 
 - **Locking works while the screensaver is up (NIRUWM 0.23.1).** A manual
