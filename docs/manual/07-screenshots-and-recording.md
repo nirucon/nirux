@@ -206,6 +206,8 @@ niruclip --full --audio mic --mic UMC1820 --mic-channels 1,2  # inputs 1 and 2 a
 
 Inputs are numbered from 1 like the labels on the interface. `all`, or no setting, records as before. With `--audio both` a mono input goes to both sides before the mix. The system default and the PipeWire routing are never changed. If the source has fewer inputs than asked for, NIRUCLIP says so and records the microphone as usual. `--list-mics` shows the channel hint only for sources with more than two channels, and `--status` names the inputs that were used.
 
+In the launcher's Capture view (`nirulauncher --clip`) a **Mic inputs** row appears only when such an interface is present. `Enter` opens a list of all inputs, each input as mono and each pair (1+2, 3+4 ...) as stereo. The choice is remembered per interface in `~/.local/state/nirulauncher/clip-inputs.tsv` and passed to every recording started from the Capture view, including profiles that use that interface and set no `mic_channels` of their own. NIRUCLIP's config is never written.
+
 ## Use the camera
 
 ```sh
