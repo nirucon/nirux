@@ -135,6 +135,20 @@ behind, whether a **relogin** is needed (the running WM or bar is not from the a
 generation), whether the screen is locked, the distribution, the uptime and the time
 of the last update. Offline hosts show the version they had when last seen.
 
+The **HEALTH** column says `ok`, or lists what needs a look:
+
+| Shown | Meaning |
+|---|---|
+| `disk 93%` | The home file system is at least 90% full, or has less than 5 GiB free |
+| `2 failed units` | Failed systemd units, system and user (`systemctl --failed`, `systemctl --user --failed`). Not checked on runit (Void) |
+| `1 stale session` | Another graphical session of yours on seat0 beside the one that runs NIRUWM, usually left over from an earlier login. `loginctl list-sessions` shows it |
+| `lock: no PAM file` | `/etc/pam.d/nirulock` is missing, so the lock screen cannot check a password. `nirux update` writes it again |
+| `lock: niruidle not running` | The session has no idle locker (unless `START_IDLE=0` in `~/.config/niruwm/session.conf`) |
+| `lock: nirulock missing` | No `nirulock` in the active generation |
+
+`--json` has the same under `health` for each online host. `NIRUX_FLEET_DISK_WARN`
+changes the disk threshold (percent).
+
 `nirux fleet update` runs `nirux update`, and `nirux extras update` where extras are
 selected, over `ssh -t`, so each host's sudo prompt appears in your terminal. It never
 logs anyone out or locks a session.

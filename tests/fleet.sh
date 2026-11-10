@@ -71,6 +71,26 @@ esac
 for real in /usr/bin/readlink /bin/readlink; do [ ! -x "$real" ] || exec "$real" "$@"; done
 exit 1
 READLINK
+# Health inputs per fake host: df, failed units, sessions, sessionid, PAM.
+cat > "$TEST/bin/df" <<'DF'
+#!/bin/sh
+if [ -n "${FAKE_HOST_DIR:-}" ] && [ -f "$FAKE_HOST_DIR/df" ]; then
+  printf 'Filesystem 1024-blocks Used Available Capacity Mounted on\n'; cat "$FAKE_HOST_DIR/df"; exit 0
+fi
+printf 'Filesystem 1024-blocks Used Available Capacity Mounted on\n/dev/x 100000000 10000000 90000000 10%% /\n'
+DF
+cat > "$TEST/bin/systemctl" <<'SYSTEMCTL'
+#!/bin/sh
+case "$*" in --version) exit 0 ;; esac
+f=failed; case "$*" in *--user*) f=failed.user ;; esac
+[ -n "${FAKE_HOST_DIR:-}" ] && [ -f "$FAKE_HOST_DIR/$f" ] && cat "$FAKE_HOST_DIR/$f"
+exit 0
+SYSTEMCTL
+cat > "$TEST/bin/loginctl" <<'LOGINCTL'
+#!/bin/sh
+[ -n "${FAKE_HOST_DIR:-}" ] && [ -f "$FAKE_HOST_DIR/sessions" ] && cat "$FAKE_HOST_DIR/sessions"
+exit 0
+LOGINCTL
 cat > "$TEST/bin/ssh-copy-id" <<'COPY'
 #!/bin/sh
 printf '%s\n' "$*" >> "$FAKE/copy.log"
@@ -143,6 +163,18 @@ OLD=$FAKE/hosts/bravo/home/.local/share/nirux/generations/0.12.241-x/bin
 printf 'niruwm 0.12.241\n' > "$OLD/niruwm"; printf 'nirubar\n' > "$OLD/nirubar"
 run_program bravo 201 niruwm "$OLD/niruwm"; run_program bravo 202 nirubar "$OLD/nirubar"
 printf 'nirusec\nnplay\n' > "$FAKE/hosts/bravo/home/.local/share/nirux/extras-selected"
+# Health: alpha is healthy; bravo has a full disk, a failed unit, a stale
+# seat0 session beside the niruwm one, and no PAM file for the lock screen.
+export NIRUX_FLEET_PROC=$FAKE/proc NIRUX_FLEET_PAM=$FAKE/pam-nirulock
+mkdir -p "$FAKE/proc/101" "$FAKE/proc/201"; : > "$FAKE/pam-nirulock"
+printf '7\n' > "$FAKE/proc/101/sessionid"; printf '9\n' > "$FAKE/proc/201/sessionid"
+printf '7 1000 %s seat0 tty7\n' "$(id -un)" > "$FAKE/hosts/alpha/sessions"
+printf '#!/bin/sh\n' > "$A/nirulock"; chmod +x "$A/nirulock"
+run_program alpha 104 niruidle "$A/niruidle"; run_program bravo 204 niruidle "$OLD/niruidle"
+printf '/dev/x 100000000 95000000 5000000 95%% /\n' > "$FAKE/hosts/bravo/df"
+printf 'x.service loaded failed failed X\n' > "$FAKE/hosts/bravo/failed.user"
+printf '4 1000 %s seat0 tty7\n9 1000 %s seat0 tty7\n' "$(id -un)" "$(id -un)" > "$FAKE/hosts/bravo/sessions"
+mkdir -p "$FAKE/hosts/bravo/home/.local/share/nirux/generations/0.12.242-x/bin"
 # carol: NIRUX, but this machine's key is not accepted.
 make_host carol 0.12.243; printf 'denied\n' > "$FAKE/hosts/carol/mode"
 # delta: offline, seen before; echo: offline, never seen.
@@ -155,9 +187,11 @@ make_host golf 0.12.243; printf 'offline\n' > "$FAKE/hosts/golf/mode"
 row() { awk -v h="$1" '$1 == h' "$TEST/out"; }
 # --- status ------------------------------------------------------------------
 nirux fleet > "$TEST/out" 2>&1 || { cat "$TEST/out"; fail "fleet status failed"; }
-head -n 1 "$TEST/out" | grep -q '^HOST *STATE *NIRUX *BEHIND *RELOGIN *LOCKED *DISTRO *UP *UPDATED$' || fail "table header"
+head -n 1 "$TEST/out" | grep -q '^HOST *STATE *NIRUX *BEHIND *RELOGIN *LOCKED *DISTRO *UP *UPDATED *HEALTH$' || fail "table header"
 row alpha | grep -q 'online *0\.12\.243 *no *no *yes ' || fail "alpha row: $(row alpha)"
 row bravo | grep -q 'online *0\.12\.242 *yes (0\.12\.243) *yes: niruwm *no ' || fail "bravo row: $(row bravo)"
+row alpha | grep -q ' ok$' || fail "alpha health: $(row alpha)"
+row bravo | grep -q 'disk 95%, 1 failed unit, 1 stale session, lock: nirulock missing$' || fail "bravo health: $(row bravo)"
 row carol | grep -q 'no access (run nirux fleet setup)' || fail "carol should be no access: $(row carol)"
 row delta | grep -q 'offline *(0\.12\.240).*seen 2h0m ago' || fail "delta should be offline, last seen: $(row delta)"
 row golf | grep -q 'offline' || fail "golf (ssh timeout) should be offline: $(row golf)"
@@ -185,6 +219,10 @@ assert a["state"] == "online" and a["behind"] is False and a["relogin"] is False
 assert b["behind"] is True and b["relogin"] is True and b["relogin_programs"] == ["niruwm"] and b["extras"] == 2
 assert h["carol"]["state"] == "no-access" and h["carol"]["version"] is None
 assert h["delta"]["state"] == "offline" and h["delta"]["last_version"] == "0.12.240"
+assert a["health"]["summary"] == "ok" and a["health"]["lock"] == "ok" and a["health"]["stale_sessions"] == 0, a["health"]
+bh = b["health"]
+assert bh["disk_percent"] == 95 and bh["failed_units"] == 1 and bh["stale_sessions"] == 1, bh
+assert bh["lock"] == "no-nirulock" and "health" not in h["carol"]
 assert isinstance(a["uptime_seconds"], int) and isinstance(a["updated_seconds_ago"], int)
 PY
 

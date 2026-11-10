@@ -6133,6 +6133,28 @@ done
 echo "session=$session"
 echo "relogin=${stale# }"
 if pgrep -u "$uid" -x nirulock >/dev/null 2>&1; then echo locked=1; else echo locked=0; fi
+# Health: disk use of the home file system, failed systemd units (system and
+# user; none on runit), other seat0 sessions left over beside the one that
+# runs niruwm, and whether locking can work (binary, PAM file, idle locker).
+df -Pk "$HOME" 2>/dev/null | awk 'NR == 2 { sub("%", "", $5); print "disk=" $5; print "disk_free_kib=" $4 }'
+if command -v systemctl >/dev/null 2>&1 && systemctl --version >/dev/null 2>&1; then
+  echo "failed=$(( $(systemctl --failed --no-legend --plain 2>/dev/null | grep -c .) + $(systemctl --user --failed --no-legend --plain 2>/dev/null | grep -c .) ))"
+fi
+wm=$(pgrep -u "$uid" -x niruwm 2>/dev/null | head -n 1)
+if [ -n "$wm" ] && command -v loginctl >/dev/null 2>&1; then
+  sid=$(cat "${NIRUX_FLEET_PROC:-/proc}/$wm/sessionid" 2>/dev/null)
+  case "$sid" in ''|4294967295) ;; *)
+    echo "stale_sessions=$(loginctl list-sessions --no-legend 2>/dev/null |
+      awk -v u="$(id -un)" -v s="$sid" '$3 == u && $4 == "seat0" && $1 != s { n++ } END { print n + 0 }')" ;;
+  esac
+fi
+lock=ok
+if [ ! -x "${gen:-/nonexistent}/bin/nirulock" ] && ! command -v nirulock >/dev/null 2>&1; then lock=no-nirulock
+elif [ ! -f "${NIRUX_FLEET_PAM:-/etc/pam.d/nirulock}" ]; then lock=no-pam
+elif [ "$session" = 1 ] && ! grep -qs '^[[:space:]]*START_IDLE=["'\'']\{0,1\}0' "$HOME/.config/niruwm/session.conf" &&
+     ! pgrep -u "$uid" -x niruidle >/dev/null 2>&1; then lock=no-idle
+fi
+echo "lock=$lock"
 (. /etc/os-release 2>/dev/null; echo "distro=${ID:-unknown}${VERSION_ID:+ $VERSION_ID}")
 echo "uptime=$(cut -d. -f1 /proc/uptime 2>/dev/null)"
 echo "updated=$(stat -c %Y "$HOME/.local/share/nirux/current" 2>/dev/null)"
@@ -6225,7 +6247,7 @@ fleet_hosts() {
 fleet_num() { case "$1" in ''|*[!0-9]*) ;; *) say "$1" ;; esac; }
 # Probe all hosts in parallel and the latest release once, then write one
 # |-separated row per host to $FLEET_WORK/rows:
-# name|local|state|version|latest|behind|relogin|session|locked|distro|uptime|updated|extras|last_version|last_seen
+# name|local|state|version|latest|behind|relogin|session|locked|distro|uptime|updated|extras|last_version|last_seen|disk|disk_free_kib|failed|stale_sessions|lock
 fleet_collect() {
   fleet_hosts
   (NIRUX_FETCH_ATTEMPTS=${NIRUX_FETCH_ATTEMPTS:-2}
@@ -6248,7 +6270,7 @@ fleet_collect() {
 # the fleet and is only named below the table.
 fleet_classify() {
   fleet_ver='' fleet_behind='' fleet_rel='' fleet_sess='' fleet_lock='' fleet_dist='' fleet_up='' fleet_upd='' fleet_ext=''
-  fleet_lastv='' fleet_seen=''
+  fleet_lastv='' fleet_seen='' fleet_disk='' fleet_dfree='' fleet_failed='' fleet_stale='' fleet_lockok=''
   if [ "$2" = 0 ]; then
     fleet_state=offline
   else
@@ -6265,6 +6287,11 @@ fleet_classify() {
       fleet_upd=$(fleet_num "$(fleet_field "$1" updated)")
       fleet_ext=$(fleet_num "$(fleet_field "$1" extras)")
       fleet_rnow=$(fleet_num "$(fleet_field "$1" now)")
+      fleet_disk=$(fleet_num "$(fleet_field "$1" disk)")
+      fleet_dfree=$(fleet_num "$(fleet_field "$1" disk_free_kib)")
+      fleet_failed=$(fleet_num "$(fleet_field "$1" failed)")
+      fleet_stale=$(fleet_num "$(fleet_field "$1" stale_sessions)")
+      fleet_lockok=$(fleet_field "$1" lock | tr -cd 'a-z-')
       # Age on the host's own clock, so clock skew does not matter.
       if [ -n "$fleet_upd" ] && [ -n "$fleet_rnow" ]; then fleet_upd=$((fleet_rnow - fleet_upd)); else fleet_upd=; fi
       if [ -n "$FLEET_LATEST" ] && [ -n "$fleet_ver" ]; then
@@ -6289,9 +6316,9 @@ fleet_classify() {
   if [ "$fleet_state" = nonirux ] && [ "$4" = tailscale ]; then
     say "$1" >> "$FLEET_WORK/hidden-nonirux"; return 0
   fi
-  printf '%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s\n' "$1" "$3" "$fleet_state" "$fleet_ver" "$FLEET_LATEST" \
+  printf '%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s\n' "$1" "$3" "$fleet_state" "$fleet_ver" "$FLEET_LATEST" \
     "$fleet_behind" "$fleet_rel" "$fleet_sess" "$fleet_lock" "$fleet_dist" "$fleet_up" "$fleet_upd" "$fleet_ext" \
-    "$fleet_lastv" "$fleet_seen" >> "$FLEET_WORK/rows"
+    "$fleet_lastv" "$fleet_seen" "$fleet_disk" "$fleet_dfree" "$fleet_failed" "$fleet_stale" "$fleet_lockok" >> "$FLEET_WORK/rows"
 }
 # Remember the hosts seen with NIRUX: "NAME VERSION EPOCH".
 fleet_remember() {
@@ -6339,10 +6366,28 @@ fleet_status() {
   fi
   [ -n "$FLEET_LATEST" ] || say 'Latest release unknown (GitHub could not be reached).'
 }
+# One short health summary from disk use %, free KiB, failed units, stale
+# sessions and lock state: "ok" or the problems, comma separated.
+fleet_health() {
+  fleet_hp=
+  if [ -n "$1" ] && { [ "$1" -ge "${NIRUX_FLEET_DISK_WARN:-90}" ] || { [ -n "$2" ] && [ "$2" -lt 5242880 ]; }; }; then
+    fleet_hp="disk $1%"
+  fi
+  if [ -n "$3" ] && [ "$3" -gt 0 ]; then fleet_hp="${fleet_hp:+$fleet_hp, }$3 failed unit$( [ "$3" = 1 ] || say s)"; fi
+  if [ -n "$4" ] && [ "$4" -gt 0 ]; then fleet_hp="${fleet_hp:+$fleet_hp, }$4 stale session$( [ "$4" = 1 ] || say s)"; fi
+  case "$5" in
+    ''|ok) ;;
+    no-pam) fleet_hp="${fleet_hp:+$fleet_hp, }lock: no PAM file" ;;
+    no-idle) fleet_hp="${fleet_hp:+$fleet_hp, }lock: niruidle not running" ;;
+    no-nirulock) fleet_hp="${fleet_hp:+$fleet_hp, }lock: nirulock missing" ;;
+    *) fleet_hp="${fleet_hp:+$fleet_hp, }lock: $5" ;;
+  esac
+  say "${fleet_hp:-ok}"
+}
 fleet_print_table() {
   {
-    printf 'HOST\tSTATE\tNIRUX\tBEHIND\tRELOGIN\tLOCKED\tDISTRO\tUP\tUPDATED\n'
-    while IFS='|' read -r h loc st ver lat beh rel ses lck dis up upd ext lastv seen; do
+    printf 'HOST\tSTATE\tNIRUX\tBEHIND\tRELOGIN\tLOCKED\tDISTRO\tUP\tUPDATED\tHEALTH\n'
+    while IFS='|' read -r h loc st ver lat beh rel ses lck dis up upd ext lastv seen dsk dfr fai stl lok; do
       [ "$loc" = 1 ] && h="$h (this)"
       case "$st" in
         online)
@@ -6351,8 +6396,9 @@ fleet_print_table() {
           elif [ "$ses" = 1 ]; then rel=no
           else rel='no session'; fi
           [ "$lck" = 1 ] && lck=yes || lck=no
-          printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' "$h" online "${ver:-?}" "$beh" "$rel" "$lck" "${dis:-?}" \
-            "$(fleet_age "$up")" "$( [ -n "$upd" ] && say "$(fleet_age "$upd") ago" || say - )" ;;
+          printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' "$h" online "${ver:-?}" "$beh" "$rel" "$lck" "${dis:-?}" \
+            "$(fleet_age "$up")" "$( [ -n "$upd" ] && say "$(fleet_age "$upd") ago" || say - )" \
+            "$(fleet_health "$dsk" "$dfr" "$fai" "$stl" "$lok")" ;;
         offline)
           if [ -n "$lastv" ]; then
             printf '%s\t%s\t%s\t-\t-\t-\t-\t-\t%s\n' "$h" offline "($lastv)" "seen $(fleet_age "$seen") ago"
@@ -6380,7 +6426,7 @@ fleet_print_json() {
   printf '"note":%s,' "$(fleet_json_value str "$FLEET_NOTE")"
   printf '"latest":%s,"hosts":[' "$(fleet_json_value str "$FLEET_LATEST")"
   fleet_sep=
-  while IFS='|' read -r h loc st ver lat beh rel ses lck dis up upd ext lastv seen; do
+  while IFS='|' read -r h loc st ver lat beh rel ses lck dis up upd ext lastv seen dsk dfr fai stl lok; do
     fleet_relb=
     if [ "$st" = online ]; then
       if [ -n "$rel" ]; then fleet_relb=1; else fleet_relb=0; fi
@@ -6392,10 +6438,17 @@ fleet_print_json() {
     printf '%s{"host":%s,"local":%s,"state":%s,"version":%s,"behind":%s,"relogin":%s,"relogin_programs":[%s],' \
       "$fleet_sep" "$(sounds_json_string "$h")" "$(fleet_json_value bool "$loc")" "$(sounds_json_string "$st")" \
       "$(fleet_json_value str "$ver")" "$(fleet_json_value bool "$beh")" "$(fleet_json_value bool "$fleet_relb")" "$fleet_progs"
-    printf '"session":%s,"locked":%s,"distro":%s,"uptime_seconds":%s,"updated_seconds_ago":%s,"extras":%s,"last_version":%s,"last_seen_seconds_ago":%s}' \
+    printf '"session":%s,"locked":%s,"distro":%s,"uptime_seconds":%s,"updated_seconds_ago":%s,"extras":%s,"last_version":%s,"last_seen_seconds_ago":%s' \
       "$(fleet_json_value bool "$ses")" "$(fleet_json_value bool "$lck")" "$(fleet_json_value str "$dis")" \
       "$(fleet_json_value num "$up")" "$(fleet_json_value num "$upd")" "$(fleet_json_value num "$ext")" \
       "$(fleet_json_value str "$lastv")" "$(fleet_json_value num "$seen")"
+    if [ "$st" = online ]; then
+      printf ',"health":{"summary":%s,"disk_percent":%s,"disk_free_kib":%s,"failed_units":%s,"stale_sessions":%s,"lock":%s}' \
+        "$(sounds_json_string "$(fleet_health "$dsk" "$dfr" "$fai" "$stl" "$lok")")" "$(fleet_json_value num "$dsk")" \
+        "$(fleet_json_value num "$dfr")" "$(fleet_json_value num "$fai")" "$(fleet_json_value num "$stl")" \
+        "$(fleet_json_value str "$lok")"
+    fi
+    printf '}'
     fleet_sep=,
   done < "$FLEET_WORK/rows"
   printf ']}\n'
