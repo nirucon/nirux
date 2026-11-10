@@ -45,19 +45,19 @@ These are not generated from an example file. The chapters describe them.
 
 <!-- generated: config (tools/manual-gen.sh; do not edit by hand) -->
 
-The example configuration files of NIRUX 0.12.252 and its components, with every
+The example configuration files of NIRUX 0.12.253 and its components, with every
 key they set or show. A value marked *commented example* is off by default:
 remove the `#` to use it. The full annotated file follows each table.
 
 | File | Read by | Example from |
 |---|---|---|
-| [`~/.config/niruwm/config.toml`](#configniruwmconfigtoml) | niruwm, nirubar, niruidle, niructl | nirux 0.12.252 `config.example.toml` |
-| [`~/.config/niruwm/appearance.toml`](#configniruwmappearancetoml) | the whole suite | nirux 0.12.252 `appearance.example.toml` |
-| [`~/.config/nirux/sounds.toml`](#configniruxsoundstoml) | nirux, nirunotify | nirux 0.12.252 `sounds.example.toml` |
-| [`~/.config/niruwm/displays.toml`](#configniruwmdisplaystoml) | niruwm, niructl, nirudisplay | nirux 0.12.252 `displays.example.toml` |
+| [`~/.config/niruwm/config.toml`](#configniruwmconfigtoml) | niruwm, nirubar, niruidle, niructl | nirux 0.12.253 `config.example.toml` |
+| [`~/.config/niruwm/appearance.toml`](#configniruwmappearancetoml) | the whole suite | nirux 0.12.253 `appearance.example.toml` |
+| [`~/.config/nirux/sounds.toml`](#configniruxsoundstoml) | nirux, nirunotify | nirux 0.12.253 `sounds.example.toml` |
+| [`~/.config/niruwm/displays.toml`](#configniruwmdisplaystoml) | niruwm, niructl, nirudisplay | nirux 0.12.253 `displays.example.toml` |
 | [`~/.config/nirubar/config.toml`](#confignirubarconfigtoml) | nirubar | nirubar 0.23.0 `weather.example.toml` |
 | [`~/.config/nirulauncher/config.toml`](#confignirulauncherconfigtoml) | nirulauncher | nirulauncher 0.11.0 `config.example.toml` |
-| [`~/.config/nirunotify/config.toml`](#confignirunotifyconfigtoml) | nirunotify | nirunotify 0.4.2 `config.example.toml` |
+| [`~/.config/nirunotify/config.toml`](#confignirunotifyconfigtoml) | nirunotify | nirunotify 0.5.0 `config.example.toml` |
 | [`~/.config/niruui/lock.toml`](#configniruuilocktoml) | nirulock | nirulock 0.25.0 `config.example.toml` |
 | [`~/.config/niruui/screensaver.toml`](#configniruuiscreensavertoml) | niruscreensaver | niruscreensaver 0.14.1 `config.example.toml` |
 | [`~/.config/nirushare/webhooks.toml`](#confignirusharewebhookstoml) | nirushare | nirushare 0.4.0 `webhooks.example.toml` |
@@ -1514,7 +1514,7 @@ terminal = ["kitty"]
 | `(top level)` | `max_timeout_ms` | `60000` | Upper bound for any timeout, including a client's persistent 0. |
 | `(top level)` | `critical_timeout_ms` | `30000` | Urgent notifications use this timeout; they may also bypass DND if enabled. |
 | `(top level)` | `critical_ignore_dnd` | `false` |  |
-| `(top level)` | `monitor` | `""` | Empty = monitor under the pointer; "primary" = RandR primary; or an output name. |
+| `(top level)` | `monitor` | `""` | Which screen notifications and the volume/brightness OSD use, chosen again for every one: empty or "focused" = the NIRUWM focused screen;... |
 | `(top level)` | `font_path` | `"/usr/share/fonts/truetype/dejavu/DejaVuSansMono.ttf"` (commented example) |  |
 | `(top level)` | `font_size` | `14.0` |  |
 | `(top level)` | `position` | `"top-right"` | top-right, top-left, bottom-right or bottom-left. |
@@ -1542,7 +1542,9 @@ max_timeout_ms = 60000
 # Urgent notifications use this timeout; they may also bypass DND if enabled.
 critical_timeout_ms = 30000
 critical_ignore_dnd = false
-# Empty = monitor under the pointer; "primary" = RandR primary; or an output name.
+# Which screen notifications and the volume/brightness OSD use, chosen again
+# for every one: empty or "focused" = the NIRUWM focused screen; "pointer" =
+# the screen under the pointer; "primary" = RandR primary; or an output name.
 monitor = ""
 # font_path = "/usr/share/fonts/truetype/dejavu/DejaVuSansMono.ttf"
 font_size = 14.0

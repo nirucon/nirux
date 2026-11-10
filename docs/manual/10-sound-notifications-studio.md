@@ -12,7 +12,9 @@ This chapter covers volume, outputs and the microphone, media keys, the NIRUX ev
 | `XF86AudioPlay` / `XF86AudioPause` | Play or pause (`playerctl play-pause`) |
 | `XF86AudioNext` / `XF86AudioPrev` | Next / previous track (`playerctl`) |
 
-The volume keys use `wpctl` on the default sink (with an `amixer` fallback), show the level in the NIRUNOTIFY OSD and play a short tick whose pitch follows the new level. At 0 % or 100 % a duller bump tells you the key cannot go further. The play keys need `playerctl` and a player that speaks MPRIS.
+The volume keys use `wpctl` on the default sink (with an `amixer` fallback), show the level in the NIRUNOTIFY OSD and play a short tick whose pitch follows the new level. At 0 % or 100 % a duller bump tells you the key cannot go further, and the OSD bar lights up briefly.
+
+The OSD (volume and brightness keys) is a small box low in the middle of the focused screen: an icon, the name, the value in large type and a level bar in the theme's accent colour that glides to the new level. Holding a key keeps the same box; when the sound is muted it shows `Muted` with the last level greyed out. It goes away about a second after the last press and is never shown over the lock screen. The play keys need `playerctl` and a player that speaks MPRIS.
 
 From a terminal or a script:
 
@@ -158,10 +160,12 @@ The full reference, including how the sounds are generated, is [docs/SOUNDS.md](
 
 ## Notifications
 
-NIRUNOTIFY is the notification service. It shows themed popups in the top-right corner of the screen under the pointer, never takes keyboard focus, and keeps a history in memory (the last 100). Popups are suppressed while the screen is locked. Any program can send one with `notify-send`.
+NIRUNOTIFY is the notification service. It shows themed popups in the top-right corner of the focused screen (the one NIRUWM has focus on, where you are working), never takes keyboard focus, and keeps a history in memory (the last 100). Popups are suppressed while the screen is locked. Any program can send one with `notify-send`.
 
 - Click a popup to run its default action, or to close it when it has none.
 - The bar's `notifications` module shows the history count; click it for recent notifications.
+- With several screens, each popup and the OSD go to the focused screen at the moment they appear, below that screen's bar. Visible popups move along when the next one arrives on another screen. Plugging in or removing a screen, or docking, moves them at once.
+- `monitor` in `~/.config/nirunotify/config.toml` changes the choice: empty or `"focused"` (default), `"pointer"` (the screen under the pointer), `"primary"`, or an output name such as `"HDMI-1"` to keep them on one screen.
 
 ```sh
 notify-send "Hello" "Body"

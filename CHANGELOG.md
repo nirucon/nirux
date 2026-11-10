@@ -2,6 +2,20 @@
 
 Earlier releases are described in their release notes and commit messages.
 
+## 0.12.253 (2026-11-10)
+
+- **A new volume and brightness OSD (NIRUNOTIFY 0.5.0).** An icon, the name,
+  the value in large type and a level bar in the theme accent that glides to
+  the new level. A held key keeps the same box, `Muted` shows the last level
+  greyed out, and pressing against 0 % or 100 % lights the bar briefly.
+- **Notifications and the OSD appear on the focused screen.** Before, the
+  screen was chosen once when the session started, so with several screens
+  they could land on the wrong screen or across two. They now follow the
+  NIRUWM focused screen, keep clear of that screen's bar only, and move at
+  once on hotplug or docking. `monitor = "pointer"`, `"primary"` or an output
+  name in `nirunotify/config.toml` choose differently.
+- Manual chapter 10: the OSD and screen choice.
+
 ## 0.12.252 (2026-11-10)
 
 - **Closing the lid while docked locks (NIRUWM 0.23.3).** With external
