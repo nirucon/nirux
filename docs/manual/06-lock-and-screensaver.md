@@ -56,7 +56,7 @@ For other suspends (lid close, a suspend from elsewhere) the session's sleep-loc
 
 A lock started while the screensaver is up (`niructl lock`, `Super+Shift+Escape`, a lid close) closes the screensaver first. Before NIRUWM 0.23.1 the screensaver kept the pointer, so such a lock failed.
 
-With external monitors connected, logind usually ignores the lid (`HandleLidSwitchDocked=ignore` in `/etc/systemd/logind.conf`), so closing the lid neither suspends nor locks. Lock with `Super+Escape` before you close it.
+With external monitors connected (docked), logind ignores the lid (`HandleLidSwitchDocked=ignore` in `/etc/systemd/logind.conf`), so the laptop stays awake. Closing the lid then locks the screen without suspending (NIRUWM 0.23.3 and later). Turn that off with `lock_on_lid_close = false` under `[idle]` in `~/.config/niruwm/config.toml`. Undocked, closing the lid locks and suspends as above.
 
 ## The idle ladder
 
@@ -73,6 +73,7 @@ Any input before the lock resets the ladder. NIRUIDLE keeps the X server's own b
 screensaver_timeout = 15      # idle minutes before the screensaver (at least 1)
 lock_after_screensaver = 15   # screensaver minutes before locking
 dpms_off_after_lock = 15      # minutes after locking before the display sleeps; 0 keeps it on
+lock_on_lid_close = true      # docked: closing the lid locks (no suspend)
 ```
 
 | Key | Default | Range |
@@ -80,6 +81,7 @@ dpms_off_after_lock = 15      # minutes after locking before the display sleeps;
 | `screensaver_timeout` | `15` | 1 to 1440 |
 | `lock_after_screensaver` | `15` | 0 to 1440 |
 | `dpms_off_after_lock` | `15` | 0 to 1440 |
+| `lock_on_lid_close` | `true` | `true` or `false`: lock when the lid closes while docked |
 
 With `lock_after_screensaver = 0` the screen locks at `screensaver_timeout`, and the lock screen is shown instead of the screensaver. Without a lock screen installed, the screensaver stays. (NIRUWM before 0.23.0 showed the screensaver and never locked with `0`.)
 

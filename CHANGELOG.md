@@ -2,6 +2,13 @@
 
 Earlier releases are described in their release notes and commit messages.
 
+## 0.12.252 (2026-11-10)
+
+- **Closing the lid while docked locks (NIRUWM 0.23.3).** With external
+  screens the laptop stays awake as before, but the screen now locks.
+  `[idle] lock_on_lid_close = false` turns it off. Undocked, the lid locks and
+  suspends as before.
+
 ## 0.12.251 (2026-11-10)
 
 - **An update waiting for the unlock is not lost (NIRUWM 0.23.2).** When the
