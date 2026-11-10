@@ -161,6 +161,7 @@ Check that the key is free first with `Super+F1` and `Ctrl+R`.
 | Mode | `--full` (default), `--region`, `--window`, `--webcam-only` |
 | `--audio` | `none`, `mic` (default), `desktop`, `both` |
 | `--mic` | A source name, part of its description, or `default` |
+| `--mic-channels` | Inputs of a multichannel interface: `3` (mono), `1,2` (stereo pair) or `all` |
 | `--webcam` | `off`, `corner`, `only` |
 | `--corner` | `top-left`, `top-right`, `bottom-left`, `bottom-right` |
 | `--webcam-size` | `small`, `medium` (default), `large`: 20, 26 or 34 % of the video height |
@@ -192,6 +193,18 @@ niruclip --full --audio both --mic UMC1820
 `--mic` takes an exact source name, or a case-insensitive part of the description (`webcam`, `UMC1820`), or `default`. It applies to `--audio mic` and the microphone half of `--audio both`; the system default is never changed. The order of precedence is `--mic`, then the profile's `mic`, then the top-level `mic` in the config, then the system default.
 
 If the chosen microphone is not there, NIRUCLIP records from the system default and says so in a notification during the countdown; it never refuses to record because of the microphone. `--status` shows which microphone was used.
+
+### Inputs of a multichannel interface
+
+An audio interface with more than two inputs (for example a Behringer UMC1820 with 18) records only its first two by default. Choose the inputs you want with `--mic-channels`, or `mic_channels` at the top of the config or in a profile:
+
+```sh
+niruclip --list-mics                                      # shows "18 channels: AUX0 AUX1 ..." per source
+niruclip --full --audio mic --mic UMC1820 --mic-channels 3    # input 3 alone, as mono
+niruclip --full --audio mic --mic UMC1820 --mic-channels 1,2  # inputs 1 and 2 as stereo, 1 left
+```
+
+Inputs are numbered from 1 like the labels on the interface. `all`, or no setting, records as before. With `--audio both` a mono input goes to both sides before the mix. The system default and the PipeWire routing are never changed. If the source has fewer inputs than asked for, NIRUCLIP says so and records the microphone as usual. `--list-mics` shows the channel hint only for sources with more than two channels, and `--status` names the inputs that were used.
 
 ## Use the camera
 
@@ -253,6 +266,7 @@ description = "Custom capture profile"
 mode = "full"                    # full, region, window, webcam-only
 audio = "desktop"                # none, mic, desktop, both
 mic = "UMC1820"                  # optional
+mic_channels = "1,2"             # optional, multichannel inputs
 webcam = "off"                   # off, corner, only
 corner = "bottom-right"
 webcam_size = "medium"
