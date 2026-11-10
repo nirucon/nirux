@@ -2693,7 +2693,7 @@ browser_addon_choose() {
 extras_table() {
   cat <<'EOF'
 niruorg niruorg 0.6.1 d012b5802fdf1253bb887c50395a2d611cd4958c43cad57650a0752bdefd1138
-nirunote nirunote 0.6.1 0536232532476e539b812a34b3382bc5468baf943b78127787155f9668ef3cb7
+nirunote nirunote 0.7.1 a27ba8db13915143f42f3141933a8596d96b0f02ce906fedde9b81f42870039a
 nirupres nirupres 2.2.1 7914b467191b80c7807a7ed3ab536873c1316d98410591fdd122755ed09b3cb5
 nplay nplay 1.8.2 5bd6dc17095648017ccf5922e342574ed596cc845ada78adbc5d5ff312d433d8
 niruamp niruamp 0.5.2 d6623c81a23959eb3eb350e34f7203651b84a818a9896296d217ceaae55b65fe
@@ -7652,8 +7652,11 @@ manual_open() { # FILE LINE HEADING
     exec $NIRUX_MANUAL_VIEWER "$1" "$2" "$3"
   fi
   if [ -n "${DISPLAY:-}" ] && command -v nirunote >/dev/null 2>&1; then
-    [ -z "$3" ] || say "Opening the manual at: $3 (Ctrl+G in NIRUNOTE goes to a heading)"
-    nohup nirunote "$1" >/dev/null 2>&1 &
+    [ -z "$3" ] || say "Opening the manual at: $3"
+    # FILE first: NIRUNOTE before 0.7 ignores the flags and still opens it.
+    if [ -n "$3" ]; then nohup nirunote "$1" --read-only --heading "$3" >/dev/null 2>&1 &
+    else nohup nirunote "$1" --read-only >/dev/null 2>&1 &
+    fi
     return 0
   fi
   if [ -n "${DISPLAY:-}" ] && command -v xdg-open >/dev/null 2>&1; then

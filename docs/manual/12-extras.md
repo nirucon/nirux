@@ -9,7 +9,7 @@ A normal `nirux install` or `nirux update` never installs an extra. You ask for 
 | Extra | Pinned | What it is | Status |
 |---|---|---|---|
 | [niruorg](#niruorg-file-manager) | 0.6.1 | Two-pane file manager for local folders, servers and cloud remotes | beta |
-| [nirunote](#nirunote-markdown-editor) | 0.6.1 | Minimal Markdown editor | beta |
+| [nirunote](#nirunote-markdown-editor) | 0.7.1 | Minimal Markdown editor and viewer | beta |
 | [nirupres](#nirupres-presentations) | 2.2.1 | Presentation studio | beta |
 | [nplay](#nplay-terminal-music-player) | 1.8.2 | Terminal music, radio and podcast player; also fully standalone | beta |
 | [niruamp](#niruamp-graphical-frontend-for-nplay) | 0.5.2 | Winamp-inspired graphical frontend for NPLAY (requires NPLAY) | alpha |
@@ -88,7 +88,9 @@ Drag files between panes to copy; use **Move** from Actions to move. All setting
 
 ## NIRUNOTE: Markdown editor
 
-A small, quiet editor for plain Markdown files with a styled preview, find and replace, an outline, crash recovery and optional Hunspell spell checking (the installer fetches a Swedish dictionary). No accounts, no cloud. Status: beta.
+A small, quiet editor and viewer for plain Markdown files with a styled preview, find and replace, an outline, crash recovery and optional Hunspell spell checking (the installer fetches a Swedish dictionary). No accounts, no cloud. Status: beta.
+
+The preview renders CommonMark and GitHub Markdown: nested lists and quotes, task lists, aligned tables, strikethrough, footnotes, reference links, bare URLs, GitHub alerts (`> [!NOTE]`, `[!TIP]`, `[!IMPORTANT]`, `[!WARNING]`, `[!CAUTION]`) and fenced code highlighted in the theme colours (skipped above 300k characters). Long lines and wide tables wrap. Local images are scaled to the page; remote images load in the background while visible (turn them off with **Remote images in Preview** in Preferences). Raw HTML is not run: a small formatting subset such as `kbd`, `sub`, `sup` and `mark` is kept. Relative Markdown links open in the same window, `#anchor` links scroll, and `Alt+Left` goes back. The manual (`nirux manual`) opens in NIRUNOTE as a read-only viewer at the chosen heading.
 
 ```sh
 nirux extras install nirunote
@@ -97,6 +99,9 @@ nirunote notes.md
 nirunote --new
 nirunote --focus         # start in focus mode
 nirunote --scratchpad    # a separate scratch note
+nirunote README.md --read-only           # viewer: no editing, saving or recovery data
+nirunote notes.md --heading "Next steps" # open at a heading (title, part of it, or #slug)
+nirunote notes.md --preview              # start in Preview
 ```
 
 | Keys | Action |
@@ -104,10 +109,13 @@ nirunote --scratchpad    # a separate scratch note
 | `Ctrl+N` / `Ctrl+O` / `Ctrl+P` | New / open / Quick Open |
 | `Ctrl+S` / `Ctrl+Shift+S` | Save / Save As |
 | `Ctrl+Shift+E` | Toggle Edit and Preview |
-| `Ctrl+F` / `Ctrl+H` | Find / replace |
+| `Ctrl+F` / `Ctrl+H` | Find (in the Preview when it is shown) / replace |
+| `F3` / `Shift+F3` | Find next / previous (`Esc` closes the find bar) |
+| `Alt+Left` | Back, after following a link in the Preview |
+| `Ctrl++` / `Ctrl+-` / `Ctrl+0`, `Ctrl`+wheel | Zoom in / out / reset |
 | `Ctrl+B` / `Ctrl+I` / `Ctrl+K` | Bold / italic / link |
 | `Ctrl+Shift+X` | Toggle a checkbox |
-| `Ctrl+G` / `Ctrl+Shift+O` | Go to heading / outline |
+| `Ctrl+G` / `Ctrl+Shift+O` | Go to heading / outline (also in the Preview) |
 | `Ctrl+Shift+P` | Command palette |
 | `F11` | Focus mode |
 | `Ctrl+Shift+F` | Toggle floating window |
