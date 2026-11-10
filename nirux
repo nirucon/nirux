@@ -1727,17 +1727,20 @@ sounds_muted() {
   wpctl get-volume @DEFAULT_AUDIO_SINK@ 2>/dev/null | grep -q '\[MUTED\]'
 }
 
+# Sets sounds_now (milliseconds, or empty). It does not print: the result used
+# to travel through `say` in a command substitution, and a failed printf there
+# (seen as "printf: I/O error" on a CI runner) left it empty, which skipped the
+# rate limit and let a held key tick twice.
 sounds_now_ms() {
   sounds_now=$(date +%s%3N 2>/dev/null || :)
   case "$sounds_now" in ''|*[!0-9]*) sounds_now= ;; esac
-  say "$sounds_now"
 }
 
 # True when STAMP is older than MS milliseconds (or missing); then renew it.
 sounds_stamp_ok() {
   sounds_stamp=$1
   sounds_cd=$2
-  sounds_now=$(sounds_now_ms)
+  sounds_now_ms
   [ -n "$sounds_now" ] || return 0
   if [ -f "$sounds_stamp" ]; then
     sounds_prev=$(cat "$sounds_stamp" 2>/dev/null || :)
