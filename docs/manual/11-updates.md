@@ -33,10 +33,18 @@ nirux status                     # what is installed and active
 The bar's update indicator (the `updates` module) tells you when a newer core
 release exists. It follows the core suite only; extras are updated separately.
 
-**Log out and back in after an update.** The running window manager, idle daemon and
-session are only replaced at a new login. The bar is restarted by the update when it
-runs inside a session (or run `niructl restart-bar`). `nirux status` says when the
-running WM is still the old generation.
+**No logout after an update.** When `nirux update` runs inside a NIRU session, it
+restarts NIRUWM in place (`niructl restart-wm`): the window manager, the bars and the
+session helpers whose program changed (notifications, idle daemon, clipboard and
+gesture daemons, NIRUSHARE, the display and night-light watchers) are replaced, and
+every window keeps its screen, workspace, layout, floating state and focus. A locked
+screen stays locked: the restart waits until you unlock. Run `niructl restart-wm`
+yourself after an update over SSH or from outside the session.
+
+A session that is still running NIRUWM 0.22.x or older cannot restart in place. The
+update then restarts the bar only and says so: log out and back in once, and from then
+on updates apply without logging out. `nirux status` says when the running WM is
+still the old generation, and whether `niructl restart-wm` can activate it.
 
 ## Update everything, then power off or restart
 

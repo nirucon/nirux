@@ -228,7 +228,7 @@ Type to filter the rows, `Enter` runs the selected one, `Escape` closes. The vie
 
 `top` and `bottom` are written back to `[bar] position` in the config, so they survive a new login. `hide` is for the running session only. `[bar] enabled = false` is the permanent off switch.
 
-`niructl restart-bar` replaces running bars with the installed binary. A new NIRUWM still needs a new login; an old running window manager says so instead of restarting.
+`niructl restart-bar` replaces running bars with the installed binary. `niructl restart-wm` replaces the window manager too, with every window kept (see [Updates](11-updates.md)); a running NIRUWM older than 0.23.0 says so instead, and needs one more login.
 
 ## Show the window title
 

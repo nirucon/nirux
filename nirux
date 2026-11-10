@@ -157,6 +157,64 @@ platform() {
   [ "$(uname -m)" = x86_64 ] || die "release binaries currently support x86_64 only"
   getconf GNU_LIBC_VERSION >/dev/null 2>&1 || die "release binaries require glibc; Void musl is not supported yet"
 }
+# True when version $1 is at least $2 (dotted numbers, e.g. 0.23.0).
+version_at_least() {
+  awk -v a="$1" -v b="$2" 'BEGIN {
+    n = split(a, x, "."); m = split(b, y, ".")
+    for (i = 1; i <= (n > m ? n : m); i++) {
+      if ((x[i] + 0) > (y[i] + 0)) exit 0
+      if ((x[i] + 0) < (y[i] + 0)) exit 1
+    }
+    exit 0
+  }'
+}
+# The first NIRUWM that restarts in place (`niructl restart-wm`).
+RESTART_WM_SINCE=0.23.0
+# Activate a new generation in the running NIRU session. $1 starts the message.
+#
+# NIRUWM 0.23.0 and later restart in place: the window manager, its bars and
+# every session helper whose program changed are replaced, and every window
+# stays where it was. A locked screen stays locked; the restart then waits for
+# the unlock. An older running manager cannot: only the bar is replaced, and
+# one more login activates the rest (after that, updates apply in place).
+# NIRUX_SESSION_RESTART=0 (update-reboot and update-shutdown) skips the
+# restart, since the machine powers off next.
+apply_to_running_session() {
+  ars_lead=$1
+  if [ -z "${DISPLAY:-}" ] || [ ! -x "$BIN/niructl" ]; then
+    say "$ars_lead Log out/in to activate the updated programs, or run niructl restart-wm in the NIRU session."
+    return 0
+  fi
+  if [ "${NIRUX_SESSION_RESTART:-1}" = 0 ]; then
+    say "$ars_lead The running session keeps its programs until the power action."
+    return 0
+  fi
+  if "$BIN/niructl" restart-wm --check --quiet >/dev/null 2>&1; then
+    if ars_out=$("$BIN/niructl" restart-wm 2>&1); then
+      case "$ars_out" in
+        *locked*) say "$ars_lead $ars_out" ;;
+        *) say "$ars_lead ${ars_out:-NIRUWM restarted in place.} Open windows are kept; no logout is needed." ;;
+      esac
+      return 0
+    fi
+    say "niructl restart-wm failed: $ars_out"
+  fi
+  if "$BIN/niructl" restart-bar >/dev/null 2>&1; then
+    say "$ars_lead Running bar restarted. The running NIRUWM is older than $RESTART_WM_SINCE: log out and back in once to activate the rest; later updates apply without logging out."
+  else
+    say "$ars_lead Log out/in to activate all updated programs. In a new NIRU session: niructl restart-bar."
+  fi
+}
+# The `nirux status` line for a running window manager that is not the
+# installed one: a manager that can restart in place needs no new login.
+running_wm_status() {
+  rws_version=$("$1" --version 2>/dev/null | awk '{print $NF; exit}') || rws_version=
+  if [ -n "$rws_version" ] && version_at_least "$rws_version" "$RESTART_WM_SINCE"; then
+    say "running WM: old generation (NIRUWM $rws_version); niructl restart-wm activates the update without logging out"
+  else
+    say "running WM: old generation${rws_version:+ (NIRUWM $rws_version)}; log out and back in once to activate the update (later updates apply in place)"
+  fi
+}
 component_matches_running() {
   running=$1
   current=$2
@@ -3102,7 +3160,10 @@ update_power_command() {
   fi
   say ''
   say 'Updating NIRUX components…'
-  if ! update_power_step "$0" update; then
+  # The machine powers off next: no restart of the running session first.
+  update_session_restart=0
+  [ "$UPDATE_NOPOWER" = 0 ] || update_session_restart=1
+  if ! update_power_step env NIRUX_SESSION_RESTART="$update_session_restart" "$0" update; then
     update_power_log 'failed: NIRUX update'
     die 'NIRUX update failed; the machine was not powered off'
   fi
@@ -4003,10 +4064,7 @@ apply_target_release() {
   APPLY_OK=1
   trap - EXIT INT TERM HUP
   rm -rf "$WORK/apply-backup"
-  if [ -n "${DISPLAY:-}" ] && "$BIN/niructl" restart-bar; then
-    say 'Applied through the target installer. Running bar restarted; log out/in to activate the new WM, idle daemon and session.'
-  else say 'Applied through the target installer. Log out/in to activate all updated programs. In a new NIRU session: niructl restart-bar.'
-  fi
+  apply_to_running_session 'Applied through the target installer.'
   refresh_running_theme
 }
 # Re-apply the active theme after a wallpaper set becomes available. The
@@ -5588,7 +5646,7 @@ status() {
     fi
   done
   if [ -n "$running_wm" ] && ! component_matches_running "$running_wm" "$current_wm"; then
-    say "running WM: old generation; log out and back in to activate the update"
+    running_wm_status "$running_wm"
   elif [ -n "$running_wm" ]; then
     say "running WM: current binary"
   fi
@@ -5903,7 +5961,7 @@ rollback() {
     as_root install -m 755 "$STATE/current/bin/nirulogin" /usr/local/bin/nirulogin
   fi
   say 'Previous program generation restored. System packages and PAM configuration are not rolled back.'
-  say 'Log out and back in to use the restored WM and session.'
+  say 'Log out and back in to use the restored WM and session (or run niructl restart-wm in it, when both generations have NIRUWM 0.23.0 or later).'
   say 'Configuration files are not part of a rollback: see nirux snapshot list and nirux restore.'
 }
 install_or_update() {
@@ -6019,10 +6077,7 @@ install_or_update() {
   enable_services
   activate
   start_selected_dm
-  if [ -n "${DISPLAY:-}" ] && "$BIN/niructl" restart-bar; then
-    say 'Running bar restarted. Log out/in to activate the new WM, idle daemon and session.'
-  else say 'Log out/in to activate all updated programs. In a new NIRU session: niructl restart-bar.'
-  fi
+  apply_to_running_session 'Updated.'
   refresh_running_theme
 }
 # nirux fleet: see and update the NIRUX machines on this Tailscale network.
