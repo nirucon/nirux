@@ -368,13 +368,27 @@ Use `--shared-profile` when sign-in should follow your normal browser (Microsoft
 
 A fast system summary for the terminal in the NIRUX style, in the colours of the current theme. It reads local files only. Status: beta.
 
+Beside the summary sits a small mark of your distribution (Debian, Arch, Void, Ubuntu, Fedora, or Tux for others) in the theme's colours, and below it a strip of the terminal's colours. The mark is left out when the window is narrower than about 63 columns. `Host` shows the machine model.
+
 ```sh
 nirufetch
 nirufetch --compact     # small terminals
-nirufetch --full        # GPU, displays, battery, packages, selected extras
+nirufetch --full        # GPU, displays, battery, packages, init, selected extras
 nirufetch --json        # everything, for scripts and bug reports
 nirufetch --plain       # no colour (NO_COLOR is honoured too)
+nirufetch --no-logo     # without the mark
 ```
+
+Settings live in `~/.config/nirufetch/config.toml` (all optional):
+
+```toml
+logo = "distro"          # "distro", "nirux" (the NIRUX rune) or "off"
+logo_colors = "theme"    # "theme" or "distro" (the distribution's own colours)
+palette = true           # the colour strip
+fields = ["os", "host", "kernel", "cpu", "memory", "theme"]   # rows and order
+```
+
+`fields` accepts `os host nirux kernel uptime init shell wm terminal cpu gpu memory swap disk display battery packages locale load extras theme`; without it the default set is shown, and `--full` always shows everything. Display names in `--full` match xrandr (`DisplayPort-4`, `eDP`).
 
 More: [github.com/nirucon/nirufetch](https://github.com/nirucon/nirufetch).
 

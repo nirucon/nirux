@@ -1,0 +1,23 @@
+# NIRUFETCH settings.
+# Location: ~/.config/nirufetch/config.toml (or $XDG_CONFIG_HOME/nirufetch/)
+# Every key is optional; colours always follow the active NIRUWM theme.
+
+# The mark beside the summary: "distro" (Debian, Arch, Void, Ubuntu, Fedora,
+# Tux for others), "nirux" (the NIRUX rune) or "off". It is shown only in a
+# terminal wide enough for it (about 63 columns) and never in --compact.
+# `--logo` and `--no-logo` override this for one run.
+logo = "distro"
+
+# Colours of the mark: "theme" (the theme accent, details in muted) or
+# "distro" (the distribution's own colours).
+logo_colors = "theme"
+
+# A strip of the terminal's eight colours (normal over bright) under the
+# summary. With the NIRUX terminal integration these are the theme's colours.
+palette = true
+
+# The rows of the default, --compact and --classic layouts, in this order.
+# Without `fields` the default set is used; --full always shows everything.
+# Names: os host nirux kernel uptime init shell wm terminal cpu gpu memory
+# swap disk display battery packages locale load extras theme
+# fields = ["os", "host", "nirux", "kernel", "uptime", "shell", "wm", "terminal", "cpu", "memory", "disk", "theme"]

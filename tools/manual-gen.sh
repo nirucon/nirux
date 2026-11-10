@@ -49,6 +49,7 @@ nirux displays.example.toml ~/.config/niruwm/displays.toml niruwm,niructl,nirudi
 nirubar weather.example.toml ~/.config/nirubar/config.toml nirubar
 nirulauncher config.example.toml ~/.config/nirulauncher/config.toml nirulauncher
 nirunotify config.example.toml ~/.config/nirunotify/config.toml nirunotify
+nirufetch config.example.toml ~/.config/nirufetch/config.toml nirufetch
 nirulock config.example.toml ~/.config/niruui/lock.toml nirulock
 niruscreensaver config.example.toml ~/.config/niruui/screensaver.toml niruscreensaver
 nirushare docs/webhooks.example.toml ~/.config/nirushare/webhooks.toml nirushare'

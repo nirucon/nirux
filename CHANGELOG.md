@@ -2,6 +2,16 @@
 
 Earlier releases are described in their release notes and commit messages.
 
+## 0.12.254 (2026-11-10)
+
+- **NIRUFETCH 0.3.0: a distribution mark in the theme's colours.** A small
+  Debian, Arch, Void, Ubuntu or Fedora mark (Tux for others) beside the
+  summary, a strip of the terminal colours, and the machine model (`Host`).
+  `--full` adds the init system and names displays as xrandr does.
+  `~/.config/nirufetch/config.toml` turns the mark off, picks the NIRUX rune
+  or the distribution's colours, hides the strip, and chooses the rows.
+- Manual chapter 12 and the configuration reference cover the new settings.
+
 ## 0.12.253 (2026-11-10)
 
 - **A new volume and brightness OSD (NIRUNOTIFY 0.5.0).** An icon, the name,

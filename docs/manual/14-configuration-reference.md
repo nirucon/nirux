@@ -45,19 +45,20 @@ These are not generated from an example file. The chapters describe them.
 
 <!-- generated: config (tools/manual-gen.sh; do not edit by hand) -->
 
-The example configuration files of NIRUX 0.12.253 and its components, with every
+The example configuration files of NIRUX 0.12.254 and its components, with every
 key they set or show. A value marked *commented example* is off by default:
 remove the `#` to use it. The full annotated file follows each table.
 
 | File | Read by | Example from |
 |---|---|---|
-| [`~/.config/niruwm/config.toml`](#configniruwmconfigtoml) | niruwm, nirubar, niruidle, niructl | nirux 0.12.253 `config.example.toml` |
-| [`~/.config/niruwm/appearance.toml`](#configniruwmappearancetoml) | the whole suite | nirux 0.12.253 `appearance.example.toml` |
-| [`~/.config/nirux/sounds.toml`](#configniruxsoundstoml) | nirux, nirunotify | nirux 0.12.253 `sounds.example.toml` |
-| [`~/.config/niruwm/displays.toml`](#configniruwmdisplaystoml) | niruwm, niructl, nirudisplay | nirux 0.12.253 `displays.example.toml` |
+| [`~/.config/niruwm/config.toml`](#configniruwmconfigtoml) | niruwm, nirubar, niruidle, niructl | nirux 0.12.254 `config.example.toml` |
+| [`~/.config/niruwm/appearance.toml`](#configniruwmappearancetoml) | the whole suite | nirux 0.12.254 `appearance.example.toml` |
+| [`~/.config/nirux/sounds.toml`](#configniruxsoundstoml) | nirux, nirunotify | nirux 0.12.254 `sounds.example.toml` |
+| [`~/.config/niruwm/displays.toml`](#configniruwmdisplaystoml) | niruwm, niructl, nirudisplay | nirux 0.12.254 `displays.example.toml` |
 | [`~/.config/nirubar/config.toml`](#confignirubarconfigtoml) | nirubar | nirubar 0.23.0 `weather.example.toml` |
 | [`~/.config/nirulauncher/config.toml`](#confignirulauncherconfigtoml) | nirulauncher | nirulauncher 0.11.0 `config.example.toml` |
 | [`~/.config/nirunotify/config.toml`](#confignirunotifyconfigtoml) | nirunotify | nirunotify 0.5.0 `config.example.toml` |
+| [`~/.config/nirufetch/config.toml`](#confignirufetchconfigtoml) | nirufetch | nirufetch 0.3.0 `config.example.toml` |
 | [`~/.config/niruui/lock.toml`](#configniruuilocktoml) | nirulock | nirulock 0.25.0 `config.example.toml` |
 | [`~/.config/niruui/screensaver.toml`](#configniruuiscreensavertoml) | niruscreensaver | niruscreensaver 0.14.1 `config.example.toml` |
 | [`~/.config/nirushare/webhooks.toml`](#confignirusharewebhookstoml) | nirushare | nirushare 0.4.0 `webhooks.example.toml` |
@@ -1550,6 +1551,45 @@ monitor = ""
 font_size = 14.0
 # top-right, top-left, bottom-right or bottom-left.
 position = "top-right"
+```
+
+</details>
+
+### ~/.config/nirufetch/config.toml
+
+| Section | Key | Example value | Meaning |
+|---|---|---|---|
+| `(top level)` | `logo` | `"distro"` | The mark beside the summary: "distro" (Debian, Arch, Void, Ubuntu, Fedora, Tux for others), "nirux" (the NIRUX rune) or "off". |
+| `(top level)` | `logo_colors` | `"theme"` | Colours of the mark: "theme" (the theme accent, details in muted) or "distro" (the distribution's own colours). |
+| `(top level)` | `palette` | `true` | A strip of the terminal's eight colours (normal over bright) under the summary. |
+| `(top level)` | `fields` | `["os", "host", "nirux", "kernel", "uptime", "shell", "wm"...` (commented example) | Names: os host nirux kernel uptime init shell wm terminal cpu gpu memory swap disk display battery packages locale load extras theme |
+
+<details><summary>The annotated example file (config.example.toml)</summary>
+
+```toml
+# NIRUFETCH settings.
+# Location: ~/.config/nirufetch/config.toml (or $XDG_CONFIG_HOME/nirufetch/)
+# Every key is optional; colours always follow the active NIRUWM theme.
+
+# The mark beside the summary: "distro" (Debian, Arch, Void, Ubuntu, Fedora,
+# Tux for others), "nirux" (the NIRUX rune) or "off". It is shown only in a
+# terminal wide enough for it (about 63 columns) and never in --compact.
+# `--logo` and `--no-logo` override this for one run.
+logo = "distro"
+
+# Colours of the mark: "theme" (the theme accent, details in muted) or
+# "distro" (the distribution's own colours).
+logo_colors = "theme"
+
+# A strip of the terminal's eight colours (normal over bright) under the
+# summary. With the NIRUX terminal integration these are the theme's colours.
+palette = true
+
+# The rows of the default, --compact and --classic layouts, in this order.
+# Without `fields` the default set is used; --full always shows everything.
+# Names: os host nirux kernel uptime init shell wm terminal cpu gpu memory
+# swap disk display battery packages locale load extras theme
+# fields = ["os", "host", "nirux", "kernel", "uptime", "shell", "wm", "terminal", "cpu", "memory", "disk", "theme"]
 ```
 
 </details>
