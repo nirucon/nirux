@@ -77,7 +77,7 @@ dpms_off_after_lock = 15      # minutes after locking before the display sleeps;
 | `lock_after_screensaver` | `15` | 0 to 1440 |
 | `dpms_off_after_lock` | `15` | 0 to 1440 |
 
-Keep `lock_after_screensaver` at 1 or more if you want the idle lock: with `0`, niruidle in NIRUWM 0.22.1 shows the screensaver but does not lock on its own.
+With `lock_after_screensaver = 0` the screen locks at `screensaver_timeout`, and the lock screen is shown instead of the screensaver. Without a lock screen installed, the screensaver stays. (NIRUWM before 0.23.0 showed the screensaver and never locked with `0`.)
 
 Change a timer without opening the file (comments and other keys are kept, a backup is written to `config.toml.bak`):
 

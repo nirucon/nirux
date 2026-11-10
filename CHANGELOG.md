@@ -2,6 +2,28 @@
 
 Earlier releases are described in their release notes and commit messages.
 
+## 0.12.249 (2026-11-10)
+
+- **Updates without logging out (NIRUWM 0.23.0).** `nirux update` inside a
+  session now runs `niructl restart-wm`: the window manager, bars and changed
+  helpers restart in place with every window, workspace, layout and scratchpad
+  kept. A locked screen stays locked; the restart waits for the unlock. A
+  session on NIRUWM older than 0.23.0 needs one last login.
+- **`lock_after_screensaver = 0` locks.** It locks at `screensaver_timeout`
+  instead of only showing the screensaver.
+- **Calendar reminders (NIRUBAR 0.23.0).** A notification before timed events,
+  10 minutes by default; `remind_minutes` in `calendars.toml` (0 = off).
+- **NIRUNOTE 0.7.1.** Full CommonMark and GitHub Markdown in the preview
+  (tables, footnotes, alerts, highlighted code), `--read-only`, `--heading`,
+  find in the preview, back after links, faster on big files. `nirux manual`
+  opens read-only at the chosen heading.
+- **Fleet health.** `nirux fleet` has a HEALTH column: disk, failed units,
+  stale sessions and lock readiness (also in `--json`).
+- **Multichannel inputs (NIRUCLIP 0.7.0, NIRULAUNCHER 0.11.0).** Record one
+  input or a pair of an interface such as the UMC1820 with `--mic-channels`;
+  the launcher's Capture view shows a Mic inputs row only when such an
+  interface is present.
+
 ## 0.12.248 (2026-11-09)
 
 - **Panels you read stay open (NIRUBAR 0.22.1, NIRUWM 0.22.4).** The calendar,

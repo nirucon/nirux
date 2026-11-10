@@ -132,6 +132,25 @@ After adding, removing or editing a calendar you don't need to do anything else:
 
 Feeds are refreshed every 15 minutes and cached in `~/.cache/nirubar/calendar/` (mode 600), so the events stay visible offline. The address never appears in process lists, logs or error messages, and `nirux sync` and snapshots never copy `calendars.toml`. Other iCal feeds (Nextcloud, iCloud, Outlook) work too; give them an `open` address to make clicks work.
 
+#### Reminders
+
+NIRUBAR shows a notification before each timed event, 10 minutes ahead by default. Change the lead time for all calendars at the top of `calendars.toml`, or per calendar; `0` turns reminders off:
+
+```toml
+remind_minutes = 15      # all calendars (0 to 1440, default 10)
+
+[[calendar]]
+name = "Work"
+url = "https://calendar.google.com/calendar/ical/.../basic.ics"
+remind_minutes = 0       # no reminders for this one
+```
+
+- All-day events get no reminder, and alarms set inside the feed are ignored.
+- Each occurrence is reminded once, also for recurring events and across time zones and daylight saving. A bar started inside the lead time still reminds you of an event that has not begun.
+- Restarting the bar or logging in again does not repeat a reminder: what was sent is kept as hashes (no titles) in `~/.local/state/nirubar/reminders.json`.
+- Clicking the notification opens the calendar's `open` page for that day.
+- The title travels over D-Bus to NIRUNOTIFY and is never logged; `nirubar --check-config` lists the reminder settings.
+
 Options go in a `[calendar]` table in `~/.config/nirubar/config.toml`:
 
 | Key | Default | Meaning |

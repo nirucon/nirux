@@ -130,7 +130,7 @@ niructl keys --markdown        # the keys in effect, as Markdown
 
 <!-- generated: niructl (tools/manual-gen.sh; do not edit by hand) -->
 
-Every form `niructl` accepts, from its usage text (NIRUWM 0.22.4). Run `niructl`
+Every form `niructl` accepts, from its usage text (NIRUWM 0.23.0). Run `niructl`
 without arguments to print it.
 
 - `niructl status`
@@ -147,6 +147,7 @@ without arguments to print it.
 - `niructl monitors`
 - `niructl reload`
 - `niructl restart-bar`
+- `niructl restart-wm [--check]`
 - `niructl bar top|bottom|hide|show|toggle|cycle|status`
 - `niructl quit`
 - `niructl save`
