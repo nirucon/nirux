@@ -4907,8 +4907,8 @@ install_wifi_rule() {
     say "$rule_user ALL=(root) NOPASSWD: NIRUX_WIFI_CMDS"
   } > "$WORK/wifi-sudoers"
   if command -v visudo >/dev/null 2>&1; then
-    visudo -cf "$WORK/wifi-sudoers" >/dev/null 2>&1 ||
-      die 'generated Wi-Fi sudoers rule is invalid; nothing was installed'
+    visudo_out=$(visudo -cf "$WORK/wifi-sudoers" 2>&1) ||
+      die "generated Wi-Fi sudoers rule is invalid; nothing was installed: $visudo_out"
   fi
   wifi_sudoers=$ROOT/etc/sudoers.d/49-nirux-wifi
   if [ -f "$wifi_sudoers" ] && [ "$(as_root cat "$wifi_sudoers" 2>/dev/null)" = "$(cat "$WORK/wifi-sudoers")" ]; then
@@ -4967,8 +4967,8 @@ install_checkup() {
     say "$rule_user ALL=(root) NOPASSWD: NIRUX_CHECKUP_CMDS"
   } > "$WORK/checkup-sudoers"
   if command -v visudo >/dev/null 2>&1; then
-    visudo -cf "$WORK/checkup-sudoers" >/dev/null 2>&1 ||
-      die 'generated checkup sudoers rule is invalid; nothing was installed'
+    visudo_out=$(visudo -cf "$WORK/checkup-sudoers" 2>&1) ||
+      die "generated checkup sudoers rule is invalid; nothing was installed: $visudo_out"
   fi
   checkup_sudoers=$ROOT/etc/sudoers.d/49-nirux-checkup
   if ! { [ -f "$checkup_sudoers" ] && [ "$(as_root cat "$checkup_sudoers" 2>/dev/null)" = "$(cat "$WORK/checkup-sudoers")" ]; }; then
