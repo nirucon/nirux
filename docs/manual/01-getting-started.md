@@ -25,12 +25,24 @@ cd nirux
 
 The installer asks for sudo, installs the runtime packages, downloads the release,
 checks every file against its SHA-256 sum and installs under `~/.local`. A fresh
-install asks about the Helium browser, LocalSend, OpenCode and Papirus icons, and
-uses **NIRU Login** as the login screen unless you already have a display manager:
+install asks about the Helium browser, LocalSend, OpenCode, Tailscale and Papirus
+icons, and uses **NIRU Login** as the login screen unless you already have a
+display manager:
 
 ```sh
 ./nirux install --display-manager auto|startx|nirulogin|sddm|lightdm
 ```
+
+**Tailscale** (default yes) joins the computer to your private network, so
+`nirux fleet`, nirushare and SSH reach it from your other machines. The
+installer installs and starts it and shows a link: open it on any device to add
+the computer. `Ctrl+C` skips the link; run `sudo tailscale up` later.
+`--tailscale no` leaves it out, and an existing Tailscale is never removed.
+
+On a laptop with a touchpad, tapping works from the start, also on the login
+screen: one finger clicks, two fingers right-click, three fingers middle-click,
+tap and drag moves things, and two fingers scroll. Turn tapping off with
+`niructl input set-pointer tap off`.
 
 From a text console without a display manager, start the session with
 `startx "$HOME/.local/bin/niruwm-session"`.

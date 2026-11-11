@@ -2,7 +2,7 @@
 # NIRUX: install a complete X11 desktop, or maintain an existing installation.
 set -eu
 
-VERSION=0.12.258
+VERSION=0.12.259
 PREFIX=${NIRUX_PREFIX:-$HOME/.local}
 BIN=$PREFIX/bin
 STATE=$PREFIX/share/nirux
@@ -80,6 +80,9 @@ LOCALSEND_EXPLICIT=0
 OPENCODE_CHOICE=
 OPENCODE_EFFECTIVE=yes
 OPENCODE_EXPLICIT=0
+TAILSCALE_CHOICE=
+TAILSCALE_EFFECTIVE=keep
+TAILSCALE_EXPLICIT=0
 BROWSER_ADDON_CHOICE=
 BROWSER_ADDON_EFFECTIVE=keep
 BROWSER_ADDON_EXPLICIT=0
@@ -91,7 +94,7 @@ usage() {
   say "NIRUX $VERSION"
   say "Usage: nirux install [--minimal|--no-packages] [--display-manager auto|startx|nirulogin|sddm|lightdm]"
   say "                    [--browser helium|none|keep] [--wallpapers all|default]"
-  say "                    [--localsend yes|no] [--opencode yes|no] [--icons none|papirus]"
+  say "                    [--localsend yes|no] [--opencode yes|no] [--tailscale yes|no] [--icons none|papirus]"
   say "       nirux update [--no-packages] [--release VERSION] [--browser helium|none|keep] [--browser-addon bonjourr|none|keep]"
   say "                    [--wallpapers all|default] [--localsend yes|no] [--opencode yes|no] [--icons keep|none|papirus]"
   say "       nirux login-wallpaper [list|set FILE|reset|sync]"
@@ -115,6 +118,7 @@ usage() {
   say "Browser: a fresh install offers Helium (default Helium) and remembers the choice."
   say "         --browser none is a persistent opt-out; --browser keep preserves the current policy."
   say "         --localsend/--opencode choose optional apps; without a flag an install prompts and an update preserves the current choice."
+  say "Tailscale: a fresh install offers it (default yes), starts it and shows the link that adds the computer; --tailscale no skips it."
   say "Papirus: --icons papirus installs Papirus-Dark with grey folders per user (~112-190 MB); none opts out."
   say "--minimal/--no-packages: binaries and integration only; required OS packages must already exist."
   say "Updates check and install missing runtime packages from the downloaded release unless --no-packages is given."
@@ -3603,6 +3607,36 @@ choose_optional_apps() {
   LOCALSEND_EFFECTIVE=$effective
   choose_one_app opencode OpenCode "$operation" "$OPENCODE_EXPLICIT" "$OPENCODE_CHOICE"
   OPENCODE_EFFECTIVE=$effective
+  choose_tailscale "$operation"
+}
+
+# Tailscale (docs: manual chapter 12). A fresh install asks, with yes as the
+# default; an update changes nothing unless --tailscale is given. "no" never
+# removes a Tailscale the machine already has.
+choose_tailscale() {
+  operation=$1
+  persisted=$(app_policy tailscale)
+  if [ "$TAILSCALE_EXPLICIT" = 1 ]; then
+    TAILSCALE_EFFECTIVE=$TAILSCALE_CHOICE
+  elif [ "$operation" = install ] && [ "$persisted" = keep ]; then
+    if command -v tailscale >/dev/null 2>&1; then
+      TAILSCALE_EFFECTIVE=yes
+    elif [ -t 0 ]; then
+      say 'Install Tailscale? It joins this computer to your private network, so'
+      say 'NIRUX fleet, nirushare and SSH reach it from your other machines.'
+      printf 'Install Tailscale [Y/n]: '
+      IFS= read -r answer || answer=yes
+      case "$answer" in [nN]*) TAILSCALE_EFFECTIVE=no ;; *) TAILSCALE_EFFECTIVE=yes ;; esac
+    else
+      TAILSCALE_EFFECTIVE=yes
+    fi
+  else
+    TAILSCALE_EFFECTIVE=$persisted
+  fi
+  case "$TAILSCALE_EFFECTIVE" in yes|no|keep) ;; *) die 'tailscale must be yes or no' ;; esac
+  if [ "$TAILSCALE_EFFECTIVE" != keep ] && { [ "$TAILSCALE_EXPLICIT" = 1 ] || [ "$operation" = install ]; }; then
+    app_policy_set tailscale "$TAILSCALE_EFFECTIVE"
+  fi
 }
 
 choose_browser() {
@@ -3985,6 +4019,7 @@ apply_target_release() {
   BROWSER_EFFECTIVE=${NIRUX_APPLY_BROWSER:-keep}
   LOCALSEND_EFFECTIVE=${NIRUX_APPLY_LOCALSEND:-yes}
   OPENCODE_EFFECTIVE=${NIRUX_APPLY_OPENCODE:-yes}
+  TAILSCALE_EFFECTIVE=${NIRUX_APPLY_TAILSCALE:-keep}
   ICONS_EFFECTIVE=${NIRUX_APPLY_ICONS:-none}
   BROWSER_ADDON_EFFECTIVE=${NIRUX_APPLY_BROWSER_ADDON:-none}
   packages=${NIRUX_APPLY_PACKAGES:-1}
@@ -4063,6 +4098,8 @@ apply_target_release() {
   setup_startx
   say 'Enabling session services...'
   enable_services
+  install_touchpad_rule
+  install_void_udev_replay
   say 'Activating the new program generation...'
   activate
   start_selected_dm
@@ -4071,6 +4108,7 @@ apply_target_release() {
   rm -rf "$WORK/apply-backup"
   apply_to_running_session 'Applied through the target installer.'
   refresh_running_theme
+  tailscale_setup
 }
 # Re-apply the active theme after a wallpaper set becomes available. The
 # installer may run from a real session (update/manual download), where the
@@ -5481,6 +5519,8 @@ remove_greeters() {
   remove_system "$ROOT/usr/libexec/nirux-wifi"
   remove_checkup
   remove_void_elogind_activation
+  remove_void_udev_replay
+  remove_system "$ROOT$TOUCHPAD_RULE"
   remove_system "$ROOT/etc/sddm.conf.d/50-nirux.conf"
   remove_system "$ROOT/etc/lightdm/lightdm.conf.d/50-nirux-session.conf"
   if [ -f "$ROOT/usr/share/sddm/themes/nirux/Main.qml" ] &&
@@ -5820,6 +5860,120 @@ install_void_elogind_activation() {
 remove_void_elogind_activation() {
   remove_system "$ROOT/usr/local/share/dbus-1/system-services/org.freedesktop.login1.service"
   remove_system "$ROOT$ELOGIND_ACTIVATE"
+}
+
+# Touchpads: tap with one finger to click, two to right-click and three for
+# the middle button, scrolling with two fingers, on the login screen too.
+# Only on machines with a touchpad; `niructl input` changes it per user.
+TOUCHPAD_RULE=/etc/X11/xorg.conf.d/30-nirux-touchpad.conf
+has_touchpad() {
+  [ -n "${NIRUX_TEST_TOUCHPAD:-}" ] && { [ "$NIRUX_TEST_TOUCHPAD" = 1 ]; return; }
+  grep -qiE '^N: Name=.*(touchpad|trackpad|clickpad)' /proc/bus/input/devices 2>/dev/null
+}
+install_touchpad_rule() {
+  if ! has_touchpad; then
+    remove_system "$ROOT$TOUCHPAD_RULE"
+    return 0
+  fi
+  {
+    say "# NIRUX owner: $PREFIX"
+    say '# Tap to click (one finger left, two right, three middle), tap and drag,'
+    say '# two-finger scrolling, and no taps while typing. Per user: niructl input.'
+    say 'Section "InputClass"'
+    say '    Identifier "NIRUX touchpad"'
+    say '    MatchIsTouchpad "on"'
+    say '    Driver "libinput"'
+    say '    Option "Tapping" "on"'
+    say '    Option "TappingButtonMap" "lrm"'
+    say '    Option "TappingDrag" "on"'
+    say '    Option "ScrollMethod" "twofinger"'
+    say '    Option "DisableWhileTyping" "on"'
+    say 'EndSection'
+  } > "$WORK/touchpad.conf"
+  as_root mkdir -p "$ROOT/etc/X11/xorg.conf.d"
+  write_system "$ROOT$TOUCHPAD_RULE" "$WORK/touchpad.conf"
+  as_root chmod 0644 "$ROOT$TOUCHPAD_RULE" || :
+}
+
+# Void: runit hands udevd over from the early boot to its supervised service.
+# A device that appears in that gap, typically a sound card whose firmware
+# loads late (Intel SOF), misses its udev rules and stays root-only, and
+# PipeWire then only offers "Dummy Output". This service replays the sound,
+# graphics and input events once udevd runs, then waits idle.
+UDEV_REPLAY_SV=/etc/sv/nirux-udev-replay
+install_void_udev_replay() {
+  [ "$OS" = void ] || return 0
+  [ -d "$ROOT/etc/sv/udevd" ] || [ -n "${NIRUX_TEST_UDEV_REPLAY:-}" ] || return 0
+  {
+    say '#!/bin/sh'
+    say "# NIRUX owner: $PREFIX"
+    say '# Replay events of devices that appeared while udevd was handed over.'
+    say 'sv check udevd >/dev/null 2>&1 || exit 1'
+    say 'udevadm trigger --action=change --subsystem-match=sound --subsystem-match=drm --subsystem-match=input'
+    say 'udevadm settle --timeout=10'
+    say 'exec pause'
+  } > "$WORK/udev-replay-run"
+  as_root mkdir -p "$ROOT$UDEV_REPLAY_SV"
+  write_system "$ROOT$UDEV_REPLAY_SV/run" "$WORK/udev-replay-run"
+  as_root chmod 0755 "$ROOT$UDEV_REPLAY_SV/run"
+  if [ ! -e "$ROOT/var/service/nirux-udev-replay" ] && [ ! -L "$ROOT/var/service/nirux-udev-replay" ]; then
+    as_root mkdir -p "$ROOT/var/service"
+    as_root ln -s "$UDEV_REPLAY_SV" "$ROOT/var/service/nirux-udev-replay" || :
+  fi
+}
+remove_void_udev_replay() {
+  if [ -L "$ROOT/var/service/nirux-udev-replay" ]; then as_root rm -f "$ROOT/var/service/nirux-udev-replay"; fi
+  remove_system "$ROOT$UDEV_REPLAY_SV/run"
+  as_root rmdir "$ROOT$UDEV_REPLAY_SV" 2>/dev/null || :
+}
+
+# Tailscale: install, start and log in, when chosen (choose_tailscale). Never
+# in test roots. The login link is shown only on a terminal; without one, or
+# when skipped, `sudo tailscale up` does it later.
+tailscale_setup() {
+  [ "$TAILSCALE_EFFECTIVE" = yes ] || return 0
+  [ -z "$ROOT" ] || return 0
+  [ "${NIRUX_TEST_AS_ROOT:-0}" = 1 ] && return 0
+  if ! command -v tailscale >/dev/null 2>&1; then
+    say 'Installing Tailscale...'
+    case "$OS" in
+      void) as_root xbps-install -Sy tailscale ;;
+      arch) as_root pacman -S --needed --noconfirm tailscale ;;
+      debian)
+        codename=$(. /etc/os-release; printf '%s' "${VERSION_CODENAME:-trixie}")
+        curl -fsSL "https://pkgs.tailscale.com/stable/debian/$codename.noarmor.gpg" -o "$WORK/tailscale.gpg" &&
+          curl -fsSL "https://pkgs.tailscale.com/stable/debian/$codename.tailscale-keyring.list" -o "$WORK/tailscale.list" ||
+          { say 'Tailscale: could not reach pkgs.tailscale.com; skipped (nirux update --tailscale yes tries again).'; return 0; }
+        as_root install -m 0644 "$WORK/tailscale.gpg" /usr/share/keyrings/tailscale-archive-keyring.gpg
+        as_root install -m 0644 "$WORK/tailscale.list" /etc/apt/sources.list.d/tailscale.list
+        as_root apt-get update -q >/dev/null &&
+          as_root env DEBIAN_FRONTEND=noninteractive apt-get install -y -q tailscale
+        ;;
+    esac || { say 'Tailscale: the package could not be installed; skipped.'; return 0; }
+  fi
+  case "$OS" in
+    void)
+      if [ ! -e /var/service/tailscaled ] && [ ! -L /var/service/tailscaled ]; then
+        as_root ln -s /etc/sv/tailscaled /var/service/tailscaled
+      fi
+      i=0; while [ "$i" -lt 20 ] && ! tailscale status >/dev/null 2>&1 && ! tailscale status 2>&1 | grep -q 'Logged out'; do i=$((i + 1)); sleep 0.5; done
+      ;;
+    *) as_root systemctl enable --now tailscaled.service >/dev/null 2>&1 || : ;;
+  esac
+  ts_user=${rule_user:-${SUDO_USER:-$(id -un)}}
+  if tailscale status >/dev/null 2>&1; then
+    as_root tailscale set --operator="$ts_user" >/dev/null 2>&1 || :
+    say "Tailscale: connected as $(tailscale status --self --peers=false 2>/dev/null | awk 'NR == 1 {print $2}')."
+    return 0
+  fi
+  if [ -t 0 ] && [ -t 1 ]; then
+    say ''
+    say 'Tailscale: open the link below on any device to add this computer to'
+    say 'your network. It waits up to 5 minutes; Ctrl+C skips it (later: sudo tailscale up).'
+    as_root tailscale up --operator="$ts_user" --timeout=5m || say 'Tailscale: not logged in yet; run sudo tailscale up later.'
+  else
+    say 'Tailscale is installed; log in with: sudo tailscale up'
+  fi
 }
 
 enable_services() {
@@ -6261,6 +6415,7 @@ install_or_update() {
       --wallpapers) shift; [ "$#" -gt 0 ] || die 'missing wallpapers value'; WALLPAPER_CHOICE=$1 ;;
       --localsend) shift; [ "$#" -gt 0 ] || die 'missing localsend value'; LOCALSEND_CHOICE=$1; LOCALSEND_EXPLICIT=1 ;;
       --opencode) shift; [ "$#" -gt 0 ] || die 'missing opencode value'; OPENCODE_CHOICE=$1; OPENCODE_EXPLICIT=1 ;;
+      --tailscale) shift; [ "$#" -gt 0 ] || die 'missing tailscale value'; TAILSCALE_CHOICE=$1; TAILSCALE_EXPLICIT=1 ;;
       --icons) shift; [ "$#" -gt 0 ] || die 'missing icons value'; ICONS_CHOICE=$1; ICONS_EXPLICIT=1 ;;
       --release) shift; [ "$#" -gt 0 ] || die 'missing release version'; RELEASE=${1#v} ;;
       *) die "unknown option: $1" ;;
@@ -6321,6 +6476,7 @@ install_or_update() {
       NIRUX_APPLY_RELEASE=$RELEASE NIRUX_APPLY_OS=$OS \
       NIRUX_APPLY_DM=$DM NIRUX_APPLY_BROWSER=$BROWSER_EFFECTIVE \
       NIRUX_APPLY_LOCALSEND=$LOCALSEND_EFFECTIVE NIRUX_APPLY_OPENCODE=$OPENCODE_EFFECTIVE \
+      NIRUX_APPLY_TAILSCALE=$TAILSCALE_EFFECTIVE \
       NIRUX_APPLY_OPERATION=$operation NIRUX_APPLY_WALLPAPERS="${wallpaper_decision:-}" \
       NIRUX_APPLY_ICONS="${ICONS_EFFECTIVE:-none}" \
       NIRUX_APPLY_BROWSER_ADDON="${BROWSER_ADDON_EFFECTIVE:-none}" \
@@ -6360,10 +6516,13 @@ install_or_update() {
   setup_dm_session
   setup_startx
   enable_services
+  install_touchpad_rule
+  install_void_udev_replay
   activate
   start_selected_dm
   apply_to_running_session 'Updated.'
   refresh_running_theme
+  tailscale_setup
 }
 # nirux fleet: see and update the NIRUX machines on this Tailscale network.
 # Hosts come from `tailscale status --json` (Linux peers) or from [fleet] in

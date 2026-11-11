@@ -41,8 +41,13 @@ nirulock --config
 niruscreensaver --config
 ```
 
-An invalid `config.toml` is rejected and the previous settings stay in effect; the
-error is also written to the session log.
+A typing error in `config.toml` never ends the session or hides the bar. At login
+NIRUWM and NIRUBAR start with the last settings that worked (kept in
+`~/.local/state/niruwm/config.last-good.toml`), or the defaults when there are
+none, and a notification says where the error is, for example
+`config.toml line 213: expected '.', '='`. A reload with an error keeps the
+current settings and shows the same notification. Fix the line, then
+`Super+Shift+R` or `niructl reload`. The error is also in the session log.
 
 ## Common problems
 
@@ -58,7 +63,7 @@ error is also written to the session log.
 | Windows are on a screen that is gone | `niructl windows rescue` (try `--dry-run` first) moves them to a connected screen. |
 | A display profile does not apply | `niructl display doctor` shows what matches and what is missing. See [Displays and profiles](09-displays.md). |
 | A key does nothing | `Super+F1`, then `Ctrl+R` and press the key: the cheat sheet tells what it is bound to and flags clashes. On Swedish layouts use `Super+F1` instead of `Super+/`. |
-| No sound | `niructl audio status`, `niructl audio outputs`; `nirux doctor` checks for a default PipeWire sink. See [Sound, notifications and studio mode](10-sound-notifications-studio.md). |
+| No sound | `niructl audio status`, `niructl audio outputs`; `nirux doctor` checks for a default PipeWire sink. Only "Dummy Output" on Void: the sound card appeared while udev was starting; NIRUX's `nirux-udev-replay` service fixes it at the next start (`sudo sv status nirux-udev-replay`). See [Sound, notifications and studio mode](10-sound-notifications-studio.md). |
 | Bluetooth audio does not work | `nirux doctor` reports a missing BlueZ SPA plugin: install your distribution's PipeWire BlueZ package. |
 | Brightness keys do nothing | `nirux doctor` says whether `brightnessctl` can read the backlight; it needs udev or group permissions. |
 | Screenshots or recording fail | `nirux doctor` checks `ffmpeg` with `x11grab`, `slop`, `maim` and the camera device. |

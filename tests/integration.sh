@@ -48,6 +48,7 @@ fetch() {
 }
 platform() { :; }
 distro() { say "$TEST_OS"; }
+export NIRUX_TEST_TOUCHPAD=1 NIRUX_TEST_UDEV_REPLAY=1
 as_root() { "$@"; }
 operation() { ( "$@" ); }
 
@@ -596,6 +597,16 @@ for TEST_OS in arch debian void; do
   grep -qxF "Exec=$BIN/niruwm-session" "$session_desktop" || fail 'display-manager session Exec must be an unquoted absolute path'
   ! grep -q '"' "$session_desktop" || fail 'display-manager session must not quote Exec'
   [ -f "$ROOT/etc/udev/rules.d/70-nirux-backlight.rules" ] || fail 'missing backlight udev rule'
+  grep -q '"Tapping" "on"' "$ROOT/etc/X11/xorg.conf.d/30-nirux-touchpad.conf" || fail 'touchpad tapping rule missing'
+  grep -q '"TappingButtonMap" "lrm"' "$ROOT/etc/X11/xorg.conf.d/30-nirux-touchpad.conf" || fail 'two-finger tap is not a right click'
+  if [ "$TEST_OS" = void ]; then
+    grep -q 'subsystem-match=sound' "$ROOT/etc/sv/nirux-udev-replay/run" || fail 'Void udev replay service missing'
+    [ -x "$ROOT/etc/sv/nirux-udev-replay/run" ] || fail 'Void udev replay service is not executable'
+    [ -L "$ROOT/var/service/nirux-udev-replay" ] || fail 'Void udev replay service is not enabled'
+  else
+    [ ! -e "$ROOT/etc/sv/nirux-udev-replay" ] || fail 'udev replay service outside Void'
+  fi
+  [ "$(app_policy tailscale)" = yes ] || fail 'a noninteractive install did not choose Tailscale'
   # The launcher entry must point at the generation link, not at a path the
   # user could replace, and the icon must come from the release.
   app_desktop=$ROOT/usr/share/applications/niruwallpaper.desktop
@@ -651,6 +662,8 @@ for TEST_OS in arch debian void; do
   operation uninstall
   rm -f "$EXTRAS_SELECTED"
   [ ! -e "$BIN/niruwm" ] || fail 'program still installed'
+  [ ! -e "$ROOT/etc/X11/xorg.conf.d/30-nirux-touchpad.conf" ] || fail 'touchpad rule remained after uninstall'
+  [ ! -e "$ROOT/etc/sv/nirux-udev-replay" ] && [ ! -L "$ROOT/var/service/nirux-udev-replay" ] || fail 'udev replay service remained after uninstall'
   [ ! -e "$ROOT/etc/pam.d/nirulock" ] || fail 'owned PAM service remained'
   [ ! -e "$ROOT/usr/share/applications/niruwallpaper.desktop" ] || fail 'wallpaper app entry remained after uninstall'
   [ ! -e "$ROOT/usr/share/icons/hicolor/256x256/apps/niruwallpaper.png" ] || fail 'wallpaper app icon remained after uninstall'

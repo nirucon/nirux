@@ -2,6 +2,29 @@
 
 Earlier releases are described in their release notes and commit messages.
 
+## 0.12.259 (2026-11-11)
+
+Nothing to fiddle with after an install:
+
+- **A typing error in the settings no longer logs you out (NIRUWM 0.24.2,
+  NIRUBAR 0.23.1).** A stray character in `config.toml` used to stop the bar
+  and, at the next login, end the session straight back at the login screen.
+  Now both start with the last settings that worked (or the defaults), and a
+  notification says where the error is, such as `config.toml line 213`. Fix
+  it and reload with `Super+Shift+R`.
+- **Tailscale at install.** `nirux install` asks (default yes), installs and
+  starts Tailscale on Void, Arch and Debian and shows the link that adds the
+  computer to your network. `--tailscale yes|no` chooses it without asking;
+  an update changes nothing unless the flag is given.
+- **Touchpads tap from the start.** On machines with a touchpad: one finger
+  clicks, two right-click, three middle-click, tap and drag, two-finger
+  scrolling, and no taps while typing, also on the login screen.
+- **Void: sound on every start.** A sound card whose firmware loads late
+  (Intel SOF laptops) appeared while runit handed udevd over and stayed
+  root-only, so PipeWire offered only "Dummy Output". The new runit service
+  `nirux-udev-replay` replays those device events once at start.
+- Manual chapters 1 and 13.
+
 ## 0.12.258 (2026-11-11)
 
 - **A new default wallpaper.** The Noir picture is now a misty Swedish lake
