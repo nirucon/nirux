@@ -1,0 +1,421 @@
+#!/bin/sh
+# NIRUX checkup: a weekly health check and clean-up of this computer.
+#
+# Installed root-owned as /usr/libexec/nirux-checkup and run by root from a
+# systemd timer (Monday 07:00, Persistent=true) or, on runit, from a small
+# service loop. Nothing from the user's own prefix is ever executed: the
+# user's files are only read, or deleted by age with find(1) that never
+# follows symbolic links.
+#
+#   nirux-checkup run [--dry-run]   check, clean, report (root)
+#   nirux-checkup loop              runit service: run when due, else sleep
+#   nirux-checkup due               exit 0 when a run is due
+#   nirux-checkup last              print the latest report
+#   nirux-checkup webhook-set       read a Discord webhook URL on stdin (root)
+#   nirux-checkup discord-test      post a short test message (root)
+#
+# Settings: /etc/nirux/checkup.conf (key=value, never sourced):
+#   enabled=yes|no  discord=always|warnings|off  clean=full|safe|off
+#   disk_warn=85    user=NAME
+# Reports: /var/lib/nirux/checkup/report-*.txt, the newest three are kept.
+set -u
+umask 022
+
+R=${NIRUX_CHECKUP_ROOT:-}
+CONF=$R/etc/nirux/checkup.conf
+HOOK=$R/etc/nirux/checkup-webhook
+STATE=$R/var/lib/nirux/checkup
+KEEP=3
+TAB=$(printf '\t')
+
+say() { printf '%s\n' "$*"; }
+conf() {
+  # conf KEY DEFAULT: the last KEY=value line, unquoted.
+  v=$(sed -n "s/^[[:space:]]*$1[[:space:]]*=[[:space:]]*//p" "$CONF" 2>/dev/null | tail -n 1 |
+    tr -d '"'"'" | sed 's/[[:space:]]*#.*//; s/[[:space:]]*$//')
+  [ -n "$v" ] && say "$v" || say "$2"
+}
+have() { command -v "$1" >/dev/null 2>&1; }
+# Bounded external commands: a hung tool must not hold the check forever.
+bounded() { t=$1; shift; if have timeout; then timeout "$t" "$@"; else "$@"; fi; }
+human() {
+  awk -v b="${1:-0}" 'BEGIN { split("B KB MB GB TB", u, " "); i = 1
+    while (b >= 1024 && i < 5) { b /= 1024; i++ }
+    if (i == 1) printf "%d %s", b, u[i]; else printf "%.1f %s", b, u[i] }'
+}
+now() { date +%s; }
+
+# ---- scheduling --------------------------------------------------------------
+
+last_run() { cat "$STATE/last-run" 2>/dev/null || say 0; }
+
+# Epoch of the first Monday 07:00 strictly after epoch $1 (local time).
+next_monday_after() {
+  base=$1
+  # Start from that day's 07:00 and walk forward at most eight days.
+  day=$(date -d "@$base" +%Y-%m-%d 2>/dev/null) || { say $((base + 604800)); return; }
+  i=0
+  while [ "$i" -le 8 ]; do
+    cand=$(date -d "$day 07:00 +$i day" +%s 2>/dev/null) || break
+    if [ "$cand" -gt "$base" ] && [ "$(date -d "@$cand" +%u)" = 1 ]; then say "$cand"; return; fi
+    i=$((i + 1))
+  done
+  say $((base + 604800))
+}
+
+# Due when it never ran, or when a Monday 07:00 has passed since the last run.
+due() {
+  [ "$(conf enabled yes)" = yes ] || return 1
+  last=$(last_run)
+  [ "$last" -gt 0 ] 2>/dev/null || return 0
+  [ "$(now)" -ge "$(next_monday_after "$last")" ]
+}
+
+loop() {
+  # runit: give a fresh boot a few minutes, then check every quarter hour.
+  # Comparing wall-clock times also covers suspend and resume.
+  sleep "${NIRUX_CHECKUP_BOOT_DELAY:-300}"
+  while :; do
+    if due; then run --scheduled || :; fi
+    sleep 900
+  done
+}
+
+# ---- environment -------------------------------------------------------------
+
+owner() { conf user ""; }
+owner_home() {
+  u=$(owner)
+  [ -n "$u" ] || return 1
+  if [ -n "$R" ]; then say "$R/home/$u"; return; fi
+  getent passwd "$u" 2>/dev/null | cut -d: -f6
+}
+distro() {
+  id=$(sed -n 's/^ID=//p' "$R/etc/os-release" 2>/dev/null | tr -d '"')
+  like=$(sed -n 's/^ID_LIKE=//p' "$R/etc/os-release" 2>/dev/null | tr -d '"')
+  for x in $id $like; do
+    case "$x" in debian|ubuntu) say debian; return ;; arch) say arch; return ;; void) say void; return ;; esac
+  done
+  say unknown
+}
+init_system() {
+  if [ -d "$R/run/systemd/system" ]; then say systemd
+  elif [ -d "$R/run/runit" ] || [ -d "$R/etc/runit" ]; then say runit
+  else say other; fi
+}
+
+# On battery below 30 %, only check; the clean-up waits for the charger.
+on_low_battery() {
+  for b in "$R"/sys/class/power_supply/BAT*; do
+    [ -d "$b" ] || continue
+    st=$(cat "$b/status" 2>/dev/null)
+    cap=$(cat "$b/capacity" 2>/dev/null)
+    [ "$st" = Discharging ] && [ "${cap:-100}" -lt 30 ] 2>/dev/null && return 0
+  done
+  return 1
+}
+
+# ---- report collection -------------------------------------------------------
+
+WARN=0
+LINES=
+add() { LINES="$LINES$1$TAB$2
+"; }
+warn() { WARN=$((WARN + 1)); add "⚠ $1" "$2"; }
+
+check_disks() {
+  limit=$(conf disk_warn 85)
+  out=
+  # Real file systems only; one line per mount point.
+  df -P -x tmpfs -x devtmpfs -x squashfs -x overlay -x efivarfs 2>/dev/null |
+    awk 'NR > 1 && $6 !~ "^/(snap|run|dev|sys|proc)" { sub("%", "", $5); print $6, $5, $4 }' > "$WORK/df"
+  while read -r mnt pct free; do
+    case "$mnt" in /|/home|/boot|/boot/efi|/efi|/var|/media/*|/mnt/*) ;; *) continue ;; esac
+    item="$mnt $pct% ($(human $((free * 1024))) free)"
+    if [ "$pct" -ge "$limit" ] 2>/dev/null; then warn Disk "$item"
+    else out="${out:+$out · }$item"; fi
+  done < "$WORK/df"
+  [ -z "$out" ] || add Disk "$out"
+  df -Pi -x tmpfs -x devtmpfs -x squashfs -x overlay -x efivarfs 2>/dev/null |
+    awk 'NR > 1 { sub("%", "", $5); if ($5 + 0 >= 90) print $6, $5 }' |
+    while read -r mnt pct; do say "$mnt $pct%"; done > "$WORK/inodes"
+  [ ! -s "$WORK/inodes" ] || warn Inodes "$(tr '\n' ' ' < "$WORK/inodes")"
+}
+
+check_smart() {
+  have smartctl || { add SMART "smartctl missing"; return; }
+  devs=$(bounded 20 smartctl --scan 2>/dev/null | awk '{print $1}')
+  [ -n "$devs" ] || { add SMART "no drives reported"; return; }
+  ok=0; bad=
+  for d in $devs; do
+    info=$(bounded 30 smartctl -H -A "$d" 2>/dev/null) || :
+    [ -n "$info" ] || continue
+    name=${d##*/}
+    health=$(printf '%s\n' "$info" | sed -n 's/.*overall-health self-assessment test result: //p; s/^SMART Health Status: //p' | head -n 1)
+    used=$(printf '%s\n' "$info" | sed -n 's/^Percentage Used:[[:space:]]*\([0-9]*\)%.*/\1/p' | head -n 1)
+    media=$(printf '%s\n' "$info" | sed -n 's/^Media and Data Integrity Errors:[[:space:]]*\([0-9,]*\).*/\1/p' | tr -d , | head -n 1)
+    realloc=$(printf '%s\n' "$info" | awk '$2 == "Reallocated_Sector_Ct" || $2 == "Current_Pending_Sector" { s += $10 } END { print s + 0 }')
+    problem=
+    case "$health" in ''|PASSED|OK) ;; *) problem="health $health" ;; esac
+    [ "${used:-0}" -lt 80 ] 2>/dev/null || problem="${problem:+$problem, }${used}% worn"
+    [ "${media:-0}" = 0 ] || problem="${problem:+$problem, }$media media errors"
+    [ "${realloc:-0}" = 0 ] || problem="${problem:+$problem, }$realloc bad sectors"
+    if [ -n "$problem" ]; then bad="${bad:+$bad; }$name $problem"; else ok=$((ok + 1)); fi
+  done
+  if [ -n "$bad" ]; then warn SMART "$bad"; else add SMART "OK ($ok drive$( [ "$ok" = 1 ] || say s))"; fi
+}
+
+check_services() {
+  case $(init_system) in
+    systemd)
+      n=$(systemctl --failed --no-legend --plain 2>/dev/null | grep -c .)
+      if [ "$n" -gt 0 ]; then
+        warn "Failed services" "$(systemctl --failed --no-legend --plain 2>/dev/null | awk '{print $1}' | head -n 5 | tr '\n' ' ')"
+      else add Services "all running"; fi ;;
+    runit)
+      down=
+      for s in "$R"/var/service/*; do
+        [ -e "$s" ] || continue
+        st=$(sv status "$s" 2>/dev/null) || continue
+        case "$st" in run:*) ;; *) down="$down ${s##*/}" ;; esac
+      done
+      if [ -n "$down" ]; then warn "Services down" "$down"; else add Services "all running"; fi ;;
+  esac
+}
+
+check_reboot() {
+  running=$(uname -r)
+  need=
+  [ ! -e "$R/var/run/reboot-required" ] || need=yes
+  # The running kernel's modules gone (Arch) or a newer kernel installed.
+  [ -d "$R/lib/modules/$running" ] || [ -d "$R/usr/lib/modules/$running" ] || need=yes
+  newest=$(ls "$R"/boot/vmlinuz-* 2>/dev/null | sed 's|.*/vmlinuz-||' | sort -V | tail -n 1)
+  case "$(distro)" in
+    debian|void) [ -z "$newest" ] || [ "$newest" = "$running" ] || need=yes ;;
+  esac
+  if [ "$need" = yes ]; then warn "Reboot needed" "running $running${newest:+, installed $newest}"
+  else add Kernel "$running"; fi
+}
+
+check_updates() {
+  n=; sec=
+  case $(distro) in
+    debian)
+      bounded 180 apt-get update -qq >/dev/null 2>&1 || :
+      list=$(apt list --upgradable 2>/dev/null | grep -v '^Listing' || :)
+      n=$(printf '%s' "$list" | grep -c .)
+      sec=$(printf '%s\n' "$list" | grep -c -- '-security' || :) ;;
+    arch)
+      if have checkupdates; then n=$(bounded 180 checkupdates 2>/dev/null | grep -c .); fi ;;
+    void)
+      n=$(bounded 180 xbps-install -Mun 2>/dev/null | grep -c .) ;;
+  esac
+  [ -n "$n" ] || return 0
+  text="$n package$( [ "$n" = 1 ] || say s)"
+  [ "${sec:-0}" = 0 ] || text="$text ($sec security)"
+  if [ "${sec:-0}" -gt 0 ] 2>/dev/null; then warn Updates "$text"; else add Updates "$text"; fi
+}
+
+check_nirux() {
+  home=$(owner_home) || return 0
+  manifest=$home/.local/share/nirux/current/manifest
+  mine=$(sed -n 's/^suite //p' "$manifest" 2>/dev/null)
+  [ -n "$mine" ] || return 0
+  latest=
+  if have curl; then
+    latest=$(bounded 20 curl -fsS --max-time 15 https://api.github.com/repos/nirucon/nirux/releases/latest 2>/dev/null |
+      sed -n 's/.*"tag_name"[[:space:]]*:[[:space:]]*"v\{0,1\}\([0-9][0-9.]*\)".*/\1/p' | head -n 1)
+  fi
+  if [ -n "$latest" ] && [ "$latest" != "$mine" ]; then add NIRUX "$mine (latest $latest: run nirux update)"
+  else add NIRUX "$mine"; fi
+  snaps=$home/.local/state/nirux/snapshots
+  newest=$(ls -t "$snaps"/*.tar.gz 2>/dev/null | head -n 1)
+  if [ -n "$newest" ]; then
+    age=$(( ($(now) - $(stat -c %Y "$newest")) / 86400 ))
+    if [ "$age" -gt 30 ]; then warn Snapshot "newest is $age days old (nirux snapshot)"
+    else add Snapshot "$age day$( [ "$age" = 1 ] || say s) old"; fi
+  fi
+}
+
+check_system() {
+  if have journalctl; then
+    oom=$(journalctl -k --since -7d -q 2>/dev/null | grep -c 'Out of memory' || :)
+    errs=$(journalctl -p err --since -7d -q 2>/dev/null | grep -c . || :)
+    [ "${oom:-0}" = 0 ] || warn Memory "$oom out-of-memory kills this week"
+    add Log "$errs error lines this week"
+  fi
+  if have timedatectl; then
+    [ "$(timedatectl show -p NTPSynchronized --value 2>/dev/null)" != no ] || warn Time "clock not synchronised"
+  fi
+  if have tailscale; then
+    if bounded 10 tailscale status >/dev/null 2>&1; then add Tailscale up; else warn Tailscale "not connected"; fi
+  fi
+  if have ufw; then
+    case "$(ufw status 2>/dev/null | head -n 1)" in
+      *inactive*) warn Firewall inactive ;;
+      *active*) add Firewall active ;;
+    esac
+  fi
+  for b in "$R"/sys/class/power_supply/BAT*; do
+    [ -d "$b" ] || continue
+    full=$(cat "$b/energy_full" 2>/dev/null || cat "$b/charge_full" 2>/dev/null)
+    design=$(cat "$b/energy_full_design" 2>/dev/null || cat "$b/charge_full_design" 2>/dev/null)
+    [ -n "$full" ] && [ "${design:-0}" -gt 0 ] 2>/dev/null || continue
+    health=$((full * 100 / design))
+    if [ "$health" -lt 60 ]; then warn Battery "${b##*/} health $health%"; else add Battery "${b##*/} health $health%"; fi
+  done
+}
+
+# ---- clean-up ----------------------------------------------------------------
+
+CLEANED=
+cleaned() { CLEANED="${CLEANED:+$CLEANED, }$1"; }
+run_clean() { if [ "$DRY" = 1 ]; then say "would run: $*" >> "$WORK/dry"; else "$@" >/dev/null 2>&1 || :; fi; }
+
+# Delete files older than N days under a directory, without following links
+# and without crossing into other file systems.
+prune() {
+  dir=$1; days=$2; shift 2
+  [ -d "$dir" ] && [ ! -L "$dir" ] || return 0
+  if [ "$DRY" = 1 ]; then
+    n=$(find "$dir" -xdev -mindepth 1 -type f -mtime +"$days" "$@" 2>/dev/null | grep -c .)
+    say "would delete $n files in $dir" >> "$WORK/dry"
+  else
+    find "$dir" -xdev -mindepth 1 -type f -mtime +"$days" "$@" -delete 2>/dev/null || :
+    find "$dir" -xdev -mindepth 1 -depth -type d -empty -mtime +"$days" "$@" -delete 2>/dev/null || :
+  fi
+}
+
+clean() {
+  level=$(conf clean full)
+  [ "$level" != off ] || { add Cleaned "off"; return; }
+  if on_low_battery; then add Cleaned "skipped on low battery"; return; fi
+  before=$(df -Pk / /home 2>/dev/null | awk 'NR > 1 && !seen[$1]++ { s += $3 } END { print s + 0 }')
+  case $(distro) in
+    debian)
+      run_clean apt-get clean
+      if [ "$level" = full ]; then run_clean env DEBIAN_FRONTEND=noninteractive apt-get -y autoremove; fi
+      cleaned packages ;;
+    arch)
+      if have paccache; then run_clean paccache -rqk2; run_clean paccache -rquk0; fi
+      if [ "$level" = full ]; then
+        orphans=$(pacman -Qtdq 2>/dev/null || :)
+        if [ -n "$orphans" ]; then
+          # shellcheck disable=SC2086
+          run_clean pacman -Rns --noconfirm $orphans
+        fi
+      fi
+      cleaned packages ;;
+    void)
+      run_clean xbps-remove -Oy
+      if [ "$level" = full ]; then
+        run_clean xbps-remove -oy
+        if have vkpurge; then run_clean vkpurge rm all; fi
+      fi
+      cleaned packages ;;
+  esac
+  if have journalctl; then run_clean journalctl --vacuum-size=200M --vacuum-time=4weeks; cleaned journal; fi
+  prune "$R/var/lib/systemd/coredump" 7
+  if have flatpak; then run_clean flatpak uninstall --unused -y --noninteractive; fi
+  u=$(owner)
+  if [ -n "$u" ]; then
+    prune "$R/tmp" 10 -user "$u"
+    prune "$R/var/tmp" 10 -user "$u"
+    home=$(owner_home) && prune "$home/.cache/thumbnails" 90 -user "$u"
+    cleaned temp
+  fi
+  after=$(df -Pk / /home 2>/dev/null | awk 'NR > 1 && !seen[$1]++ { s += $3 } END { print s + 0 }')
+  freed=$(( (before - after) * 1024 ))
+  [ "$freed" -gt 0 ] || freed=0
+  if [ "$DRY" = 1 ]; then add Cleaned "dry run"
+  else add Cleaned "$(human "$freed") freed ($CLEANED)"; fi
+}
+
+# ---- report and Discord ------------------------------------------------------
+
+host() { cat "$R/etc/hostname" 2>/dev/null || hostname 2>/dev/null || say unknown; }
+
+report_text() {
+  if [ "$WARN" = 0 ]; then status="OK"; else status="$WARN warning$( [ "$WARN" = 1 ] || say s)"; fi
+  say "NIRUX checkup: $(host) · $(date '+%Y-%m-%d %H:%M') · $status"
+  printf '%s' "$LINES" | awk -F '\t' '$1 != "" { printf "%-16s %s\n", $1, $2 }'
+}
+
+json_escape() { sed 's/\\/\\\\/g; s/"/\\"/g' | awk '{ printf "%s\\n", $0 }'; }
+
+post_discord() {
+  # $1: the message text. The webhook URL is read from a root-only file and
+  # handed to curl as a config on stdin, never as an argument.
+  [ -s "$HOOK" ] && have curl || return 1
+  url=$(head -n 1 "$HOOK")
+  case "$url" in https://discord.com/api/webhooks/*|https://discordapp.com/api/webhooks/*) ;; *) return 1 ;; esac
+  body="{\"content\":\"$(printf '%s' "$1" | head -c 1900 | json_escape)\"}"
+  printf 'url = "%s"\n' "$url" | bounded 30 curl -K - -fsS -H 'Content-Type: application/json' \
+    --data-binary "$body" -o /dev/null 2>/dev/null
+}
+
+discord_message() {
+  if [ "$WARN" = 0 ]; then icon="✅"; status="OK"; else icon="⚠️"; status="$WARN warning$( [ "$WARN" = 1 ] || say s)"; fi
+  say "$icon **$(host)** · NIRUX checkup · $status"
+  printf '%s' "$LINES" | awk -F '\t' '$1 != "" { printf "%s: %s\n", $1, $2 }'
+}
+
+save_report() {
+  mkdir -p "$STATE" && chmod 755 "$STATE"
+  stamp=$(date +%Y%m%d-%H%M%S)
+  report_text > "$STATE/report-$stamp.txt"
+  chmod 644 "$STATE/report-$stamp.txt"
+  ln -sf "report-$stamp.txt" "$STATE/latest"
+  # Keep the newest three reports.
+  ls -1 "$STATE"/report-*.txt 2>/dev/null | sort -r | tail -n +$((KEEP + 1)) | while read -r old; do rm -f "$old"; done
+  now > "$STATE/last-run"
+}
+
+run() {
+  DRY=0
+  for a in "$@"; do case "$a" in --dry-run) DRY=1 ;; esac; done
+  if [ "$(id -u)" != 0 ] && [ -z "$R" ]; then say 'nirux-checkup: run needs root (use: nirux checkup)' >&2; return 1; fi
+  WORK=$(mktemp -d "${TMPDIR:-/tmp}/nirux-checkup.XXXXXX") || return 1
+  trap 'rm -rf "$WORK"' EXIT
+  : > "$WORK/dry"
+  check_disks
+  check_smart
+  check_services
+  check_reboot
+  check_updates
+  check_nirux
+  check_system
+  clean
+  if [ "$DRY" = 1 ]; then
+    report_text
+    cat "$WORK/dry"
+    return 0
+  fi
+  save_report
+  report_text
+  mode=$(conf discord always)
+  if [ "$mode" = always ] || { [ "$mode" = warnings ] && [ "$WARN" -gt 0 ]; }; then
+    post_discord "$(discord_message)" || say 'Discord: no webhook or the post failed' >&2
+  fi
+  return 0
+}
+
+case "${1:-}" in
+  run) shift; run "$@" ;;
+  loop) loop ;;
+  due) due ;;
+  last) if [ -f "$STATE/latest" ]; then cat "$STATE/latest"; else say 'No checkup has run yet.'; fi ;;
+  webhook-set)
+    [ "$(id -u)" = 0 ] || [ -n "$R" ] || { say 'webhook-set needs root' >&2; exit 1; }
+    IFS= read -r url || :
+    case "$url" in https://discord.com/api/webhooks/*|https://discordapp.com/api/webhooks/*) ;;
+      '') rm -f "$HOOK"; say 'Discord webhook removed'; exit 0 ;;
+      *) say 'not a Discord webhook URL' >&2; exit 1 ;;
+    esac
+    mkdir -p "${HOOK%/*}"
+    (umask 077; printf '%s\n' "$url" > "$HOOK.new") && mv -f "$HOOK.new" "$HOOK" && chmod 600 "$HOOK"
+    say 'Discord webhook saved' ;;
+  discord-test)
+    post_discord "🔧 **$(host)** · NIRUX checkup can reach Discord" && say 'posted' || { say 'post failed' >&2; exit 1; } ;;
+  *) say 'usage: nirux-checkup run [--dry-run] | loop | due | last | webhook-set | discord-test' >&2; exit 2 ;;
+esac

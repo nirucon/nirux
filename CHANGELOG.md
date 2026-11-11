@@ -2,6 +2,19 @@
 
 Earlier releases are described in their release notes and commit messages.
 
+## 0.12.255 (2026-11-11)
+
+- **A weekly checkup on every computer (`nirux checkup`).** Monday 07:00,
+  or at start when it was missed: disks and the EFI partition, SMART and
+  NVMe health, failed services, reboot needed, waiting and security updates,
+  NIRUX behind, snapshot age, OOM kills, time sync, Tailscale, firewall and
+  battery health. It also cleans the package cache, unused packages and old
+  kernels, the journal, coredumps, old temporary files and thumbnails. The
+  last three reports are kept, and with a webhook each computer posts its
+  report to Discord. Root-owned helper, systemd timer or runit service.
+- `smartmontools` (and `pacman-contrib` on Arch) are now installed with NIRUX.
+- Manual chapter 11: Weekly checkup.
+
 ## 0.12.254 (2026-11-10)
 
 - **NIRUFETCH 0.3.0: a distribution mark in the theme's colours.** A small

@@ -211,6 +211,26 @@ items = ["quotes", "theme", "lock"]          # default: all items
 exclude = ["sid", "~/.config/niru/quotes/"]  # item names, or paths under your home
 ```
 
+## Weekly checkup
+
+Every NIRUX computer checks itself every Monday at 07:00 and cleans up. A computer that was off, or asleep, runs the checkup when it starts, if a Monday 07:00 has passed since the last one. It runs at the lowest priority and takes a few seconds; on battery below 30 % it only checks and leaves the clean-up for later.
+
+**What it checks:** disk use of `/`, `/home`, `/boot`, the EFI partition and mounted data disks (a warning at 85 %), inodes, SMART and NVMe health (wear, media errors, bad sectors), failed services, whether a reboot is needed for a new kernel, waiting package updates (security updates are a warning), whether NIRUX is behind the latest release, the age of the newest `nirux snapshot`, out-of-memory kills and errors in the log this week, time sync, Tailscale, the firewall and battery health.
+
+**What it cleans:** the package cache (`apt clean`, `paccache` keeping two versions, `xbps-remove -O`), unused packages and old kernels (`apt autoremove`, orphaned packages on Arch, `xbps-remove -o` and `vkpurge` on Void), the journal down to 200 MB or four weeks, coredumps older than a week, your own files in `/tmp` and `/var/tmp` older than ten days, thumbnails older than 90 days and unused Flatpak runtimes. It never follows links and never touches your files otherwise.
+
+```sh
+nirux checkup               # run it now
+nirux checkup --dry-run     # show what it would do, change nothing
+nirux checkup last          # the latest report (the last three are kept)
+nirux checkup status        # on or off, last and next run
+nirux checkup disable       # or enable
+nirux checkup discord set   # paste a Discord webhook URL; empty removes it
+nirux checkup discord test
+```
+
+With a webhook set, each computer posts its report to Discord: its name, OK or the number of warnings, and one line per check. Settings are in `/etc/nirux/checkup.conf` (edit with sudo): `enabled`, `discord` (`always`, `warnings` or `off`), `clean` (`full`, `safe` without unused packages and old kernels, or `off`) and `disk_warn`. Reports are in `/var/lib/nirux/checkup/`. The checkup is a root-owned program, `/usr/libexec/nirux-checkup`, started by a systemd timer (`nirux-checkup.timer`) or, on Void, the runit service `nirux-checkup`; `smartmontools` (and `pacman-contrib` on Arch) are installed with NIRUX.
+
 ## When GitHub is down: the GitLab mirror
 
 NIRUX downloads its releases from GitHub. When a download or the latest-release lookup

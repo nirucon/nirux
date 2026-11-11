@@ -22,6 +22,9 @@ normal user, never in a root shell; it asks for sudo itself when it needs it.
 | `nirux snapshot [--note TEXT]` | Save a snapshot of your configuration |
 | `nirux snapshot list` | List the snapshots |
 | `nirux restore [ID\|latest] [--dry-run]` | Restore a configuration snapshot, after a preview and a y/N question |
+| `nirux checkup [--dry-run]` | Run the weekly checkup now (or show what it would do) |
+| `nirux checkup last\|status\|enable\|disable` | The latest report, the schedule, or turn it on or off |
+| `nirux checkup discord set\|test` | Set the Discord webhook for the checkup report, or test it |
 | `nirux fleet [status [--json]]` | Status of your other NIRUX machines |
 | `nirux fleet update HOST...\|--all\|--behind` | Update other machines over SSH, one at a time |
 | `nirux fleet setup [HOST...]` | Let this machine log in to the others with an SSH key |

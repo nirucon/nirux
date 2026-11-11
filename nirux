@@ -2,7 +2,7 @@
 # NIRUX: install a complete X11 desktop, or maintain an existing installation.
 set -eu
 
-VERSION=0.12.254
+VERSION=0.12.255
 PREFIX=${NIRUX_PREFIX:-$HOME/.local}
 BIN=$PREFIX/bin
 STATE=$PREFIX/share/nirux
@@ -107,6 +107,7 @@ usage() {
   say "       nirux sync status [HOST...] | push HOST...|--all [ITEM...] | pull HOST [ITEM...] | items"
   say "       nirux snapshot [--note TEXT] | snapshot list | restore [ID|latest] [--dry-run]"
   say "       nirux manual [TOPIC] | manual --list | manual --path"
+  say "       nirux checkup [--dry-run] | last | status | enable | disable | discord set|test"
   say "       nirux update-shutdown [--yes] [--dry-run] [--no-power]"
   say "       nirux update-reboot [--yes] [--dry-run] [--no-power]"
   say "       nirux rollback | gc [--keep N] [--dry-run] | status | doctor | uninstall [--purge] | --version | --help"
@@ -374,9 +375,9 @@ distribution_packages_for() {
   # The root-owned, restricted standalone Wi-Fi helper uses the system Python.
   case "$1" in arch) say python ;; debian|void) say python3 ;; esac
   case "$1" in
-    arch) say "xorg-server xorg-xinit xorg-xauth xorg-xrandr xorg-xset xorg-xprop xorg-xdpyinfo xorg-xwininfo xorg-xrdb xorg-xsetroot xorg-setxkbmap xorg-xinput xf86-input-libinput libinput-tools xkeyboard-config noto-fonts-emoji ttf-liberation noto-fonts udisks2 gvfs gvfs-mtp gvfs-smb gvfs-afc gvfs-nfs gvfs-dnssd glib2 xarchiver 7zip unzip zip unrar-free exfatprogs dbus pam pipewire pipewire-audio pipewire-pulse pipewire-alsa wireplumber alsa-utils alsa-ucm-conf rtkit fontconfig libglvnd ttf-dejavu ttf-jetbrains-mono-nerd kitty fish polkit-gnome libayatana-appindicator libayatana-indicator ayatana-ido bluez bluez-utils power-profiles-daemon dunst picom feh maim slop xdotool xclip tesseract tesseract-data-swe tesseract-data-eng ffmpeg v4l-utils xorg-xrandr xorg-xprop pcmanfm playerctl libnotify brightnessctl gammastep iproute2 iw xdg-utils xdg-user-dirs unzip procps-ng util-linux" ;;
-    debian) say "xserver-xorg xserver-xorg-input-libinput xinput libinput-tools xinit xauth x11-xserver-utils x11-utils x11-xkb-utils xkb-data fonts-liberation fonts-noto-core udisks2 gvfs gvfs-backends gvfs-fuse libglib2.0-bin xarchiver 7zip unzip zip unrar-free exfatprogs dbus-x11 dbus-user-session libpam0g pipewire pipewire-pulse pipewire-alsa wireplumber alsa-utils alsa-ucm-conf rtkit fontconfig libgles2 fonts-dejavu-core fonts-font-awesome fonts-jetbrains-mono fonts-noto-color-emoji kitty fish lxpolkit libayatana-appindicator3-1 libayatana-indicator3-7 libayatana-ido3-0.4-0 bluez libspa-0.2-bluetooth power-profiles-daemon dunst picom feh maim slop xdotool xclip tesseract-ocr tesseract-ocr-swe tesseract-ocr-eng ffmpeg sidplayfp v4l-utils x11-utils pcmanfm playerctl libnotify-bin brightnessctl gammastep iproute2 iw rfkill xdg-utils xdg-user-dirs unzip procps util-linux" ;;
-    void) say "xorg-minimal xinit xauth xrandr xset xprop xdpyinfo xwininfo xrdb xsetroot setxkbmap xinput libinput xkeyboard-config liberation-fonts-ttf noto-fonts-ttf udisks2 gvfs gvfs-mtp gvfs-smb gvfs-afc glib xarchiver 7zip unzip zip exfatprogs dbus elogind pam pam-base pipewire wireplumber alsa-utils alsa-ucm-conf rtkit fontconfig libglvnd dejavu-fonts-ttf nerd-fonts-symbols-ttf noto-fonts-emoji kitty fish-shell polkit-gnome libayatana-appindicator libayatana-indicator ayatana-ido bluez libspa-bluetooth power-profiles-daemon dunst picom feh maim slop xdotool xclip tesseract-ocr tesseract-ocr-swe tesseract-ocr-eng ffmpeg sidplayfp v4l-utils xrandr xprop pcmanfm playerctl libnotify brightnessctl gammastep iproute2 iw xdg-utils xdg-user-dirs unzip procps-ng util-linux" ;;
+    arch) say "xorg-server xorg-xinit xorg-xauth xorg-xrandr xorg-xset xorg-xprop xorg-xdpyinfo xorg-xwininfo xorg-xrdb xorg-xsetroot xorg-setxkbmap xorg-xinput xf86-input-libinput libinput-tools xkeyboard-config noto-fonts-emoji ttf-liberation noto-fonts udisks2 gvfs gvfs-mtp gvfs-smb gvfs-afc gvfs-nfs gvfs-dnssd glib2 xarchiver 7zip unzip zip unrar-free exfatprogs dbus pam pipewire pipewire-audio pipewire-pulse pipewire-alsa wireplumber alsa-utils alsa-ucm-conf rtkit fontconfig libglvnd ttf-dejavu ttf-jetbrains-mono-nerd kitty fish polkit-gnome libayatana-appindicator libayatana-indicator ayatana-ido bluez bluez-utils power-profiles-daemon dunst picom feh maim slop xdotool xclip tesseract tesseract-data-swe tesseract-data-eng ffmpeg v4l-utils xorg-xrandr xorg-xprop pcmanfm playerctl libnotify brightnessctl gammastep iproute2 iw xdg-utils xdg-user-dirs unzip procps-ng util-linux smartmontools pacman-contrib" ;;
+    debian) say "xserver-xorg xserver-xorg-input-libinput xinput libinput-tools xinit xauth x11-xserver-utils x11-utils x11-xkb-utils xkb-data fonts-liberation fonts-noto-core udisks2 gvfs gvfs-backends gvfs-fuse libglib2.0-bin xarchiver 7zip unzip zip unrar-free exfatprogs dbus-x11 dbus-user-session libpam0g pipewire pipewire-pulse pipewire-alsa wireplumber alsa-utils alsa-ucm-conf rtkit fontconfig libgles2 fonts-dejavu-core fonts-font-awesome fonts-jetbrains-mono fonts-noto-color-emoji kitty fish lxpolkit libayatana-appindicator3-1 libayatana-indicator3-7 libayatana-ido3-0.4-0 bluez libspa-0.2-bluetooth power-profiles-daemon dunst picom feh maim slop xdotool xclip tesseract-ocr tesseract-ocr-swe tesseract-ocr-eng ffmpeg sidplayfp v4l-utils x11-utils pcmanfm playerctl libnotify-bin brightnessctl gammastep iproute2 iw rfkill xdg-utils xdg-user-dirs unzip procps util-linux smartmontools" ;;
+    void) say "xorg-minimal xinit xauth xrandr xset xprop xdpyinfo xwininfo xrdb xsetroot setxkbmap xinput libinput xkeyboard-config liberation-fonts-ttf noto-fonts-ttf udisks2 gvfs gvfs-mtp gvfs-smb gvfs-afc glib xarchiver 7zip unzip zip exfatprogs dbus elogind pam pam-base pipewire wireplumber alsa-utils alsa-ucm-conf rtkit fontconfig libglvnd dejavu-fonts-ttf nerd-fonts-symbols-ttf noto-fonts-emoji kitty fish-shell polkit-gnome libayatana-appindicator libayatana-indicator ayatana-ido bluez libspa-bluetooth power-profiles-daemon dunst picom feh maim slop xdotool xclip tesseract-ocr tesseract-ocr-swe tesseract-ocr-eng ffmpeg sidplayfp v4l-utils xrandr xprop pcmanfm playerctl libnotify brightnessctl gammastep iproute2 iw xdg-utils xdg-user-dirs unzip procps-ng util-linux smartmontools" ;;
   esac
 }
 # Runtime libraries and extraction tools for the pinned Helium archive. These
@@ -4052,6 +4053,7 @@ apply_target_release() {
   # that installed one; the helper writes nothing when no greeter is present.
   [ -n "${rule_user:-}" ] || rule_user=${SUDO_USER:-$(id -un)}
   install_wifi_rule
+  install_checkup
   install_login_wallpaper_rule
   install_wallpaper_app
   install_display_app
@@ -4914,6 +4916,152 @@ install_wifi_rule() {
   as_root chmod 0440 "$wifi_sudoers" || die 'could not secure the Wi-Fi sudoers rule'
 }
 
+# The weekly checkup (docs: manual chapter 11). The helper is installed
+# root-owned in a system path and run by root from a systemd timer, or a
+# runit service on Void; nothing in the user's prefix is ever run as root.
+# The sudoers rule lets `nirux checkup` start exactly that helper.
+CHECKUP_HELPER=/usr/libexec/nirux-checkup
+install_checkup() {
+  [ -n "${rule_user:-}" ] || return 0
+  checkup_source=$WORK/checkup-integration/checkup/nirux-checkup
+  checkup_archive=$WORK/download/nirux/nirux-integration.tar.xz
+  if [ -f "$checkup_archive" ]; then
+    mkdir -p "$WORK/checkup-integration"
+    tar -xJf "$checkup_archive" -C "$WORK/checkup-integration" ./checkup/nirux-checkup 2>/dev/null || :
+  fi
+  [ -f "$checkup_source" ] || return 0
+  {
+    say '#!/bin/sh'
+    say "# NIRUX owner: $PREFIX"
+    sed '1d' "$checkup_source"
+  } > "$WORK/checkup-helper"
+  write_system "$ROOT$CHECKUP_HELPER" "$WORK/checkup-helper"
+  as_root chmod 0755 "$ROOT$CHECKUP_HELPER" || die 'could not secure the checkup helper'
+  # Settings are created once and then belong to the owner of the machine.
+  checkup_conf=$ROOT/etc/nirux/checkup.conf
+  if ! as_root test -f "$checkup_conf"; then
+    {
+      say "# NIRUX owner: $PREFIX"
+      say '# NIRUX checkup settings (nirux checkup --help). Edit with sudo.'
+      say 'enabled=yes'
+      say '# discord: always, warnings or off (needs: nirux checkup discord set)'
+      say 'discord=always'
+      say '# clean: full (also unused packages and old kernels), safe or off'
+      say 'clean=full'
+      say 'disk_warn=85'
+      say "user=$rule_user"
+    } > "$WORK/checkup-conf"
+    write_system "$checkup_conf" "$WORK/checkup-conf"
+  fi
+  {
+    say "# NIRUX owner: $PREFIX"
+    say '# Only the root-owned checkup helper, with fixed arguments.'
+    say "$rule_user ALL=(root) NOPASSWD: $CHECKUP_HELPER run, $CHECKUP_HELPER run --dry-run"
+  } > "$WORK/checkup-sudoers"
+  if command -v visudo >/dev/null 2>&1; then
+    visudo -cf "$WORK/checkup-sudoers" >/dev/null 2>&1 ||
+      die 'generated checkup sudoers rule is invalid; nothing was installed'
+  fi
+  checkup_sudoers=$ROOT/etc/sudoers.d/49-nirux-checkup
+  if ! { [ -f "$checkup_sudoers" ] && [ "$(as_root cat "$checkup_sudoers" 2>/dev/null)" = "$(cat "$WORK/checkup-sudoers")" ]; }; then
+    write_system "$checkup_sudoers" "$WORK/checkup-sudoers"
+  fi
+  as_root chmod 0440 "$checkup_sudoers" || die 'could not secure the checkup sudoers rule'
+  if [ "${OS:-$(distro)}" = void ]; then
+    {
+      say '#!/bin/sh'
+      say "# NIRUX owner: $PREFIX"
+      say 'exec 2>&1'
+      say "exec chpst -n 19 $CHECKUP_HELPER loop"
+    } > "$WORK/checkup-run"
+    write_system "$ROOT/etc/sv/nirux-checkup/run" "$WORK/checkup-run"
+    as_root chmod 0755 "$ROOT/etc/sv/nirux-checkup/run"
+    [ -e "$ROOT/var/service/nirux-checkup" ] || [ -n "$ROOT" ] ||
+      as_root ln -s /etc/sv/nirux-checkup "$ROOT/var/service/nirux-checkup"
+  else
+    {
+      say "# NIRUX owner: $PREFIX"
+      say '[Unit]'
+      say 'Description=NIRUX weekly checkup'
+      say 'After=network-online.target'
+      say 'Wants=network-online.target'
+      say '[Service]'
+      say 'Type=oneshot'
+      say "ExecStart=$CHECKUP_HELPER run"
+      say 'Nice=19'
+      say 'IOSchedulingClass=idle'
+    } > "$WORK/checkup-service"
+    {
+      say "# NIRUX owner: $PREFIX"
+      say '[Unit]'
+      say 'Description=NIRUX weekly checkup (Monday 07:00, or at start when missed)'
+      say '[Timer]'
+      say 'OnCalendar=Mon *-*-* 07:00:00'
+      say 'Persistent=true'
+      say 'RandomizedDelaySec=120'
+      say '[Install]'
+      say 'WantedBy=timers.target'
+    } > "$WORK/checkup-timer"
+    write_system "$ROOT/etc/systemd/system/nirux-checkup.service" "$WORK/checkup-service"
+    write_system "$ROOT/etc/systemd/system/nirux-checkup.timer" "$WORK/checkup-timer"
+    if [ -z "$ROOT" ] && command -v systemctl >/dev/null 2>&1; then
+      as_root systemctl daemon-reload >/dev/null 2>&1 || :
+      as_root systemctl enable --now nirux-checkup.timer >/dev/null 2>&1 ||
+        say 'Could not enable the checkup timer; run: sudo systemctl enable --now nirux-checkup.timer'
+    fi
+  fi
+}
+
+remove_checkup() {
+  if [ -z "$ROOT" ] && command -v systemctl >/dev/null 2>&1 && [ -f /etc/systemd/system/nirux-checkup.timer ]; then
+    as_root systemctl disable --now nirux-checkup.timer >/dev/null 2>&1 || :
+  fi
+  if [ -L "$ROOT/var/service/nirux-checkup" ]; then as_root rm -f "$ROOT/var/service/nirux-checkup"; fi
+  remove_system "$ROOT/etc/sv/nirux-checkup/run"
+  as_root rmdir "$ROOT/etc/sv/nirux-checkup" 2>/dev/null || :
+  remove_system "$ROOT/etc/systemd/system/nirux-checkup.timer"
+  remove_system "$ROOT/etc/systemd/system/nirux-checkup.service"
+  remove_system "$ROOT/etc/sudoers.d/49-nirux-checkup"
+  remove_system "$ROOT$CHECKUP_HELPER"
+}
+
+# `nirux checkup [--dry-run] | last | status | enable | disable | discord set|test`
+checkup_command() {
+  [ -x "$CHECKUP_HELPER" ] || die 'the checkup is not installed yet; run nirux update'
+  case "${1:-run}" in
+    run|--dry-run)
+      if [ "${1:-}" = --dry-run ]; then sudo "$CHECKUP_HELPER" run --dry-run
+      else sudo "$CHECKUP_HELPER" run; fi ;;
+    last) "$CHECKUP_HELPER" last ;;
+    status)
+      enabled=$(sed -n 's/^enabled=//p' /etc/nirux/checkup.conf 2>/dev/null | tail -n 1)
+      say "Checkup: ${enabled:-yes} (settings: /etc/nirux/checkup.conf)"
+      if [ -f /var/lib/nirux/checkup/last-run ]; then
+        say "Last run: $(date -d "@$(cat /var/lib/nirux/checkup/last-run)" '+%Y-%m-%d %H:%M')"
+      else say 'Last run: never'; fi
+      if command -v systemctl >/dev/null 2>&1 && [ -f /etc/systemd/system/nirux-checkup.timer ]; then
+        systemctl list-timers nirux-checkup.timer --no-pager 2>/dev/null | sed -n '2p' | awk '{ print "Next run: " $1, $2, $3 }'
+      elif [ -e /var/service/nirux-checkup ]; then
+        say 'Next run: Monday 07:00 (runit service nirux-checkup)'
+      fi
+      if sudo -n test -s /etc/nirux/checkup-webhook 2>/dev/null; then say 'Discord: webhook set'; fi ;;
+    enable|disable)
+      value=yes; [ "$1" = enable ] || value=no
+      lock
+      as_root sed -i "s/^enabled=.*/enabled=$value/" /etc/nirux/checkup.conf
+      say "Checkup ${1}d" ;;
+    discord)
+      case "${2:-}" in
+        set) say 'Paste the Discord webhook URL and press Enter (empty removes it):'
+             as_root "$CHECKUP_HELPER" webhook-set ;;
+        test) as_root "$CHECKUP_HELPER" discord-test ;;
+        *) die 'usage: nirux checkup discord set|test' ;;
+      esac ;;
+    -h|--help) say 'usage: nirux checkup [--dry-run] | last | status | enable | disable | discord set|test' ;;
+    *) die "unknown checkup command: $1 (nirux checkup --help)" ;;
+  esac
+}
+
 install_login_wallpaper_rule() {
   legacy_file=$ROOT/etc/sudoers.d/49-nirux-login-wallpaper
   # The unsafe rule from earlier releases goes first, whatever happens next: it
@@ -5243,6 +5391,7 @@ remove_greeters() {
   remove_system "$ROOT/etc/sudoers.d/49-nirux-login-wallpaper"
   remove_system "$ROOT/etc/sudoers.d/49-nirux-wifi"
   remove_system "$ROOT/usr/libexec/nirux-wifi"
+  remove_checkup
   remove_system "$ROOT/etc/sddm.conf.d/50-nirux.conf"
   remove_system "$ROOT/etc/lightdm/lightdm.conf.d/50-nirux-session.conf"
   if [ -f "$ROOT/usr/share/sddm/themes/nirux/Main.qml" ] &&
@@ -6070,6 +6219,7 @@ install_or_update() {
   # that installed one; the helper writes nothing when no greeter is present.
   [ -n "${rule_user:-}" ] || rule_user=${SUDO_USER:-$(id -un)}
   install_wifi_rule
+  install_checkup
   install_login_wallpaper_rule
   install_wallpaper_app
   install_display_app
@@ -7827,6 +7977,7 @@ main() {
     fleet) shift; fleet_command "$@" ;;
     sync) shift; sync_command "$@" ;;
     snapshot) shift; snapshot_command "$@" ;;
+    checkup) shift; checkup_command "$@" ;;
     restore) shift; restore_command "$@" ;;
     update-shutdown) shift; update_power_command shutdown "$@" ;;
     update-reboot) shift; update_power_command reboot "$@" ;;
