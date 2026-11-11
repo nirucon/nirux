@@ -125,6 +125,17 @@ for OS in debian arch void; do
   remove_system "$lightdm_conf"
   grep -qx 'admin-owned setting' "$lightdm_conf" || fail 'LightDM admin config not restored'
 
+  # On Void, D-Bus activation of logind starts the runit elogind service
+  # instead of a second, unsupervised elogind (boot race with the greeter).
+  if [ "$OS" = void ]; then
+    mkdir -p "$ROOT/etc/sv/elogind"
+    enable_services
+    login1=$ROOT/usr/local/share/dbus-1/system-services/org.freedesktop.login1.service
+    grep -qx 'Exec=/usr/libexec/nirux-elogind-activate' "$login1" || fail 'no NIRUX login1 activation on Void'
+    grep -q 'sv start elogind' "$ROOT/usr/libexec/nirux-elogind-activate" || fail 'login1 activation does not start runit elogind'
+    remove_void_elogind_activation
+    [ ! -e "$login1" ] || fail 'login1 activation left after removal'
+  fi
   # Service enable alone must not launch a display manager on Void/runit.
   for DM in lightdm sddm; do
     rm -f "$TEST/activated" "$TEST/services.log"

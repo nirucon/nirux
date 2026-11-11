@@ -2,6 +2,14 @@
 
 Earlier releases are described in their release notes and commit messages.
 
+## 0.12.257 (2026-11-11)
+
+- **Void: elogind no longer restarts every second.** At boot the login
+  screen asked for logind before runit had started elogind, D-Bus started a
+  copy of its own, and the runit service failed in a loop for as long as the
+  machine ran. NIRUX now installs a D-Bus activation file that asks runit to
+  start its supervised elogind instead. It takes effect at the next start.
+
 ## 0.12.256 (2026-11-11)
 
 - **`nirux checkup` and the Wi-Fi helper no longer ask for a password on

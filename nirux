@@ -2,7 +2,7 @@
 # NIRUX: install a complete X11 desktop, or maintain an existing installation.
 set -eu
 
-VERSION=0.12.256
+VERSION=0.12.257
 PREFIX=${NIRUX_PREFIX:-$HOME/.local}
 BIN=$PREFIX/bin
 STATE=$PREFIX/share/nirux
@@ -5400,6 +5400,7 @@ remove_greeters() {
   remove_system "$ROOT/etc/sudoers.d/zz-nirux-wifi"
   remove_system "$ROOT/usr/libexec/nirux-wifi"
   remove_checkup
+  remove_void_elogind_activation
   remove_system "$ROOT/etc/sddm.conf.d/50-nirux.conf"
   remove_system "$ROOT/etc/lightdm/lightdm.conf.d/50-nirux-session.conf"
   if [ -f "$ROOT/usr/share/sddm/themes/nirux/Main.qml" ] &&
@@ -5699,16 +5700,59 @@ ensure_video_group() {
   say "Added $target_user to the video group for brightness; log out/in to activate it."
 }
 
+# On Void, elogind runs as a runit service, but the package also lets D-Bus
+# start it on demand. At boot the greeter's PAM session asks for logind
+# before runit has started elogind, D-Bus starts its own copy, and the runit
+# service then fails and is restarted every second for as long as the
+# machine runs. NIRUX installs a D-Bus activation file that takes precedence
+# over the package's (/usr/local/share comes first) and asks runit to start
+# the supervised service instead. Nothing running is restarted.
+ELOGIND_ACTIVATE=/usr/libexec/nirux-elogind-activate
+install_void_elogind_activation() {
+  [ "$OS" = void ] || return 0
+  [ -d "$ROOT/etc/sv/elogind" ] || return 0
+  {
+    say '#!/bin/sh'
+    say "# NIRUX owner: $PREFIX"
+    say '# D-Bus activation of org.freedesktop.login1: start the runit service,'
+    say '# which then owns the name, rather than an unsupervised second elogind.'
+    say 'if [ -e /var/service/elogind ]; then'
+    say '  i=0'
+    say '  while [ "$i" -lt 20 ]; do'
+    say '    /usr/bin/sv start elogind >/dev/null 2>&1 && exit 0'
+    say '    i=$((i + 1)); sleep 0.5'
+    say '  done'
+    say 'fi'
+    say 'exec /usr/libexec/elogind/elogind --daemon'
+  } > "$WORK/elogind-activate"
+  write_system "$ROOT$ELOGIND_ACTIVATE" "$WORK/elogind-activate"
+  as_root chmod 0755 "$ROOT$ELOGIND_ACTIVATE"
+  {
+    say "# NIRUX owner: $PREFIX"
+    say '[D-BUS Service]'
+    say 'Name=org.freedesktop.login1'
+    say "Exec=$ELOGIND_ACTIVATE"
+    say 'User=root'
+  } > "$WORK/login1-service"
+  write_system "$ROOT/usr/local/share/dbus-1/system-services/org.freedesktop.login1.service" "$WORK/login1-service"
+}
+
+remove_void_elogind_activation() {
+  remove_system "$ROOT/usr/local/share/dbus-1/system-services/org.freedesktop.login1.service"
+  remove_system "$ROOT$ELOGIND_ACTIVATE"
+}
+
 enable_services() {
   if [ "$OS" = void ]; then
+    install_void_elogind_activation
     for service in dbus elogind; do
-      if [ -d "$ROOT/etc/sv/$service" ] && [ ! -e "$ROOT/var/service/$service" ]; then
+      if [ -d "$ROOT/etc/sv/$service" ] && [ ! -e "$ROOT/var/service/$service" ] && [ ! -L "$ROOT/var/service/$service" ]; then
         as_root ln -s "/etc/sv/$service" "$ROOT/var/service/$service"
       fi
     done
     for service in bluetoothd power-profiles-daemon udisks2; do
       if [ "$service" = power-profiles-daemon ] && tlp_in_use; then continue; fi
-      if [ -d "$ROOT/etc/sv/$service" ] && [ ! -e "$ROOT/var/service/$service" ]; then
+      if [ -d "$ROOT/etc/sv/$service" ] && [ ! -e "$ROOT/var/service/$service" ] && [ ! -L "$ROOT/var/service/$service" ]; then
         as_root ln -s "/etc/sv/$service" "$ROOT/var/service/$service"
       fi
     done
