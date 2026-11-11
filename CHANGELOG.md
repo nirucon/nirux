@@ -2,6 +2,13 @@
 
 Earlier releases are described in their release notes and commit messages.
 
+## 0.12.256 (2026-11-11)
+
+- **`nirux checkup` and the Wi-Fi helper no longer ask for a password on
+  Void.** sudo uses the last matching rule, and Void's wheel rule sorts after
+  the NIRUX rules; a `Defaults` entry for the fixed commands now holds
+  whatever the order.
+
 ## 0.12.255 (2026-11-11)
 
 - **A weekly checkup on every computer (`nirux checkup`).** Monday 07:00,

@@ -2,7 +2,7 @@
 # NIRUX: install a complete X11 desktop, or maintain an existing installation.
 set -eu
 
-VERSION=0.12.255
+VERSION=0.12.256
 PREFIX=${NIRUX_PREFIX:-$HOME/.local}
 BIN=$PREFIX/bin
 STATE=$PREFIX/share/nirux
@@ -4901,7 +4901,10 @@ install_wifi_rule() {
   {
     say "# NIRUX owner: $PREFIX"
     say '# Only the root-owned request validator is authorized, never raw wpa_cli.'
-    say "$rule_user ALL=(root) NOPASSWD: /usr/libexec/nirux-wifi"
+    say 'Cmnd_Alias NIRUX_WIFI_CMDS = /usr/libexec/nirux-wifi'
+    # Holds even when a broader rule sorts later (sudo uses the last match).
+    say 'Defaults!NIRUX_WIFI_CMDS !authenticate'
+    say "$rule_user ALL=(root) NOPASSWD: NIRUX_WIFI_CMDS"
   } > "$WORK/wifi-sudoers"
   if command -v visudo >/dev/null 2>&1; then
     visudo -cf "$WORK/wifi-sudoers" >/dev/null 2>&1 ||
@@ -4956,7 +4959,12 @@ install_checkup() {
   {
     say "# NIRUX owner: $PREFIX"
     say '# Only the root-owned checkup helper, with fixed arguments.'
-    say "$rule_user ALL=(root) NOPASSWD: $CHECKUP_HELPER run, $CHECKUP_HELPER run --dry-run"
+    say "Cmnd_Alias NIRUX_CHECKUP_CMDS = $CHECKUP_HELPER run, $CHECKUP_HELPER run --dry-run"
+    # sudo applies the last matching rule, and a broader rule in a file that
+    # sorts after this one (Void's wheel file) would ask for a password
+    # again. A Defaults entry holds whatever the order.
+    say 'Defaults!NIRUX_CHECKUP_CMDS !authenticate'
+    say "$rule_user ALL=(root) NOPASSWD: NIRUX_CHECKUP_CMDS"
   } > "$WORK/checkup-sudoers"
   if command -v visudo >/dev/null 2>&1; then
     visudo -cf "$WORK/checkup-sudoers" >/dev/null 2>&1 ||
