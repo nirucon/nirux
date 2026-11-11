@@ -2,11 +2,12 @@
 
 Earlier releases are described in their release notes and commit messages.
 
-## 0.12.259 (2026-11-11)
+## 0.12.260 (2026-11-11)
 
+(0.12.259 did not publish: NIRUWM had to bundle the new NIRUBAR.)
 Nothing to fiddle with after an install:
 
-- **A typing error in the settings no longer logs you out (NIRUWM 0.24.2,
+- **A typing error in the settings no longer logs you out (NIRUWM 0.24.3,
   NIRUBAR 0.23.1).** A stray character in `config.toml` used to stop the bar
   and, at the next login, end the session straight back at the login screen.
   Now both start with the last settings that worked (or the defaults), and a
