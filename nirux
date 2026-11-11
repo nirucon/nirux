@@ -2,7 +2,7 @@
 # NIRUX: install a complete X11 desktop, or maintain an existing installation.
 set -eu
 
-VERSION=0.12.257
+VERSION=0.12.258
 PREFIX=${NIRUX_PREFIX:-$HOME/.local}
 BIN=$PREFIX/bin
 STATE=$PREFIX/share/nirux
@@ -95,7 +95,7 @@ usage() {
   say "       nirux update [--no-packages] [--release VERSION] [--browser helium|none|keep] [--browser-addon bonjourr|none|keep]"
   say "                    [--wallpapers all|default] [--localsend yes|no] [--opencode yes|no] [--icons keep|none|papirus]"
   say "       nirux login-wallpaper [list|set FILE|reset|sync]"
-  say "       nirux wallpapers [status|download [themes|extras|all|theme NAME]|remove]"
+  say "       nirux wallpapers [status|download [themes|signature|extras|all|theme NAME]|style art|signature|toggle|remove]"
   say "       nirux layout list|save NAME|apply NAME|rotate OUTPUT normal|left|right|inverted|auto"
   say "       nirux reset-config"
   say "       nirux repair-session | repair-wallpaper"
@@ -4371,6 +4371,14 @@ theme_login_wallpaper() {
     *) name=$theme ;;
   esac
   base=$(pictures_directory)/Wallpapers/NIRU
+  # The login screen shows the same picture style as the desktop.
+  style=
+  [ ! -f "$CONFDIR/config.toml" ] ||
+    style=$(sed -n 's/^[[:space:]]*theme_style[[:space:]]*=[[:space:]]*"\([^"]*\)".*/\1/p' "$CONFDIR/config.toml" | head -n 1)
+  if [ "$style" = signature ] && [ -f "$base/nirux-wallpaper-signature-$name-4k.png" ] &&
+     is_png "$base/nirux-wallpaper-signature-$name-4k.png"; then
+    say "$base/nirux-wallpaper-signature-$name-4k.png"; return 0
+  fi
   for candidate in "$base/nirux-wallpaper-$name-4k.png" "$base/nirux-wallpaper-$name-8k.png" "$base/nirux-wallpaper-$name.png"; do
     if [ -f "$candidate" ] && is_png "$candidate"; then say "$candidate"; return 0; fi
   done
@@ -4520,9 +4528,14 @@ nirux-wallpaper-carl-larsson-extras.tar.xz 182739720 c2225a723d74963ee03a7861cba
 nirux-wallpaper-satie-extras.tar.xz 83893724 5ce97288cc819af72dde4ddc2edd3ba9c5c9d075bdcc424bce3de0f06080310f
 '
 WALLPAPER_EXTRA_COLOURS='red blue green noir'
+# NIRUX Signature: the Noir photograph toned in each theme's colours (4K, one
+# archive). It is published in a later wallpaper release than the theme packs,
+# which stay where they are, so only this archive is new to download.
+WALLPAPER_SIGNATURE_RELEASE=v1.1.0
+WALLPAPER_SIGNATURE_ASSET='nirux-wallpaper-signature.tar.xz 48883084 ead39530a7f942498e532ede999f77efb804c878ccc6d9425875709ed3ed6d8e'
 
 wallpaper_asset_meta() {
-  printf '%s\n%s\n' "$WALLPAPER_THEME_ASSETS" "$WALLPAPER_EXTRA_ASSETS" |
+  printf '%s\n%s\n%s\n' "$WALLPAPER_THEME_ASSETS" "$WALLPAPER_EXTRA_ASSETS" "$WALLPAPER_SIGNATURE_ASSET" |
     awk -v n="$1" '$1 == n {print $2, $3; found=1} END {exit found ? 0 : 1}'
 }
 
@@ -4571,8 +4584,8 @@ wallpapers() {
         wp_choice=theme:$3
       fi
       case "$wp_choice" in
-        themes|extras|all|carl-larsson|satie|erik-satie|theme:*) ;;
-        *) die 'wallpapers download takes themes, extras, all, theme NAME, carl-larsson or satie' ;;
+        themes|signature|extras|all|carl-larsson|satie|erik-satie|theme:*) ;;
+        *) die 'wallpapers download takes themes, signature, extras, all, theme NAME, carl-larsson or satie' ;;
       esac
       # Self-contained command: it can run outside install/update, where WORK
       # and OS are never set. A private directory keeps the archives off /tmp
@@ -4584,7 +4597,8 @@ wallpapers() {
       WP_WORK=$wp_work wallpapers_download "$wp_choice"
       ;;
     remove) wallpapers_remove ;;
-    *) die 'wallpapers takes status, download or remove' ;;
+    style) wallpapers_style "${2:-}" ;;
+    *) die 'wallpapers takes status, download, style or remove' ;;
   esac
 }
 
@@ -4620,6 +4634,7 @@ wallpapers_status() {
   wp_extra=$(wallpaper_extra_count)
   say "Theme wallpapers: $wp_have of 10 installed in $wp_dir"
   say "Additional colour packs: $wp_extra of 16 installed"
+  say "NIRUX Signature: $(wallpaper_signature_count) of 10 installed (nirux wallpapers download signature)"
   if [ "$wp_have" -eq 10 ] && [ "$wp_extra" -eq 16 ]; then
     say 'Every theme and additional wallpaper is installed; nothing to download.'
     return 0
@@ -4655,7 +4670,12 @@ wallpaper_fetch_asset() {
   wp_sha=${wp_meta#* }
   wp_file=${WP_WORK:?no work directory}/$wp_asset
   rm -f "$wp_file"
-  fetch "$WALLPAPER_BASE_URL/$wp_asset" "$wp_file" ||
+  wp_base=$WALLPAPER_BASE_URL
+  case "$wp_asset" in
+    nirux-wallpaper-signature.tar.xz)
+      wp_base=https://github.com/nirucon/nirux-wallpapers/releases/download/$WALLPAPER_SIGNATURE_RELEASE ;;
+  esac
+  fetch "$wp_base/$wp_asset" "$wp_file" ||
     die "could not download $wp_asset; check the network connection"
   wp_actual_bytes=$(wc -c < "$wp_file" | tr -d ' ')
   [ "$wp_actual_bytes" = "$wp_bytes" ] ||
@@ -4805,21 +4825,81 @@ wallpapers_download() {
   wallpapers_lock
   wp_choice=${1:-themes}
   case "$wp_choice" in
-    themes) wallpapers_download_themes ;;
+    themes) wallpapers_download_themes && wallpapers_download_signature ;;
+    signature) wallpapers_download_signature ;;
     extras)
       wallpapers_download_pack carl-larsson
       wallpapers_download_pack satie
       ;;
     all)
       wallpapers_download_themes
+      wallpapers_download_signature
       wallpapers_download_pack carl-larsson
       wallpapers_download_pack satie
       ;;
     carl-larsson) wallpapers_download_pack carl-larsson ;;
     satie|erik-satie) wallpapers_download_pack satie ;;
     theme:*) wallpaper_download_theme "${wp_choice#theme:}" ;;
-    *) die 'wallpapers download takes themes, extras, all, theme NAME, carl-larsson or satie' ;;
+    *) die 'wallpapers download takes themes, signature, extras, all, theme NAME, carl-larsson or satie' ;;
   esac
+}
+
+wallpaper_signature_count() {
+  wp_sig_dir=$(wallpaper_destination)
+  wp_sig=0
+  for wp_theme in $WALLPAPER_THEMES; do
+    [ -f "$wp_sig_dir/nirux-wallpaper-signature-$wp_theme-4k.png" ] && wp_sig=$((wp_sig + 1))
+  done
+  printf '%s\n' "$wp_sig"
+}
+
+# NIRUX Signature: ten 4K pictures, one per built-in theme.
+wallpapers_download_signature() {
+  if [ "$(wallpaper_signature_count)" -ge 10 ]; then
+    say 'NIRUX Signature wallpapers are already installed.'
+    return 0
+  fi
+  wp_asset=nirux-wallpaper-signature.tar.xz
+  say 'Downloading the NIRUX Signature wallpapers from GitHub...'
+  wp_tar=$(wallpaper_fetch_asset "$wp_asset")
+  wp_stage=$(wallpaper_extract_asset "$wp_asset" "$wp_tar")
+  for wp_theme in $WALLPAPER_THEMES; do
+    wp_image=$wp_stage/nirux-wallpaper-signature-$wp_theme-4k.png
+    [ -f "$wp_image" ] && [ ! -L "$wp_image" ] && is_png "$wp_image" ||
+      die 'the NIRUX Signature archive is incomplete or invalid; nothing installed'
+  done
+  say 'Download verified.'
+  wallpaper_install_stage "$wp_stage"
+  rm -rf "$wp_stage" "$wp_tar"
+  say "Installed $WP_INSTALLED_COUNT NIRUX Signature wallpaper file(s)."
+}
+
+# `nirux wallpapers style art|signature|toggle`: which picture a theme shows.
+# Choosing Signature downloads the pack first when it is missing.
+wallpapers_style() {
+  wp_style=${1:-}
+  case "$wp_style" in
+    art|signature|toggle) ;;
+    '') "$BIN/niructl" wallpaper status 2>/dev/null | sed -n 's/^theme_style=/Theme pictures: /p'; return 0 ;;
+    *) die 'wallpapers style takes art, signature or toggle' ;;
+  esac
+  [ -x "$BIN/niructl" ] || die 'niructl is missing; run nirux update'
+  if [ "$wp_style" = toggle ]; then
+    case "$("$BIN/niructl" wallpaper status 2>/dev/null | sed -n 's/^theme_style=//p')" in
+      signature) wp_style=art ;;
+      *) wp_style=signature ;;
+    esac
+  fi
+  if [ "$wp_style" = signature ] && [ "$(wallpaper_signature_count)" -lt 10 ]; then
+    OS=${OS:-$(distro)}
+    wp_work=$(mktemp -d "${TMPDIR:-/tmp}/nirux-wallpapers.XXXXXX") ||
+      die 'could not create a temporary directory'
+    WP_WORK=$wp_work wallpapers_download_signature || { rm -rf "$wp_work"; return 1; }
+    rm -rf "$wp_work"
+  fi
+  "$BIN/niructl" wallpaper style "$wp_style" >/dev/null ||
+    die 'could not change the wallpaper style (is NIRUWM 0.24.1 or newer installed?)'
+  say "Theme pictures: $wp_style"
 }
 
 wallpapers_remove() {

@@ -133,7 +133,7 @@ niructl keys --markdown        # the keys in effect, as Markdown
 
 <!-- generated: niructl (tools/manual-gen.sh; do not edit by hand) -->
 
-Every form `niructl` accepts, from its usage text (NIRUWM 0.23.3). Run `niructl`
+Every form `niructl` accepts, from its usage text (NIRUWM 0.24.1). Run `niructl`
 without arguments to print it.
 
 - `niructl status`
@@ -162,7 +162,7 @@ without arguments to print it.
 - `niructl nightlight on|off|toggle|status|temperature K|apply|watch`
 - `niructl compositor on|off|toggle|status`
 - `niructl timing show|set KEY MINUTES`
-- `niructl wallpaper list|status|apply [--json]|set PATH|mode VALUE|rotation MINUTES|scale VALUE|follow-theme on|off`
+- `niructl wallpaper list|status|apply [--json]|set PATH|mode VALUE|rotation MINUTES|scale VALUE|follow-theme on|off|style art|signature|toggle`
 - `niructl wallpaper output list|set NAME KEY VALUE|reset NAME`
 - `niructl autostart`
 - `niructl recipe list|run NAME`

@@ -45,16 +45,16 @@ These are not generated from an example file. The chapters describe them.
 
 <!-- generated: config (tools/manual-gen.sh; do not edit by hand) -->
 
-The example configuration files of NIRUX 0.12.257 and its components, with every
+The example configuration files of NIRUX 0.12.258 and its components, with every
 key they set or show. A value marked *commented example* is off by default:
 remove the `#` to use it. The full annotated file follows each table.
 
 | File | Read by | Example from |
 |---|---|---|
-| [`~/.config/niruwm/config.toml`](#configniruwmconfigtoml) | niruwm, nirubar, niruidle, niructl | nirux 0.12.257 `config.example.toml` |
-| [`~/.config/niruwm/appearance.toml`](#configniruwmappearancetoml) | the whole suite | nirux 0.12.257 `appearance.example.toml` |
-| [`~/.config/nirux/sounds.toml`](#configniruxsoundstoml) | nirux, nirunotify | nirux 0.12.257 `sounds.example.toml` |
-| [`~/.config/niruwm/displays.toml`](#configniruwmdisplaystoml) | niruwm, niructl, nirudisplay | nirux 0.12.257 `displays.example.toml` |
+| [`~/.config/niruwm/config.toml`](#configniruwmconfigtoml) | niruwm, nirubar, niruidle, niructl | nirux 0.12.258 `config.example.toml` |
+| [`~/.config/niruwm/appearance.toml`](#configniruwmappearancetoml) | the whole suite | nirux 0.12.258 `appearance.example.toml` |
+| [`~/.config/nirux/sounds.toml`](#configniruxsoundstoml) | nirux, nirunotify | nirux 0.12.258 `sounds.example.toml` |
+| [`~/.config/niruwm/displays.toml`](#configniruwmdisplaystoml) | niruwm, niructl, nirudisplay | nirux 0.12.258 `displays.example.toml` |
 | [`~/.config/nirubar/config.toml`](#confignirubarconfigtoml) | nirubar | nirubar 0.23.0 `weather.example.toml` |
 | [`~/.config/nirulauncher/config.toml`](#confignirulauncherconfigtoml) | nirulauncher | nirulauncher 0.11.0 `config.example.toml` |
 | [`~/.config/nirunotify/config.toml`](#confignirunotifyconfigtoml) | nirunotify | nirunotify 0.5.0 `config.example.toml` |
@@ -90,6 +90,7 @@ remove the `#` to use it. The full annotated file follows each table.
 | `[wallpaper]` | `shuffle_on_start` | `true` | Pick a fresh picture at login, even in fixed mode. |
 | `[wallpaper]` | `follow_theme` | `true` | When the theme changes, apply that theme's wallpaper from theme_dir. |
 | `[wallpaper]` | `theme_dir` | `"~/Pictures/Wallpapers/NIRU"` | NIRUX installs nirux-wallpaper-<theme>-4k.png and -8k.png here. |
+| `[wallpaper]` | `theme_style` | `"art"` (commented example) | Which picture a theme shows: "art" (each theme's own artwork) or "signature" (the NIRUX Signature picture in the theme's colours, from th... |
 | `[autostart]` | `enabled` | `false` |  |
 | `[autostart]` | `settle_seconds` | `2` | Seconds to wait after each workspace group before moving to the next one. |
 | `[autostart]` | `window_timeout_ms` | `5000` | How long to wait for a matched window before moving on. |
@@ -308,6 +309,11 @@ follow_theme = true
 # NIRUX installs nirux-wallpaper-<theme>-4k.png and -8k.png here. A custom
 # theme `foo` can provide nirux-wallpaper-foo-4k.png.
 theme_dir = "~/Pictures/Wallpapers/NIRU"
+# Which picture a theme shows: "art" (each theme's own artwork) or
+# "signature" (the NIRUX Signature picture in the theme's colours, from the
+# optional pack: nirux wallpapers signature). A theme without a Signature
+# picture keeps its artwork. Switch with: niructl wallpaper style toggle
+# theme_style = "art"
 
 # ── Autostart ──────────────────────────────────────────────────────────────
 # Optional programs opened once at login. They are grouped by workspace and

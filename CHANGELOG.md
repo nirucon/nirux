@@ -2,6 +2,18 @@
 
 Earlier releases are described in their release notes and commit messages.
 
+## 0.12.258 (2026-11-11)
+
+- **A new default wallpaper.** The Noir picture is now a misty Swedish lake
+  (photo by Nicklas Rudolfsson, 2025), 4K and 8K. It replaces the old one on
+  update unless you changed the file yourself.
+- **NIRUX Signature (NIRUWM 0.24.1).** Every built-in theme can show the same
+  photograph toned in its own colours instead of its own artwork:
+  `nirux wallpapers style signature` (downloads the 47 MiB pack the first
+  time), `Alt+S` in NIRU Theme Selector 0.3.0 or `S` in NIRU Wallpaper 0.3.0.
+  Art stays the default; the login screen follows the chosen style.
+- Manual chapter 8 and docs/WALLPAPERS.md: Art or Signature.
+
 ## 0.12.257 (2026-11-11)
 
 - **Void: elogind no longer restarts every second.** At boot the login

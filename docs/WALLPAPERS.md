@@ -11,8 +11,27 @@ nirux wallpapers download theme nord
 nirux wallpapers download extras
 nirux wallpapers download carl-larsson
 nirux wallpapers download satie
+nirux wallpapers download signature
 nirux wallpapers download all
+nirux wallpapers style signature   # or art, or toggle
 ```
+
+## Art and Signature
+
+Every built-in theme has two pictures to choose from:
+
+- **Art** (default): the theme's own artwork.
+- **NIRUX Signature**: the Noir photograph (photo by Nicklas Rudolfsson, 2025)
+  toned in the theme's own colours, so the whole suite shares one picture.
+
+`nirux wallpapers style signature` downloads the Signature archive (one 4K
+picture per theme, about 47 MiB, from release `v1.1.0` of nirux-wallpapers)
+when it is missing and sets `[wallpaper] theme_style`. NIRU Theme Selector and
+NIRU Wallpaper switch the style with one key, and `niructl wallpaper style
+toggle` does it from a terminal. A theme without a Signature picture keeps its
+artwork, and the login screen follows the same style.
+
+The default Noir picture is the same photograph, shipped with NIRUX in 4K and 8K.
 
 The nine optional theme wallpapers are 4K/8K images (about 284 MiB) and are
 downloaded as verified archives from the release assets in

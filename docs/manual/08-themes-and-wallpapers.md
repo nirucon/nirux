@@ -58,6 +58,7 @@ NIRU Theme Selector shows every theme as a small desktop preview with its wallpa
 | `Alt+A` / `Alt+I` / `Alt+H` / `Alt+D` | Apply / import / hide or show / remove |
 | `Alt+V` | Show the hidden themes |
 | `Alt+R` | Reload the list |
+| `Alt+S` | Theme pictures: Art or NIRUX Signature (also the label in the key row) |
 | `Ctrl+Q` / `Alt+Q` | Close |
 | `F1` | Help |
 
@@ -172,6 +173,24 @@ You have three choices:
 
 By default every screen shows the same picture, scaled for its own size. A screen can have its own picture.
 
+### Art or Signature
+
+A theme's picture comes in two styles:
+
+- **Art** (the default): each theme's own artwork, from Carl Larsson to Forest Vigil.
+- **Signature**: the same photograph for every theme, the NIRUX Noir picture (photo by Nicklas Rudolfsson, 2025) toned in that theme's own colours. The whole suite then looks like one family, and a theme change still changes the colours of the picture.
+
+Switch with `Alt+S` in NIRU Theme Selector, `S` (or the **Theme picture** button) in NIRU Wallpaper, or from a terminal:
+
+```sh
+nirux wallpapers style signature   # downloads the Signature pack (about 47 MiB) the first time
+nirux wallpapers style art
+nirux wallpapers style toggle
+niructl wallpaper style toggle     # the same switch, once the pack is installed
+```
+
+The choice is `theme_style` in `[wallpaper]`. A theme without a Signature picture (your own themes) keeps its artwork. The login screen follows the same style.
+
 ### NIRU Wallpaper
 
 Open **Wallpaper** in NIRU Launcher, or run `niruwallpaper`. It shows previews of the theme pictures (under **Official themes**) and your own (under **My wallpapers**), a map of the screens when you have more than one, the scale preview and the rotation interval. Choose, then **Apply**. NIRU Wallpaper is beta.
@@ -185,6 +204,7 @@ Open **Wallpaper** in NIRU Launcher, or run `niruwallpaper`. It shows previews o
 | `Enter` | Apply, or press the focused control |
 | `Ctrl+D` | Discard the staged change |
 | `A` | Back to the picture grid |
+| `S` | Theme pictures: Art or NIRUX Signature (also the **Theme picture** button) |
 | `F1` | Help |
 | `Esc` or `q` | Close |
 
@@ -207,6 +227,7 @@ niructl wallpaper follow-theme off
 niructl wallpaper mode random            # random, fixed or single
 niructl wallpaper rotation 30            # minutes between changes; 0 turns rotation off
 niructl wallpaper scale fit              # fill, fit, stretch or center
+niructl wallpaper style toggle           # Art or Signature theme pictures
 niructl wallpaper apply                  # set the wallpaper again now
 ```
 
@@ -239,6 +260,7 @@ Screens are named by their RandR output name (`eDP-1`, `HDMI-1`), so a cable mov
 | `shuffle_on_start` | `true` | A fresh picture at login, even in `fixed` mode |
 | `follow_theme` | `true` | Use the theme's picture; a `single` file is never overridden |
 | `theme_dir` | `"~/Pictures/Wallpapers/NIRU"` | Where the theme pictures are |
+| `theme_style` | `"art"` | `art`: each theme's artwork; `signature`: the NIRUX Signature photo in the theme's colours |
 
 While `follow_theme` is on and the mode is not `single`, a screen without its own picture shows the theme's picture. To rotate through your own pictures, turn follow-theme off and use `random` mode.
 
@@ -246,8 +268,9 @@ While `follow_theme` is on and the mode is not `single`, a screen without its ow
 
 ```sh
 nirux wallpapers status              # how many theme and extra pictures are installed
-nirux wallpapers download themes     # the nine optional theme wallpapers (4K and 8K)
+nirux wallpapers download themes     # the nine optional theme wallpapers (4K and 8K) and Signature
 nirux wallpapers download theme nord # one theme only
+nirux wallpapers download signature  # NIRUX Signature, ten themes, 4K (about 47 MiB)
 nirux wallpapers download extras     # Carl Larsson and Erik Satie colour variants
 nirux wallpapers download carl-larsson
 nirux wallpapers download satie

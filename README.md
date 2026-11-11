@@ -100,7 +100,7 @@ Themes, artwork and small shared pieces.
 
 | Repository | What it is | Status |
 |---|---|---|
-| [nirux-wallpapers](https://github.com/nirucon/nirux-wallpapers) | Optional 4K/8K wallpapers for the built-in themes (release assets) | beta |
+| [nirux-wallpapers](https://github.com/nirucon/nirux-wallpapers) | Optional 4K/8K wallpapers for the built-in themes and the NIRUX Signature set (release assets) | beta |
 | [nirux-theme-carl-larsson-blue](https://github.com/nirucon/nirux-theme-carl-larsson-blue) | Theme pack: Carl Larsson Blue | beta |
 | [nirux-theme-carl-larsson-green](https://github.com/nirucon/nirux-theme-carl-larsson-green) | Theme pack: Carl Larsson Green | beta |
 | [nirux-theme-carl-larsson-jul](https://github.com/nirucon/nirux-theme-carl-larsson-jul) | Theme pack: Carl Larsson Jul (Christmas) | beta |
@@ -179,7 +179,9 @@ Themes, artwork and small shared pieces.
   `~/.local/state/niru/clipboard.json`, capped at 200 entries, filtered for
   obvious secrets and never uploaded.
 - **Themes and wallpaper:** ten built-in themes, user theme packs, wallpaper
-  scale, rotation, output selection and follow-theme behaviour.
+  scale, rotation, output selection and follow-theme behaviour. Each theme
+  has its own artwork or, with NIRUX Signature, the default Noir photograph
+  (photo by Nicklas Rudolfsson, 2025) in the theme's own colours.
 - **NIRU Display:** stable screen numbers, EDID identity, snapping, mirror
   groups, profiles and safe preview transactions.
 - **Notifications, lock and idle:** native notifications with DND and history,
@@ -268,6 +270,7 @@ or without NIRUX. Details in [Optional extras](docs/EXTRAS.md).
 ```sh
 nirux wallpapers download themes   # the nine optional theme wallpapers (4K/8K)
 nirux wallpapers download extras   # Carl Larsson and Erik Satie colour variants
+nirux wallpapers style signature   # one photo for every theme, in its colours
 nirux wallpapers status
 ```
 
