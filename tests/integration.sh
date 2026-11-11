@@ -884,6 +884,7 @@ un=$TEST/uninstall-root
   mkdir -p "$ROOT/etc/sudoers.d" "$ROOT/etc/polkit-1/rules.d" "$ROOT/etc/greetd" "$ROOT/etc/X11" \
     "$ROOT/etc/systemd/system" "$ROOT/usr/local/bin" "$ROOT/var/service"
   printf '# NIRUX owner: %s\nniru ALL=(root) NOPASSWD: /usr/libexec/nirux-wifi\n' "$PREFIX" > "$ROOT/etc/sudoers.d/49-nirux-wifi"
+  printf '# NIRUX owner: %s\nniru ALL=(root) NOPASSWD: /usr/libexec/nirux-wifi\n' "$PREFIX" > "$ROOT/etc/sudoers.d/zz-nirux-wifi"
   printf '# NIRUX owner: %s\nniru ALL=(root) NOPASSWD: /old/unsafe login-wallpaper sync\n' "$PREFIX" > "$ROOT/etc/sudoers.d/49-nirux-login-wallpaper.nirux-backup"
   printf '# NIRUX owner: %s\nniru ALL=(root) NOPASSWD: /usr/bin/install x\n' "$PREFIX" > "$ROOT/etc/sudoers.d/49-nirux-login-wallpaper"
   printf 'admin rule\n' > "$ROOT/etc/sudoers.d/00_admin"
@@ -912,7 +913,7 @@ un=$TEST/uninstall-root
   printf '/lib/systemd/system/greetd.service\n' > "$ROOT/etc/nirulogin-previous-display-manager"
   ln -s /etc/sv/greetd "$ROOT/var/service/greetd"
   remove_greeters > "$TEST/uninstall-greeters.log"
-  for f in sudoers.d/49-nirux-wifi sudoers.d/49-nirux-login-wallpaper sudoers.d/49-nirux-login-wallpaper.nirux-backup \
+  for f in sudoers.d/49-nirux-wifi sudoers.d/zz-nirux-wifi sudoers.d/49-nirux-login-wallpaper sudoers.d/49-nirux-login-wallpaper.nirux-backup \
     polkit-1/rules.d/49-nirux-power.rules polkit-1/rules.d/49-nirulogin-power.rules greetd/config.toml \
     X11/Xwrapper.config X11/Xwrapper.config.before-nirulogin systemd/system/display-manager.service nirulogin-previous-display-manager; do
     if [ -e "$ROOT/etc/$f" ] || [ -L "$ROOT/etc/$f" ]; then fail "uninstall left /etc/$f"; fi

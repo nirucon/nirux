@@ -4901,16 +4901,17 @@ install_wifi_rule() {
   {
     say "# NIRUX owner: $PREFIX"
     say '# Only the root-owned request validator is authorized, never raw wpa_cli.'
-    say 'Cmnd_Alias NIRUX_WIFI_CMDS = /usr/libexec/nirux-wifi'
-    # Holds even when a broader rule sorts later (sudo uses the last match).
-    say 'Defaults!NIRUX_WIFI_CMDS !authenticate'
-    say "$rule_user ALL=(root) NOPASSWD: NIRUX_WIFI_CMDS"
+    say "$rule_user ALL=(root) NOPASSWD: /usr/libexec/nirux-wifi"
   } > "$WORK/wifi-sudoers"
   if command -v visudo >/dev/null 2>&1; then
     visudo_out=$(visudo -cf "$WORK/wifi-sudoers" 2>&1) ||
       die "generated Wi-Fi sudoers rule is invalid; nothing was installed: $visudo_out"
   fi
-  wifi_sudoers=$ROOT/etc/sudoers.d/49-nirux-wifi
+  # sudo and sudo-rs use the last matching rule, and files are read in name
+  # order: a broad rule in a later file (Void's "wheel") would ask for a
+  # password again. The zz- name sorts after those; 49- was the old name.
+  remove_system "$ROOT/etc/sudoers.d/49-nirux-wifi"
+  wifi_sudoers=$ROOT/etc/sudoers.d/zz-nirux-wifi
   if [ -f "$wifi_sudoers" ] && [ "$(as_root cat "$wifi_sudoers" 2>/dev/null)" = "$(cat "$WORK/wifi-sudoers")" ]; then
     :
   else
@@ -4959,18 +4960,15 @@ install_checkup() {
   {
     say "# NIRUX owner: $PREFIX"
     say '# Only the root-owned checkup helper, with fixed arguments.'
-    say "Cmnd_Alias NIRUX_CHECKUP_CMDS = $CHECKUP_HELPER run, $CHECKUP_HELPER run --dry-run"
-    # sudo applies the last matching rule, and a broader rule in a file that
-    # sorts after this one (Void's wheel file) would ask for a password
-    # again. A Defaults entry holds whatever the order.
-    say 'Defaults!NIRUX_CHECKUP_CMDS !authenticate'
-    say "$rule_user ALL=(root) NOPASSWD: NIRUX_CHECKUP_CMDS"
+    say "$rule_user ALL=(root) NOPASSWD: $CHECKUP_HELPER run, $CHECKUP_HELPER run --dry-run"
   } > "$WORK/checkup-sudoers"
   if command -v visudo >/dev/null 2>&1; then
     visudo_out=$(visudo -cf "$WORK/checkup-sudoers" 2>&1) ||
       die "generated checkup sudoers rule is invalid; nothing was installed: $visudo_out"
   fi
-  checkup_sudoers=$ROOT/etc/sudoers.d/49-nirux-checkup
+  # Sorts after broad rules such as Void's "wheel" file (see install_wifi_rule).
+  remove_system "$ROOT/etc/sudoers.d/49-nirux-checkup"
+  checkup_sudoers=$ROOT/etc/sudoers.d/zz-nirux-checkup
   if ! { [ -f "$checkup_sudoers" ] && [ "$(as_root cat "$checkup_sudoers" 2>/dev/null)" = "$(cat "$WORK/checkup-sudoers")" ]; }; then
     write_system "$checkup_sudoers" "$WORK/checkup-sudoers"
   fi
@@ -5030,6 +5028,7 @@ remove_checkup() {
   remove_system "$ROOT/etc/systemd/system/nirux-checkup.timer"
   remove_system "$ROOT/etc/systemd/system/nirux-checkup.service"
   remove_system "$ROOT/etc/sudoers.d/49-nirux-checkup"
+  remove_system "$ROOT/etc/sudoers.d/zz-nirux-checkup"
   remove_system "$ROOT$CHECKUP_HELPER"
 }
 
@@ -5398,6 +5397,7 @@ remove_greeters() {
   remove_system "$ROOT/etc/polkit-1/rules.d/49-nirux-power.rules"
   remove_system "$ROOT/etc/sudoers.d/49-nirux-login-wallpaper"
   remove_system "$ROOT/etc/sudoers.d/49-nirux-wifi"
+  remove_system "$ROOT/etc/sudoers.d/zz-nirux-wifi"
   remove_system "$ROOT/usr/libexec/nirux-wifi"
   remove_checkup
   remove_system "$ROOT/etc/sddm.conf.d/50-nirux.conf"

@@ -5,9 +5,9 @@ Earlier releases are described in their release notes and commit messages.
 ## 0.12.256 (2026-11-11)
 
 - **`nirux checkup` and the Wi-Fi helper no longer ask for a password on
-  Void.** sudo uses the last matching rule, and Void's wheel rule sorts after
-  the NIRUX rules; a `Defaults` entry for the fixed commands now holds
-  whatever the order.
+  Void.** sudo uses the last matching rule, and Void's wheel rule sorted
+  after the NIRUX rules. The rules are now `zz-nirux-checkup` and
+  `zz-nirux-wifi` in `/etc/sudoers.d`, which sort last (sudo and sudo-rs).
 
 ## 0.12.255 (2026-11-11)
 
