@@ -1240,6 +1240,13 @@ install_wallpapers >/dev/null
   fail 'an update removed a downloaded theme wallpaper'
 grep -q 'nirux-wallpaper-satie-4k.png' "$STATE/wallpapers.sha256" ||
   fail 'an update dropped a downloaded theme from the manifest'
+# The NIRUX Signature pictures (`nirux wallpapers download signature`) too.
+printf '\211PNG\r\n\032\nsignature\n' > "$wallpaper_dir/nirux-wallpaper-signature-nord-4k.png"
+printf '%s  %s\n' "$(sha256sum "$wallpaper_dir/nirux-wallpaper-signature-nord-4k.png" | cut -d ' ' -f1)" \
+  nirux-wallpaper-signature-nord-4k.png >> "$STATE/wallpapers.sha256"
+install_wallpapers >/dev/null
+[ -e "$wallpaper_dir/nirux-wallpaper-signature-nord-4k.png" ] ||
+  fail 'an update removed a downloaded Signature wallpaper'
 # The optional Carl Larsson and Erik Satie colour packs must survive a normal
 # release update that only ships the default theme.
 for extra_pack in carl-larsson satie; do

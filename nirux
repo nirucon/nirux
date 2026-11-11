@@ -2,7 +2,7 @@
 # NIRUX: install a complete X11 desktop, or maintain an existing installation.
 set -eu
 
-VERSION=0.12.261
+VERSION=0.12.262
 PREFIX=${NIRUX_PREFIX:-$HOME/.local}
 BIN=$PREFIX/bin
 STATE=$PREFIX/share/nirux
@@ -1372,6 +1372,8 @@ install_wallpapers() {
           the-norns-[48]k.png|winter-nights-[48]k.png) keep=1 ;;
           carl-larsson-red-[48]k.png|carl-larsson-blue-[48]k.png|carl-larsson-green-[48]k.png|carl-larsson-noir-[48]k.png) keep=1 ;;
           satie-red-[48]k.png|satie-blue-[48]k.png|satie-green-[48]k.png|satie-noir-[48]k.png) keep=1 ;;
+          # NIRUX Signature (`nirux wallpapers download signature`).
+          signature-*-4k.png) keep=1 ;;
         esac
         if [ "$keep" = 1 ]; then
           printf '%s  %s\n' "$old_hash" "$name" >> "$next"

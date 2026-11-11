@@ -2,6 +2,14 @@
 
 Earlier releases are described in their release notes and commit messages.
 
+## 0.12.262 (2026-11-11)
+
+- **An update no longer removes the NIRUX Signature pictures.** The update
+  that installs the release's own Noir picture removed other NIRUX pictures
+  it did not recognise, and the Signature set (0.12.258) was missing from the
+  list it keeps. Run `nirux wallpapers download signature` once if your
+  Signature pictures are gone.
+
 ## 0.12.261 (2026-11-11)
 
 - **The bar keeps your settings with the Signature wallpaper style (NIRUBAR
