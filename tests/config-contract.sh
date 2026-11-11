@@ -63,4 +63,14 @@ printf '%s\n' '[[scratchpad.slot]]' 'number = 2' 'command = ["btop"]' > "$TEST/s
 check scratchpad-slot-class bad "$TEST/scratch-slot-class.toml"
 printf '%s\n' '[[rules]]' 'workspace = 1' > "$TEST/rule.toml"
 check rule bad "$TEST/rule.toml"
+printf '%s\n' '[wallpaper]' 'enabled = true' 'theme_style = "signature"' > "$TEST/style.toml"
+check wallpaper-style ok "$TEST/style.toml"
+printf '%s\n' '[wallpaper]' 'theme_style = "photo"' > "$TEST/style-bad.toml"
+check wallpaper-style-value bad "$TEST/style-bad.toml"
+# Every key NIRUWM knows, as it writes them: a key the bar does not know
+# makes the bar start without the user's settings.
+printf '' > "$config"
+XDG_CONFIG_HOME=$TEST/home/.config HOME=$TEST/home "$WM" --dump-config > "$TEST/dump.toml" ||
+  fail 'niruwm --dump-config failed'
+check every-niruwm-key ok "$TEST/dump.toml"
 printf 'PASS: shared configuration fixtures agree in NIRUWM and NIRUBAR\n'

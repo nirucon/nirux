@@ -2,6 +2,21 @@
 
 Earlier releases are described in their release notes and commit messages.
 
+## 0.12.261 (2026-11-11)
+
+- **The bar keeps your settings with the Signature wallpaper style (NIRUBAR
+  0.23.2, NIRUWM 0.24.4).** NIRUBAR did not know `[wallpaper] theme_style`,
+  which `nirux wallpapers style signature` writes. It refused every reload,
+  and from 0.12.260 a restarted bar fell back to the default modules. It now
+  accepts the key, and when the bar itself has to fall back it says so in a
+  notification. `tests/config-contract.sh` checks every key NIRUWM writes
+  against NIRUBAR.
+- **New wallpapers for seven themes, same colours, new style:** Nord, Forest
+  Vigil, Blood of Urðr, Root and Stone, Blue Horizon, The Norns and Winter
+  Nights (4K and 8K, nirux-wallpapers v1.2.0). `nirux update` replaces the
+  old pictures of the themes you have; a picture you changed yourself stays.
+  Satie, Carl Larsson, the extras and Signature are unchanged.
+
 ## 0.12.260 (2026-11-11)
 
 (0.12.259 did not publish: NIRUWM had to bundle the new NIRUBAR.)

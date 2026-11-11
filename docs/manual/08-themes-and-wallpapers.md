@@ -278,7 +278,7 @@ nirux wallpapers download all
 nirux wallpapers remove              # remove them again (Noir and your own files stay)
 ```
 
-The theme set is about 284 MiB and the two extra packs about 254 MiB together. Downloads are verified against pinned sizes and SHA-256 checksums, and pictures already installed are reused. Run from a session, the active theme's picture is refreshed when the download finishes; no logout is needed. The pictures go to `Wallpapers/NIRU` in your XDG Pictures folder. Opening NIRU Wallpaper never downloads anything.
+The theme set is about 375 MiB and the two extra packs about 254 MiB together. Downloads are verified against pinned sizes and SHA-256 checksums, and pictures already installed are reused. When a release brings a new version of a theme picture you already have, `nirux update` downloads it and replaces the old one; a picture you changed yourself is kept. Run from a session, the active theme's picture is refreshed when the download finishes; no logout is needed. The pictures go to `Wallpapers/NIRU` in your XDG Pictures folder. Opening NIRU Wallpaper never downloads anything.
 
 ## The login screen picture
 

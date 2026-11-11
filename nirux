@@ -2,7 +2,7 @@
 # NIRUX: install a complete X11 desktop, or maintain an existing installation.
 set -eu
 
-VERSION=0.12.260
+VERSION=0.12.261
 PREFIX=${NIRUX_PREFIX:-$HOME/.local}
 BIN=$PREFIX/bin
 STATE=$PREFIX/share/nirux
@@ -4079,6 +4079,7 @@ apply_target_release() {
     wallpapers_policy_write
   fi
   wallpapers_install_bundle
+  if [ "$operation" = update ]; then wallpapers_refresh_installed || :; fi
   icons_apply
   install_terminal
   install_sounds
@@ -4544,22 +4545,22 @@ login_wallpaper() {
 # release assets in nirucon/nirux-wallpapers. A theme without its image paints
 # its own background colour, so nothing looks broken while a pack is absent.
 WALLPAPER_RELEASE=v1.0.0
-WALLPAPER_BASE_URL=https://github.com/nirucon/nirux-wallpapers/releases/download/$WALLPAPER_RELEASE
 WALLPAPER_OPTIONAL_THEMES='nord satie carl-larsson forest-vigil blood-of-urdr root-and-stone blue-horizon the-norns winter-nights'
 WALLPAPER_THEMES='noir nord satie carl-larsson forest-vigil blood-of-urdr root-and-stone blue-horizon the-norns winter-nights'
-# Archive bytes and SHA-256 are pinned here. The optional assets live outside
+# Archive bytes and SHA-256 are pinned here, and the wallpaper release when it
+# is not WALLPAPER_RELEASE: v1.2.0 restyled seven themes in the same colours. The optional assets live outside
 # the NIRUX release so the core desktop update stays small and does not fetch
 # hundreds of megabytes on machines that already have their wallpapers.
 WALLPAPER_THEME_ASSETS='
-nirux-wallpaper-nord.tar.xz 34724648 4e9336cf8a6fd4e32570b16decc36ce1a30ee54fb3413cccbd1a9c9a80cafd61
+nirux-wallpaper-nord.tar.xz 47263024 ce11b7b52919451990211ca74cf868b023fba436cb323d3f996e55b34290d307 v1.2.0
 nirux-wallpaper-satie.tar.xz 37974168 d8122198e69e8d2dc9ec69f56701fdcc19f9f05876c60d3bf0106ab9f2c50118
 nirux-wallpaper-carl-larsson.tar.xz 38690916 1d6415e8c296ef4bfb776422fa0bf65eeda9d1fd5f46eb4df17ffd30fbc013a2
-nirux-wallpaper-forest-vigil.tar.xz 34347800 73048d2df310e0236a45de33f21d49199ec478768acaf52d2aafbfa3b6b78acd
-nirux-wallpaper-blood-of-urdr.tar.xz 27205920 8d19192f5dbbbc58478436b9abc29e725e5a9f374bd0a804c9a5824429907979
-nirux-wallpaper-root-and-stone.tar.xz 35445828 d4c693ba0550c47bc6bb4148cee78669fedff1ce70e3c9a6449b7d3695449dc9
-nirux-wallpaper-blue-horizon.tar.xz 26247548 4c69e15b2dafece5337b91d73cf2c9a67320ef875b6c7955220bfaabbd444cd7
-nirux-wallpaper-the-norns.tar.xz 28489296 b34ebfbd6aa228020880abe28102010dab7dfbdaf0cc2e96846e680e3020bfe8
-nirux-wallpaper-winter-nights.tar.xz 34407324 94cf9dff3ceebeef859a3a9d8b8e736406cb75ff69f14ce6e175fcea410ac4d6
+nirux-wallpaper-forest-vigil.tar.xz 36412768 6e20c50cd1806c139c4e93a0abd725bf3143ef1fe2b0a34bd9baa64cb6998bf4 v1.2.0
+nirux-wallpaper-blood-of-urdr.tar.xz 57054300 93440cc8ef8d0236d240c829b22d36daf116453cf569f3f83a5018c769dbea7a v1.2.0
+nirux-wallpaper-root-and-stone.tar.xz 46011164 0789d03ba203adc9b31490a478955f6759c0d7e27a1eec064b052a9caebe3914 v1.2.0
+nirux-wallpaper-blue-horizon.tar.xz 43933788 0c0b8f97e2385f7d1cee375f2ac78792e8d61bf32074def9e736f717737c7392 v1.2.0
+nirux-wallpaper-the-norns.tar.xz 38644648 9d80195428faa54ab7ed9922caae596664439083981280e2904891106a4b7537 v1.2.0
+nirux-wallpaper-winter-nights.tar.xz 27967420 ed60d052b6ac826a1531b977324e931cc469e961113cf9f5c3b3c4f0ac6a0b69 v1.2.0
 '
 WALLPAPER_EXTRA_ASSETS='
 nirux-wallpaper-carl-larsson-extras.tar.xz 182739720 c2225a723d74963ee03a7861cbadceec0221cbf4a83764ed48e596d9c09a6feb
@@ -4571,6 +4572,67 @@ WALLPAPER_EXTRA_COLOURS='red blue green noir'
 # which stay where they are, so only this archive is new to download.
 WALLPAPER_SIGNATURE_RELEASE=v1.1.0
 WALLPAPER_SIGNATURE_ASSET='nirux-wallpaper-signature.tar.xz 48883084 ead39530a7f942498e532ede999f77efb804c878ccc6d9425875709ed3ed6d8e'
+
+# The current theme pictures, for themes whose pictures changed after they
+# were first published. A NIRUX-installed picture with another checksum is an
+# older version and is replaced on update; a picture changed by the user is kept.
+WALLPAPER_THEME_PNGS='
+nirux-wallpaper-blood-of-urdr-4k.png c14f24d968cd7ef2a95eedda45ddd48089f5583505fc85779146e69fc1e734b6
+nirux-wallpaper-blood-of-urdr-8k.png 6a48ba4bebfe279a44135ecb61f1b87f67676ff75605acb2e79186c98da4de4b
+nirux-wallpaper-blue-horizon-4k.png 04ba33f8b5fbd949408cfc9eabb046daf7d2a57aa9bc86f028a6eb34487e6d46
+nirux-wallpaper-blue-horizon-8k.png 352ef9ae5787f888985e39977edff96e83d71cefc4f2c69eef605f7c153f27ec
+nirux-wallpaper-forest-vigil-4k.png e74ddaf2b2bbe668fc7713b08ccea526bcb34d8dfa9e39ef45e4aad60377651b
+nirux-wallpaper-forest-vigil-8k.png 290f0913568bf2f8642a9d4f33084ae2e97287de380bb04d97ceb47383912ba0
+nirux-wallpaper-nord-4k.png 38638b9a782f789ad6c29f754b472cd9c06e9fb99b3c4fb68a912406cf232e19
+nirux-wallpaper-nord-8k.png a78f8a97c0dc8f59ec4de8196ce4c3fc5553f2b6b85f5574bf4c512ea5e7cef2
+nirux-wallpaper-root-and-stone-4k.png 55511dec2a3fead40925c608dc273b123e40bbd6bc3fa6182ca2a2e868b03676
+nirux-wallpaper-root-and-stone-8k.png b790334ed7f611817ca224925f810fd5ded04f407d3f33e92e4b206cdd4fb6fa
+nirux-wallpaper-the-norns-4k.png e0efb519362314c453a9bfeb12cb2084000c6a1d0c130af45cc5bc741ca58e63
+nirux-wallpaper-the-norns-8k.png 5c61fad4970aa97b820c3d4736b991722a863da25f02b576ed0444e8c4eebd49
+nirux-wallpaper-winter-nights-4k.png 6d0cc2d5c77ec18035531a29f6dd1f50ce81018cc84240261b98c14717c1b9f3
+nirux-wallpaper-winter-nights-8k.png d65b88d94bedc677f27fcb9616314378e8393f8c6ab9f8e2cd8dd07a95320bb7
+'
+
+wallpaper_asset_release() {
+  printf '%s\n' "$WALLPAPER_THEME_ASSETS" | awk -v n="$1" -v d="$WALLPAPER_RELEASE" '$1 == n {print ($4 != "" ? $4 : d); found=1} END {if (!found) print d}'
+}
+
+# True when a theme's pictures are NIRUX's own but an older version.
+wallpaper_theme_outdated() {
+  wp_od_dir=$(wallpaper_destination)
+  wp_od_manifest=$(wallpaper_manifest)
+  for wp_od_size in 4k 8k; do
+    wp_od_name=nirux-wallpaper-$1-$wp_od_size.png
+    wp_od_want=$(printf '%s\n' "$WALLPAPER_THEME_PNGS" | awk -v n="$wp_od_name" '$1 == n {print $2; exit}')
+    [ -n "$wp_od_want" ] || continue
+    [ -f "$wp_od_dir/$wp_od_name" ] || continue
+    wp_od_cur=$(sha256sum "$wp_od_dir/$wp_od_name" | cut -d ' ' -f1)
+    [ "$wp_od_cur" != "$wp_od_want" ] || continue
+    wp_od_rec=$(awk -v n="$wp_od_name" '$2 == n {print $1; exit}' "$wp_od_manifest" 2>/dev/null)
+    [ "$wp_od_cur" = "$wp_od_rec" ] && return 0
+  done
+  return 1
+}
+
+# On update: new versions of the theme pictures you already have.
+wallpapers_refresh_installed() {
+  wp_rf_themes=
+  for wp_rf in $WALLPAPER_OPTIONAL_THEMES; do
+    if wallpaper_theme_installed "$wp_rf" && wallpaper_theme_outdated "$wp_rf"; then
+      wp_rf_themes="$wp_rf_themes $wp_rf"
+    fi
+  done
+  [ -n "$wp_rf_themes" ] || return 0
+  say "New versions of theme wallpapers:$wp_rf_themes"
+  wp_rf_work=$(mktemp -d "${TMPDIR:-/tmp}/nirux-wallpapers.XXXXXX") || return 0
+  for wp_rf in $wp_rf_themes; do
+    if ! (WP_WORK=$wp_rf_work WP_FORCE=1 wallpaper_download_theme "$wp_rf"); then
+      say "The new $wp_rf wallpapers could not be downloaded; the current ones stay. Later: nirux wallpapers download"
+    fi
+  done
+  rm -rf "$wp_rf_work"
+  refresh_running_theme
+}
 
 wallpaper_asset_meta() {
   printf '%s\n%s\n%s\n' "$WALLPAPER_THEME_ASSETS" "$WALLPAPER_EXTRA_ASSETS" "$WALLPAPER_SIGNATURE_ASSET" |
@@ -4708,7 +4770,7 @@ wallpaper_fetch_asset() {
   wp_sha=${wp_meta#* }
   wp_file=${WP_WORK:?no work directory}/$wp_asset
   rm -f "$wp_file"
-  wp_base=$WALLPAPER_BASE_URL
+  wp_base=https://github.com/nirucon/nirux-wallpapers/releases/download/$(wallpaper_asset_release "$wp_asset")
   case "$wp_asset" in
     nirux-wallpaper-signature.tar.xz)
       wp_base=https://github.com/nirucon/nirux-wallpapers/releases/download/$WALLPAPER_SIGNATURE_RELEASE ;;
@@ -4786,7 +4848,7 @@ wallpaper_download_theme() {
     *" $wp_theme "*) ;;
     *) die "unknown optional theme wallpaper: $wp_theme" ;;
   esac
-  if wallpaper_theme_installed "$wp_theme"; then
+  if [ "${WP_FORCE:-0}" != 1 ] && wallpaper_theme_installed "$wp_theme" && ! wallpaper_theme_outdated "$wp_theme"; then
     say "$wp_theme wallpapers are already installed."
     return 0
   fi
@@ -4808,7 +4870,7 @@ wallpaper_download_theme() {
 wallpapers_download_themes() {
   wp_missing=0
   for wp_theme in $WALLPAPER_OPTIONAL_THEMES; do
-    if ! wallpaper_theme_installed "$wp_theme"; then
+    if ! wallpaper_theme_installed "$wp_theme" || wallpaper_theme_outdated "$wp_theme"; then
       wp_missing=1
       wallpaper_download_theme "$wp_theme" || return 1
     fi
@@ -6499,6 +6561,7 @@ install_or_update() {
   select_wallpaper_bundle
   wallpapers_policy=${wallpaper_decision:-}
   wallpapers_install_bundle
+  if [ "$operation" = update ]; then wallpapers_refresh_installed || :; fi
   icons_apply
   install_terminal
   prepare_pam

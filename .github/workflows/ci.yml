@@ -15,6 +15,7 @@ jobs:
       - run: sh tests/sync.sh
       - run: sh tests/manual.sh
       - run: sh tests/checkup.sh
+      - run: sh tests/wallpaper-ownership.sh
       - run: sh tests/session-restart.sh
       - run: python3 tests/terminal-theme.py
   distros:
