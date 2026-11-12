@@ -304,6 +304,26 @@ niructl powerprofile next           # cycle
 
 The bar's `powerprofile` module shows the active profile; right-click selects the next one.
 
+## Battery charge limit
+
+A laptop that is mostly plugged in lasts longer when the battery is not kept at 100 %. NIRUX stops charging at 80 % by default:
+
+```toml
+[battery]
+charge_limit = 80        # 50 to 100; 100 means no limit
+```
+
+```sh
+niructl battery status   # level, the limit, and whether this laptop supports one
+niructl battery full     # charge to 100 % once, until the next login
+niructl battery limit    # back to the limit now
+niructl battery apply    # set the limit from config.toml (done at every login)
+```
+
+Quick Settings has the same switch: *Charge to 100 % once*, or *Back to the 80 % charge limit*.
+
+The limit needs firmware support. ThinkPad, Framework and many Dell, ASUS and Lenovo laptops have it; many HP models do not. `niructl battery status` and `nirux doctor` say which it is. NIRUX installs a udev rule (`/etc/udev/rules.d/90-nirux-battery.rules`) so the limit can be set without root; after the first installation, log in again.
+
 ## See also
 
 - [04-bar-and-quick-settings.md](04-bar-and-quick-settings.md)

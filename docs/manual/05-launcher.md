@@ -71,6 +71,34 @@ On Swedish layouts type `/` as `Shift+7`.
 
 `Super+W`, `Alt+Tab` or `` Super+` `` opens the window switcher. Type to filter the open windows, then `Enter` switches to the selected one.
 
+## Jump to a window
+
+`Ctrl+Alt+W` puts a short label on every visible window on every screen. Type a label and that window gets the focus, and the pointer moves there. `Escape`, a click or a key that matches no label closes the labels.
+
+Labels are letters, home row first (`a`, `s`, `d`, …), or numbers:
+
+```toml
+# ~/.config/nirulauncher/config.toml
+[hints]
+style = "letters"        # or "numbers"
+```
+
+With more windows than one character can name, every label gets two characters, so a window is chosen the moment its label is complete. From a terminal: `nirulauncher --hints`.
+
+## Quick note
+
+`Super+Shift+N` opens one line. Type the note and press `Enter`: it is added to the inbox, a Markdown file that NIRUNOTE (or any editor) opens, as `- 2026-11-12 09:41 your note`.
+
+Below the line, the rows choose where the note also goes. The first row keeps it local. When NIRUSHARE is installed, there is a row for each Discord webhook and each trusted device. Pick one with `↑` and `↓` before `Enter`.
+
+```toml
+# ~/.config/nirulauncher/config.toml
+[note]
+file = "~/Notes/inbox.md"
+```
+
+From a terminal: `nirulauncher --note`.
+
 ## NIRU Actions
 
 `Super+A` opens the NIRU Actions catalogue: practical system actions grouped as System, Display, Power, Appearance, Wallpaper, Wi-Fi, Workspaces, Windows and NIRUX Settings. The same entries are in the unified view.
@@ -255,7 +283,7 @@ The view lists the chapters and headings of the installed manual and searches ac
 --quick  --clipboard  --keys  --emoji  --colors  --files  --settings
 --themes  --displays  --power  --timing  --input
 --wifi  --wired  --bluetooth  --tailscale  --sound  --microphone
---clip  --share  --share-pair  --health  --agent
+--clip  --share  --share-pair  --health  --agent  --note  --hints
 ```
 
 Non-interactive helpers for scripts:

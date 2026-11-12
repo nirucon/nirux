@@ -74,18 +74,18 @@ These are not generated from an example file. The chapters describe them.
 
 <!-- generated: config (tools/manual-gen.sh; do not edit by hand) -->
 
-The example configuration files of NIRUX 0.12.263 and its components, with every
+The example configuration files of NIRUX 0.12.264 and its components, with every
 key they set or show. A value marked *commented example* is off by default:
 remove the `#` to use it. The full annotated file follows each table.
 
 | File | Read by | Example from |
 |---|---|---|
-| [`~/.config/niruwm/config.toml`](#configniruwmconfigtoml) | niruwm, nirubar, niruidle, niructl | nirux 0.12.263 `config.example.toml` |
-| [`~/.config/niruwm/appearance.toml`](#configniruwmappearancetoml) | the whole suite | nirux 0.12.263 `appearance.example.toml` |
-| [`~/.config/nirux/sounds.toml`](#configniruxsoundstoml) | nirux, nirunotify | nirux 0.12.263 `sounds.example.toml` |
-| [`~/.config/niruwm/displays.toml`](#configniruwmdisplaystoml) | niruwm, niructl, nirudisplay | nirux 0.12.263 `displays.example.toml` |
-| [`~/.config/nirubar/config.toml`](#confignirubarconfigtoml) | nirubar | nirubar 0.24.0 `weather.example.toml` |
-| [`~/.config/nirulauncher/config.toml`](#confignirulauncherconfigtoml) | nirulauncher | nirulauncher 0.12.1 `config.example.toml` |
+| [`~/.config/niruwm/config.toml`](#configniruwmconfigtoml) | niruwm, nirubar, niruidle, niructl | nirux 0.12.264 `config.example.toml` |
+| [`~/.config/niruwm/appearance.toml`](#configniruwmappearancetoml) | the whole suite | nirux 0.12.264 `appearance.example.toml` |
+| [`~/.config/nirux/sounds.toml`](#configniruxsoundstoml) | nirux, nirunotify | nirux 0.12.264 `sounds.example.toml` |
+| [`~/.config/niruwm/displays.toml`](#configniruwmdisplaystoml) | niruwm, niructl, nirudisplay | nirux 0.12.264 `displays.example.toml` |
+| [`~/.config/nirubar/config.toml`](#confignirubarconfigtoml) | nirubar | nirubar 0.24.1 `weather.example.toml` |
+| [`~/.config/nirulauncher/config.toml`](#confignirulauncherconfigtoml) | nirulauncher | nirulauncher 0.13.0 `config.example.toml` |
 | [`~/.config/nirunotify/config.toml`](#confignirunotifyconfigtoml) | nirunotify | nirunotify 0.5.0 `config.example.toml` |
 | [`~/.config/nirufetch/config.toml`](#confignirufetchconfigtoml) | nirufetch | nirufetch 0.3.0 `config.example.toml` |
 | [`~/.config/niruui/lock.toml`](#configniruuilocktoml) | nirulock | nirulock 0.25.0 `config.example.toml` |
@@ -140,15 +140,16 @@ remove the `#` to use it. The full annotated file follows each table.
 | `[recipes.apps]` | `workspace` | `2` (commented example) |  |
 | `[recipes.apps]` | `class` | `"helium"` (commented example) |  |
 | `[recipes.apps]` | `command` | `["helium"]` (commented example) |  |
-| `[nightlight]` | `latitude` | `59.33` | Manual night light, applied by niructl nightlight on / Super+N. |
+| `[nightlight]` | `latitude` | `59.33` | Night light: warm, reddish light in the evening. |
 | `[nightlight]` | `longitude` | `18.07` |  |
-| `[nightlight]` | `temperature` | `3400` |  |
-| `[nightlight]` | `mode` | `"manual"` | manual: Super+N / niructl nightlight on\|off fixed:  on/off local times every day solar:  gammastep computes sunrise/sunset from the coord... |
+| `[nightlight]` | `temperature` | `2700` |  |
+| `[nightlight]` | `mode` | `"solar"` | manual: Super+N / niructl nightlight on\|off fixed:  on/off local times every day solar:  gammastep computes sunrise/sunset from the coord... |
 | `[nightlight]` | `on` | `"20:00"` |  |
 | `[nightlight]` | `off` | `"07:00"` |  |
 | `[nightlight]` | `day_temperature` | `6500` |  |
 | `[brightness]` | `device` | `""` | Empty uses brightnessctl's default device; step is the up/down percentage. |
 | `[brightness]` | `step` | `5` |  |
+| `[battery]` | `charge_limit` | `80` | Stop charging at this percentage, which is kinder to the battery when the laptop is mostly plugged in. |
 | `[monitors]` | `workspaces` | `10` |  |
 | `[monitors]` | `master_ratios` | `[0.55, 0.65, 0.45]` (commented example) | Per-workspace tiling state written by NIRUWM after Super+H/L or Super+I/D: |
 | `[monitors]` | `nmasters` | `[1, 2, 1]` (commented example) |  |
@@ -396,15 +397,17 @@ return_workspace = 1
 
 # ── Night light and brightness ─────────────────────────────────────────────
 [nightlight]
-# Manual night light, applied by `niructl nightlight on` / Super+N.
+# Night light: warm, reddish light in the evening. By default it follows the
+# sun (solar) at 2700 K. Super+N or `niructl nightlight on|off|toggle` switch
+# it by hand; mode = "manual" turns the schedule off.
 # 0,0 means no location; manual temperature still works.
 latitude = 59.33
 longitude = 18.07
-temperature = 3400
+temperature = 2700
 # manual: Super+N / niructl nightlight on|off
 # fixed:  on/off local times every day
 # solar:  gammastep computes sunrise/sunset from the coordinates
-mode = "manual"
+mode = "solar"
 on = "20:00"
 off = "07:00"
 day_temperature = 6500
@@ -413,6 +416,14 @@ day_temperature = 6500
 # Empty uses brightnessctl's default device; step is the up/down percentage.
 device = ""
 step = 5
+
+[battery]
+# Stop charging at this percentage, which is kinder to the battery when the
+# laptop is mostly plugged in. 100 means no limit. It needs firmware support
+# (ThinkPad, Framework, many Dell, ASUS and Lenovo; many HP models lack it):
+# `niructl battery status` tells. `niructl battery full` charges to 100 % once,
+# until the next login.
+charge_limit = 80
 
 # ── Monitors ────────────────────────────────────────────────────────────────
 # Automatic by default: every connected screen gets its own ten workspaces,
@@ -1425,6 +1436,8 @@ refresh_minutes = 30
 | `[search]` | `aliases` | `{ gh = "github", aw = "archwiki", yt = "youtube" }` (commented example) |  |
 | `[search]` | `favorites` | `["firefox.desktop", "Lock screen"]` (commented example) | Desktop-file IDs or action names pinned above search rank. |
 | `[search]` | `rank_by_usage` | `true` (commented example) | Order equal search matches by how often and how recently they were launched (local history in ~/.local/state/nirulauncher/usage.tsv), and... |
+| `[hints]` | `style` | `"letters"` (commented example) |  |
+| `[note]` | `file` | `"~/Notes/inbox.md"` (commented example) |  |
 | `[files]` | `enabled` | `true` (commented example) |  |
 | `[files]` | `roots` | `["~"]` (commented example) |  |
 | `[files]` | `backend` | `"auto"` (commented example) |  |
@@ -1521,6 +1534,14 @@ terminal = ["kitty"]
 # (backend = "auto"); "plocate", "locate", "fd" and "builtin" choose one.
 # Recently used files (~/.local/share/recently-used.xbel) come first.
 #
+# Window jump (Ctrl+Alt+W, nirulauncher --hints): "letters" or "numbers".
+# [hints]
+# style = "letters"
+
+# Quick note (Super+Shift+N, nirulauncher --note): the inbox file.
+# [note]
+# file = "~/Notes/inbox.md"
+
 # [files]
 # enabled = true
 # roots = ["~"]

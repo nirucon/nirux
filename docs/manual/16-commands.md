@@ -133,7 +133,7 @@ niructl keys --markdown        # the keys in effect, as Markdown
 
 <!-- generated: niructl (tools/manual-gen.sh; do not edit by hand) -->
 
-Every form `niructl` accepts, from its usage text (NIRUWM 0.25.1). Run `niructl`
+Every form `niructl` accepts, from its usage text (NIRUWM 0.25.2). Run `niructl`
 without arguments to print it.
 
 - `niructl status`
@@ -192,6 +192,7 @@ without arguments to print it.
 - `niructl agent [--dry-run] TASK`
 - `niructl task list [--json]|clear`
 - `niructl windows rescue [--dry-run]`
+- `niructl battery status [--json]|apply|full|limit`
 - `niructl config history|diff [N|--all]|undo [STEPS] [--yes]|restore N [--yes]|reset SECTION|KEY|all [--yes]`
 - `niructl input status [--json]|apply|set-keyboard LAYOUT [VARIANT]|set-repeat DELAY RATE|set-pointer natural|tap on|off|toggle natural|tap|set-speed VALUE|cycle-speed|reset`
 

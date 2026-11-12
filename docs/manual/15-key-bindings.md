@@ -28,7 +28,7 @@ entries in `config.example.toml`; see
 
 <!-- generated: keys (tools/manual-gen.sh; do not edit by hand) -->
 
-The key bindings of a fresh NIRUX installation: NIRUWM 0.25.1 defaults with
+The key bindings of a fresh NIRUX installation: NIRUWM 0.25.2 defaults with
 the `[[keys]]` of the NIRUX `config.example.toml`. Your own `[[keys]]` and the keys
 that extras register are added on top; `Super+F1` shows the keys in effect.
 
@@ -41,6 +41,8 @@ that extras register are added on top; `Super+F1` shows the keys in effect.
 | `Super+V` | Clipboard history |
 | `Super+Shift+F1` | The NIRUX manual (search and read) |
 | `Super+O` | Find files in the home folder |
+| `Ctrl+Alt+W` | Jump to a visible window by its label |
+| `Super+Shift+N` | Quick note to the inbox (also to Discord or a device) |
 | `Super+Shift+B` / `Super+Shift+M` / `Super+Shift+P` / `Super+Shift+Q` / `Super+Ctrl+T` | Unified launcher: apps, windows, actions and settings |
 | `Alt+Tab` / `` Super+` `` / `Super+W` | Window switcher |
 | `Super+Enter` | Open a terminal |

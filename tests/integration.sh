@@ -48,7 +48,7 @@ fetch() {
 }
 platform() { :; }
 distro() { say "$TEST_OS"; }
-export NIRUX_TEST_TOUCHPAD=1 NIRUX_TEST_UDEV_REPLAY=1
+export NIRUX_TEST_TOUCHPAD=1 NIRUX_TEST_UDEV_REPLAY=1 NIRUX_TEST_BATTERY=1
 as_root() { "$@"; }
 operation() { ( "$@" ); }
 
@@ -472,6 +472,9 @@ files = ["my wallpaper.png"]
 scale = "fit"
   [bar] # keep this comment
 enabled = false
+[nightlight]
+temperature = 3400
+mode = "manual"
 [[monitors.profiles]]
 name = "eDP-1"
 workspaces = ["web", "code"]
@@ -494,6 +497,12 @@ grep -q '^\[autostart\]' "$i06/config/niruwm/config.toml" || fail 'autostart sec
 grep -qx 'theme_dir = "~/Pictures/Wallpapers/NIRU"' "$i06/config/niruwm/config.toml" || fail 'wallpaper theme_dir default was not added'
 grep -q 'scale = "not-a-real-setting"' "$i06/config/niruwm/config.toml" || fail 'multiline string was changed'
 [ "$(wc -l < "$i06/validators.log")" = 2 ] || fail 'candidate was not validated by both components'
+grep -qx 'mode = "solar"' "$i06/config/niruwm/config.toml" || fail 'old default night light was not moved to the solar schedule'
+grep -qx 'temperature = 2700' "$i06/config/niruwm/config.toml" || fail 'old default night light temperature was not changed'
+grep -qx 'charge_limit = 80' "$i06/config/niruwm/config.toml" || fail 'battery section was not added'
+printf '[nightlight]\nmode = "manual"\ntemperature = 3400\n' > "$i06/nightlight-again.toml"
+upgrade_nightlight_schedule "$i06/nightlight-again.toml" >/dev/null
+grep -qx 'mode = "manual"' "$i06/nightlight-again.toml" || fail 'the night light migration ran twice'
 
 # A symlinked config keeps its link and updates the resolved target atomically.
 mkdir -p "$i06/symlink/niruwm" "$i06/symlink/real"
@@ -599,6 +608,8 @@ for TEST_OS in arch debian void; do
   [ -f "$ROOT/etc/udev/rules.d/70-nirux-backlight.rules" ] || fail 'missing backlight udev rule'
   grep -q '"Tapping" "on"' "$ROOT/etc/X11/xorg.conf.d/30-nirux-touchpad.conf" || fail 'touchpad tapping rule missing'
   grep -q '"TappingButtonMap" "lrm"' "$ROOT/etc/X11/xorg.conf.d/30-nirux-touchpad.conf" || fail 'two-finger tap is not a right click'
+  grep -q 'charge_control_end_threshold' "$ROOT/etc/udev/rules.d/90-nirux-battery.rules" || fail 'battery charge limit rule missing'
+  grep -q "chgrp $(id -g) " "$ROOT/etc/udev/rules.d/90-nirux-battery.rules" || fail 'battery rule does not name the user group'
   if [ "$TEST_OS" = void ]; then
     grep -q 'subsystem-match=sound' "$ROOT/etc/sv/nirux-udev-replay/run" || fail 'Void udev replay service missing'
     [ -x "$ROOT/etc/sv/nirux-udev-replay/run" ] || fail 'Void udev replay service is not executable'
@@ -663,6 +674,7 @@ for TEST_OS in arch debian void; do
   rm -f "$EXTRAS_SELECTED"
   [ ! -e "$BIN/niruwm" ] || fail 'program still installed'
   [ ! -e "$ROOT/etc/X11/xorg.conf.d/30-nirux-touchpad.conf" ] || fail 'touchpad rule remained after uninstall'
+  [ ! -e "$ROOT/etc/udev/rules.d/90-nirux-battery.rules" ] || fail 'battery rule remained after uninstall'
   [ ! -e "$ROOT/etc/sv/nirux-udev-replay" ] && [ ! -L "$ROOT/var/service/nirux-udev-replay" ] || fail 'udev replay service remained after uninstall'
   [ ! -e "$ROOT/etc/pam.d/nirulock" ] || fail 'owned PAM service remained'
   [ ! -e "$ROOT/usr/share/applications/niruwallpaper.desktop" ] || fail 'wallpaper app entry remained after uninstall'

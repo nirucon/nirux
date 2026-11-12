@@ -239,9 +239,11 @@ step = 5         # percent per up/down
 
 ## Night light
 
+By default the night light follows the sun: warm, reddish light (2700 K) from sunset to sunrise at the location in `[nightlight]`. Without a location it uses Stockholm's. `Super+N` switches it by hand, and that choice holds until the next sunset or sunrise; then the schedule takes over again. `mode = "manual"` turns the schedule off.
+
 | Keys | Action |
 |---|---|
-| `Super+N` | Night light on or off |
+| `Super+N` | Night light on or off (until the next sunset or sunrise) |
 
 ```sh
 niructl nightlight status
@@ -259,8 +261,8 @@ Night light uses `gammastep` and needs a location: `[nightlight] latitude` and `
 [nightlight]
 latitude = 59.33
 longitude = 18.07
-temperature = 3400       # Kelvin at night, and for "on"
-mode = "manual"          # manual, fixed or solar
+temperature = 2700       # Kelvin at night, and for "on"
+mode = "solar"           # solar (default), fixed or manual
 on = "20:00"             # fixed mode: switch on
 off = "07:00"            # fixed mode: switch off
 day_temperature = 6500   # solar mode: daytime Kelvin
@@ -268,9 +270,11 @@ day_temperature = 6500   # solar mode: daytime Kelvin
 
 | Mode | Behaviour |
 |---|---|
-| `manual` | Only `Super+N` and `niructl nightlight on/off` |
+| `solar` | gammastep follows sunrise and sunset at your location (default) |
 | `fixed` | On and off at the `on` and `off` times every day |
-| `solar` | gammastep follows sunrise and sunset at your location |
+| `manual` | Only `Super+N` and `niructl nightlight on/off` |
+
+NIRUX 0.12.264 moved existing installations that still had the old defaults (`manual`, 3400 K) to the schedule once. Set `mode = "manual"` to go back; that is not changed again.
 
 ## See also
 

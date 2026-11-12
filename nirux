@@ -2,7 +2,7 @@
 # NIRUX: install a complete X11 desktop, or maintain an existing installation.
 set -eu
 
-VERSION=0.12.263
+VERSION=0.12.264
 PREFIX=${NIRUX_PREFIX:-$HOME/.local}
 BIN=$PREFIX/bin
 STATE=$PREFIX/share/nirux
@@ -2298,6 +2298,45 @@ fresh_config_source() {
   fi
 }
 
+# 0.12.264: the night light follows the sun at 2700 K by default. A file that
+# still has the old defaults (manual, 3400 K) gets the new ones once; after
+# that, mode = "manual" is respected as a choice.
+upgrade_nightlight_schedule() {
+  file=$1
+  nl_marker=$STATE/nightlight-solar-0.12.264
+  [ -e "$nl_marker" ] && return 0
+  mkdir -p "$STATE"
+  if awk '
+    /^[[:space:]]*\[nightlight\][[:space:]]*$/ { inside = 1; next }
+    /^[[:space:]]*\[/ { inside = 0 }
+    inside && /^mode = "manual"[[:space:]]*$/ { mode = 1 }
+    inside && /^temperature = 3400[[:space:]]*$/ { temp = 1 }
+    END { exit !(mode && temp) }
+  ' "$file"; then
+    mig_mode=$(stat -c %a "$file") || die "could not read permissions for $file"
+    mig_tmp=$(mktemp "$file.nirux-nightlight.XXXXXX") || die "could not stage $file"
+    awk '
+      /^[[:space:]]*\[nightlight\][[:space:]]*$/ { inside = 1; print; next }
+      /^[[:space:]]*\[/ { inside = 0 }
+      inside && /^mode = "manual"[[:space:]]*$/ { print "mode = \"solar\""; next }
+      inside && /^temperature = 3400[[:space:]]*$/ { print "temperature = 2700"; next }
+      { print }
+    ' "$file" > "$mig_tmp" && chmod "$mig_mode" "$mig_tmp" && mv -f "$mig_tmp" "$file" || {
+      rm -f "$mig_tmp"
+      die "could not update the night light in $file; original kept"
+    }
+    say 'Night light now follows the sun at 2700 K (Super+N switches it by hand; mode = "manual" turns the schedule off).'
+  fi
+  : > "$nl_marker"
+}
+
+# 0.12.264: the battery charge limit is visible in the file, so it can be changed.
+add_battery_section() {
+  file=$1
+  grep -q '^[[:space:]]*\[battery\][[:space:]]*$' "$file" && return 0
+  printf '\n[battery]\n# Stop charging at this percentage; 100 means no limit. See: niructl battery status\ncharge_limit = 80\n' >> "$file"
+}
+
 upgrade_default_wallpaper_paths() {
   file=$1
   wallpaper_dir=$(config_picture_paths | sed -n '1p')
@@ -2398,6 +2437,8 @@ install_config() {
   add_missing_key "$cfg_candidate" monitors workspaces 10
   upgrade_default_workspaces "$cfg_candidate"
   upgrade_default_wallpaper_paths "$cfg_candidate"
+  upgrade_nightlight_schedule "$cfg_candidate"
+  add_battery_section "$cfg_candidate"
   add_localsend_rule "$cfg_candidate"
   upgrade_obsolete_default_browser "$cfg_candidate"
   cfg_after=$(sha256sum "$cfg_candidate" | cut -d ' ' -f1)
@@ -4102,6 +4143,7 @@ apply_target_release() {
   say 'Enabling session services...'
   enable_services
   install_touchpad_rule
+  install_battery_rule
   install_void_udev_replay
   say 'Activating the new program generation...'
   activate
@@ -5585,6 +5627,7 @@ remove_greeters() {
   remove_void_elogind_activation
   remove_void_udev_replay
   remove_system "$ROOT$TOUCHPAD_RULE"
+  remove_system "$ROOT$BATTERY_RULE"
   remove_system "$ROOT/etc/sddm.conf.d/50-nirux.conf"
   remove_system "$ROOT/etc/lightdm/lightdm.conf.d/50-nirux-session.conf"
   if [ -f "$ROOT/usr/share/sddm/themes/nirux/Main.qml" ] &&
@@ -5964,6 +6007,40 @@ install_touchpad_rule() {
 # loads late (Intel SOF), misses its udev rules and stays root-only, and
 # PipeWire then only offers "Dummy Output". This service replays the sound,
 # graphics and input events once udevd runs, then waits idle.
+# Battery charge limit (default 80 %, [battery] charge_limit). The kernel
+# exposes it as charge_control_end_threshold on laptops whose firmware
+# supports it (ThinkPad, Framework, many Dell, ASUS and Lenovo; many HP
+# models do not). This rule lets the user's primary group write it, so
+# `niructl battery` sets it at every login without root.
+BATTERY_RULE=/etc/udev/rules.d/90-nirux-battery.rules
+has_battery_limit() {
+  [ -n "${NIRUX_TEST_BATTERY:-}" ] && { [ "$NIRUX_TEST_BATTERY" = 1 ]; return; }
+  for bat in /sys/class/power_supply/BAT*; do
+    [ -e "$bat/charge_control_end_threshold" ] && return 0
+  done
+  return 1
+}
+install_battery_rule() {
+  if ! has_battery_limit; then
+    remove_system "$ROOT$BATTERY_RULE"
+    return 0
+  fi
+  battery_gid=$(id -g)
+  {
+    say "# NIRUX owner: $PREFIX"
+    say '# Let the NIRUX user set the battery charge limit (niructl battery).'
+    say "ACTION==\"add|change\", SUBSYSTEM==\"power_supply\", KERNEL==\"BAT*\", TEST==\"charge_control_end_threshold\", RUN+=\"/bin/sh -c 'for f in /sys%p/charge_control_end_threshold /sys%p/charge_control_start_threshold; do [ -e \$\$f ] && chgrp $battery_gid \$\$f && chmod g+w \$\$f; done; true'\""
+  } > "$WORK/battery.rules"
+  as_root mkdir -p "$ROOT/etc/udev/rules.d"
+  write_system "$ROOT$BATTERY_RULE" "$WORK/battery.rules"
+  as_root chmod 0644 "$ROOT$BATTERY_RULE" || :
+  [ -z "$ROOT" ] && [ -z "${NIRUX_TEST_BATTERY:-}" ] || return 0
+  as_root udevadm control --reload >/dev/null 2>&1 || :
+  as_root udevadm trigger --action=change --subsystem-match=power_supply >/dev/null 2>&1 || :
+  as_root udevadm settle --timeout=5 >/dev/null 2>&1 || :
+  if [ -x "$PREFIX/bin/niructl" ]; then "$PREFIX/bin/niructl" battery apply >/dev/null 2>&1 || :; fi
+}
+
 UDEV_REPLAY_SV=/etc/sv/nirux-udev-replay
 install_void_udev_replay() {
   [ "$OS" = void ] || return 0
@@ -6260,6 +6337,9 @@ doctor() {
     fi
     if pgrep -u "$(id -u)" -x gammastep >/dev/null; then say 'night-light provider gammastep is running'; else say 'night-light provider gammastep is not running'; fi
     if pgrep -u "$(id -u)" -x niruidle >/dev/null; then say 'idle provider niruidle is running'; else say 'idle provider niruidle is not running'; fi
+    if ls -d /sys/class/power_supply/BAT* >/dev/null 2>&1 && command -v niructl >/dev/null 2>&1; then
+      niructl battery status 2>&1 | sed 's/^/battery: /'
+    fi
   else say 'Live session check skipped: DISPLAY is unset (normal over SSH/TTY).'
   fi
   return "$result"
@@ -6582,6 +6662,7 @@ install_or_update() {
   setup_startx
   enable_services
   install_touchpad_rule
+  install_battery_rule
   install_void_udev_replay
   activate
   start_selected_dm

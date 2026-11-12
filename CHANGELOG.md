@@ -2,6 +2,30 @@
 
 Earlier releases are described in their release notes and commit messages.
 
+## 0.12.264 (2026-11-12)
+
+- **Jump to a window: `Ctrl+Alt+W`.** Every visible window on every screen
+  gets a short label; type it and that window has the focus. Letters by
+  default (home row first), or numbers with `[hints] style = "numbers"` in
+  `~/.config/nirulauncher/config.toml` (NIRULAUNCHER 0.13.0).
+- **Quick note: `Super+Shift+N`.** One line, added to `~/Notes/inbox.md`
+  (`[note] file`) with the time, for NIRUNOTE or any editor. Before `Enter`,
+  `↑`/`↓` choose whether it also goes to a Discord webhook or a trusted
+  device through NIRUSHARE.
+- **The night light follows the sun by default:** warm, reddish 2700 K from
+  sunset to sunrise. `Super+N` switches it by hand until the next sunset or
+  sunrise; `mode = "manual"` turns the schedule off. Without a location it
+  uses Stockholm's. `nirux update` moves a file that still has the old
+  defaults (manual, 3400 K) to the schedule once. The schedule changes the
+  temperature without notifications.
+- **Battery charge limit, 80 % by default** (`[battery] charge_limit`, 100
+  for no limit). It is set at every login by `niructl battery`; *Charge to
+  100 % once* in Quick Settings (or `niructl battery full`) lasts until the
+  next login. It needs firmware support, which `niructl battery status` and
+  `nirux doctor` report; many HP models lack it. NIRUX installs a udev rule
+  so the limit can be set without root; log in again after the first
+  installation. `nirux update` adds the `[battery]` section to the file.
+
 ## 0.12.263 (2026-11-12)
 
 - **Settings history and undo.** NIRUWM 0.25.1 keeps every version of
