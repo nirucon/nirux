@@ -1164,6 +1164,7 @@ rm -f "$fix_dir/calls"
 set +e
 (
   BIN=$fix_dir/bin
+  # shellcheck disable=SC2034 # read by doctor_apply_fixes
   DOCTOR_FIXES=bar DOCTOR_YES=0
   doctor_apply_fixes
 ) < /dev/null > "$fix_dir/noyes.log" 2>&1
@@ -1176,8 +1177,8 @@ grep -q 'needs a terminal to confirm, or --yes' "$fix_dir/noyes.log" || fail 'do
 ( doctor --yes ) >/dev/null 2>&1 && fail 'doctor accepted --yes without --fix'
 ( doctor --frobnicate ) >/dev/null 2>&1 && fail 'doctor accepted an unknown option'
 # A supported but unwritable charge limit is offered as the battery fix.
-( NIRUX_TEST_BATTERY=1 NIRUX_TEST_BATTERY_WRITABLE=0; doctor_battery_writable ) && fail 'unwritable battery limit reported as writable'
-( NIRUX_TEST_BATTERY_WRITABLE=1; doctor_battery_writable ) || fail 'writable battery limit reported as unwritable'
+( export NIRUX_TEST_BATTERY=1 NIRUX_TEST_BATTERY_WRITABLE=0; doctor_battery_writable ) && fail 'unwritable battery limit reported as writable'
+( export NIRUX_TEST_BATTERY_WRITABLE=1; doctor_battery_writable ) || fail 'writable battery limit reported as unwritable'
 
 # S02: managed Helium policy, download verification, version replacement,
 # corrupt-download preservation and owned opt-out removal. The archive is a
