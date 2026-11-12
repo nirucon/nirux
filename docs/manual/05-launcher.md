@@ -279,12 +279,14 @@ The view lists the chapters and headings of the installed manual and searches ac
 `nirulauncher` with no option opens application search. Interactive views:
 
 ```text
---apps  --actions  --system-actions  --windows (alias --overview)  --search [PHRASE]
+--apps [--query TEXT]  --actions  --system-actions  --windows  --overview  --search [PHRASE]
 --quick  --clipboard  --keys  --emoji  --colors  --files  --settings
 --themes  --displays  --power  --timing  --input
 --wifi  --wired  --bluetooth  --tailscale  --sound  --microphone
 --clip  --share  --share-pair  --health  --agent  --note  --hints
 ```
+
+`--overview` is the workspace overview on `Super+E` (see [Workspaces](03-workspaces-monitors-scratchpads.md)); until NIRULAUNCHER 0.14.0 it was another name for `--windows`.
 
 Non-interactive helpers for scripts:
 
@@ -298,6 +300,8 @@ Non-interactive helpers for scripts:
 | `--wired-status` | Wired interfaces |
 | `--check-config` | Validates `~/.config/nirulauncher/config.toml` |
 | `--version` | The version |
+| `--apps --query TEXT --launch-best` | Starts the app TEXT clearly names and prints `launched<TAB>Name`; otherwise opens Apps with TEXT typed and prints `shown` |
+| `--note --stdin` | Saves standard input as a quick note in the inbox, without a window; prints the inbox path |
 
 ## Configure the launcher
 

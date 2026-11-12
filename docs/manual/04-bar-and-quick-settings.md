@@ -48,6 +48,7 @@ Choose and order the modules with `[bar] modules`. A module without a provider h
 | `notifications` | NIRUNOTIFY history count | Recent notifications | |
 | `scratchpad` | A terminal mark while a scratchpad exists, with a count for several; accent while one is shown; `!` when one asks for attention | Panel with one row per scratchpad; click a row to show or hide it | Right: the default scratchpad |
 | `dictation` | NIRUDICTATE: red `●` recording, `…` transcribing, `AI` in agent mode; nothing when idle or not installed | | Right: stop and insert. Middle: NIRUDICTATE settings |
+| `privacy` | A red `●` while an app uses the microphone, a camera or NIRUCLIP screen recording; nothing otherwise. The panel names the apps (`microphone: NIRUDICTATE`, `camera: cheese`) | Status | |
 | `recording` | NIRUCLIP: `● rec MM:SS`, `○ paused MM:SS`, `· cam off` / `· cam !` on a camera problem | Status; footer opens the capture view | Right: stop and save (or recover an interrupted one). Middle: `nirulauncher --clip` |
 | `share` | NIRUSHARE entry | Opens the inbox (`nirulauncher --share`) | |
 | `updates` | Available package upgrades (`apt`, `pacman` or `xbps`) | Details and the command to run | |
@@ -67,8 +68,14 @@ The `wifi` module is added automatically after `network` when a Wi-Fi adapter ex
 
 ```toml
 [bar]
-modules = ["workspaces", "dictation", "recording", "scratchpad", "layout", "media", "volume", "microphone", "brightness", "display", "tailscale", "network", "wifi", "mode", "battery", "niruxupdate", "agent", "nirusec", "dnd", "quicksettings", "share", "clock"]
+modules = ["workspaces", "dictation", "privacy", "recording", "scratchpad", "layout", "media", "volume", "microphone", "brightness", "display", "tailscale", "network", "wifi", "mode", "battery", "niruxupdate", "agent", "nirusec", "dnd", "quicksettings", "share", "clock"]
 ```
+
+The privacy dot counts PipeWire capture streams from a real microphone (not sound
+visualisers such as CAVA, which listen to the output), camera streams and processes that
+hold `/dev/video*` open, and NIRUCLIP recordings. On X11 it cannot see other
+screen-capture programs, and the panel says so. NIRUX 0.12.266 adds `privacy` to an
+existing bar once; if you remove it, it stays removed.
 
 To add a module, put its name in the list where you want it. To remove one, delete its name. Then press `Super+R` (or run `niructl reload`).
 

@@ -2,6 +2,40 @@
 
 Earlier releases are described in their release notes and commit messages.
 
+## 0.12.266 (2026-11-12)
+
+- **Voice commands: `Super+Alt+Space`** (NIRUDICTATE 0.3.0, an extra). Say
+  "öppna terminalen", "open the browser", "gå till arbetsyta tre", "lås
+  skärmen", "höj volymen", "anteckning köp mjölk" and more, in Swedish or
+  English. A fixed, local list, no AI and never an arbitrary command; closing
+  a window and the power commands ask first. `nirudictate command list` shows
+  every phrase.
+- **Workspace overview: `Super+E`.** Every workspace on every screen as a
+  small picture with its window titles; a digit, the arrows or a click go
+  there. Pictures stay in memory, only for you, and are deleted when the
+  screen locks (NIRUWM 0.26.0, NIRULAUNCHER 0.14.0).
+- **`niructl do ACTION`** runs any key binding's action by name from a script
+  (`niructl do terminal`, `niructl do tag 3`); it never starts arbitrary
+  programs.
+- **Privacy dot in the bar.** A red dot while an app uses the microphone, a
+  camera or NIRUCLIP screen recording; click it to see which (NIRUBAR
+  0.25.0). Added to existing bars once.
+- **The power profile follows the charger:** `power-saver` on battery,
+  `balanced` on the charger, on laptops. `[battery] auto_profile`,
+  `profile_on_battery`, `profile_on_ac`; a profile you pick yourself holds
+  until the next plug or unplug, and studio mode still wins.
+- **Typewriter clicks in the lock screen** while you type the password
+  (`lock-typing`, on by default; `nirux sounds toggle lock-typing` turns it
+  off). NIRULOCK 0.26.0, NIRUNOTIFY 0.6.0, which can also pick between
+  `EVENT-2.ogg`, `EVENT-3.ogg` variants of any sound.
+- **`nirux doctor --fix`** repairs what doctor finds and can safely fix:
+  missing packages, the backlight and battery udev rules, a missing bar,
+  notification daemon, idle daemon or night-light schedule, and PipeWire
+  user services. It asks once (`--yes` for scripts).
+- Fixed: after the 0.12.264 update the night light schedule did not start
+  until the next login; restarting NIRUWM in place now starts a missing
+  night-light or power-profile watcher.
+
 ## 0.12.265 (2026-11-12)
 
 - The window jump (`Ctrl+Alt+W`) shows the letters on its labels; in

@@ -53,6 +53,7 @@ Options of `install` and `update`:
 |---|---|
 | `nirux status` | Programs, session file, PAM, polkit rule, browser, generation and manual |
 | `nirux doctor` | `status`, plus tools, audio, capture, the configuration checks and, in a session, the live WM, bar and services |
+| `nirux doctor --fix [--yes]` | `doctor`, then repairs what it safely can (packages, udev rules, bar and session helpers, audio services) after one question |
 | `nirux manual [TOPIC]` | Open this manual, see [Reading this manual](#reading-this-manual) |
 | `nirux extras [list\|status]` | Pinned, installed and selected extras |
 | `nirux extras install [NAME...]` | Download the pinned extra, verify it and run its installer |
@@ -133,7 +134,7 @@ niructl keys --markdown        # the keys in effect, as Markdown
 
 <!-- generated: niructl (tools/manual-gen.sh; do not edit by hand) -->
 
-Every form `niructl` accepts, from its usage text (NIRUWM 0.25.2). Run `niructl`
+Every form `niructl` accepts, from its usage text (NIRUWM 0.26.0). Run `niructl`
 without arguments to print it.
 
 - `niructl status`
@@ -174,7 +175,8 @@ without arguments to print it.
 - `niructl urgent [list|--json|focus]`
 - `niructl swallow on|off|toggle|status`
 - `niructl studio on|off|toggle|status`
-- `niructl powerprofile status|list|set NAME|next`
+- `niructl powerprofile status|list|set NAME|next|auto|watch`
+- `niructl do ACTION [ARG...]|do goto MONITOR TAG [WINDOW]|do --list [--json]`
 - `niructl lock [--manual|--silent|--reason NAME]`
 - `niructl screensaver`
 - `niructl logout`

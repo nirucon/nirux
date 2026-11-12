@@ -74,21 +74,21 @@ These are not generated from an example file. The chapters describe them.
 
 <!-- generated: config (tools/manual-gen.sh; do not edit by hand) -->
 
-The example configuration files of NIRUX 0.12.265 and its components, with every
+The example configuration files of NIRUX 0.12.266 and its components, with every
 key they set or show. A value marked *commented example* is off by default:
 remove the `#` to use it. The full annotated file follows each table.
 
 | File | Read by | Example from |
 |---|---|---|
-| [`~/.config/niruwm/config.toml`](#configniruwmconfigtoml) | niruwm, nirubar, niruidle, niructl | nirux 0.12.265 `config.example.toml` |
-| [`~/.config/niruwm/appearance.toml`](#configniruwmappearancetoml) | the whole suite | nirux 0.12.265 `appearance.example.toml` |
-| [`~/.config/nirux/sounds.toml`](#configniruxsoundstoml) | nirux, nirunotify | nirux 0.12.265 `sounds.example.toml` |
-| [`~/.config/niruwm/displays.toml`](#configniruwmdisplaystoml) | niruwm, niructl, nirudisplay | nirux 0.12.265 `displays.example.toml` |
-| [`~/.config/nirubar/config.toml`](#confignirubarconfigtoml) | nirubar | nirubar 0.24.1 `weather.example.toml` |
-| [`~/.config/nirulauncher/config.toml`](#confignirulauncherconfigtoml) | nirulauncher | nirulauncher 0.13.1 `config.example.toml` |
-| [`~/.config/nirunotify/config.toml`](#confignirunotifyconfigtoml) | nirunotify | nirunotify 0.5.0 `config.example.toml` |
+| [`~/.config/niruwm/config.toml`](#configniruwmconfigtoml) | niruwm, nirubar, niruidle, niructl | nirux 0.12.266 `config.example.toml` |
+| [`~/.config/niruwm/appearance.toml`](#configniruwmappearancetoml) | the whole suite | nirux 0.12.266 `appearance.example.toml` |
+| [`~/.config/nirux/sounds.toml`](#configniruxsoundstoml) | nirux, nirunotify | nirux 0.12.266 `sounds.example.toml` |
+| [`~/.config/niruwm/displays.toml`](#configniruwmdisplaystoml) | niruwm, niructl, nirudisplay | nirux 0.12.266 `displays.example.toml` |
+| [`~/.config/nirubar/config.toml`](#confignirubarconfigtoml) | nirubar | nirubar 0.25.0 `weather.example.toml` |
+| [`~/.config/nirulauncher/config.toml`](#confignirulauncherconfigtoml) | nirulauncher | nirulauncher 0.14.0 `config.example.toml` |
+| [`~/.config/nirunotify/config.toml`](#confignirunotifyconfigtoml) | nirunotify | nirunotify 0.6.0 `config.example.toml` |
 | [`~/.config/nirufetch/config.toml`](#confignirufetchconfigtoml) | nirufetch | nirufetch 0.3.0 `config.example.toml` |
-| [`~/.config/niruui/lock.toml`](#configniruuilocktoml) | nirulock | nirulock 0.25.0 `config.example.toml` |
+| [`~/.config/niruui/lock.toml`](#configniruuilocktoml) | nirulock | nirulock 0.26.0 `config.example.toml` |
 | [`~/.config/niruui/screensaver.toml`](#configniruuiscreensavertoml) | niruscreensaver | niruscreensaver 0.14.1 `config.example.toml` |
 | [`~/.config/nirushare/webhooks.toml`](#confignirusharewebhookstoml) | nirushare | nirushare 0.4.0 `webhooks.example.toml` |
 
@@ -163,7 +163,7 @@ remove the `#` to use it. The full annotated file follows each table.
 | `[idle]` | `dpms_off_after_lock` | `15` |  |
 | `[bar]` | `enabled` | `true` | The bar is a separate process; NIRUWM starts it from PATH. |
 | `[bar]` | `position` | `"top"` | Screen edge: "top" (default) or "bottom". |
-| `[bar]` | `modules` | `["workspaces", "dictation", "recording", "scratchpad", "l...` | Weather settings live in ~/.config/nirubar/config.toml; see weather.example.toml. |
+| `[bar]` | `modules` | `["workspaces", "dictation", "privacy", "recording", "scra...` | Weather settings live in ~/.config/nirubar/config.toml; see weather.example.toml. |
 | `[bar]` | `microphone_visibility` | `"always"` | Missing input/provider stays visible even with "muted" visibility. |
 | `[bar]` | `tags` | `["1", "2", "3", "4", "5", "6", "7", "8", "9", "10"]` | Numbered (default): |
 | `[bar]` | `tags` | `["\uf015", "\uf121", "\uf086", "\uf0c0", "\uf001", "\uf03...` (commented example) | Icon labels: comment out the numbered line and uncomment this one. |
@@ -521,7 +521,7 @@ position = "top"
 # "dictation" shows NIRUDICTATE (an extra): a red dot while it records, an
 # accent mark while it transcribes; nothing otherwise or when not installed.
 # Weather settings live in ~/.config/nirubar/config.toml; see weather.example.toml.
-modules = ["workspaces", "dictation", "recording", "scratchpad", "layout", "media", "volume", "microphone", "brightness", "display", "tailscale", "network", "wifi", "mode", "battery", "niruxupdate", "agent", "nirusec", "dnd", "quicksettings", "share", "clock"]
+modules = ["workspaces", "dictation", "privacy", "recording", "scratchpad", "layout", "media", "volume", "microphone", "brightness", "display", "tailscale", "network", "wifi", "mode", "battery", "niruxupdate", "agent", "nirusec", "dnd", "quicksettings", "share", "clock"]
 # Missing input/provider stays visible even with "muted" visibility.
 microphone_visibility = "always" # "always" or "muted"
 # Left: information. Right: mute. Scroll: gain (never unmutes).
@@ -1104,6 +1104,7 @@ reduced = false
 | `[sounds.system]` | `auth-fail` | `true` |  |
 | `[sounds.system]` | `lock` | `false` |  |
 | `[sounds.system]` | `unlock` | `false` |  |
+| `[sounds.system]` | `lock-typing` | `true` | Typewriter keys while you type the password in NIRULOCK. |
 | `[sounds.notifications]` | `enabled` | `true` |  |
 | `[sounds.feedback]` | `enabled` | `true` |  |
 | `[sounds.feedback]` | `volume-up` | `true` |  |
@@ -1160,6 +1161,8 @@ enabled = true
 auth-fail = true
 lock = false
 unlock = false
+# Typewriter keys while you type the password in NIRULOCK.
+lock-typing = true
 
 # Notification sounds (the notification key in [sounds] above and the app
 # sounds in [sounds.apps]). Do Not Disturb silences these and nothing else.

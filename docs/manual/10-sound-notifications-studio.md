@@ -81,7 +81,7 @@ NIRUX plays short, soft sounds for the session, notifications, the keys you pres
 
 | Category | Events | On by default |
 |---|---|---|
-| `system` | `startup`, `update`, `shutdown`, `auth-fail` (wrong password in NIRULOCK), `lock`, `unlock` | all except `lock` and `unlock` |
+| `system` | `startup`, `update`, `shutdown`, `auth-fail` (wrong password in NIRULOCK), `lock`, `unlock`, `lock-typing` (typewriter keys while you type the password) | all except `lock` and `unlock` |
 | `notifications` | `notification` (or the app's own sound) | yes |
 | `feedback` | `volume-up`, `volume-down`, `volume-limit`, `mute`, `unmute`, `brightness-up`, `brightness-down`, `screenshot` | all except the brightness ticks |
 | `power` | `power-plug`, `power-unplug`, `battery-low`, `battery-critical`, `battery-full` | all except `battery-full` |
@@ -303,6 +303,26 @@ niructl powerprofile next           # cycle
 ```
 
 The bar's `powerprofile` module shows the active profile; right-click selects the next one.
+
+### The profile follows the charger
+
+On a laptop the profile changes by itself: `power-saver` on battery, `balanced` on the
+charger. It is applied at login and whenever the charger is plugged in or out. Choosing a
+profile yourself (`niructl powerprofile set`, the bar or the launcher) holds until the next
+plug or unplug. Studio mode wins while it is on, and when it ends the profile for the
+current power source comes back. Desktops (no battery of their own) are left alone.
+
+```toml
+[battery]
+auto_profile = true                  # false: never change the profile by itself
+profile_on_battery = "power-saver"   # performance, balanced, power-saver, or "keep"
+profile_on_ac = "balanced"
+```
+
+```sh
+niructl powerprofile auto     # apply the profile for the current power source now
+niructl powerprofile status   # also shows auto=, auto_target= and hold=
+```
 
 ## Battery charge limit
 

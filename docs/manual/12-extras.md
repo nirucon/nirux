@@ -17,7 +17,7 @@ A normal `nirux install` or `nirux update` never installs an extra. You ask for 
 | [nirusec](#nirusec-firewall-and-security-overview) | 0.2.0 | Firewall, ports, updates, firmware and security overview | alpha |
 | [nirugame](#nirugame-game-launcher) | 0.1.4 | Steam, RetroArch and native games, with optional SID music | alpha |
 | [niruremote](#niruremote-remote-desktop) | 0.2.0 | Graphical remote desktop over Tailscale and SSH | alpha |
-| [nirudictate](#nirudictate-local-dictation) | 0.2.1 | Local speech-to-text dictation, and voice messages to opencode | alpha |
+| [nirudictate](#nirudictate-local-dictation) | 0.3.0 | Local speech-to-text dictation, voice commands, and voice messages to opencode | alpha |
 
 ### Install, update and remove
 
@@ -323,6 +323,7 @@ The installer starts the background service in your session, and the NIRUX sessi
 | `Shift+Alt+Space` twice quickly | Agent mode, new conversation |
 | `Enter` / `Esc` | In the agent confirmation box: send now / cancel (it sends by itself after 2 s) |
 | `Super+Alt+9` | Show or hide the opencode window (scratchpad 9) |
+| `Super+Alt+Space` | Voice command: the same trigger, and what you say controls NIRUX (see below) |
 
 NIRUDICTATE listens for its shortcuts itself; they are not NIRUWM bindings, but they appear in the cheat sheet (`Super+/`; on Swedish and similar layouts `/` is `Shift+7`). The bar's `dictation` module shows a red dot while recording (`● AI` in agent mode).
 
@@ -335,9 +336,44 @@ nirudictate agent new            # the next agent message starts a new conversat
 nirudictate doctor               # shortcut, audio, models and display
 ```
 
+### Voice commands: Super+Alt+Space
+
+Say what you want, in Swedish or English, and NIRUX does it: "öppna terminalen",
+"open the browser", "gå till arbetsyta tre", "lås skärmen". The overlay shows **CMD**
+while it listens and then what runs ("Öppnar terminal" / "Opening terminal"). What you say
+is matched against a fixed list, locally and without AI; it never runs an arbitrary shell
+command. When it is not sure, it runs nothing and says "Förstod inte: …".
+
+| Say (sv / en) | It does |
+|---|---|
+| öppna terminalen / open terminal | NIRUWM's terminal (your `terminal` setting) |
+| öppna webbläsaren / open the browser | NIRUWM's browser (your `browser` setting) |
+| öppna Spotify, starta Thunderbird / open Signal | the app that name clearly matches; otherwise the launcher with the name typed |
+| gå till arbetsyta tre / go to workspace three | workspace 1 to 10; also "nästa/föregående arbetsyta", "next/previous workspace" |
+| flytta fönstret till arbetsyta fyra / move the window to workspace four | moves the focused window |
+| helskärm, flytande fönster, byt till monokel / fullscreen, float, switch to monocle | window and layout |
+| översikt / overview; fönsterhopp / window jump; sök / search | `Super+E`, `Ctrl+Alt+W`, the launcher's search |
+| lås skärmen / lock the screen | locks |
+| höj volymen, volym 50 procent, ljud av / louder, volume 50 percent, mute | sound; "stäng av mikrofonen" / "mute the microphone" too |
+| ljusare, mörkare / brighter, dimmer | brightness |
+| spela, pausa, nästa låt / play, pause, next song | media players |
+| ta en skärmbild, skärmbild av ett område / take a screenshot | NIRUSHOT |
+| nattljus av, slå på stör ej / night light off, turn on do not disturb | night light and Do Not Disturb |
+| anteckning köp mjölk, kom ihåg att … / note buy milk | adds the text to the quick-note inbox |
+| sök efter väder i Stockholm / search for … | web search |
+| stäng fönstret, viloläge, starta om datorn, stäng av datorn, logga ut / close the window, suspend, restart, shut down, log out | asks first: `Enter` runs, `Esc` cancels |
+
+`nirudictate command list` prints every phrase it knows; `nirudictate command --dry-run "öppna terminalen"`
+shows what a phrase would do without doing it. Settings are in `[command]` in
+`~/.config/nirudictate/config.toml`: `enabled`, `key`, `confirm_dangerous`, `language`
+(`both` by default: the dictation language listens first, and if nothing matches, the
+other language's model tries, when installed) and `app_names` (installed app names help
+recognition). A command takes about 3 s on a fast desktop with the Small model, longer
+when the second language has to try. It needs NIRUWM 0.26 and NIRULAUNCHER 0.14 or later.
+
 **Agent mode** needs [opencode](https://opencode.ai), which NIRUX does not install; without it the agent shortcut is simply not taken. The speech is still transcribed locally, but the text you confirm goes to the AI provider opencode uses. Keep scratchpad slot 9 free for the opencode window. opencode asks before it edits files or runs commands, as usual.
 
-- Settings: `~/.config/nirudictate/config.toml` (shortcut, mode, language, output, vocabulary, `[agent]`); `nirudictate reload` after editing
+- Settings: `~/.config/nirudictate/config.toml` (shortcut, mode, language, output, vocabulary, `[agent]`, `[command]`); `nirudictate reload` after editing
 - Models: `~/.local/share/nirudictate/models/`
 - History: `~/.local/state/nirudictate/history.jsonl` (0600; turn it off in the panel)
 - Sounds: the `dictation` category of `nirux sounds` (see [10-sound-notifications-studio.md](10-sound-notifications-studio.md#event-sounds))

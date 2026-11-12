@@ -31,6 +31,42 @@ niructl tag 3          # go to workspace 3 on the focused screen
 niructl status         # the running window manager and the current workspace
 ```
 
+## See every workspace at once: Super+E
+
+`Super+E` opens the overview: one row per screen, and a card per workspace that has
+windows (plus the one you are on) with a small picture of it, its number and its window
+titles.
+
+| Key or mouse | Action |
+|---|---|
+| `1` to `9`, `0` | Go to that workspace on the focused screen, even an empty one |
+| Arrow keys, `Tab`, `Shift+Tab`, `Home`, `End` | Move between cards, also across screens |
+| `Enter` or a click on a card | Go there (the window that had the focus gets it back) |
+| `Escape` or a click outside | Close |
+
+The pictures are taken when a screen leaves a workspace, scaled down on the X server
+(about a millisecond), and kept in `$XDG_RUNTIME_DIR/niruwm/overview/`, which only you
+can read and which lives in memory. They are deleted the moment the screen locks, and
+nothing is captured while it is locked. A workspace you have not left since login shows
+"no preview" until you do. From a script: `niructl do overview`.
+
+## Run any action from a script
+
+`niructl do` runs a key binding's action by name, with the same names and arguments as
+`[[keys]] action` in the configuration:
+
+```sh
+niructl do terminal
+niructl do browser
+niructl do tag 3
+niructl do layout monocle
+niructl do goto 1 4        # screen 2 (counted from 0), workspace 4
+niructl do --list          # every action it accepts (--json for scripts)
+```
+
+It refuses `shell`, `start` and `quit` (it never starts an arbitrary program or ends the
+session) and does nothing while the screen is locked. NIRUDICTATE's voice commands use it.
+
 ## Move windows between workspaces
 
 | Keys | Action |

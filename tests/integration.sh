@@ -503,6 +503,19 @@ grep -qx 'charge_limit = 80' "$i06/config/niruwm/config.toml" || fail 'battery s
 printf '[nightlight]\nmode = "manual"\ntemperature = 3400\n' > "$i06/nightlight-again.toml"
 upgrade_nightlight_schedule "$i06/nightlight-again.toml" >/dev/null
 grep -qx 'mode = "manual"' "$i06/nightlight-again.toml" || fail 'the night light migration ran twice'
+# The privacy dot goes next to the recording module once; a later removal stays.
+rm -f "$STATE/bar-privacy-0.12.266"
+printf '[bar]\nmodules = [\n  "workspaces", "recording",\n  "clock"]\n\n[other]\nx = 1\n' > "$i06/privacy.toml"
+upgrade_bar_privacy_module "$i06/privacy.toml" >/dev/null
+grep -q '"privacy", "recording"' "$i06/privacy.toml" || fail 'privacy module was not added next to recording'
+grep -qx 'x = 1' "$i06/privacy.toml" || fail 'privacy migration damaged the next table'
+[ "$(grep -c 'modules' "$i06/privacy.toml")" = 1 ] || fail 'privacy migration duplicated the modules list'
+printf '[bar]\nmodules = ["workspaces", "clock"]\n' > "$i06/privacy-removed.toml"
+upgrade_bar_privacy_module "$i06/privacy-removed.toml" >/dev/null
+grep -q 'privacy' "$i06/privacy-removed.toml" && fail 'the privacy migration ran twice'
+rm -f "$STATE/bar-privacy-0.12.266"
+upgrade_bar_privacy_module "$i06/privacy-removed.toml" >/dev/null
+grep -q '"privacy", "clock"' "$i06/privacy-removed.toml" || fail 'privacy module was not added before the clock'
 
 # A symlinked config keeps its link and updates the resolved target atomically.
 mkdir -p "$i06/symlink/niruwm" "$i06/symlink/real"
@@ -1118,6 +1131,53 @@ rc=$?
 set -e
 [ "$rc" != 0 ] || fail 'doctor succeeded with a missing configured program'
 grep -q 'missing configured missing-browser-for-test' "$doctor_dir/doctor.log" || fail 'missing configured program was not reported'
+
+# doctor --fix: offers are collected once each, listed, and applied only with
+# --yes or a confirmed terminal; session helpers start detached.
+fix_dir=$TEST/doctor-fix
+mkdir -p "$fix_dir/bin"
+cat > "$fix_dir/bin/niructl" <<EOF
+#!/bin/sh
+printf '%s\n' "niructl \$*" >> "$fix_dir/calls"
+EOF
+chmod +x "$fix_dir/bin/niructl"
+set +e
+(
+  BIN=$fix_dir/bin
+  doctor_spawn() { printf 'spawn %s\n' "$*" >> "$fix_dir/calls"; }
+  DOCTOR_FIXES=
+  doctor_offer bar
+  doctor_offer nightlight
+  doctor_offer bar
+  [ "$DOCTOR_FIXES" = 'bar nightlight' ] || { echo "offers: $DOCTOR_FIXES"; exit 9; }
+  DOCTOR_YES=1
+  doctor_apply_fixes
+) > "$fix_dir/fix.log" 2>&1
+rc=$?
+set -e
+[ "$rc" = 0 ] || { cat "$fix_dir/fix.log"; fail "doctor --fix failed: $rc"; }
+grep -qx "niructl restart-bar" "$fix_dir/calls" || fail 'doctor --fix did not restart the bar'
+grep -qx "spawn $fix_dir/bin/niructl nightlight watch" "$fix_dir/calls" || fail 'doctor --fix did not start the night-light watcher'
+grep -q 'fixed: restart NIRUBAR' "$fix_dir/fix.log" || fail 'doctor --fix did not report its fix'
+# Without a terminal and without --yes nothing is changed.
+rm -f "$fix_dir/calls"
+set +e
+(
+  BIN=$fix_dir/bin
+  DOCTOR_FIXES=bar DOCTOR_YES=0
+  doctor_apply_fixes
+) < /dev/null > "$fix_dir/noyes.log" 2>&1
+rc=$?
+set -e
+[ "$rc" != 0 ] || fail 'doctor --fix ran without confirmation'
+[ ! -e "$fix_dir/calls" ] || fail 'doctor --fix changed something without confirmation'
+grep -q 'needs a terminal to confirm, or --yes' "$fix_dir/noyes.log" || fail 'doctor --fix did not explain --yes'
+# --yes alone is refused, and an unknown option too.
+( doctor --yes ) >/dev/null 2>&1 && fail 'doctor accepted --yes without --fix'
+( doctor --frobnicate ) >/dev/null 2>&1 && fail 'doctor accepted an unknown option'
+# A supported but unwritable charge limit is offered as the battery fix.
+( NIRUX_TEST_BATTERY=1 NIRUX_TEST_BATTERY_WRITABLE=0; doctor_battery_writable ) && fail 'unwritable battery limit reported as writable'
+( NIRUX_TEST_BATTERY_WRITABLE=1; doctor_battery_writable ) || fail 'writable battery limit reported as unwritable'
 
 # S02: managed Helium policy, download verification, version replacement,
 # corrupt-download preservation and owned opt-out removal. The archive is a

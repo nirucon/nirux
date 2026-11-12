@@ -40,6 +40,7 @@ Type your password and press `Enter`.
 
 - The prompt shows the active keyboard layout (`[SE] password:`) when more than one layout is configured, and a Caps Lock indicator.
 - A wrong password is shown for two seconds in the theme's warning colour with the number of failed attempts; the entry stays usable. With NIRUNOTIFY running, a soft `auth-fail` sound plays.
+- While you type the password, each key and Backspace gives a soft typewriter click (the `lock-typing` sound, on by default). Turn it off with `nirux sounds toggle lock-typing`, in the launcher's sound view, or with `lock-typing = false` under `[sounds.system]` in `~/.config/nirux/sounds.toml`.
 - Messages from PAM modules appear under the prompt, so a `pam_faillock` lockout ("The account is locked due to 3 failed logins") does not look like a wrong password.
 - Keys are translated through XKB: dead keys, AltGr, keypad digits and composed letters reach PAM exactly as a terminal would type them. Input methods (IBus, Fcitx) are not used while locked.
 - The lock never unlocks by itself.

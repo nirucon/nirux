@@ -2,7 +2,7 @@
 # NIRUX: install a complete X11 desktop, or maintain an existing installation.
 set -eu
 
-VERSION=0.12.265
+VERSION=0.12.266
 PREFIX=${NIRUX_PREFIX:-$HOME/.local}
 BIN=$PREFIX/bin
 STATE=$PREFIX/share/nirux
@@ -113,7 +113,7 @@ usage() {
   say "       nirux checkup [--dry-run] | last | status | enable | disable | discord set|test"
   say "       nirux update-shutdown [--yes] [--dry-run] [--no-power]"
   say "       nirux update-reboot [--yes] [--dry-run] [--no-power]"
-  say "       nirux rollback | gc [--keep N] [--dry-run] | status | doctor | uninstall [--purge] | --version | --help"
+  say "       nirux rollback | gc [--keep N] [--dry-run] | status | doctor [--fix [--yes]] | uninstall [--purge] | --version | --help"
   say "Default: keep an existing display manager; a fresh install uses NIRU Login, with startx/SDDM/LightDM available."
   say "Browser: a fresh install offers Helium (default Helium) and remembers the choice."
   say "         --browser none is a persistent opt-out; --browser keep preserves the current policy."
@@ -1489,7 +1489,7 @@ SOUNDS_CATEGORIES='system notifications feedback power devices dictation'
 
 sounds_category_events() {
   case "$1" in
-    system) say 'startup update shutdown auth-fail lock unlock' ;;
+    system) say 'startup update shutdown auth-fail lock unlock lock-typing' ;;
     notifications) say 'notification' ;;
     feedback) say 'volume-up volume-down volume-limit mute unmute brightness-up brightness-down screenshot' ;;
     power) say 'power-plug power-unplug battery-low battery-critical battery-full' ;;
@@ -1500,7 +1500,7 @@ sounds_category_events() {
 
 sounds_category() {
   case "$1" in
-    startup|update|shutdown|auth-fail|lock|unlock) say system ;;
+    startup|update|shutdown|auth-fail|lock|unlock|lock-typing) say system ;;
     notification) say notifications ;;
     volume-up|volume-down|volume-limit|mute|unmute|brightness-up|brightness-down|screenshot) say feedback ;;
     power-plug|power-unplug|battery-low|battery-critical|battery-full) say power ;;
@@ -1531,6 +1531,8 @@ enabled = true
 auth-fail = true
 lock = false
 unlock = false
+# Typewriter keys while you type the password in NIRULOCK.
+lock-typing = true
 EOF
     ;;
     notifications) cat <<'EOF'
@@ -2330,6 +2332,54 @@ upgrade_nightlight_schedule() {
   : > "$nl_marker"
 }
 
+# 0.12.266: the privacy dot (microphone, camera, screen recording in use) is
+# added to an existing bar once, next to the recording module; removing it
+# afterwards is respected.
+upgrade_bar_privacy_module() {
+  file=$1
+  pv_marker=$STATE/bar-privacy-0.12.266
+  [ -e "$pv_marker" ] && return 0
+  mkdir -p "$STATE"
+  pv_modules=$(awk '
+    /^\[bar\]/ { inside = 1; next }
+    inside && /^\[/ { inside = 0 }
+    inside && /^modules *= *\[/ {
+      line = $0
+      while (line !~ /\]/ && (getline more) > 0) line = line " " more
+      print line
+      exit
+    }
+  ' "$file")
+  if [ -n "$pv_modules" ] && ! printf '%s' "$pv_modules" | grep -q '"privacy"'; then
+    if printf '%s' "$pv_modules" | grep -q '"recording"'; then
+      pv_new=$(printf '%s' "$pv_modules" | sed 's/"recording"/"privacy", "recording"/')
+    elif printf '%s' "$pv_modules" | grep -q '"volume"'; then
+      pv_new=$(printf '%s' "$pv_modules" | sed 's/"volume"/"privacy", "volume"/')
+    elif printf '%s' "$pv_modules" | grep -q '"clock"'; then
+      pv_new=$(printf '%s' "$pv_modules" | sed 's/"clock"/"privacy", "clock"/')
+    else
+      pv_new=$(printf '%s' "$pv_modules" | sed 's/\]\([^]]*\)$/, "privacy"]\1/')
+    fi
+    pv_mode=$(stat -c %a "$file") || die "could not read permissions for $file"
+    pv_tmp=$(mktemp "$file.nirux-privacy.XXXXXX") || die "could not stage $file"
+    awk -v new="$pv_new" '
+      /^\[bar\]/ { inside = 1; print; next }
+      inside && /^\[/ { inside = 0 }
+      inside && /^modules *= *\[/ {
+        print new
+        while ($0 !~ /\]/ && (getline more) > 0) { $0 = more }
+        next
+      }
+      { print }
+    ' "$file" > "$pv_tmp" && chmod "$pv_mode" "$pv_tmp" && mv -f "$pv_tmp" "$file" || {
+      rm -f "$pv_tmp"
+      die "could not add the privacy module to $file; original kept"
+    }
+    say 'Added the bar privacy dot (shows when the microphone, a camera or screen recording is in use).'
+  fi
+  : > "$pv_marker"
+}
+
 # 0.12.264: the battery charge limit is visible in the file, so it can be changed.
 add_battery_section() {
   file=$1
@@ -2439,6 +2489,7 @@ install_config() {
   upgrade_default_wallpaper_paths "$cfg_candidate"
   upgrade_nightlight_schedule "$cfg_candidate"
   add_battery_section "$cfg_candidate"
+  upgrade_bar_privacy_module "$cfg_candidate"
   add_localsend_rule "$cfg_candidate"
   upgrade_obsolete_default_browser "$cfg_candidate"
   cfg_after=$(sha256sum "$cfg_candidate" | cut -d ' ' -f1)
@@ -2810,7 +2861,7 @@ niruflow niruflow 0.6.1 8c5611a3d719fb0ec6f0dc8f296ffde1b22e5d4aa9e6f600b5d5c76e
 nirusec nirusec 0.2.0 f3f7b85a1e0e3e91880721c060d24c50eadf843c602624eb8345bf8f3c5ae6d2
 nirugame nirugame 0.1.4 96288834f2ca08c08b062f6f28142c079ee6c9c9198b9cdf085143deac719e54
 niruremote niruremote 0.2.0 64571f661be436c1fb69b72439f7af69802d87c83ac1652c49b84f0cfd80f784
-nirudictate nirudictate 0.2.1 f7996be0595daaee334ab8c0b6cf92489a96155103e656ac8d786a6eb359f9ac
+nirudictate nirudictate 0.3.0 b82afe62bd53fab9775dd71ca0a6de0bda7a80cd3aa058567faa5412320b7c64
 EOF
 }
 extras_row() {
@@ -6020,6 +6071,25 @@ has_battery_limit() {
   done
   return 1
 }
+# Whether every charge threshold file is writable for this user.
+doctor_battery_writable() {
+  [ -n "${NIRUX_TEST_BATTERY_WRITABLE:-}" ] && { [ "$NIRUX_TEST_BATTERY_WRITABLE" = 1 ]; return; }
+  for bat in /sys/class/power_supply/BAT*; do
+    [ ! -e "$bat/charge_control_end_threshold" ] || [ -w "$bat/charge_control_end_threshold" ] || return 1
+  done
+  return 0
+}
+# Whether a niructl watcher (e.g. "nightlight watch") runs on this display.
+doctor_watcher_running() {
+  for dw_pid in $(pgrep -u "$(id -u)" -x niructl 2>/dev/null); do
+    dw_cmd=$(tr '\0' ' ' < "/proc/$dw_pid/cmdline" 2>/dev/null)
+    case "$dw_cmd" in *"$1"*) ;; *) continue ;; esac
+    dw_display=$(tr '\0' '\n' < "/proc/$dw_pid/environ" 2>/dev/null | sed -n 's/^DISPLAY=//p')
+    [ -z "${DISPLAY:-}" ] || [ "$dw_display" = "$DISPLAY" ] || continue
+    return 0
+  done
+  return 1
+}
 install_battery_rule() {
   if ! has_battery_limit; then
     remove_system "$ROOT$BATTERY_RULE"
@@ -6257,7 +6327,86 @@ configured_commands() {
   ' | sort -u
 }
 
+# Problems doctor can repair itself, as space-separated ids in the order found.
+DOCTOR_FIXES=
+doctor_offer() {
+  case " $DOCTOR_FIXES " in *" $1 "*) return 0 ;; esac
+  DOCTOR_FIXES="${DOCTOR_FIXES:+$DOCTOR_FIXES }$1"
+}
+doctor_fix_text() {
+  case "$1" in
+    packages) say "install the missing NIRUX packages: $(required_missing_packages | tr '\n' ' ' | sed 's/ $//') (sudo)" ;;
+    backlight) say 'install the NIRUX backlight rule and add you to the video group (sudo; the group applies at the next login)' ;;
+    battery) say 'install the NIRUX battery rule so the charge limit can be set (sudo)' ;;
+    bar) say 'restart NIRUBAR' ;;
+    notify) say 'start NIRUNOTIFY for this session' ;;
+    idle) say 'start niruidle (screen saver, idle lock) for this session' ;;
+    nightlight) say 'start the night-light schedule for this session' ;;
+    audio) say 'restart PipeWire and WirePlumber (user services)' ;;
+  esac
+}
+# Start a session helper detached from this shell, as the session would.
+doctor_spawn() {
+  if command -v setsid >/dev/null 2>&1; then
+    setsid -f "$@" >/dev/null 2>&1 </dev/null
+  else
+    ("$@" >/dev/null 2>&1 </dev/null &)
+  fi
+}
+doctor_fix_one() {
+  case "$1" in
+    packages) provision_packages missing ;;
+    backlight) ensure_video_group; install_backlight_rule ;;
+    battery) install_battery_rule ;;
+    bar) "$BIN/niructl" restart-bar ;;
+    notify) doctor_spawn "$BIN/nirunotify" ;;
+    idle) doctor_spawn "$BIN/niruidle" ;;
+    nightlight) doctor_spawn "$BIN/niructl" nightlight watch ;;
+    audio) systemctl --user restart pipewire pipewire-pulse wireplumber ;;
+    *) return 1 ;;
+  esac
+}
+doctor_apply_fixes() {
+  if [ -z "$DOCTOR_FIXES" ]; then
+    say 'Nothing for doctor --fix to repair.'
+    return 0
+  fi
+  say ''
+  say 'doctor --fix will:'
+  for fix_id in $DOCTOR_FIXES; do say "  - $(doctor_fix_text "$fix_id")"; done
+  if [ "$DOCTOR_YES" != 1 ]; then
+    if [ ! -t 0 ]; then die 'doctor --fix needs a terminal to confirm, or --yes'; fi
+    printf 'Apply these fixes? [y/N] '
+    read -r fix_answer || fix_answer=
+    case "$fix_answer" in y|Y|yes|YES|j|J|ja|JA) ;; *) say 'No changes made.'; return 1 ;; esac
+  fi
+  fix_failed=0
+  for fix_id in $DOCTOR_FIXES; do
+    if doctor_fix_one "$fix_id"; then
+      say "fixed: $(doctor_fix_text "$fix_id")"
+    else
+      say "could not fix: $(doctor_fix_text "$fix_id")"
+      fix_failed=1
+    fi
+  done
+  say 'Run nirux doctor again to check the result.'
+  return "$fix_failed"
+}
+
 doctor() {
+  DOCTOR_FIX=0
+  DOCTOR_YES=0
+  for doctor_arg in "$@"; do
+    case "$doctor_arg" in
+      --fix) DOCTOR_FIX=1 ;;
+      --yes|-y) DOCTOR_YES=1 ;;
+      *) die "unknown doctor option: $doctor_arg (use --fix [--yes])" ;;
+    esac
+  done
+  [ "$DOCTOR_FIX" = 1 ] || [ "$DOCTOR_YES" = 0 ] || die 'doctor --yes needs --fix'
+  # Rules and packages are written through the same helpers as an install.
+  [ "$DOCTOR_FIX" = 0 ] || lock
+  DOCTOR_FIXES=
   result=0
   status || result=1
   say "selected prefix: $PREFIX"
@@ -6268,12 +6417,24 @@ doctor() {
   for tool in startx Xorg xauth dbus-run-session fc-match fish brightnessctl gammastep notify-send; do
     if command -v "$tool" >/dev/null 2>&1; then say "available $tool"; else say "missing $tool"; result=1; fi
   done
+  # The release's own package list, on a distribution NIRUX supports.
+  if OS=$( (distro) 2>/dev/null ) && [ -n "$OS" ]; then
+    doctor_missing=$(required_missing_packages | tr '\n' ' ' | sed 's/ $//')
+    if [ -n "$doctor_missing" ]; then
+      say "missing packages: $doctor_missing"
+      result=1
+      doctor_offer packages
+    else
+      say 'all NIRUX packages installed'
+    fi
+  fi
   if [ -d /sys/class/backlight ] && [ -n "$(ls -A /sys/class/backlight 2>/dev/null)" ]; then
     if command -v brightnessctl >/dev/null 2>&1 && brightnessctl -m >/dev/null 2>&1; then
       say 'backlight readable through brightnessctl'
     else
       say 'backlight present but brightnessctl cannot read it (check udev/group permissions)'
       result=1
+      doctor_offer backlight
     fi
   else say 'no backlight device (desktop or external display)'
   fi
@@ -6293,6 +6454,11 @@ doctor() {
       say 'audio default sink available'
     else
       say 'no default audio sink (PipeWire/WirePlumber)'; result=1
+      # Only where PipeWire runs as systemd user services; elsewhere the
+      # session starts it and a new login is the repair.
+      if command -v systemctl >/dev/null 2>&1 && systemctl --user cat wireplumber.service >/dev/null 2>&1; then
+        doctor_offer audio
+      fi
     fi
   fi
   bluez_spa=
@@ -6312,10 +6478,17 @@ doctor() {
   done
   if [ -n "${DISPLAY:-}" ]; then
     say '== live X session'
-    "$BIN/niructl" status || result=1
+    # Session helpers are offered only for a session that runs and answers.
+    doctor_live=0
+    if "$BIN/niructl" status; then
+      pgrep -u "$(id -u)" -x niruwm >/dev/null && doctor_live=1
+    else
+      result=1
+    fi
     for program in niruwm nirubar; do
       if pgrep -u "$(id -u)" -x "$program" >/dev/null; then say "running $program"; else say "not running $program"; result=1; fi
     done
+    if [ "$doctor_live" = 1 ] && ! pgrep -u "$(id -u)" -x nirubar >/dev/null; then doctor_offer bar; fi
     if command -v xprop >/dev/null 2>&1; then
       wm_id=$(xprop -root _NET_SUPPORTING_WM_CHECK 2>/dev/null | sed -n 's/.*# //p')
       if [ -n "$wm_id" ]; then
@@ -6329,18 +6502,51 @@ doctor() {
       bars=$(xwininfo -root -tree 2>/dev/null | grep -c 'NIRUBAR' || true)
       layouts=$(xprop -root _NIRUWM_MONITORS 2>/dev/null | grep -o '\\n' | wc -l | tr -d ' ')
       say "bar windows: $bars; monitor layouts published: $layouts"
-      if [ "$bars" != "$layouts" ]; then say 'bar ownership does not match the published monitors'; result=1; fi
+      if [ "$bars" != "$layouts" ]; then say 'bar ownership does not match the published monitors'; result=1; [ "$doctor_live" = 0 ] || doctor_offer bar; fi
     fi
     if command -v dbus-send >/dev/null 2>&1; then
       owner=$(dbus-send --session --print-reply --dest=org.freedesktop.DBus /org/freedesktop/DBus org.freedesktop.DBus.GetNameOwner string:org.freedesktop.Notifications 2>/dev/null | sed -n 's/.*string "\(.*\)"/\1/p' | head -n1)
-      if [ -n "$owner" ]; then say "notifications owned by $owner"; else say 'no notification daemon owns the session bus'; fi
+      if [ -n "$owner" ]; then say "notifications owned by $owner"
+      else
+        say 'no notification daemon owns the session bus'
+        [ "$doctor_live" = 0 ] || [ ! -x "$BIN/nirunotify" ] || doctor_offer notify
+      fi
     fi
-    if pgrep -u "$(id -u)" -x gammastep >/dev/null; then say 'night-light provider gammastep is running'; else say 'night-light provider gammastep is not running'; fi
-    if pgrep -u "$(id -u)" -x niruidle >/dev/null; then say 'idle provider niruidle is running'; else say 'idle provider niruidle is not running'; fi
+    # A schedule (solar or fixed) needs its watcher; manual needs nothing running.
+    doctor_nl_mode=$("$BIN/niructl" nightlight status 2>/dev/null | sed -n 's/^mode: //p' | head -n1)
+    case "${doctor_nl_mode:-manual}" in
+      manual) say 'night light: manual (Super+N)' ;;
+      *)
+        if doctor_watcher_running 'nightlight watch'; then
+          say "night light: $doctor_nl_mode schedule running"
+        else
+          say "night light: $doctor_nl_mode schedule set but its watcher is not running"
+          result=1
+          [ "$doctor_live" = 0 ] || doctor_offer nightlight
+        fi ;;
+    esac
+    if pgrep -u "$(id -u)" -x niruidle >/dev/null; then say 'idle provider niruidle is running'
+    else
+      say 'idle provider niruidle is not running'
+      if [ "$doctor_live" = 1 ] && [ -x "$BIN/niruidle" ] && ! pgrep -u "$(id -u)" -x nirulock >/dev/null; then doctor_offer idle; fi
+    fi
     if ls -d /sys/class/power_supply/BAT* >/dev/null 2>&1 && command -v niructl >/dev/null 2>&1; then
       niructl battery status 2>&1 | sed 's/^/battery: /'
     fi
   else say 'Live session check skipped: DISPLAY is unset (normal over SSH/TTY).'
+  fi
+  # A charge limit the hardware supports but this user cannot write.
+  if has_battery_limit && ! doctor_battery_writable; then
+    say 'battery: the charge limit is supported but not writable for you (udev rule missing)'
+    result=1
+    doctor_offer battery
+  fi
+  if [ "$DOCTOR_FIX" = 1 ]; then
+    doctor_apply_fixes || result=1
+  elif [ -n "$DOCTOR_FIXES" ]; then
+    say ''
+    say 'nirux doctor --fix can repair:'
+    for fix_id in $DOCTOR_FIXES; do say "  - $(doctor_fix_text "$fix_id")"; done
   fi
   return "$result"
 }
@@ -8419,7 +8625,8 @@ main() {
     update-shutdown) shift; update_power_command shutdown "$@" ;;
     update-reboot) shift; update_power_command reboot "$@" ;;
     manual) manual_command "$@" ;;
-    status|doctor) [ "$#" = 1 ] || die "$1 takes no arguments"; "$1" ;;
+    status) [ "$#" = 1 ] || die "$1 takes no arguments"; status ;;
+    doctor) shift; doctor "$@" ;;
     --version) say "NIRUX $VERSION" ;;
     --help|help) usage ;;
     '') usage; exit 2 ;;

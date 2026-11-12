@@ -84,6 +84,7 @@
 
 | Keys | Action |
 |---|---|
+| `Super+E` | Overview of every workspace, with thumbnails |
 | `Super+Ctrl+1…9` / `Super+Ctrl+0` | Go to workspace 1…9 / 10 |
 | `Super+Ctrl+Shift+1…9` / `Super+Ctrl+Shift+0` | Move the window to workspace 1…9 / 10 and follow it |
 | `Super+Shift+1…9` / `Super+Shift+0` | Move the window to workspace 1…9 / 10 |

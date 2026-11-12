@@ -15,7 +15,7 @@ SOUNDS=$NIRUX_PREFIX/share/nirux/sounds
 CONFIG=$XDG_CONFIG_HOME/nirux/sounds.toml
 LOG=$TEST/played
 mkdir -p "$HOME" "$SOUNDS" "$TEST/bin"
-for name in startup notification update shutdown mail chat auth-fail lock unlock \
+for name in startup notification update shutdown mail chat auth-fail lock unlock lock-typing \
   volume-up volume-down volume-limit mute unmute brightness-up brightness-down screenshot \
   power-plug power-unplug battery-low battery-critical battery-full device-connect device-disconnect \
   dictation-start dictation-stop dictation-done dictation-error; do
@@ -240,7 +240,7 @@ grep -q '^  dictation-start: on' "$TEST/status" || fail 'dictation-start is not 
 grep -q '^  dictation-done: off' "$TEST/status" || fail 'dictation-done is not off by default'
 
 nirux sounds list > "$TEST/list"
-for event in startup update shutdown auth-fail lock unlock notification volume-up volume-down \
+for event in startup update shutdown auth-fail lock unlock lock-typing notification volume-up volume-down \
   volume-limit mute unmute brightness-up brightness-down screenshot power-plug power-unplug \
   battery-low battery-critical battery-full device-connect device-disconnect \
   dictation-start dictation-stop dictation-done dictation-error; do

@@ -7,8 +7,28 @@ Where to look first, the logs, and fixes for common problems.
 ```sh
 nirux status        # programs, session file, PAM, polkit, generation, manual
 nirux doctor        # status, plus tools, audio, capture, config checks and the live session
+nirux doctor --fix  # the same, then repairs what it safely can, after asking
 niructl explain     # what is going on with this session
 ```
+
+`nirux doctor` ends with a list of the problems it can repair itself.
+`nirux doctor --fix` shows that list, asks once, and then repairs them; `--yes`
+skips the question (for scripts). What it repairs:
+
+| Problem | Repair |
+|---|---|
+| NIRUX packages missing | installs them with the distribution's package manager (sudo) |
+| Backlight present but not readable | installs the NIRUX backlight rule and adds you to the `video` group (sudo; log in again for the group) |
+| Battery charge limit supported but not writable | installs the NIRUX battery rule (sudo) |
+| NIRUBAR not running, or not on every monitor | restarts the bar |
+| No notification daemon | starts NIRUNOTIFY for this session |
+| `niruidle` not running | starts it for this session (screen saver, idle lock) |
+| Night light schedule set but not running | starts the schedule's watcher for this session |
+| No default audio sink, with PipeWire as systemd user services | restarts PipeWire and WirePlumber |
+
+Session repairs are offered only inside a running NIRUWM session. Anything else
+`doctor` reports, such as an invalid configuration, is left to you:
+`niructl config undo` takes back the last configuration change.
 
 `nirux doctor` checks the live window manager, bar, notification daemon, night
 light and idle daemon only inside a session; over SSH or from a text console it says

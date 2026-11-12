@@ -28,7 +28,7 @@ entries in `config.example.toml`; see
 
 <!-- generated: keys (tools/manual-gen.sh; do not edit by hand) -->
 
-The key bindings of a fresh NIRUX installation: NIRUWM 0.25.2 defaults with
+The key bindings of a fresh NIRUX installation: NIRUWM 0.26.0 defaults with
 the `[[keys]]` of the NIRUX `config.example.toml`. Your own `[[keys]]` and the keys
 that extras register are added on top; `Super+F1` shows the keys in effect.
 
@@ -118,6 +118,7 @@ that extras register are added on top; `Super+F1` shows the keys in effect.
 
 | Keys | Action |
 |---|---|
+| `Super+E` | Overview of every workspace, with thumbnails |
 | `Super+Ctrl+1…9` / `Super+Ctrl+0` | Go to workspace 1…9 / 10 |
 | `Super+Ctrl+Shift+1…9` / `Super+Ctrl+Shift+0` | Move the window to workspace 1…9 / 10 and follow it |
 | `Super+Shift+1…9` / `Super+Shift+0` | Move the window to workspace 1…9 / 10 |
