@@ -2,6 +2,11 @@
 
 Earlier releases are described in their release notes and commit messages.
 
+## 0.12.265 (2026-11-12)
+
+- The window jump (`Ctrl+Alt+W`) shows the letters on its labels; in
+  0.12.264 they were plain boxes (NIRULAUNCHER 0.13.1).
+
 ## 0.12.264 (2026-11-12)
 
 - **Jump to a window: `Ctrl+Alt+W`.** Every visible window on every screen
