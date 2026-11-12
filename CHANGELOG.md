@@ -2,6 +2,11 @@
 
 Earlier releases are described in their release notes and commit messages.
 
+## 0.12.267 (2026-11-12)
+
+- `nirux extras update` installs NIRUDICTATE 0.3.0 (voice commands); 0.12.266
+  had the wrong checksum for it and kept 0.2.1.
+
 ## 0.12.266 (2026-11-12)
 
 - **Voice commands: `Super+Alt+Space`** (NIRUDICTATE 0.3.0, an extra). Say
