@@ -28,6 +28,35 @@ nirunotify --check-config
 never rewrites your values. `nirux reset-config` replaces `config.toml` with the
 current example (it keeps a `.nirux-backup` copy and takes a snapshot first).
 
+## History, undo and reset
+
+Every time `config.toml` loads without an error, NIRUWM keeps that version in
+`~/.local/state/niruwm/config-history/` (the last 30). A change that breaks
+something can be taken back without remembering what you edited:
+
+```sh
+niructl config history          # the versions, newest first, and which sections changed
+niructl config diff 3           # what changed since version 3
+niructl config undo             # back one version; again goes one further back
+niructl config restore 3        # back to version 3 (restore 0 returns to the newest)
+niructl config diff             # only the values that differ from the defaults
+niructl config diff --all       # also the default keys your file does not have
+niructl config reset bar        # only [bar] back to the defaults, comments included
+niructl config reset bar.modules   # only one key
+niructl config reset all        # the whole file (also works when it no longer parses)
+```
+
+Undo, restore and reset print the change as a diff and ask before writing; add
+`--yes` to apply without asking. The file they replace is kept in the history
+first, so `niructl config undo` takes any of them back. After writing they reload
+the session. A version that would not load is refused and nothing is changed.
+
+The defaults are the example NIRUX installed (`~/.local/share/nirux/config.example.toml`).
+A reset keeps the picture folders NIRUX chose for this machine (`[wallpaper] dir`
+and `theme_dir`). `Super+A` has the same tools: **Undo the last settings change**,
+**Settings history**, **Settings that differ from the defaults** and **Reset bar
+configuration**.
+
 ## Other configuration files
 
 These are not generated from an example file. The chapters describe them.
@@ -45,18 +74,18 @@ These are not generated from an example file. The chapters describe them.
 
 <!-- generated: config (tools/manual-gen.sh; do not edit by hand) -->
 
-The example configuration files of NIRUX 0.12.262 and its components, with every
+The example configuration files of NIRUX 0.12.263 and its components, with every
 key they set or show. A value marked *commented example* is off by default:
 remove the `#` to use it. The full annotated file follows each table.
 
 | File | Read by | Example from |
 |---|---|---|
-| [`~/.config/niruwm/config.toml`](#configniruwmconfigtoml) | niruwm, nirubar, niruidle, niructl | nirux 0.12.262 `config.example.toml` |
-| [`~/.config/niruwm/appearance.toml`](#configniruwmappearancetoml) | the whole suite | nirux 0.12.262 `appearance.example.toml` |
-| [`~/.config/nirux/sounds.toml`](#configniruxsoundstoml) | nirux, nirunotify | nirux 0.12.262 `sounds.example.toml` |
-| [`~/.config/niruwm/displays.toml`](#configniruwmdisplaystoml) | niruwm, niructl, nirudisplay | nirux 0.12.262 `displays.example.toml` |
-| [`~/.config/nirubar/config.toml`](#confignirubarconfigtoml) | nirubar | nirubar 0.23.2 `weather.example.toml` |
-| [`~/.config/nirulauncher/config.toml`](#confignirulauncherconfigtoml) | nirulauncher | nirulauncher 0.11.0 `config.example.toml` |
+| [`~/.config/niruwm/config.toml`](#configniruwmconfigtoml) | niruwm, nirubar, niruidle, niructl | nirux 0.12.263 `config.example.toml` |
+| [`~/.config/niruwm/appearance.toml`](#configniruwmappearancetoml) | the whole suite | nirux 0.12.263 `appearance.example.toml` |
+| [`~/.config/nirux/sounds.toml`](#configniruxsoundstoml) | nirux, nirunotify | nirux 0.12.263 `sounds.example.toml` |
+| [`~/.config/niruwm/displays.toml`](#configniruwmdisplaystoml) | niruwm, niructl, nirudisplay | nirux 0.12.263 `displays.example.toml` |
+| [`~/.config/nirubar/config.toml`](#confignirubarconfigtoml) | nirubar | nirubar 0.24.0 `weather.example.toml` |
+| [`~/.config/nirulauncher/config.toml`](#confignirulauncherconfigtoml) | nirulauncher | nirulauncher 0.12.1 `config.example.toml` |
 | [`~/.config/nirunotify/config.toml`](#confignirunotifyconfigtoml) | nirunotify | nirunotify 0.5.0 `config.example.toml` |
 | [`~/.config/nirufetch/config.toml`](#confignirufetchconfigtoml) | nirufetch | nirufetch 0.3.0 `config.example.toml` |
 | [`~/.config/niruui/lock.toml`](#configniruuilocktoml) | nirulock | nirulock 0.25.0 `config.example.toml` |
@@ -133,7 +162,7 @@ remove the `#` to use it. The full annotated file follows each table.
 | `[idle]` | `dpms_off_after_lock` | `15` |  |
 | `[bar]` | `enabled` | `true` | The bar is a separate process; NIRUWM starts it from PATH. |
 | `[bar]` | `position` | `"top"` | Screen edge: "top" (default) or "bottom". |
-| `[bar]` | `modules` | `["workspaces", "layout", "media", "volume", "brightness",...` | Weather settings live in ~/.config/nirubar/config.toml; see weather.example.toml. |
+| `[bar]` | `modules` | `["workspaces", "dictation", "recording", "scratchpad", "l...` | Weather settings live in ~/.config/nirubar/config.toml; see weather.example.toml. |
 | `[bar]` | `microphone_visibility` | `"always"` | Missing input/provider stays visible even with "muted" visibility. |
 | `[bar]` | `tags` | `["1", "2", "3", "4", "5", "6", "7", "8", "9", "10"]` | Numbered (default): |
 | `[bar]` | `tags` | `["\uf015", "\uf121", "\uf086", "\uf0c0", "\uf001", "\uf03...` (commented example) | Icon labels: comment out the numbered line and uncomment this one. |
@@ -481,7 +510,7 @@ position = "top"
 # "dictation" shows NIRUDICTATE (an extra): a red dot while it records, an
 # accent mark while it transcribes; nothing otherwise or when not installed.
 # Weather settings live in ~/.config/nirubar/config.toml; see weather.example.toml.
-modules = ["workspaces", "layout", "media", "volume", "brightness", "display", "tailscale", "network", "wifi", "mode", "battery", "agent", "dnd", "scratchpad", "dictation", "quicksettings", "updates", "clock"]
+modules = ["workspaces", "dictation", "recording", "scratchpad", "layout", "media", "volume", "microphone", "brightness", "display", "tailscale", "network", "wifi", "mode", "battery", "niruxupdate", "agent", "nirusec", "dnd", "quicksettings", "share", "clock"]
 # Missing input/provider stays visible even with "muted" visibility.
 microphone_visibility = "always" # "always" or "muted"
 # Left: information. Right: mute. Scroll: gain (never unmutes).

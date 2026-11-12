@@ -2,6 +2,37 @@
 
 Earlier releases are described in their release notes and commit messages.
 
+## 0.12.263 (2026-11-12)
+
+- **Settings history and undo.** NIRUWM 0.25.1 keeps every version of
+  `config.toml` that loads (the last 30, in
+  `~/.local/state/niruwm/config-history/`). `niructl config history` lists
+  them with the sections each one changed, `niructl config undo` goes back
+  one version (again for one more), `niructl config restore N` picks one and
+  `niructl config diff N` shows what changed since. Each command prints the
+  change and asks first; `--yes` applies at once. The file being replaced is
+  kept first, so every step can be undone, and the session reloads.
+- **What you have changed.** `niructl config diff` lists only the values
+  that differ from the defaults (changed, added, removed); `--all` also names
+  the default keys your file does not have.
+- **Reset one part.** `niructl config reset bar` (any section, a key such as
+  `bar.modules`, or `all`) takes that part from the NIRUX example, comments
+  included, and leaves the rest of the file alone. The picture folders NIRUX
+  chose for this machine are kept. `reset all` also works when the file no
+  longer parses.
+- **The bar reset no longer loses the previous backup.** `nirubar
+  --reset-config` (NIRUBAR 0.24.0) runs the reset above, keeps the old file
+  in the history instead of overwriting one backup file, and reloads the bars
+  itself.
+- **`Super+A`, Appearance:** *Undo the last settings change*, *Settings
+  history* and *Settings that differ from the defaults* (NIRULAUNCHER 0.12.1).
+- **New default bar modules** for new installations and resets: workspaces,
+  dictation, recording, scratchpad, layout, media, volume, microphone,
+  brightness, display, tailscale, network, wifi, mode, battery, niruxupdate,
+  agent, nirusec, dnd, quicksettings, share and clock. Modules for something
+  that is not installed (NIRUDICTATE, NIRUSEC, Tailscale, a battery) show
+  nothing. An existing `modules` list is not changed.
+
 ## 0.12.262 (2026-11-11)
 
 - **An update no longer removes the NIRUX Signature pictures.** The update

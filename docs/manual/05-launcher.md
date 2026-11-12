@@ -82,6 +82,7 @@ It includes, among others:
 - display profiles (preview, keep, revert), arrange side by side, a "turn this screen" entry for each rotation, and NIRU Display when installed;
 - power profiles, layouts with their shortcuts, theme selection and a compositor toggle;
 - NIRU Wallpaper, and the optional colour wallpaper packs when NIRUX is installed;
+- settings history: undo the last settings change, the history list, what differs from the defaults, and resetting the bar;
 - focus and presentation work modes with a timer, workspace recipes;
 - storage review (read-only), off-screen window recovery, recent tasks, diagnostics, installed/running status;
 - **Studio mode** and **Window swallowing** with their current state;

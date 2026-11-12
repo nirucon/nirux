@@ -67,7 +67,7 @@ The `wifi` module is added automatically after `network` when a Wi-Fi adapter ex
 
 ```toml
 [bar]
-modules = ["workspaces", "layout", "media", "volume", "brightness", "display", "tailscale", "network", "wifi", "mode", "battery", "agent", "dnd", "scratchpad", "dictation", "quicksettings", "updates", "clock"]
+modules = ["workspaces", "dictation", "recording", "scratchpad", "layout", "media", "volume", "microphone", "brightness", "display", "tailscale", "network", "wifi", "mode", "battery", "niruxupdate", "agent", "nirusec", "dnd", "quicksettings", "share", "clock"]
 ```
 
 To add a module, put its name in the list where you want it. To remove one, delete its name. Then press `Super+R` (or run `niructl reload`).
@@ -303,8 +303,13 @@ Check and repair:
 
 ```sh
 nirubar --check-config   # validate the [bar] settings
-nirubar --reset-config   # replace only [bar] with the defaults; backup in config.toml.nirubar-backup
+nirubar --reset-config   # only [bar] back to the defaults, then the bars reload
+niructl config undo      # take the reset back
 ```
+
+The reset is the same as `niructl config reset bar --yes`: the `[bar]` of the NIRUX
+example with its comments, the rest of the file untouched, the old file kept in the
+settings history. `Super+A` → **Reset bar configuration** does the same after asking.
 
 ## Troubleshooting the bar
 

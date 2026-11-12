@@ -59,6 +59,7 @@ current settings and shows the same notification. Fix the line, then
 | The bar is missing or wrong | `niructl restart-bar`. `niructl bar show` if it was hidden with `Super+Alt+B`. |
 | The screen went back to the login screen | Read the session log. A deliberate quit is logged as `quit requested ...`, a crash as `niruwm stopped with status N ... starting it again`. After a crash NIRUWM restarts with the open windows; only four crashes within a minute end the session. |
 | The session does not start, or a display manager opens only a terminal | `nirux repair-session`, then choose the **NIRUWM** session in the greeter (Debian's *Default Xsession* is not NIRUWM). |
+| A setting change made things worse | `niructl config undo` goes back one working version (again for one more); `niructl config history` lists them. |
 | The wallpaper is wrong or missing | `niructl wallpaper status` says why. `niructl wallpaper follow-theme on` returns to theme wallpapers; `nirux repair-wallpaper` repairs the setup. |
 | Windows are on a screen that is gone | `niructl windows rescue` (try `--dry-run` first) moves them to a connected screen. |
 | A display profile does not apply | `niructl display doctor` shows what matches and what is missing. See [Displays and profiles](09-displays.md). |
@@ -79,6 +80,17 @@ From a text console you can always start the session with
 `startx "$HOME/.local/bin/niruwm-session"` (never over SSH).
 
 ## Start over
+
+Usually one part is enough, and every step can be undone:
+
+```sh
+niructl config undo         # back to the version before your last change
+niructl config reset bar    # only the bar back to the defaults
+niructl config diff         # what you have changed from the defaults
+```
+
+See [History, undo and reset](14-configuration-reference.md#history-undo-and-reset).
+To replace the whole file:
 
 ```sh
 nirux snapshot --note "before reset"   # keep what you have
