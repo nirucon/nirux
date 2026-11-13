@@ -2,6 +2,14 @@
 
 Earlier releases are described in their release notes and commit messages.
 
+## 0.12.270 (2026-11-13)
+
+- **Presenting you can see.** NIRUPRES 2.4.0: the fade in and out now show in
+  the presenter view too (in laptop mode they only happened behind it), aim
+  Spotlight, Focus and Zoom by pointing at the current slide in the presenter
+  view, and Next on the last slide fades to black. Fixes: notes size at start,
+  keys with Ctrl/Shift, zoom near the edge, see-through windows under picom.
+
 ## 0.12.269 (2026-11-13)
 
 - **Safe presenting in Teams.** NIRUPRES 2.3.0 names its windows so the share

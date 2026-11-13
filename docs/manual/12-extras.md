@@ -10,7 +10,7 @@ A normal `nirux install` or `nirux update` never installs an extra. You ask for 
 |---|---|---|---|
 | [niruorg](#niruorg-file-manager) | 0.6.1 | Two-pane file manager for local folders, servers and cloud remotes | beta |
 | [nirunote](#nirunote-markdown-editor) | 0.7.1 | Minimal Markdown editor and viewer | beta |
-| [nirupres](#nirupres-presentations) | 2.3.0 | Presentation studio | beta |
+| [nirupres](#nirupres-presentations) | 2.4.0 | Presentation studio | beta |
 | [nplay](#nplay-terminal-music-player) | 1.8.2 | Terminal music, radio and podcast player; also fully standalone | beta |
 | [niruamp](#niruamp-graphical-frontend-for-nplay) | 0.5.2 | Winamp-inspired graphical frontend for NPLAY (requires NPLAY) | alpha |
 | [niruflow](#niruflow-maintenance-and-cleanup) | 0.6.1 | Local maintenance and automation | alpha |
@@ -150,7 +150,8 @@ nirupres --check-config
 | `F5` / `Shift+F5` | Present from the current slide / from the start |
 | `Right`, `Space` / `Left` | Next / previous slide while presenting |
 | `B` / `W` | Black / white screen |
-| `S` / `Z` | Spotlight / zoom |
+| `S` / `F` / `Z` | Spotlight / focus reveal / zoom; `[` `]` size them. Aim with the mouse over CURRENT in the presenter view (a click pins) |
+| `C` / `P` | Curtain / pause |
 | `Esc` | End the presentation |
 | `Ctrl+-` / `Ctrl++` | Smaller / larger speaker notes in the presenter view |
 
@@ -176,6 +177,11 @@ has a red "PRIVATE · NOT FOR SHARING" bar, also in the dialog's thumbnail.
 - **Presenting mode:** NIRUPRES runs `niructl present on`, which turns on Do
   Not Disturb and hides the private bar modules (`[bar] presenting_hide`);
   both come back when the presentation ends, also if NIRUPRES crashes.
+- **Fades:** the show fades in from black when it starts (online: after
+  *Start presenting*) and out to black at the end; `Esc` again closes at once.
+  Next on the last slide fades to black; Next or `Esc` ends, Previous goes
+  back. CURRENT in the presenter view shows the fades, transitions and the
+  spotlight exactly as the audience sees them.
 - The presenter view shows the current and next slide, a large timer with
   pace, the clock, `x / y` and the speaker notes (at least a third of the
   height; `A−`/`A+` sizes are remembered).
