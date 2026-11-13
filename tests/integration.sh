@@ -502,7 +502,10 @@ grep -q '^\[autostart\]' "$i06/config/niruwm/config.toml" || fail 'autostart sec
 grep -qx 'theme_dir = "~/Pictures/Wallpapers/NIRU"' "$i06/config/niruwm/config.toml" || fail 'wallpaper theme_dir default was not added'
 grep -q 'scale = "not-a-real-setting"' "$i06/config/niruwm/config.toml" || fail 'multiline string was changed'
 [ "$(wc -l < "$i06/validators.log")" = 2 ] || fail 'candidate was not validated by both components'
-grep -qx 'mode = "solar"' "$i06/config/niruwm/config.toml" || fail 'old default night light was not moved to the solar schedule'
+# 0.12.264 moved the old manual/3400 defaults to solar; 0.12.272 moves the
+# solar defaults on to gradual in the same run.
+grep -qx 'mode = "gradual"' "$i06/config/niruwm/config.toml" || fail 'old default night light was not moved to the gradual schedule'
+grep -qx 'deepest_at = "22:00"' "$i06/config/niruwm/config.toml" || fail 'gradual night-light keys were not added'
 grep -qx 'temperature = 2700' "$i06/config/niruwm/config.toml" || fail 'old default night light temperature was not changed'
 grep -qx 'charge_limit = 80' "$i06/config/niruwm/config.toml" || fail 'battery section was not added'
 printf '[nightlight]\nmode = "manual"\ntemperature = 3400\n' > "$i06/nightlight-again.toml"

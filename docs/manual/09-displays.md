@@ -239,11 +239,13 @@ step = 5         # percent per up/down
 
 ## Night light
 
-By default the night light follows the sun: warm, reddish light (2700 K) from sunset to sunrise at the location in `[nightlight]`. Without a location it uses Stockholm's. `Super+N` switches it by hand, and that choice holds until the next sunset or sunrise; then the schedule takes over again. `mode = "manual"` turns the schedule off.
+The night light makes the screen warmer and more reddish in the evening, which is easier on the eyes. By default it is gradual: it starts softly at sunset and grows warmer over the evening, so you hardly notice it change. Without a location it uses Stockholm's.
+
+`Super+N` switches it by hand, and that choice holds until the night starts or ends; then the schedule takes over again. Switching on gives the night temperature. During the evening glide `Super+N` switches it off.
 
 | Keys | Action |
 |---|---|
-| `Super+N` | Night light on or off (until the next sunset or sunrise) |
+| `Super+N` | Night light on or off (until the night starts or ends) |
 
 ```sh
 niructl nightlight status
@@ -252,7 +254,7 @@ niructl nightlight off
 niructl nightlight toggle
 niructl nightlight temperature 3000    # 1000 to 10000 K, now
 niructl nightlight apply               # apply what the schedule wants now
-niructl nightlight watch               # follow the schedule (fixed or solar mode)
+niructl nightlight watch               # follow the schedule (the session starts it)
 ```
 
 Night light uses `gammastep` and needs a location: `[nightlight] latitude` and `longitude`, or the top-level `weather_latitude` and `weather_longitude`.
@@ -261,20 +263,48 @@ Night light uses `gammastep` and needs a location: `[nightlight] latitude` and `
 [nightlight]
 latitude = 59.33
 longitude = 18.07
-temperature = 2700       # Kelvin at night, and for "on"
-mode = "solar"           # solar (default), fixed or manual
-on = "20:00"             # fixed mode: switch on
-off = "07:00"            # fixed mode: switch off
-day_temperature = 6500   # solar mode: daytime Kelvin
+temperature = 2700         # Kelvin at night, and for "on"
+mode = "gradual"           # gradual (default), solar, fixed or manual
+on = "20:00"               # fixed mode: switch on
+off = "07:00"              # fixed mode: switch off; gradual: done by then
+day_temperature = 6500     # solar and gradual: daytime Kelvin
+start_temperature = 4500   # gradual: Kelvin at the evening start
+not_before = "19:00"       # gradual: never start before this
+deepest_at = "22:00"       # gradual: temperature is reached here
 ```
+
+### The four modes
 
 | Mode | Behaviour |
 |---|---|
-| `solar` | gammastep follows sunrise and sunset at your location (default) |
-| `fixed` | On and off at the `on` and `off` times every day |
+| `gradual` | Starts at sunset, not before `not_before`, at `start_temperature`, glides to `temperature` by `deepest_at`, and back to the day before sunrise or `off` (default) |
+| `solar` | gammastep follows sunrise and sunset at your location, between `day_temperature` and `temperature` |
+| `fixed` | `temperature` from `on` to `off` every day |
 | `manual` | Only `Super+N` and `niructl nightlight on/off` |
 
-NIRUX 0.12.264 moved existing installations that still had the old defaults (`manual`, 3400 K) to the schedule once. Set `mode = "manual"` to go back; that is not changed again.
+### How the gradual evening goes
+
+The evening starts at sunset, but never earlier than `not_before`. From there the temperature glides in small steps (every 30 seconds, too small to see) from `start_temperature` to `temperature`, which it reaches at `deepest_at`, and stays there through the night. When `deepest_at` is less than an hour after the start (a late summer sunset), the night temperature is reached one hour after the start instead. In the morning it glides back to `day_temperature` over 30 minutes, finished at sunrise or at `off`, whichever comes first, so the screen is never red after 07:00 on a dark winter morning. A time before noon in `not_before` or `deepest_at` means after midnight, for example `deepest_at = "00:30"`.
+
+An example with the defaults in Stockholm:
+
+| Time | 10 December (sunset about 14:50, sunrise 08:40) | 20 June (sunset about 22:07, sunrise 03:30) |
+|---|---|---|
+| 19:00 | starts at 4500 K | day |
+| 20:30 | 3600 K | day |
+| 22:00 | 2700 K (deepest) | day |
+| 22:07 | 2700 K | starts at 4500 K |
+| 23:07 | 2700 K | 2700 K (one hour after the start) |
+| 03:00 to 03:30 | 2700 K | glides back to 6500 K |
+| 06:30 to 07:00 | glides back to 6500 K (07:00 comes before sunrise) | day |
+
+`niructl nightlight status` shows the mode, tonight's start (and the sunset), the deepest time, the morning glide, the scheduled and current temperature and a `Super+N` choice that is still in force.
+
+### Changes apply within seconds
+
+The watcher reads `config.toml` again a few seconds after you save it and applies the new settings at once, also when you switch between `manual` and a schedule; no new login is needed. A file with a mistake keeps the last good settings (the session log says so). In `manual` mode the watcher never changes the screen.
+
+NIRUX 0.12.264 moved installations that still had the old defaults (`manual`, 3400 K) to the schedule once, and NIRUX 0.12.272 moves installations that still have the previous `solar` defaults (2700 K, 20:00 and 07:00, 6500 K) to `gradual` once; the file as it was is kept, so `niructl config undo` goes back. Set `mode = "solar"` or `mode = "manual"` to choose otherwise; that is not changed again.
 
 ## See also
 

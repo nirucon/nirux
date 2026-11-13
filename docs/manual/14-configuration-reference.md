@@ -75,17 +75,17 @@ These are not generated from an example file. The chapters describe them.
 
 <!-- generated: config (tools/manual-gen.sh; do not edit by hand) -->
 
-The example configuration files of NIRUX 0.12.271 and its components, with every
+The example configuration files of NIRUX 0.12.272 and its components, with every
 key they set or show. A value marked *commented example* is off by default:
 remove the `#` to use it. The full annotated file follows each table.
 
 | File | Read by | Example from |
 |---|---|---|
-| [`~/.config/niruwm/config.toml`](#configniruwmconfigtoml) | niruwm, nirubar, niruidle, niructl | nirux 0.12.271 `config.example.toml` |
-| [`~/.config/niruwm/appearance.toml`](#configniruwmappearancetoml) | the whole suite | nirux 0.12.271 `appearance.example.toml` |
-| [`~/.config/nirux/sounds.toml`](#configniruxsoundstoml) | nirux, nirunotify | nirux 0.12.271 `sounds.example.toml` |
-| [`~/.config/niruwm/displays.toml`](#configniruwmdisplaystoml) | niruwm, niructl, nirudisplay | nirux 0.12.271 `displays.example.toml` |
-| [`~/.config/nirubar/config.toml`](#confignirubarconfigtoml) | nirubar | nirubar 0.27.0 `weather.example.toml` |
+| [`~/.config/niruwm/config.toml`](#configniruwmconfigtoml) | niruwm, nirubar, niruidle, niructl | nirux 0.12.272 `config.example.toml` |
+| [`~/.config/niruwm/appearance.toml`](#configniruwmappearancetoml) | the whole suite | nirux 0.12.272 `appearance.example.toml` |
+| [`~/.config/nirux/sounds.toml`](#configniruxsoundstoml) | nirux, nirunotify | nirux 0.12.272 `sounds.example.toml` |
+| [`~/.config/niruwm/displays.toml`](#configniruwmdisplaystoml) | niruwm, niructl, nirudisplay | nirux 0.12.272 `displays.example.toml` |
+| [`~/.config/nirubar/config.toml`](#confignirubarconfigtoml) | nirubar | nirubar 0.28.0 `weather.example.toml` |
 | [`~/.config/nirulauncher/config.toml`](#confignirulauncherconfigtoml) | nirulauncher | nirulauncher 0.14.0 `config.example.toml` |
 | [`~/.config/nirunotify/config.toml`](#confignirunotifyconfigtoml) | nirunotify | nirunotify 0.6.0 `config.example.toml` |
 | [`~/.config/nirufetch/config.toml`](#confignirufetchconfigtoml) | nirufetch | nirufetch 0.3.0 `config.example.toml` |
@@ -143,11 +143,14 @@ remove the `#` to use it. The full annotated file follows each table.
 | `[recipes.apps]` | `command` | `["helium"]` (commented example) |  |
 | `[nightlight]` | `latitude` | `59.33` | Night light: warm, reddish light in the evening. |
 | `[nightlight]` | `longitude` | `18.07` |  |
-| `[nightlight]` | `temperature` | `2700` |  |
-| `[nightlight]` | `mode` | `"solar"` | manual: Super+N / niructl nightlight on\|off fixed:  on/off local times every day solar:  gammastep computes sunrise/sunset from the coord... |
-| `[nightlight]` | `on` | `"20:00"` |  |
-| `[nightlight]` | `off` | `"07:00"` |  |
-| `[nightlight]` | `day_temperature` | `6500` |  |
+| `[nightlight]` | `temperature` | `2700` | Night temperature in Kelvin (1000..10000), also what Super+N turns on. |
+| `[nightlight]` | `mode` | `"gradual"` | gradual: from sunset (not before not_before) glide to temperature by deepest_at, back to day_temperature by sunrise or off solar:   gamma... |
+| `[nightlight]` | `on` | `"20:00"` | fixed mode: switch on. |
+| `[nightlight]` | `off` | `"07:00"` | fixed mode: switch off. |
+| `[nightlight]` | `day_temperature` | `6500` | Daytime Kelvin in solar and gradual mode (6500 is neutral). |
+| `[nightlight]` | `start_temperature` | `4500` | gradual mode: Kelvin at the evening start. |
+| `[nightlight]` | `not_before` | `"19:00"` | gradual mode: the evening never starts before this time. |
+| `[nightlight]` | `deepest_at` | `"22:00"` | gradual mode: temperature is reached here, or 1 hour after the start if later. |
 | `[brightness]` | `device` | `""` | Empty uses brightnessctl's default device; step is the up/down percentage. |
 | `[brightness]` | `step` | `5` |  |
 | `[battery]` | `charge_limit` | `80` | Stop charging at this percentage, which is kinder to the battery when the laptop is mostly plugged in. |
@@ -407,20 +410,35 @@ return_workspace = 1
 
 # ── Night light and brightness ─────────────────────────────────────────────
 [nightlight]
-# Night light: warm, reddish light in the evening. By default it follows the
-# sun (solar) at 2700 K. Super+N or `niructl nightlight on|off|toggle` switch
-# it by hand; mode = "manual" turns the schedule off.
-# 0,0 means no location; manual temperature still works.
+# Night light: warm, reddish light in the evening. By default (gradual) it
+# starts at sunset, never before not_before, at start_temperature and glides
+# slowly to temperature, reached at deepest_at. In the morning it glides back
+# to day_temperature over 30 minutes, done by sunrise or off, whichever comes
+# first. Super+N or `niructl nightlight on|off|toggle` switch it by hand until
+# the next start or end of the night. Edits here apply within a few seconds.
+# 0,0 means no location (Stockholm is used); manual temperature still works.
 latitude = 59.33
 longitude = 18.07
+# Night temperature in Kelvin (1000..10000), also what Super+N turns on.
 temperature = 2700
-# manual: Super+N / niructl nightlight on|off
-# fixed:  on/off local times every day
-# solar:  gammastep computes sunrise/sunset from the coordinates
-mode = "solar"
+# gradual: from sunset (not before not_before) glide to temperature by
+#          deepest_at, back to day_temperature by sunrise or off
+# solar:   gammastep follows the sun between day_temperature and temperature
+# fixed:   temperature from on to off every day
+# manual:  only Super+N / niructl nightlight on|off
+mode = "gradual"
+# fixed mode: switch on.
 on = "20:00"
+# fixed mode: switch off. gradual mode: the night is over by this time.
 off = "07:00"
+# Daytime Kelvin in solar and gradual mode (6500 is neutral).
 day_temperature = 6500
+# gradual mode: Kelvin at the evening start.
+start_temperature = 4500
+# gradual mode: the evening never starts before this time.
+not_before = "19:00"
+# gradual mode: temperature is reached here, or 1 hour after the start if later.
+deepest_at = "22:00"
 
 [brightness]
 # Empty uses brightnessctl's default device; step is the up/down percentage.

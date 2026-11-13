@@ -2,6 +2,27 @@
 
 Earlier releases are described in their release notes and commit messages.
 
+## 0.12.272 (2026-11-13)
+
+- **A night light that glides.** NIRUWM 0.30.0 adds `mode = "gradual"`, now the
+  default: the evening starts at sunset but never before 19:00
+  (`not_before`), at 4500 K (`start_temperature`), and grows warmer in steps
+  too small to see until 2700 K (`temperature`) at 22:00 (`deepest_at`), or one
+  hour after the start after a late summer sunset. In the morning it glides
+  back to 6500 K over 30 minutes, done by sunrise or 07:00 (`off`), whichever
+  is earlier. `Super+N` works as before; `niructl nightlight status` shows
+  tonight's start, deepest time and morning.
+- **Night-light edits apply within seconds.** The watcher reads `config.toml`
+  again when it changes and applies the new settings at once, also a switch
+  between `manual` and a schedule, without a new login. A file with a mistake
+  keeps the last good settings.
+- **Existing installations move to gradual once.** A `[nightlight]` that still
+  has the previous defaults (`solar`, 2700 K, 20:00, 07:00, 6500 K, any
+  location) becomes `gradual` with the new keys on the next `nirux update`;
+  the file as it was goes to the config history (`niructl config undo`). Any
+  other choice is kept, and setting `solar` again later is never undone.
+- **NIRUBAR 0.28.0** accepts the new night-light keys in the shared file.
+
 ## 0.12.271 (2026-11-13)
 
 - **Videos and calls keep the screen awake.** NIRUWM 0.29.0: NIRUIDLE answers

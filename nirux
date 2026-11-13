@@ -2,7 +2,7 @@
 # NIRUX: install a complete X11 desktop, or maintain an existing installation.
 set -eu
 
-VERSION=0.12.271
+VERSION=0.12.272
 PREFIX=${NIRUX_PREFIX:-$HOME/.local}
 BIN=$PREFIX/bin
 STATE=$PREFIX/share/nirux
@@ -2366,6 +2366,55 @@ upgrade_nightlight_schedule() {
   : > "$nl_marker"
 }
 
+# 0.12.272: the gradual night light (NIRUWM 0.30) is the default. A file whose
+# [nightlight] still has the previous defaults (solar, 2700 K, on 20:00, off
+# 07:00, day 6500 K; any location) is moved to gradual once, with its keys
+# written; the file as it was is kept in NIRUWM's config history first, so
+# `niructl config undo` goes back. Any other choice is left alone, and after
+# the first run a change back to solar is never undone (marker file).
+upgrade_nightlight_gradual() {
+  file=$1 ng_original=${2:-$1}
+  ng_marker=$STATE/nightlight-gradual-0.12.272
+  [ -e "$ng_marker" ] && return 0
+  mkdir -p "$STATE"
+  if awk '
+    function val(line) { sub(/^[^=]*=[[:space:]]*/, "", line); sub(/[[:space:]]*#.*$/, "", line); sub(/[[:space:]]+$/, "", line); return line }
+    /^[[:space:]]*\[nightlight\][[:space:]]*(#.*)?$/ { inside = 1; seen = 1; next }
+    /^[[:space:]]*\[/ { inside = 0 }
+    inside && /^[[:space:]]*mode[[:space:]]*=/ { mode = val($0) }
+    inside && /^[[:space:]]*temperature[[:space:]]*=/ { temp = val($0) }
+    inside && /^[[:space:]]*on[[:space:]]*=/ { on = val($0) }
+    inside && /^[[:space:]]*off[[:space:]]*=/ { off = val($0) }
+    inside && /^[[:space:]]*day_temperature[[:space:]]*=/ { day = val($0) }
+    END {
+      # A missing key is the previous default.
+      ok = seen && (mode == "\"solar\"" || mode == "") && (temp == "2700" || temp == "") &&
+        (on == "\"20:00\"" || on == "") && (off == "\"07:00\"" || off == "") &&
+        (day == "6500" || day == "")
+      exit !ok
+    }
+  ' "$file"; then
+    config_history_keep "$ng_original" || say 'nirux: warning: could not keep the old configuration in the history' >&2
+    ng_mode=$(stat -c %a "$file") || die "could not read permissions for $file"
+    ng_tmp=$(mktemp "$file.nirux-nightlight.XXXXXX") || die "could not stage $file"
+    awk '
+      /^[[:space:]]*\[nightlight\][[:space:]]*(#.*)?$/ { inside = 1; print; next }
+      /^[[:space:]]*\[/ { inside = 0 }
+      inside && /^[[:space:]]*mode[[:space:]]*=/ { print "mode = \"gradual\""; next }
+      { print }
+    ' "$file" > "$ng_tmp" && chmod "$ng_mode" "$ng_tmp" && mv -f "$ng_tmp" "$file" || {
+      rm -f "$ng_tmp"
+      die "could not update the night light in $file; original kept"
+    }
+    add_missing_key "$file" nightlight mode '"gradual"'
+    add_missing_key "$file" nightlight start_temperature 4500
+    add_missing_key "$file" nightlight not_before '"19:00"'
+    add_missing_key "$file" nightlight deepest_at '"22:00"'
+    say 'Night light is now gradual: from sunset (not before 19:00) it glides from 4500 K to 2700 K by 22:00 (niructl config undo goes back; mode = "solar" keeps the old schedule).'
+  fi
+  : > "$ng_marker"
+}
+
 # 0.12.266: the privacy dot (microphone, camera, screen recording in use) is
 # added to an existing bar once, next to the recording module; removing it
 # afterwards is respected.
@@ -2471,6 +2520,9 @@ install_config() {
     cfg_stage="$WORK/config.fresh"
     fresh_config_source "$cfg_example" > "$cfg_stage"
     install -m 644 "$cfg_stage" "$cfg_file"
+    # A new file already has the gradual night light; a later change to
+    # solar is a choice the 0.12.272 migration must not undo.
+    : > "$STATE/nightlight-gradual-0.12.272"
     say "Created $cfg_file"
     install_appearance || :
     return 0
@@ -2502,10 +2554,13 @@ install_config() {
   add_missing_top_key "$cfg_candidate" restore_session false
   add_missing_top_key "$cfg_candidate" weather_latitude 59.33
   add_missing_top_key "$cfg_candidate" weather_longitude 18.07
-  add_missing_key "$cfg_candidate" nightlight mode '"manual"'
+  add_missing_key "$cfg_candidate" nightlight mode '"gradual"'
   add_missing_key "$cfg_candidate" nightlight on '"20:00"'
   add_missing_key "$cfg_candidate" nightlight off '"07:00"'
   add_missing_key "$cfg_candidate" nightlight day_temperature 6500
+  add_missing_key "$cfg_candidate" nightlight start_temperature 4500
+  add_missing_key "$cfg_candidate" nightlight not_before '"19:00"'
+  add_missing_key "$cfg_candidate" nightlight deepest_at '"22:00"'
   add_missing_key "$cfg_candidate" brightness device '""'
   add_missing_key "$cfg_candidate" brightness step 5
   add_missing_key "$cfg_candidate" bar title_delay_seconds 0
@@ -2522,6 +2577,7 @@ install_config() {
   upgrade_default_workspaces "$cfg_candidate"
   upgrade_default_wallpaper_paths "$cfg_candidate"
   upgrade_nightlight_schedule "$cfg_candidate"
+  upgrade_nightlight_gradual "$cfg_candidate" "$cfg_target"
   add_battery_section "$cfg_candidate"
   upgrade_bar_privacy_module "$cfg_candidate"
   add_localsend_rule "$cfg_candidate"
@@ -6943,7 +6999,8 @@ doctor() {
         [ "$doctor_live" = 0 ] || [ ! -x "$BIN/nirunotify" ] || doctor_offer notify
       fi
     fi
-    # A schedule (solar or fixed) needs its watcher; manual needs nothing running.
+    # A schedule (gradual, solar or fixed) needs its watcher. NIRUWM 0.30 also
+    # runs it, idle, in manual so a switch to a schedule needs no new login.
     doctor_nl_mode=$("$BIN/niructl" nightlight status 2>/dev/null | sed -n 's/^mode: //p' | head -n1)
     case "${doctor_nl_mode:-manual}" in
       manual) say 'night light: manual (Super+N)' ;;
