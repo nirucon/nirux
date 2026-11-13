@@ -22,6 +22,8 @@ trap cleanup_test EXIT HUP INT TERM
 export HOME=$TEST/home NIRUX_PREFIX=$TEST/prefix NIRUX_SYSTEM_ROOT=$TEST/system
 export XDG_CONFIG_HOME=$HOME/.config XDG_STATE_HOME=$HOME/.local/state NIRUX_LIBRARY=1
 export NIRUX_WALLPAPERS=default
+# Pinned apps: the test compares with the NIRUX pins, not the newest upstream.
+export NIRUX_APPS=pinned
 mkdir -p "$HOME" "$NIRUX_SYSTEM_ROOT/etc/pam.d" "$TEST/release"
 . "$SOURCE/nirux"
 unset NIRUX_LIBRARY

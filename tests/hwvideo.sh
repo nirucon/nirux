@@ -1,4 +1,5 @@
 #!/bin/sh
+# shellcheck disable=SC2034 # variables are read by the sourced nirux functions
 # Hardware video decoding in Helium: GPU detection (single, hybrid, NVIDIA),
 # the verification gate (vainfo profiles, Vulkan device, device-select layer),
 # the flags file and the generated launcher. Offline: sysfs, /dev/dri, vainfo,

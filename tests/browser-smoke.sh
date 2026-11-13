@@ -8,6 +8,8 @@ TEST=$(mktemp -d)
 trap 'rm -rf "$TEST"' EXIT
 export HOME=$TEST/home NIRUX_PREFIX=$TEST/prefix NIRUX_SYSTEM_ROOT=$TEST/system
 export XDG_CONFIG_HOME=$HOME/.config XDG_STATE_HOME=$HOME/.local/state NIRUX_LIBRARY=1
+# Pinned apps: the test compares with the NIRUX pin, not the newest upstream.
+export NIRUX_APPS=pinned
 mkdir -p "$HOME" "$NIRUX_SYSTEM_ROOT" "$TEST/work"
 . "$SOURCE/nirux"
 unset NIRUX_LIBRARY
