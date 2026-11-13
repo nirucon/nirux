@@ -1832,7 +1832,10 @@ cp "$fd/config.toml" "$fd/original.toml"
 [ "$(bar_modules_line "$fd/config.toml")" = "$(bar_modules_line "$SOURCE/config.example.toml")" ] || fail 'bar modules did not follow the default list'
 grep -q '"disk", "quicksettings"' "$fd/config.toml" || fail 'followed list lacks the disk module'
 [ "$(find "$fd/state/niruwm/config-history" -name '*-[0-9][0-9].toml' | wc -l)" = 1 ] || fail 'the old configuration was not kept exactly once'
-cmp -s "$fd/original.toml" "$(find "$fd/state/niruwm/config-history" -name '*.toml' | head -n 1)" || fail 'the history copy differs from the old file'
+# Arch's base image has no `cmp`: compare by checksum.
+[ "$(sha256sum "$fd/original.toml" | cut -d ' ' -f1)" = \
+  "$(sha256sum "$(find "$fd/state/niruwm/config-history" -name '*.toml' | head -n 1)" | cut -d ' ' -f1)" ] ||
+  fail 'the history copy differs from the old file'
 [ "$(grep -c 'Bar modules set to the NIRUX default list' "$fd/log")" = 1 ] || fail 'following the default was not announced once'
 printf '[bar]\nfollow_default_modules = false\nmodules = ["workspaces", "clock"]\n' > "$fd/mine.toml"
 (XDG_STATE_HOME=$fd/state2; follow_default_bar_modules "$fd/mine.toml" "$SOURCE/config.example.toml" "$fd/mine.toml")
