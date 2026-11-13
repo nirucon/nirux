@@ -75,16 +75,16 @@ These are not generated from an example file. The chapters describe them.
 
 <!-- generated: config (tools/manual-gen.sh; do not edit by hand) -->
 
-The example configuration files of NIRUX 0.12.270 and its components, with every
+The example configuration files of NIRUX 0.12.271 and its components, with every
 key they set or show. A value marked *commented example* is off by default:
 remove the `#` to use it. The full annotated file follows each table.
 
 | File | Read by | Example from |
 |---|---|---|
-| [`~/.config/niruwm/config.toml`](#configniruwmconfigtoml) | niruwm, nirubar, niruidle, niructl | nirux 0.12.270 `config.example.toml` |
-| [`~/.config/niruwm/appearance.toml`](#configniruwmappearancetoml) | the whole suite | nirux 0.12.270 `appearance.example.toml` |
-| [`~/.config/nirux/sounds.toml`](#configniruxsoundstoml) | nirux, nirunotify | nirux 0.12.270 `sounds.example.toml` |
-| [`~/.config/niruwm/displays.toml`](#configniruwmdisplaystoml) | niruwm, niructl, nirudisplay | nirux 0.12.270 `displays.example.toml` |
+| [`~/.config/niruwm/config.toml`](#configniruwmconfigtoml) | niruwm, nirubar, niruidle, niructl | nirux 0.12.271 `config.example.toml` |
+| [`~/.config/niruwm/appearance.toml`](#configniruwmappearancetoml) | the whole suite | nirux 0.12.271 `appearance.example.toml` |
+| [`~/.config/nirux/sounds.toml`](#configniruxsoundstoml) | nirux, nirunotify | nirux 0.12.271 `sounds.example.toml` |
+| [`~/.config/niruwm/displays.toml`](#configniruwmdisplaystoml) | niruwm, niructl, nirudisplay | nirux 0.12.271 `displays.example.toml` |
 | [`~/.config/nirubar/config.toml`](#confignirubarconfigtoml) | nirubar | nirubar 0.27.0 `weather.example.toml` |
 | [`~/.config/nirulauncher/config.toml`](#confignirulauncherconfigtoml) | nirulauncher | nirulauncher 0.14.0 `config.example.toml` |
 | [`~/.config/nirunotify/config.toml`](#confignirunotifyconfigtoml) | nirunotify | nirunotify 0.6.0 `config.example.toml` |
@@ -162,6 +162,7 @@ remove the `#` to use it. The full annotated file follows each table.
 | `[idle]` | `screensaver_timeout` | `15` |  |
 | `[idle]` | `lock_after_screensaver` | `15` |  |
 | `[idle]` | `dpms_off_after_lock` | `15` |  |
+| `[idle]` | `honor_app_inhibit` | `true` |  |
 | `[bar]` | `enabled` | `true` | The bar is a separate process; NIRUWM starts it from PATH. |
 | `[bar]` | `position` | `"top"` | Screen edge: "top" (default) or "bottom". |
 | `[bar]` | `modules` | `["workspaces", "dictation", "privacy", "recording", "scra...` | Weather settings live in ~/.config/nirubar/config.toml; see weather.example.toml. |
@@ -482,11 +483,17 @@ workspaces = 10
 # [idle]
 # screensaver_timeout = 5
 # lock_after_screensaver = 2
+#
+# honor_app_inhibit: true lets programs (Helium during a video or a call, VLC)
+# ask the screensaver, the idle lock and display-off to wait while they play.
+# A video left playing then keeps the screen from locking by itself; manual
+# lock, lid close and suspend still lock. false ignores such requests.
 
 [idle]
 screensaver_timeout = 15
 lock_after_screensaver = 15
 dpms_off_after_lock = 15
+honor_app_inhibit = true
 
 # ── Bar ─────────────────────────────────────────────────────────────────────
 [bar]

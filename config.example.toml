@@ -273,11 +273,17 @@ workspaces = 10
 # [idle]
 # screensaver_timeout = 5
 # lock_after_screensaver = 2
+#
+# honor_app_inhibit: true lets programs (Helium during a video or a call, VLC)
+# ask the screensaver, the idle lock and display-off to wait while they play.
+# A video left playing then keeps the screen from locking by itself; manual
+# lock, lid close and suspend still lock. false ignores such requests.
 
 [idle]
 screensaver_timeout = 15
 lock_after_screensaver = 15
 dpms_off_after_lock = 15
+honor_app_inhibit = true
 
 # ── Bar ─────────────────────────────────────────────────────────────────────
 [bar]

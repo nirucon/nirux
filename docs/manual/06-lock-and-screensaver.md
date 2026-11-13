@@ -107,10 +107,34 @@ Older `idle_minutes`, `lock_after_minutes` and `dpms_off_minutes` in `~/.config/
 | `niructl idle on [MINUTES]` | Keep awake, until turned off or for MINUTES (1 to 1440) |
 | `niructl idle off` | Back to the normal ladder |
 | `niructl idle toggle [MINUTES]` | Switch |
-| `niructl idle status` | `idle on (no expiry)`, `idle on, N min remaining` or `idle off` |
+| `niructl idle status` | `idle on (no expiry)`, `idle on, N min remaining` or `idle off`; then a `session inhibit: HOLDER` line (studio mode) and an `app inhibit: APP (REASON)` line for each program that asks the screen to stay awake |
 | Launcher | `keep awake` / `håll vaken`, or **Toggle idle inhibition** in Quick Settings |
 
 `niructl idle on` means idle *inhibition* is on: no screensaver, no idle lock, no display off. The state is kept in `~/.local/state/niruui/inhibit`. Studio mode (`niructl studio on`) also inhibits the saver and the idle lock while it is on. Manual locking always works.
+
+### Programs that keep the screen awake
+
+Programs can ask the screen to stay awake while they need it: Helium while a
+video plays or during a call (Teams, Meet), VLC while it plays. NIRUIDLE answers
+these requests (the standard `org.freedesktop.ScreenSaver` service on the
+session bus, NIRUWM 0.29.0 and later). While a program holds one, there is no
+screensaver, no idle lock and no display off; the timers start from zero when
+the last request ends. A program that quits or crashes loses its request at
+once. `niructl idle status` lists the requests, and the session log has lines
+like `niruidle: app inhibit on: helium (Video Wake Lock)`.
+
+Be aware: a video left playing in a browser tab keeps the screen from locking
+by itself (GNOME and KDE behave the same). Super+Escape, `niructl lock`,
+closing the lid and suspend still lock. Helium only asks for videos with a
+sound track. To ignore all such requests:
+
+```toml
+[idle]
+honor_app_inhibit = false
+```
+
+An update that restarts NIRUIDLE drops the requests held so far; programs ask
+again when they next start playing.
 
 ## The screensaver
 
@@ -265,7 +289,7 @@ nirulock --version
 ## Troubleshooting
 
 - **The right password is rejected.** Check the layout shown next to the prompt and the Caps Lock indicator. A PAM lockout message appears under the prompt.
-- **The screensaver never appears.** Run `niructl timing show` and `niructl idle status`; keep awake or studio mode stops it.
+- **The screensaver never appears.** Run `niructl timing show` and `niructl idle status`; keep awake, studio mode or a program's request (an `app inhibit:` line, for example a playing video) stops it. The session log `~/.local/state/niruwm/session.log` has the `niruidle:` lines.
 - **No spectrum.** CAVA is not installed, `visual` is `quotes` or `none`, or (with `auto`) nothing plays loud enough.
 - **No pause music.** Check `enabled = true`, the reason in `on`, `sidplayfp` and the `.sid` files, then read `~/.local/state/nirulock/trace.log`.
 - **The screen does not lock by itself.** The lock comes `screensaver_timeout` + `lock_after_screensaver` minutes after the last input (30 with the defaults). Shorten it with `niructl timing set lock_after_screensaver 5`, or lock as the screensaver starts with `0`. Video players and calls can keep the session awake.

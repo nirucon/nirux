@@ -89,6 +89,11 @@ update` set it up for the managed Helium:
    On a computer with two cards NIRUX also keeps the video decoder and Vulkan on
    the chosen card.
 
+The nightly update never turns it on by itself: the first time happens when
+you run `nirux update` or `nirux doctor --fix`, so a change in how Helium draws
+is something you see and can try straight away. Once it is on, the nightly
+update keeps it current, and turns it off if the check stops passing.
+
 Restart Helium after an update that turns it on. A video in a format the card
 cannot decode still plays: Helium decodes it in software, as before. Hardware
 video encoding is not turned on; it failed in tests.

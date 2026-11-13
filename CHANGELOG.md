@@ -2,8 +2,16 @@
 
 Earlier releases are described in their release notes and commit messages.
 
-## 0.12.271 (unreleased)
+## 0.12.271 (2026-11-13)
 
+- **Videos and calls keep the screen awake.** NIRUWM 0.29.0: NIRUIDLE answers
+  programs that ask the screen to stay awake (Helium during a video or a Teams
+  call, VLC), so the screensaver and idle lock wait while they play;
+  `[idle] honor_app_inhibit = false` turns that off and `niructl idle status`
+  lists the requests.
+- **Screensaver history in the log.** NIRUIDLE, NIRUNOTIFY and the night light
+  watcher now write to the session log also after a restart in place (they
+  went to nowhere), and PATH no longer grows with every restart.
 - **Video on the graphics card in Helium.** Videos in the managed Helium are
   decoded by the GPU instead of the CPU (measured: 1080p H264, VP9 and AV1 from
   about 95 % of a core to about 32 %); web calls such as Teams use the same
@@ -13,7 +21,8 @@ Earlier releases are described in their release notes and commit messages.
   Vulkan video path. AMD and Intel are on by default, NVIDIA is opt-in;
   `[browser] hardware_video = "auto"|"on"|"off"` in the new NIRUX-only
   `~/.config/nirux/browser.toml`. `nirux doctor` shows the card, the formats it
-  decodes and the flags; `nirux doctor --fix` installs what is missing.
+  decodes and the flags; `nirux doctor --fix` installs what is missing. The
+  nightly update never turns it on by itself the first time.
 - **A Helium launcher.** `~/.local/bin/helium` is now a small NIRUX launcher
   that adds these flags (your own flags still win), not a link; it is
   rewritten on every install and update.

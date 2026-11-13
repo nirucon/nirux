@@ -2,7 +2,7 @@
 # NIRUX: install a complete X11 desktop, or maintain an existing installation.
 set -eu
 
-VERSION=0.12.270
+VERSION=0.12.271
 PREFIX=${NIRUX_PREFIX:-$HOME/.local}
 BIN=$PREFIX/bin
 STATE=$PREFIX/share/nirux
@@ -3792,6 +3792,13 @@ hwvideo_apply() {
   fi
   if ! hwvideo_supported "$hv_mode"; then
     hwvideo_disable; say "Hardware video in Helium: off ($HV_REASON)"; return 0
+  fi
+  # The nightly run never turns the flags on for the first time: a change in
+  # how Helium draws must first happen in front of the owner (nirux update or
+  # nirux doctor --fix). Once on, the nightly run keeps them current.
+  if [ "${NIRUX_AUTO:-0}" = 1 ] && [ ! -f "$STATE/helium-flags" ]; then
+    say 'Hardware video in Helium: available, not on yet (turn it on with nirux update or nirux doctor --fix)'
+    return 0
   fi
   hv_os=${OS:-$( (distro) 2>/dev/null || :)}
   hv_missing=$(hwvideo_missing_packages "$hv_os" | tr '\n' ' ' | sed 's/ $//')

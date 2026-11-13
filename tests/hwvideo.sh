@@ -158,6 +158,14 @@ hwvideo_apply > /dev/null 2>&1
 grep -qx 'would install: vainfo mesa-va-drivers' "$TEST/installed" || fail 'missing packages were not installed'
 NIRUX_AUTO=1
 WANTED_PACKAGES=$STATE/wanted-packages
+# The nightly run never turns the flags on for the first time.
+rm -f "$STATE/helium-flags" "$WANTED_PACKAGES"
+hwvideo_apply > "$TEST/out" 2>&1
+[ ! -e "$STATE/helium-flags" ] || fail 'the nightly update turned the flags on by itself'
+[ ! -s "$WANTED_PACKAGES" ] || fail 'the nightly update asked for packages before the flags were on'
+grep -q 'available, not on yet' "$TEST/out" || fail 'the nightly update did not say how to turn it on'
+# Once on (here: an earlier manual run), the nightly run keeps it current.
+printf '# on\n' > "$STATE/helium-flags"
 hwvideo_apply > /dev/null 2>&1
 grep -qx vainfo "$WANTED_PACKAGES" && grep -qx mesa-va-drivers "$WANTED_PACKAGES" ||
   fail 'the nightly update did not ask for the packages'
