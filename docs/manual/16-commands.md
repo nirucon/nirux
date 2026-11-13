@@ -25,6 +25,12 @@ normal user, never in a root shell; it asks for sudo itself when it needs it.
 | `nirux checkup [--dry-run]` | Run the weekly checkup now (or show what it would do) |
 | `nirux checkup last\|status\|enable\|disable` | The latest report, the schedule, or turn it on or off |
 | `nirux checkup discord set\|test` | Set the Discord webhook for the checkup report, or test it |
+| `nirux autoupdate [status]` | The nightly update: on or off, user, window, last run, waiting system changes |
+| `nirux autoupdate last` | The report of the last nightly update (the last seven are kept) |
+| `nirux autoupdate enable\|disable\|run-now` | Turn the nightly update on or off, or run it now (sudo, fixed rule) |
+| `nirux whats-new [--notify]` | The highlights of the NIRUX releases the last update installed; `--notify` shows them once as a notice |
+| `nirux resume-check [--notify]` | After sleep: check and repair the network, Wi-Fi, sound, screens and Tailscale |
+| `nirux clean [--yes] [--dry-run]` | Show what can be freed (package cache, journal, thumbnails, old generations, old trash), ask once, clean |
 | `nirux fleet [status [--json]]` | Status of your other NIRUX machines |
 | `nirux fleet update HOST...\|--all\|--behind` | Update other machines over SSH, one at a time |
 | `nirux fleet setup [HOST...]` | Let this machine log in to the others with an SSH key |
@@ -46,6 +52,8 @@ Options of `install` and `update`:
 | `--localsend yes\|no`, `--opencode yes\|no` | Optional apps; without a flag an install asks and an update keeps the choice |
 | `--icons none\|papirus` (update also `keep`) | Papirus-Dark icons with grey folders |
 | `--release VERSION` | Install or update to that release instead of the newest |
+| `--apps latest\|pinned` | Helium, LocalSend and OpenCode follow their newest verified upstream release (`latest`, the default) or keep the NIRUX pins (`pinned`, also `NIRUX_APPS=pinned`) |
+| `--auto` | The nightly update (update only): no questions and no sudo; root steps wait for the next `nirux update` |
 
 ### Desktop pieces
 
@@ -134,7 +142,7 @@ niructl keys --markdown        # the keys in effect, as Markdown
 
 <!-- generated: niructl (tools/manual-gen.sh; do not edit by hand) -->
 
-Every form `niructl` accepts, from its usage text (NIRUWM 0.26.0). Run `niructl`
+Every form `niructl` accepts, from its usage text (NIRUWM 0.27.1). Run `niructl`
 without arguments to print it.
 
 - `niructl status`

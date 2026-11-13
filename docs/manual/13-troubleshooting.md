@@ -88,7 +88,9 @@ current settings and shows the same notification. Fix the line, then
 | Bluetooth audio does not work | `nirux doctor` reports a missing BlueZ SPA plugin: install your distribution's PipeWire BlueZ package. |
 | Brightness keys do nothing | `nirux doctor` says whether `brightnessctl` can read the backlight; it needs udev or group permissions. |
 | Screenshots or recording fail | `nirux doctor` checks `ffmpeg` with `x11grab`, `slop`, `maim` and the camera device. |
-| The disk is filling up | `niructl storage review`, then `niructl storage clean cache --yes`; `nirux gc --dry-run` for old generations. |
+| The disk is filling up | `nirux clean` shows what can be freed (package cache, the journal above 200 MB, thumbnails, old NIRUX generations and snapshots, trash older than 30 days), asks once and cleans; `--dry-run` only shows. The bar's red disk icon opens it. `niructl storage review` looks at your own files. |
+| Wi-Fi, sound or a screen is wrong after sleep | NIRUWM runs `nirux resume-check --notify` a few seconds after the computer wakes: it switches a Wi-Fi that does not reconnect off and on, restarts PipeWire when it does not answer, re-applies the display profile and checks Tailscale (a root sleep hook restarts its daemon). It notifies only when it fixed something or could not. Run `nirux resume-check` yourself; the last 50 runs are in `~/.local/state/nirux/resume-check.log`. |
+| `nirux status` says system changes are waiting | The nightly update left root steps for you: run `nirux update` once. See [Keeping NIRUX up to date](11-updates.md). |
 | Downloads from GitHub fail | NIRUX falls back to the GitLab mirror by itself; see [Keeping NIRUX up to date](11-updates.md). |
 | Wi-Fi cannot be controlled | See [WIFI.md](https://github.com/nirucon/nirux/blob/main/docs/WIFI.md) for the supported backends and their limits. |
 

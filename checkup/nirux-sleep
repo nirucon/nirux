@@ -1,0 +1,43 @@
+#!/bin/sh
+# NIRUX sleep hook: after resume, bring Tailscale back when its daemon does
+# not answer. Installed root-owned in systemd's system-sleep directory
+# (/usr/lib/systemd/system-sleep/nirux) or elogind's (Void:
+# /usr/libexec/elogind/system-sleep/nirux). Called as: nirux pre|post TYPE.
+#
+# It never blocks resume: the work runs in the background and every command
+# is bounded. Nothing else is touched; the user's `nirux resume-check` (run
+# by NIRUWM after resume) handles Wi-Fi, sound and screens.
+R=${NIRUX_SLEEP_ROOT:-}
+TEST_PATH=${NIRUX_SLEEP_PATH:-}
+# Test settings never apply to root.
+if [ "$(id -u)" = 0 ]; then R='' TEST_PATH='' NIRUX_SLEEP_DELAY='' NIRUX_SLEEP_FOREGROUND=''; fi
+PATH=${TEST_PATH:-/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin}
+export PATH
+
+case "${1:-}" in post|check) ;; *) exit 0 ;; esac
+command -v tailscale >/dev/null 2>&1 || exit 0
+
+bounded() { t=$1; shift; if command -v timeout >/dev/null 2>&1; then timeout "$t" "$@"; else "$@"; fi; }
+
+check() {
+  # The network needs a moment after resume before the daemon reconnects.
+  sleep "${NIRUX_SLEEP_DELAY:-4}"
+  out=$(bounded 5 tailscale status 2>&1) && exit 0
+  case "$out" in
+    *'Logged out'*|*stopped*|*NeedsLogin*) exit 0 ;;  # off by choice
+  esac
+  if [ -d "$R/run/systemd/system" ] && command -v systemctl >/dev/null 2>&1; then
+    bounded 30 systemctl restart tailscaled.service
+  elif [ -e "$R/var/service/tailscaled" ] && command -v sv >/dev/null 2>&1; then
+    bounded 30 sv restart tailscaled
+  fi
+}
+
+if [ "$1" = check ] || [ "${NIRUX_SLEEP_FOREGROUND:-0}" = 1 ]; then check; exit 0; fi
+# systemd ends every process of systemd-suspend.service when it finishes, so
+# the check runs as its own short unit there; elogind leaves a child alone.
+if [ -d "$R/run/systemd/system" ] && command -v systemd-run >/dev/null 2>&1; then
+  bounded 5 systemd-run --no-block --quiet --collect --unit="nirux-resume-$$" "$0" check >/dev/null 2>&1 && exit 0
+fi
+( check ) </dev/null >/dev/null 2>&1 &
+exit 0

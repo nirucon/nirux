@@ -2,6 +2,35 @@
 
 Earlier releases are described in their release notes and commit messages.
 
+## 0.12.268 (2026-11-13)
+
+- **Nightly updates.** Between 03:00 and 05:00, when nobody is logged in, the
+  computer updates its system packages, NIRUX, the extras and the apps by
+  itself. `nirux doctor` runs before and after; if something got worse, the
+  previous NIRUX and settings come back and a warning is posted. On battery it
+  waits for the charger or 50 %. `nirux autoupdate status|last|disable` (on by
+  default; Debian, Arch and Void).
+- **Apps follow upstream.** Helium, LocalSend and OpenCode update to their
+  newest stable release at every `nirux update`, verified against the
+  publisher's checksum; the version NIRUX names is the lowest it installs
+  (Helium 0.21.2.1, OpenCode 2.2.7). `--apps pinned` keeps the pins.
+- **Disk warning in the bar.** A red disk icon left of the gear appears when
+  the disk is 90 % full (`[bar] disk_warn`); a click runs `nirux clean`, which
+  shows what it would remove and asks first.
+- **Fixes after sleep.** After a wake-up NIRUX checks Wi-Fi, sound, screens
+  and Tailscale and repairs the common failures; a notice only when it fixed
+  something or could not (`nirux resume-check`).
+- **Battery health.** The battery panel shows the health in percent of the
+  design capacity, the charge cycles and a graph of the last 24 hours.
+- **What's new after an update.** The first login on a new version shows its
+  highlights once, with a button to the manual (`nirux whats-new`).
+- **The bar follows the NIRUX defaults.** Every `nirux update` keeps
+  `[bar] modules` on the default list and order, which now includes `updates`
+  (system package count) and `disk`; the previous list stays in the settings
+  history (`niructl config undo`). `follow_default_modules = false` keeps your
+  own list.
+- NIRUWM 0.27.1, NIRUBAR 0.26.1.
+
 ## 0.12.267 (2026-11-12)
 
 - `nirux extras update` installs NIRUDICTATE 0.3.0 (voice commands); 0.12.266

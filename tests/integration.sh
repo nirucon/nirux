@@ -10,6 +10,8 @@ export NIRUX_LIBRARY=1 NIRUX_TEST_AS_ROOT=1
 # Offline tests must not fetch the optional wallpaper release assets. An
 # explicit choice still overrides this when a test exercises it.
 export NIRUX_WALLPAPERS=default
+# Apps keep their pins; the upstream lookup is tested with its own fixture.
+export NIRUX_APPS=pinned
 mkdir -p "$HOME" "$NIRUX_SYSTEM_ROOT/etc/pam.d" "$NIRUX_SYSTEM_ROOT/usr/share/xsessions"
 . "$SOURCE/nirux"
 unset NIRUX_LIBRARY
@@ -93,6 +95,8 @@ integration_archive() {
   cp -R "$SOURCE/greeters/." "$build/"
   cp "$SOURCE/polkit/49-nirux-power.rules" "$build/polkit/"
   cp "$SOURCE/polkit/nirux-wifi" "$build/polkit/"
+  mkdir -p "$build/checkup"
+  cp "$SOURCE/checkup/nirux-checkup" "$SOURCE/checkup/nirux-autoupdate" "$SOURCE/checkup/nirux-sleep" "$build/checkup/"
   cp "$SOURCE/wallpaper/nirux-wallpaper-noir-4k.png" "$build/background.png"
   tar -cJf "$1" -C "$build" .
 }
@@ -164,6 +168,7 @@ for release in "$VERSION" 99.0.0; do
   wallpaper_archive "$FIXTURE/nirux/$release/nirux-wallpapers.tar.xz"
   terminal_archive "$FIXTURE/nirux/$release/nirux-terminal.tar.xz"
   integration_archive "$FIXTURE/nirux/$release/nirux-integration.tar.xz"
+  printf '# Changelog\n\n## 99.0.0 (2026-11-13)\n\n- **Test highlight one.** More words.\n- Plain bullet sentence. Second sentence.\n\n## %s (2026-11-12)\n\n- **Older entry.**\n' "$VERSION" > "$FIXTURE/nirux/$release/CHANGELOG.md"
   checksums "$FIXTURE/nirux/$release"
 done
 # 99.2.0 adds a synthetic component. The running installer does not know its
@@ -600,6 +605,35 @@ for TEST_OS in arch debian void; do
   touch "$ROOT/etc/pam.d/system-auth" "$ROOT/etc/pam.d/common-auth" "$ROOT/etc/pam.d/common-account"
   operation install_or_update install --no-packages --browser none --display-manager startx --release "$VERSION"
   [ -x "$ROOT/usr/libexec/nirux-wifi" ] || fail 'restricted Wi-Fi helper was not installed'
+  # K7/K8: the nightly update helper, its settings, the fixed sudoers rule,
+  # its schedule on this init system, and the root sleep hook.
+  [ -x "$ROOT/usr/libexec/nirux-autoupdate" ] || fail "$TEST_OS: nightly update helper was not installed"
+  grep -qxF "# NIRUX owner: $PREFIX" "$ROOT/usr/libexec/nirux-autoupdate" || fail 'nightly update helper has no owner line'
+  grep -qx 'enabled=yes' "$ROOT/etc/nirux/autoupdate.conf" || fail 'nightly update is not on by default'
+  grep -qx "user=$(id -un)" "$ROOT/etc/nirux/autoupdate.conf" || fail 'nightly update settings name no user'
+  grep -q "NOPASSWD: /usr/libexec/nirux-autoupdate run-now, /usr/libexec/nirux-autoupdate enable, /usr/libexec/nirux-autoupdate disable\$" \
+    "$ROOT/etc/sudoers.d/zz-nirux-autoupdate" || fail 'nightly update sudoers rule is not fixed-argument'
+  [ "$(stat -c %a "$ROOT/etc/sudoers.d/zz-nirux-autoupdate")" = 440 ] || fail 'nightly update sudoers rule is not 0440'
+  allow=$ROOT/etc/nirux/autoupdate-packages
+  [ "$(stat -c %a "$allow")" = 644 ] || fail "$TEST_OS: the nightly package allowlist is not 0644"
+  for allowed_pkg in curl kitty tailscale papirus-icon-theme sddm; do
+    grep -qx "$allowed_pkg" "$allow" || fail "$TEST_OS: $allowed_pkg is missing from the nightly package allowlist"
+  done
+  case "$TEST_OS" in
+    debian) grep -qx libgtk-3-0t64 "$allow" && grep -qx libnss3 "$allow" || fail 'debian: browser libraries missing from the allowlist' ;;
+    void) grep -qx libXcomposite "$allow" || fail 'void: browser libraries missing from the allowlist' ;;
+    arch) grep -qx pacman-contrib "$allow" || fail 'arch: pacman-contrib missing from the allowlist' ;;
+  esac
+  if [ "$TEST_OS" = void ]; then
+    grep -q 'nirux-autoupdate loop' "$ROOT/etc/sv/nirux-autoupdate/run" || fail 'void: no runit loop for the nightly update'
+    [ -x "$ROOT/usr/libexec/elogind/system-sleep/nirux" ] || fail 'void: elogind sleep hook missing'
+  else
+    grep -qx 'OnCalendar=\*-\*-\* 03:00:00' "$ROOT/etc/systemd/system/nirux-autoupdate.timer" || fail 'nightly timer is not at 03:00'
+    grep -qx 'RandomizedDelaySec=30min' "$ROOT/etc/systemd/system/nirux-autoupdate.timer" || fail 'nightly timer has no random delay'
+    grep -qx 'Persistent=false' "$ROOT/etc/systemd/system/nirux-autoupdate.timer" || fail 'nightly timer catches up missed runs'
+    grep -qx 'ExecStart=/usr/libexec/nirux-autoupdate run --scheduled' "$ROOT/etc/systemd/system/nirux-autoupdate.service" || fail 'nightly service runs the wrong command'
+    [ -x "$ROOT/usr/lib/systemd/system-sleep/nirux" ] || fail "$TEST_OS: systemd sleep hook missing"
+  fi
   status
   [ ! -e "$HOME/session-was-started" ] || fail 'status ran the session'
   [ "$(awk '$1 == "suite" {print $2}' "$STATE/current/manifest")" = "$VERSION" ] || fail 'wrong manifest'
@@ -690,6 +724,13 @@ for TEST_OS in arch debian void; do
   [ ! -e "$ROOT/etc/udev/rules.d/90-nirux-battery.rules" ] || fail 'battery rule remained after uninstall'
   [ ! -e "$ROOT/etc/sv/nirux-udev-replay" ] && [ ! -L "$ROOT/var/service/nirux-udev-replay" ] || fail 'udev replay service remained after uninstall'
   [ ! -e "$ROOT/etc/pam.d/nirulock" ] || fail 'owned PAM service remained'
+  [ ! -e "$ROOT/usr/libexec/nirux-autoupdate" ] && [ ! -e "$ROOT/etc/sudoers.d/zz-nirux-autoupdate" ] ||
+    fail 'nightly update helper or its sudoers rule remained after uninstall'
+  [ ! -e "$ROOT/etc/nirux/autoupdate-packages" ] || fail 'nightly package allowlist remained after uninstall'
+  [ ! -e "$ROOT/etc/systemd/system/nirux-autoupdate.timer" ] && [ ! -e "$ROOT/etc/sv/nirux-autoupdate/run" ] ||
+    fail 'nightly update schedule remained after uninstall'
+  [ ! -e "$ROOT/usr/lib/systemd/system-sleep/nirux" ] && [ ! -e "$ROOT/usr/libexec/elogind/system-sleep/nirux" ] ||
+    fail 'sleep hook remained after uninstall'
   [ ! -e "$ROOT/usr/share/applications/niruwallpaper.desktop" ] || fail 'wallpaper app entry remained after uninstall'
   [ ! -e "$ROOT/usr/share/icons/hicolor/256x256/apps/niruwallpaper.png" ] || fail 'wallpaper app icon remained after uninstall'
   find "$ROOT" -name '*.sha256' -path '*nirux-owned*' | grep -q niruwallpaper.png && fail 'icon ownership record remained after uninstall'
@@ -1624,5 +1665,315 @@ gc_left=$(cd "$STATE/generations" && ls -1 | tr '\n' ' ')
 [ "$gc_left" = '0.0.2-T 0.0.3-T 0.0.6-T 0.0.7-T 0.0.8-T ' ] || fail "gc kept the wrong generations: $gc_left"
 [ -d "$(readlink -f "$STATE/current")" ] && [ -d "$(readlink -f "$STATE/previous")" ] || fail 'gc broke current or previous'
 rm -rf "$PREFIX"
+
+# The release fixture again (the Helium tests above replaced fetch).
+fetch() {
+  case "$1" in
+    https://github.com/nirucon/*/releases/download/v*)
+      relative=${1#https://github.com/nirucon/}
+      repo=${relative%%/*}
+      relative=${relative#*/releases/download/v}
+      relative=${relative%%\?*}
+      cp "$FIXTURE/$repo/$relative" "$2" ;;
+    *) return 1 ;;
+  esac
+}
+BROWSER_EFFECTIVE=keep
+export NIRUX_WALLPAPERS=default
+# A test above corrupted the NIRULOCK fixture on purpose.
+make_binary "$FIXTURE/nirulock/$lock_version/nirulock" nirulock "$lock_version"
+checksums "$FIXTURE/nirulock/$lock_version"
+# Files an earlier test prefix left in the shared test root.
+grep -rlE '^(# |// |/\* )NIRUX owner:' "$ROOT" 2>/dev/null | while read -r leftover; do rm -f "$leftover"; done
+touch "$ROOT/etc/pam.d/system-auth" "$ROOT/etc/pam.d/common-auth" "$ROOT/etc/pam.d/common-account"
+# K7: `nirux update --auto` never asks for sudo. Changes already in place pass;
+# a system file that would change is listed in pending-system and left alone.
+TEST_OS=debian; PREFIX=$TEST/auto; BIN=$PREFIX/bin; STATE=$PREFIX/share/nirux
+PENDING_SYSTEM=$STATE/pending-system; WANTED_PACKAGES=$STATE/wanted-packages; SYSTEM_SUMS=$STATE/system-sums
+WHATS_NEW=$STATE/whats-new
+# shellcheck disable=SC2034 # read by whats_new_command in the sourced nirux
+WHATS_NEW_SHOWN=$STATE/whats-new-shown
+operation install_or_update install --no-packages --browser none --localsend no --opencode no --display-manager startx --release "$VERSION" >/dev/null
+# An update keeps the display manager and would adopt one the test machine
+# itself has installed (existing_dm looks in PATH); name none.
+mkdir -p "$ROOT/etc/systemd/system"
+ln -sfn /lib/systemd/system/nirux-test-none.service "$ROOT/etc/systemd/system/display-manager.service"
+[ -s "$SYSTEM_SUMS" ] || fail 'files installed through sudo were not recorded'
+pam_before=$(sha256sum "$ROOT/etc/pam.d/nirulock" | cut -d' ' -f1)
+say '# changed by hand' >> "$ROOT/etc/pam.d/nirulock"
+# --auto never replaces the package allowlist (it is not reported either).
+say extra-by-test >> "$ROOT/etc/nirux/autoupdate-packages"
+allow_sum=$(sha256sum "$ROOT/etc/nirux/autoupdate-packages" | cut -d' ' -f1)
+pam_changed=$(sha256sum "$ROOT/etc/pam.d/nirulock" | cut -d' ' -f1)
+first=$(readlink "$STATE/current")
+set +e
+(
+  eval "$(sed -n '/^as_root() {/,/^}/p' "$SOURCE/nirux")"
+  export NIRUX_TEST_AS_ROOT=0
+  sudo() { echo "sudo was called: $*" >&2; exit 97; }
+  install_or_update update --auto --no-packages --release 99.0.0
+) > "$TEST/auto.log" 2>&1
+rc=$?
+set -e
+[ "$rc" = 0 ] || { cat "$TEST/auto.log" >&2; fail 'update --auto failed'; }
+grep -q 'sudo was called' "$TEST/auto.log" && fail 'update --auto used sudo'
+[ "$(readlink "$STATE/current")" != "$first" ] || fail 'update --auto did not activate the new generation'
+[ "$(sha256sum "$ROOT/etc/pam.d/nirulock" | cut -d' ' -f1)" = "$pam_changed" ] || fail 'update --auto changed a system file'
+grep -qx "update $ROOT/etc/pam.d/nirulock" "$PENDING_SYSTEM" || { cat "$PENDING_SYSTEM" >&2; fail 'the changed system file is not pending'; }
+[ "$(grep -c . "$PENDING_SYSTEM")" = 1 ] || { cat "$PENDING_SYSTEM" >&2; fail 'unchanged system integration was reported as pending'; }
+[ "$(sha256sum "$ROOT/etc/nirux/autoupdate-packages" | cut -d' ' -f1)" = "$allow_sum" ] || fail 'update --auto rewrote the package allowlist'
+status > "$TEST/auto-status.log" 2>&1 || :
+grep -q 'pending system changes (1): run nirux update once to finish' "$TEST/auto-status.log" || fail 'status does not show pending system changes'
+# What's new: the highlights of every entry newer than the old version.
+grep -qx 'version 99.0.0' "$WHATS_NEW" || fail 'whats-new was not recorded for the new version'
+grep -qx "from $VERSION" "$WHATS_NEW" || fail 'whats-new does not name the old version'
+grep -qx 'Test highlight one' "$WHATS_NEW" || fail 'whats-new misses the bold lead phrase'
+grep -qx 'Plain bullet sentence' "$WHATS_NEW" || fail 'whats-new misses the first sentence of a plain bullet'
+grep -q 'Older entry' "$WHATS_NEW" && fail 'whats-new included an entry that was already installed'
+[ -f "$STATE/current/CHANGELOG.md" ] || fail 'the changelog is not kept in the generation'
+mkdir -p "$TEST/notifybin"
+cat > "$TEST/notifybin/notify-send" <<'EOF'
+#!/bin/sh
+printf '%s\n' "$*" >> "$NOTIFY_LOG"
+EOF
+chmod +x "$TEST/notifybin/notify-send"
+NOTIFY_LOG=$TEST/notify.log; export NOTIFY_LOG
+(PATH="$TEST/notifybin:$PATH" DISPLAY=:99 whats_new_command --notify)
+(PATH="$TEST/notifybin:$PATH" DISPLAY=:99 whats_new_command --notify)
+[ "$(grep -c "NIRUX 99.0.0: what's new" "$NOTIFY_LOG")" = 1 ] || fail 'whats-new --notify did not show exactly one notice'
+grep -q 'Run nirux update once to finish' "$NOTIFY_LOG" || fail 'whats-new notice does not mention pending system changes'
+grep -q -- "--action=manual=Open the manual" "$NOTIFY_LOG" || fail 'whats-new notice has no manual action'
+whats_new_command | grep -q 'Test highlight one' || fail 'whats-new does not print the highlights'
+# Same release again: apps only, no new generation, pending list kept.
+second=$(readlink "$STATE/current")
+(
+  eval "$(sed -n '/^as_root() {/,/^}/p' "$SOURCE/nirux")"
+  export NIRUX_TEST_AS_ROOT=0
+  install_or_update update --auto --no-packages --release 99.0.0
+) > "$TEST/auto-again.log" 2>&1 || { cat "$TEST/auto-again.log" >&2; fail 'a current update --auto failed'; }
+grep -q 'NIRUX 99.0.0 is current' "$TEST/auto-again.log" || fail 'a current update --auto did not short-cut'
+[ "$(readlink "$STATE/current")" = "$second" ] || fail 'a current update --auto made a new generation'
+[ -s "$PENDING_SYSTEM" ] || fail 'a current update --auto forgot the pending changes'
+# A normal update applies the file and clears the list.
+operation install_or_update update --no-packages --release 99.0.0 >/dev/null 2>&1
+[ "$(sha256sum "$ROOT/etc/pam.d/nirulock" | cut -d' ' -f1)" = "$pam_before" ] || fail 'a normal update did not restore the system file'
+[ ! -e "$PENDING_SYSTEM" ] || fail 'a normal update left the pending list'
+grep -qx extra-by-test "$ROOT/etc/nirux/autoupdate-packages" && fail 'a normal update did not replace the package allowlist'
+operation uninstall --purge >/dev/null 2>&1 || :
+rm -rf "$PREFIX"
+rm -f "$ROOT/etc/systemd/system/display-manager.service"
+
+# K7: auto_root on its own. Unreadable root-only files count as unchanged when
+# the recorded checksum matches what would be written.
+PREFIX=$TEST/autoroot; STATE=$PREFIX/share/nirux; PENDING_SYSTEM=$STATE/pending-system; SYSTEM_SUMS=$STATE/system-sums
+mkdir -p "$STATE" "$TEST/ar"
+say same > "$TEST/ar/src"; cp "$TEST/ar/src" "$TEST/ar/dst"; chmod 644 "$TEST/ar/dst"
+auto_root install -m 644 "$TEST/ar/src" "$TEST/ar/dst"
+auto_root chmod 0644 "$TEST/ar/dst"
+auto_root install -d -m 755 "$TEST/ar"
+auto_root rm -f "$TEST/ar/absent"
+auto_root udevadm control --reload
+[ ! -s "$PENDING_SYSTEM" ] || { cat "$PENDING_SYSTEM" >&2; fail 'auto_root reported a change that is already in place'; }
+auto_root chmod 0600 "$TEST/ar/dst"
+grep -qx "set the mode of $TEST/ar/dst to 0600" "$PENDING_SYSTEM" || fail 'auto_root did not report a mode change'
+[ "$(stat -c %a "$TEST/ar/dst")" = 644 ] || fail 'auto_root changed a mode'
+rm -f "$PENDING_SYSTEM"
+system_sum_note install -m 440 "$TEST/ar/src" "$TEST/ar/secret"
+if [ "$(id -u)" != 0 ]; then
+  cp "$TEST/ar/src" "$TEST/ar/secret"; chmod 000 "$TEST/ar/secret"
+  auto_root install -m 440 "$TEST/ar/src" "$TEST/ar/secret"
+  [ ! -s "$PENDING_SYSTEM" ] || fail 'auto_root did not use the recorded checksum of an unreadable file'
+  say other > "$TEST/ar/src2"
+  auto_root install -m 440 "$TEST/ar/src2" "$TEST/ar/secret"
+  grep -qx "update $TEST/ar/secret" "$PENDING_SYSTEM" || fail 'auto_root missed a change to an unreadable file'
+  chmod 600 "$TEST/ar/secret"
+fi
+rm -f "$PENDING_SYSTEM"
+# Packages the release needs are listed for the root helper, not installed.
+WANTED_PACKAGES=$STATE/wanted-packages
+(
+  # shellcheck disable=SC2034 # read by provision_packages in the sourced nirux
+  OS=debian NIRUX_AUTO=1
+  wanted_query() { [ "$1" = curl ]; }
+  packages_for() { say "curl fake-one fake-two"; }
+  internal_package_query wanted_query
+  install_packages() { fail 'auto provisioning installed packages'; }
+  NIRUX_PROVISION_OS=debian NIRUX_PACKAGE_MAP=none provision_packages missing
+) > "$TEST/wanted.log" 2>&1 || { cat "$TEST/wanted.log" >&2; fail 'auto provisioning failed'; }
+[ "$(tr '\n' ' ' < "$WANTED_PACKAGES")" = 'fake-one fake-two ' ] || fail "wanted packages: $(cat "$WANTED_PACKAGES" 2>/dev/null)"
+pending_lines | grep -qx 'install packages: fake-one fake-two' || fail 'wanted packages are not shown as pending'
+rm -rf "$PREFIX"
+
+# K5: changelog highlights keep at most six lines, newest first.
+{
+  say '## 9.9.3 (x)'; say ''
+  for n in 1 2 3 4; do say "- **Three $n.** words"; done
+  say '  continued `code`.'
+  say ''; say '## 9.9.2 (x)'; say ''
+  for n in 1 2 3; do say "- Two $n plain. More."; done
+  say ''; say '## 9.9.1 (x)'; say ''; say '- **One.**'
+} > "$TEST/changelog.md"
+changelog_highlights "$TEST/changelog.md" 9.9.1 9.9.3 > "$TEST/highlights"
+[ "$(grep -c . "$TEST/highlights")" = 6 ] || fail 'changelog highlights are not limited to six lines'
+[ "$(head -n 1 "$TEST/highlights")" = 'Three 1' ] || fail 'changelog highlights do not start with the newest entry'
+grep -qx 'Two 2 plain' "$TEST/highlights" || fail 'changelog highlights lost a plain bullet'
+grep -q 'One' "$TEST/highlights" && fail 'changelog highlights included the installed version'
+
+# K5: [bar] follow_default_modules keeps modules on the shipped list; the
+# old file goes to NIRUWM's config history once; false keeps your list.
+fd=$TEST/follow; mkdir -p "$fd"
+printf '[bar]\nmodules = ["workspaces", "clock"]\n' > "$fd/config.toml"
+cp "$fd/config.toml" "$fd/original.toml"
+(
+  XDG_STATE_HOME=$fd/state
+  follow_default_bar_modules "$fd/config.toml" "$SOURCE/config.example.toml" "$fd/original.toml"
+  follow_default_bar_modules "$fd/config.toml" "$SOURCE/config.example.toml" "$fd/original.toml"
+) > "$fd/log"
+[ "$(bar_modules_line "$fd/config.toml")" = "$(bar_modules_line "$SOURCE/config.example.toml")" ] || fail 'bar modules did not follow the default list'
+grep -q '"disk", "quicksettings"' "$fd/config.toml" || fail 'followed list lacks the disk module'
+[ "$(find "$fd/state/niruwm/config-history" -name '*-[0-9][0-9].toml' | wc -l)" = 1 ] || fail 'the old configuration was not kept exactly once'
+cmp -s "$fd/original.toml" "$(find "$fd/state/niruwm/config-history" -name '*.toml' | head -n 1)" || fail 'the history copy differs from the old file'
+[ "$(grep -c 'Bar modules set to the NIRUX default list' "$fd/log")" = 1 ] || fail 'following the default was not announced once'
+printf '[bar]\nfollow_default_modules = false\nmodules = ["workspaces", "clock"]\n' > "$fd/mine.toml"
+(XDG_STATE_HOME=$fd/state2; follow_default_bar_modules "$fd/mine.toml" "$SOURCE/config.example.toml" "$fd/mine.toml")
+grep -qx 'modules = \["workspaces", "clock"\]' "$fd/mine.toml" || fail 'follow_default_modules = false was not respected'
+printf '[bar]\nmodules = ["workspaces", "clock"]\n' > "$fd/addkey.toml"
+add_missing_key "$fd/addkey.toml" bar follow_default_modules true
+grep -qx 'follow_default_modules = true' "$fd/addkey.toml" || fail 'follow_default_modules was not added to [bar]'
+
+# K6: apps follow verified upstream releases, never below the pin and never
+# without a checksum; the lookup is cached.
+apps=$TEST/apps; mkdir -p "$apps"
+APPS_CACHE=$apps/cache
+cat > "$apps/helium.json" <<'EOF'
+{"tag_name": "1.2.3.4", "name": "1.2.3.4", "draft": false, "prerelease": false, "author": {"login": "x"},
+ "assets": [{"name": "helium-1.2.3.4-x86_64_linux.tar.xz.asc", "digest": "sha256:1111111111111111111111111111111111111111111111111111111111111111"},
+            {"name": "helium-1.2.3.4-x86_64_linux.tar.xz", "uploader": {"login": "y"}, "digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"}],
+ "body": "text \"name\": \"helium-1.2.3.4-x86_64_linux.tar.xz\""}
+EOF
+[ "$(app_github_latest "$apps/helium.json" '' 'helium-%s-x86_64_linux.tar.xz')" = "1.2.3.4 sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" ] ||
+  fail 'the GitHub asset digest was not found'
+sed 's/"prerelease": false/"prerelease": true/' "$apps/helium.json" > "$apps/pre.json"
+app_github_latest "$apps/pre.json" '' 'helium-%s-x86_64_linux.tar.xz' >/dev/null && fail 'a prerelease was accepted'
+sed 's/"digest": "sha256:a*"//' "$apps/helium.json" > "$apps/nodigest.json"
+app_github_latest "$apps/nodigest.json" '' 'helium-%s-x86_64_linux.tar.xz' >/dev/null && fail 'a release without a digest was accepted'
+api_calls=0
+apps_api() { api_calls=$((api_calls + 1)); cp "$apps/helium.json" "$2"; }
+NIRUX_APPS=latest app_latest helium || fail 'app_latest failed on a good release'
+NIRUX_APPS=latest app_latest helium || fail 'app_latest failed from the cache'
+[ "$api_calls" = 1 ] || fail "the upstream answer was not cached ($api_calls requests)"
+NIRUX_APPS=latest app_upstream helium 1.2.3.0 || fail 'a newer upstream release was not used'
+NIRUX_APPS=latest app_upstream helium 1.2.4 && fail 'an upstream release below the pin was used'
+NIRUX_APPS=pinned app_latest helium && fail 'NIRUX_APPS=pinned asked upstream'
+# OpenCode 2: the version from opencode.ai, the sha512 from npm.
+oc_tgz=$apps/oc.tgz
+mkdir -p "$apps/ocpkg/package/bin"
+printf '#!/bin/sh\necho "opencode v2.9.1"\n' > "$apps/ocpkg/package/bin/opencode"; chmod +x "$apps/ocpkg/package/bin/opencode"
+tar -czf "$oc_tgz" -C "$apps/ocpkg" package
+# The raw digest as octal escapes (POSIX printf has no \x), then base64.
+oc_octal=$(sha512sum "$oc_tgz" | cut -d' ' -f1 | awk '{
+  for (i = 1; i <= length($0); i += 2) {
+    v = (index("0123456789abcdef", substr($0, i, 1)) - 1) * 16 + index("0123456789abcdef", substr($0, i + 1, 1)) - 1
+    printf "\\%03o", v
+  } }')
+# shellcheck disable=SC2059 # the format is the escaped digest
+oc_b64=$(printf "$oc_octal" | base64 | tr -d '\n')
+apps_api() {
+  case "$1" in
+    https://opencode.ai/update/api/latest/cli/npm) printf '{"channel":"latest","version":"2.9.1","metadata":{"package":"@opencode/cli"}}' > "$2" ;;
+    https://registry.npmjs.org/@opencode%2fcli-linux-x64/2.9.1) printf '{"name":"@opencode/cli-linux-x64","version":"2.9.1","dist":{"integrity":"sha512-%s"}}' "$oc_b64" > "$2" ;;
+    *) return 1 ;;
+  esac
+}
+rm -f "$APPS_CACHE"
+NIRUX_APPS=latest app_upstream opencode 2.2.7 || fail 'the OpenCode 2 upstream release was not found'
+[ "$AL_EXTRA" = @opencode ] || fail 'the OpenCode npm scope was not kept'
+app_digest_ok "$oc_tgz" "$AL_DIGEST" || fail 'the npm sha512 integrity does not verify the package'
+NIRUX_APPS=latest app_upstream opencode 1.9.0 && fail 'OpenCode moved to another major version'
+# Helium end to end: the newer upstream archive is installed when it verifies;
+# a wrong digest falls back to the pin.
+(
+  PREFIX=$apps/prefix; BIN=$PREFIX/bin; STATE=$PREFIX/share/nirux; WORK=$apps/work
+  mkdir -p "$WORK" "$BIN"
+  # shellcheck disable=SC2034 # read by browser_install in the sourced nirux
+  BROWSER_EFFECTIVE=helium; HELIUM_VERSION=99.9.10
+  browser_unmanaged() { return 1; }
+  make_helium_archive 99.9.20 "$apps/up.tar.xz"
+  make_helium_archive 99.9.10 "$apps/pin.tar.xz"
+  # shellcheck disable=SC2034 # read by browser_install in the sourced nirux
+  HELIUM_SHA256=$(sha256sum "$apps/pin.tar.xz" | cut -d' ' -f1)
+  up_sum=$(sha256sum "$apps/up.tar.xz" | cut -d' ' -f1)
+  fetch() { case "$1" in *99.9.20*) cp "$apps/up.tar.xz" "$2" ;; *99.9.10*) cp "$apps/pin.tar.xz" "$2" ;; *) return 1 ;; esac; }
+  rm -f "$APPS_CACHE"
+  apps_api() { sed "s/1\.2\.3\.4/99.9.20/g; s/sha256:a*\"/sha256:$UPSUM\"/" "$apps/helium.json" > "$2"; }
+  UPSUM=$up_sum NIRUX_APPS=latest browser_install > "$apps/up.log" 2>&1 || { cat "$apps/up.log" >&2; exit 1; }
+  [ "$("$BIN/helium" --version)" = 'Helium 99.9.20 (test)' ] || { echo 'upstream Helium was not installed' >&2; exit 1; }
+  # A broken upstream checksum: the newer installed one is kept (never a downgrade).
+  rm -f "$APPS_CACHE"
+  UPSUM=$(printf '%064d' 0) NIRUX_APPS=latest browser_install > "$apps/bad.log" 2>&1 || { cat "$apps/bad.log" >&2; exit 1; }
+  [ "$("$BIN/helium" --version)" = 'Helium 99.9.20 (test)' ] || { echo 'an installed newer Helium was replaced' >&2; exit 1; }
+) || fail 'Helium did not follow upstream safely'
+unset -f apps_api 2>/dev/null || :
+eval "$(sed -n '/^apps_api() {/,/^}/p' "$SOURCE/nirux")"
+
+# K5: resume-check reconnects a lone Wi-Fi, restarts sound and logs every run.
+rc_bin=$TEST/resumebin; mkdir -p "$rc_bin"
+cat > "$rc_bin/nmcli" <<'EOF'
+#!/bin/sh
+echo "nmcli $*" >> "$RC_CALLS"
+case "$*" in
+  'networking connectivity check') echo none ;;
+  'radio wifi') echo enabled ;;
+  'radio wifi on') touch "$RC_STATE/wifi-on" ;;
+  '-t -f TYPE device') echo wifi ;;
+  '-t -f TYPE,STATE device') if [ -e "$RC_STATE/wifi-on" ]; then echo wifi:connected; else echo wifi:disconnected; fi ;;
+esac
+exit 0
+EOF
+cat > "$rc_bin/wpctl" <<'EOF'
+#!/bin/sh
+[ -e "$RC_STATE/audio-ok" ]
+EOF
+cat > "$rc_bin/systemctl" <<'EOF'
+#!/bin/sh
+echo "systemctl $*" >> "$RC_CALLS"
+case "$*" in *restart*) touch "$RC_STATE/audio-ok" ;; esac
+exit 0
+EOF
+cat > "$rc_bin/tailscale" <<'EOF'
+#!/bin/sh
+echo 'Logged out.'; exit 1
+EOF
+cp "$TEST/notifybin/notify-send" "$rc_bin/notify-send"
+chmod +x "$rc_bin"/*
+RC_CALLS=$TEST/rc-calls RC_STATE=$TEST/rc-state; mkdir -p "$RC_STATE"; export RC_CALLS RC_STATE
+: > "$NOTIFY_LOG"
+(PATH="$rc_bin:$PATH" XDG_STATE_HOME=$TEST/rc-xdg NIRUX_RESUME_WAIT=1 RESUME_LOG=$TEST/rc-xdg/nirux/resume-check.log resume_check_command --notify)
+grep -q 'radio wifi off' "$RC_CALLS" && grep -q 'radio wifi on' "$RC_CALLS" || fail 'resume-check did not switch the Wi-Fi radio off and on'
+grep -q 'systemctl --user restart pipewire pipewire-pulse wireplumber' "$RC_CALLS" || fail 'resume-check did not restart the sound services'
+grep -q 'Wi-Fi reconnected after sleep' "$NOTIFY_LOG" || fail 'resume-check did not report the Wi-Fi fix'
+grep -q 'Sound restarted after sleep' "$NOTIFY_LOG" || fail 'resume-check did not report the sound fix'
+grep -q 'network=wifi-reconnected audio=restarted screens=skipped tailscale=off' "$TEST/rc-xdg/nirux/resume-check.log" || fail 'resume-check did not log the run'
+# Nothing to fix: no notice.
+: > "$NOTIFY_LOG"
+(PATH="$rc_bin:$PATH" NIRUX_RESUME_WAIT=1 RESUME_LOG=$TEST/rc-xdg/nirux/resume-check.log resume_check_command --notify)
+[ ! -s "$NOTIFY_LOG" ] || fail 'resume-check notified although nothing was wrong'
+for _ in $(seq 1 60); do say "old run" >> "$TEST/rc-xdg/nirux/resume-check.log"; done
+(PATH="$rc_bin:$PATH" NIRUX_RESUME_WAIT=1 RESUME_LOG=$TEST/rc-xdg/nirux/resume-check.log resume_check_command >/dev/null)
+[ "$(wc -l < "$TEST/rc-xdg/nirux/resume-check.log")" = 50 ] || fail 'resume-check keeps more than 50 runs'
+
+# K5: nirux clean --dry-run lists what can go and changes nothing.
+cl_home=$TEST/cleanhome; mkdir -p "$cl_home/.cache/thumbnails/normal"
+say x > "$cl_home/.cache/thumbnails/normal/a.png"
+(HOME=$cl_home XDG_CACHE_HOME=$cl_home/.cache XDG_DATA_HOME=$cl_home/.local/share TEST_OS=debian clean_command --dry-run) > "$TEST/clean.log"
+grep -q 'nirux clean can free:' "$TEST/clean.log" || fail 'clean does not list what it can free'
+grep -q 'thumbnails' "$TEST/clean.log" || fail 'clean does not offer the thumbnails'
+[ -f "$cl_home/.cache/thumbnails/normal/a.png" ] || fail 'clean --dry-run deleted a file'
+(HOME=$cl_home XDG_CACHE_HOME=$cl_home/.cache TEST_OS=debian clean_command </dev/null) >/dev/null 2>&1 && fail 'clean without a terminal or --yes did not refuse'
+
+# K8: the sleep hook goes where this init system runs it.
+sh_root=$TEST/sleeproot; mkdir -p "$sh_root/usr/libexec/elogind"
+[ "$(ROOT=$sh_root OS=void sleep_hook_dir)" = /usr/libexec/elogind/system-sleep ] || fail 'void: wrong elogind sleep hook directory'
+[ "$(ROOT=$sh_root OS=debian sleep_hook_dir)" = /usr/lib/systemd/system-sleep ] || fail 'debian: wrong systemd sleep hook directory'
 
 say 'PASS: install/update/rollback/purge, generation gc on all three distro mappings, status purity, checksum failure, PAM includes, power rule, greeter themes, managed Helium policy, obsolete browser migration, target-owned apply'

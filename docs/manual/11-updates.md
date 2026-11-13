@@ -30,8 +30,25 @@ nirux update --no-packages       # do not install missing OS packages
 nirux status                     # what is installed and active
 ```
 
-The bar's update indicator (the `updates` module) tells you when a newer core
-release exists. It follows the core suite only; extras are updated separately.
+The bar's update indicator (the `niruxupdate` module) tells you when a newer core
+release exists; `updates` counts the system packages that can be upgraded.
+
+**What's new.** After an update that installs a new NIRUX version, the first
+graphical login shows one notice, *NIRUX X.Y.Z: what's new*, with the highlights
+of every release since the version you had (at most six lines). *Open the manual*
+opens this manual. The notice is shown once; `nirux whats-new` prints it again.
+
+**Apps follow upstream.** Helium, LocalSend and OpenCode are not distribution
+packages. `nirux update` installs each app's newest stable upstream release when
+that release publishes a SHA-256 for its archive (the GitHub release digest; for
+OpenCode 2, the sha512 of the npm package `@opencode/cli-linux-x64`, the same
+binary opencode.ai serves). The archive is verified before it is unpacked, the
+program is started once to check its version, and only then is it switched in. The
+upstream answer is cached for an hour. The versions pinned in NIRUX are the
+minimum: if the lookup, the checksum or the download fails, the installed version
+is kept, and nothing is ever installed below the pin. Prereleases are never used.
+`nirux update --apps pinned` (or `NIRUX_APPS=pinned`) keeps the pins; `nirux
+status` lists each app's installed and newest version.
 
 **No logout after an update.** When `nirux update` runs inside a NIRU session, it
 restarts NIRUWM in place (`niructl restart-wm`): the window manager, the bars and the
@@ -230,6 +247,52 @@ nirux checkup discord test
 ```
 
 With a webhook set, each computer posts its report to Discord: its name, OK or the number of warnings, and one line per check. Settings are in `/etc/nirux/checkup.conf` (edit with sudo): `enabled`, `discord` (`always`, `warnings` or `off`), `clean` (`full`, `safe` without unused packages and old kernels, or `off`) and `disk_warn`. Reports are in `/var/lib/nirux/checkup/`. The checkup is a root-owned program, `/usr/libexec/nirux-checkup`, started by a systemd timer (`nirux-checkup.timer`) or, on Void, the runit service `nirux-checkup`; `smartmontools` (and `pacman-contrib` on Arch) are installed with NIRUX.
+
+## Nightly update
+
+Every NIRUX computer updates itself at night, on by default: the system packages
+(`apt-get full-upgrade`, `pacman -Syu`, `xbps-install -Su`), NIRUX, the selected
+extras and the apps above. It starts at 03:00 (a random delay of up to half an
+hour on systemd; every quarter hour between 03:00 and 05:00 on Void) and only
+when **nobody is logged in**: no user session in `loginctl` (the login screen does
+not count) and no one in `who`, SSH included. On battery it waits for the charger
+or at least 50 %. A computer that is off at night simply updates the next night.
+It never restarts the computer and never touches a running session.
+
+A run checks with `nirux doctor`, runs `nirux update --auto` (which saves a
+configuration snapshot before it changes anything, like every update), `nirux
+extras update` and `nirux doctor` again. When the second doctor finds a problem
+the first did not, the run goes back: `nirux rollback` to the previous program
+generation and `nirux restore` of that snapshot, and it posts a warning. A night
+with nothing new installs nothing and takes no snapshot, so your own snapshots
+stay among the kept ones.
+
+```sh
+nirux autoupdate            # status: on or off, user, window, last run
+nirux autoupdate last       # the latest report (the last seven are kept)
+nirux autoupdate run-now    # run it now (also while you are logged in)
+nirux autoupdate disable    # or enable
+```
+
+**Waiting system changes.** The nightly update runs your NIRUX as you, without a
+password. Whatever needs root and would change something (a new rule, a changed
+helper, a package NIRUX now needs) is left for later and listed in `nirux
+status`, `nirux autoupdate status` and the what's-new notice, as *Run nirux
+update once to finish*. The bar does not show it. Packages a release needs are
+installed by the nightly run itself, from your distribution's repositories,
+before it runs the update once more, but only names in
+`/etc/nirux/autoupdate-packages`: the complete list of packages this NIRUX
+version may install on your distribution, root-owned and written by every
+interactive `nirux update` (never by the nightly one). Any other name waits for
+your next `nirux update`.
+
+Settings are in `/etc/nirux/autoupdate.conf` (edit with sudo): `enabled`, `user`,
+`window` (`03:00-05:00`) and `discord` (`warnings`, `always` or `off`; it uses the
+webhook of `nirux checkup discord set`). Reports are in `/var/lib/nirux/autoupdate/`.
+The nightly update is a root-owned program, `/usr/libexec/nirux-autoupdate`,
+started by `nirux-autoupdate.timer` or, on Void, the runit service
+`nirux-autoupdate`. It runs only the distribution's package manager as root; your
+NIRUX in `~/.local` always runs as you.
 
 ## When GitHub is down: the GitLab mirror
 

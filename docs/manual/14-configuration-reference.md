@@ -74,17 +74,17 @@ These are not generated from an example file. The chapters describe them.
 
 <!-- generated: config (tools/manual-gen.sh; do not edit by hand) -->
 
-The example configuration files of NIRUX 0.12.267 and its components, with every
+The example configuration files of NIRUX 0.12.268 and its components, with every
 key they set or show. A value marked *commented example* is off by default:
 remove the `#` to use it. The full annotated file follows each table.
 
 | File | Read by | Example from |
 |---|---|---|
-| [`~/.config/niruwm/config.toml`](#configniruwmconfigtoml) | niruwm, nirubar, niruidle, niructl | nirux 0.12.267 `config.example.toml` |
-| [`~/.config/niruwm/appearance.toml`](#configniruwmappearancetoml) | the whole suite | nirux 0.12.267 `appearance.example.toml` |
-| [`~/.config/nirux/sounds.toml`](#configniruxsoundstoml) | nirux, nirunotify | nirux 0.12.267 `sounds.example.toml` |
-| [`~/.config/niruwm/displays.toml`](#configniruwmdisplaystoml) | niruwm, niructl, nirudisplay | nirux 0.12.267 `displays.example.toml` |
-| [`~/.config/nirubar/config.toml`](#confignirubarconfigtoml) | nirubar | nirubar 0.25.0 `weather.example.toml` |
+| [`~/.config/niruwm/config.toml`](#configniruwmconfigtoml) | niruwm, nirubar, niruidle, niructl | nirux 0.12.268 `config.example.toml` |
+| [`~/.config/niruwm/appearance.toml`](#configniruwmappearancetoml) | the whole suite | nirux 0.12.268 `appearance.example.toml` |
+| [`~/.config/nirux/sounds.toml`](#configniruxsoundstoml) | nirux, nirunotify | nirux 0.12.268 `sounds.example.toml` |
+| [`~/.config/niruwm/displays.toml`](#configniruwmdisplaystoml) | niruwm, niructl, nirudisplay | nirux 0.12.268 `displays.example.toml` |
+| [`~/.config/nirubar/config.toml`](#confignirubarconfigtoml) | nirubar | nirubar 0.26.1 `weather.example.toml` |
 | [`~/.config/nirulauncher/config.toml`](#confignirulauncherconfigtoml) | nirulauncher | nirulauncher 0.14.0 `config.example.toml` |
 | [`~/.config/nirunotify/config.toml`](#confignirunotifyconfigtoml) | nirunotify | nirunotify 0.6.0 `config.example.toml` |
 | [`~/.config/nirufetch/config.toml`](#confignirufetchconfigtoml) | nirufetch | nirufetch 0.3.0 `config.example.toml` |
@@ -164,6 +164,8 @@ remove the `#` to use it. The full annotated file follows each table.
 | `[bar]` | `enabled` | `true` | The bar is a separate process; NIRUWM starts it from PATH. |
 | `[bar]` | `position` | `"top"` | Screen edge: "top" (default) or "bottom". |
 | `[bar]` | `modules` | `["workspaces", "dictation", "privacy", "recording", "scra...` | Weather settings live in ~/.config/nirubar/config.toml; see weather.example.toml. |
+| `[bar]` | `follow_default_modules` | `true` | true (default): nirux update keeps modules on the default list above, so new modules arrive by themselves (your old file is kept in t... |
+| `[bar]` | `disk_warn` | `90` | Percent used (1-99) at which the "disk" module appears. |
 | `[bar]` | `microphone_visibility` | `"always"` | Missing input/provider stays visible even with "muted" visibility. |
 | `[bar]` | `tags` | `["1", "2", "3", "4", "5", "6", "7", "8", "9", "10"]` | Numbered (default): |
 | `[bar]` | `tags` | `["\uf015", "\uf121", "\uf086", "\uf0c0", "\uf001", "\uf03...` (commented example) | Icon labels: comment out the numbered line and uncomment this one. |
@@ -494,7 +496,7 @@ position = "top"
 #   volume      speaker and percentage; click opens information
 #   network     wired link (and Wi-Fi when wifi = false)
 #   wifi        Wi-Fi radio and connection; opens the Wi-Fi selector
-#   updates     packages that can be upgraded
+#   updates     system packages that can be upgraded (count, hidden at 0)
 #   pulse       cpu and memory, with a graph in the panel
 #   uptime      how long the machine has been on
 #   sun         sunrise and sunset, from top-level coordinates above
@@ -514,14 +516,26 @@ position = "top"
 # "niruxupdate" shows a newer NIRUX release than the installed one. It asks
 # GitHub once a day, keeps the answer in ~/.cache/nirubar, and is silent when
 # there is nothing newer. It never installs anything: click it for the command,
-# which you run when you can log out afterwards.
+# which you run when you can log out afterwards. With "niruxupdate" also in
+# the list, "updates" counts only system packages and leaves the NIRUX notice
+# to "niruxupdate".
+# "disk" is a red disk icon with the percentage used, shown only when / or
+# your home filesystem is at or above `disk_warn` percent full (hidden
+# otherwise). Its popup lists used/free/total; a click opens a terminal with
+# `nirux clean`, which asks once before freeing anything.
 # "scratchpad" shows NIRUWM scratchpads (Super+Shift+S, Super+Alt+1-9): a
 # terminal mark while any exist; click it to list, show and hide them. It draws
 # nothing while there is no scratchpad.
 # "dictation" shows NIRUDICTATE (an extra): a red dot while it records, an
 # accent mark while it transcribes; nothing otherwise or when not installed.
 # Weather settings live in ~/.config/nirubar/config.toml; see weather.example.toml.
-modules = ["workspaces", "dictation", "privacy", "recording", "scratchpad", "layout", "media", "volume", "microphone", "brightness", "display", "tailscale", "network", "wifi", "mode", "battery", "niruxupdate", "agent", "nirusec", "dnd", "quicksettings", "share", "clock"]
+modules = ["workspaces", "dictation", "privacy", "recording", "scratchpad", "layout", "media", "volume", "microphone", "brightness", "display", "tailscale", "network", "wifi", "mode", "battery", "updates", "niruxupdate", "agent", "nirusec", "dnd", "disk", "quicksettings", "share", "clock"]
+# true (default): `nirux update` keeps `modules` on the default list above, so
+# new modules arrive by themselves (your old file is kept in the config history:
+# `niructl config undo`). false: your own `modules` list is never changed.
+follow_default_modules = true
+# Percent used (1-99) at which the "disk" module appears. Default 90.
+disk_warn = 90
 # Missing input/provider stays visible even with "muted" visibility.
 microphone_visibility = "always" # "always" or "muted"
 # Left: information. Right: mute. Scroll: gain (never unmutes).

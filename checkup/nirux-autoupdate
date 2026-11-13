@@ -1,0 +1,441 @@
+#!/bin/sh
+# NIRUX nightly update: system packages, NIRUX, extras and apps, while nobody
+# is logged in.
+#
+# Installed root-owned as /usr/libexec/nirux-autoupdate and run by root from a
+# systemd timer (03:00 with a random delay of up to 30 minutes, no catch-up)
+# or, on runit, from a small service loop that checks every quarter hour.
+# Root runs only root-owned code: the distribution's package manager, and
+# this script. The user's NIRUX (in ~/.local) runs as the user, through
+# runuser with a clean environment; its output is only logged, never run.
+#
+#   nirux-autoupdate run [--scheduled]   one run (root); --scheduled keeps to
+#                                        the window and to once a day
+#   nirux-autoupdate run-now             a run now, even with a session open
+#   nirux-autoupdate loop                runit service: run when due, else sleep
+#   nirux-autoupdate due                 exit 0 when a scheduled run is due
+#   nirux-autoupdate status | last       settings and the last run; the report
+#   nirux-autoupdate enable | disable    switch it on or off (root)
+#
+# Settings: /etc/nirux/autoupdate.conf (key=value, never sourced):
+#   enabled=yes|no  user=NAME  window=03:00-05:00  discord=warnings|always|off
+# Reports: /var/lib/nirux/autoupdate/report-*.txt, the newest seven are kept.
+set -u
+umask 022
+
+R=${NIRUX_AUTOUPDATE_ROOT:-}
+# The fixture root and PATH of the tests apply only to an unprivileged run:
+# root never takes them from the environment.
+TEST_PATH=${NIRUX_AUTOUPDATE_PATH:-}
+if [ "$(id -u)" = 0 ]; then R='' TEST_PATH='' NIRUX_AUTOUPDATE_SESSIONS=''; fi
+CONF=$R/etc/nirux/autoupdate.conf
+# The package names this NIRUX may install here, written by an interactive
+# (sudo) nirux update: root-owned, never taken from the user's home.
+ALLOW=$R/etc/nirux/autoupdate-packages
+HOOK=$R/etc/nirux/checkup-webhook
+STATE=$R/var/lib/nirux/autoupdate
+LOCKDIR=$R/run/nirux-autoupdate.lock
+KEEP=7
+PATH=${TEST_PATH:-/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin}
+export PATH
+
+say() { printf '%s\n' "$*"; }
+conf() {
+  v=$(sed -n "s/^[[:space:]]*$1[[:space:]]*=[[:space:]]*//p" "$CONF" 2>/dev/null | tail -n 1 |
+    tr -d '"'"'" | sed 's/[[:space:]]*#.*//; s/[[:space:]]*$//')
+  [ -n "$v" ] && say "$v" || say "$2"
+}
+have() { command -v "$1" >/dev/null 2>&1; }
+bounded() { t=$1; shift; if have timeout; then timeout "$t" "$@"; else "$@"; fi; }
+now() { date +%s; }
+host() { cat "$R/etc/hostname" 2>/dev/null || hostname 2>/dev/null || say unknown; }
+
+distro() {
+  id=$(sed -n 's/^ID=//p' "$R/etc/os-release" 2>/dev/null | tr -d '"')
+  like=$(sed -n 's/^ID_LIKE=//p' "$R/etc/os-release" 2>/dev/null | tr -d '"')
+  for x in $id $like; do
+    case "$x" in debian|ubuntu) say debian; return ;; arch) say arch; return ;; void) say void; return ;; esac
+  done
+  say unknown
+}
+
+# ---- who and when ------------------------------------------------------------
+
+# The owner, checked: an existing ordinary account, never root.
+owner() {
+  u=$(conf user "")
+  case "$u" in ''|root|-*|*[!a-z0-9_.-]*) return 1 ;; esac
+  say "$u"
+}
+owner_home() {
+  if [ -n "$R" ]; then say "$R/home/$1"; return; fi
+  getent passwd "$1" 2>/dev/null | cut -d: -f6
+}
+owner_prefix() {
+  # The installing NIRUX writes its prefix into this file's header.
+  p=$(sed -n 's/^# NIRUX owner: //p' "$0" 2>/dev/null | head -n 1)
+  [ -n "$p" ] || p=$(owner_home "$1")/.local
+  say "$p"
+}
+
+# Minutes since midnight for HH:MM.
+minutes() {
+  h=${1%%:*}; m=${1#*:}
+  case "$h$m" in ''|*[!0-9]*) return 1 ;; esac
+  say $(( ${h#0} * 60 + ${m#0} ))
+}
+in_window() {
+  w=$(conf window 03:00-05:00)
+  start=$(minutes "${w%-*}") || start=180
+  end=$(minutes "${w#*-}") || end=300
+  cur=$(minutes "$(date +%H:%M)") || return 1
+  if [ "$start" -le "$end" ]; then [ "$cur" -ge "$start" ] && [ "$cur" -lt "$end" ]
+  else [ "$cur" -ge "$start" ] || [ "$cur" -lt "$end" ]; fi
+}
+ran_today() { [ "$(cat "$STATE/last-day" 2>/dev/null)" = "$(date +%Y-%m-%d)" ]; }
+due() {
+  [ "$(conf enabled yes)" = yes ] || return 1
+  in_window || return 1
+  ! ran_today
+}
+loop() {
+  sleep "${NIRUX_AUTOUPDATE_BOOT_DELAY:-300}"
+  while :; do
+    if due; then run --scheduled || :; fi
+    sleep 900
+  done
+}
+
+# Somebody is logged in: a session of class "user" (a greeter does not
+# count), or anyone in who(1). ssh logins count too.
+someone_logged_in() {
+  if [ -n "${NIRUX_AUTOUPDATE_SESSIONS:-}" ]; then [ "$NIRUX_AUTOUPDATE_SESSIONS" != 0 ]; return; fi
+  if have loginctl; then
+    for s in $(bounded 10 loginctl list-sessions --no-legend 2>/dev/null | awk '{ print $1 }'); do
+      class=$(bounded 5 loginctl show-session "$s" -p Class --value 2>/dev/null)
+      state=$(bounded 5 loginctl show-session "$s" -p State --value 2>/dev/null)
+      [ "$class" = user ] && [ "$state" != closing ] && return 0
+    done
+  fi
+  [ -n "$(who 2>/dev/null | head -n 1)" ]
+}
+# On battery only with the charger connected or at least 50 %.
+power_ok() {
+  ac=0 bat=0 low=0
+  for s in "$R"/sys/class/power_supply/*; do
+    [ -d "$s" ] || continue
+    case "$(cat "$s/type" 2>/dev/null)" in
+      Mains|USB) [ "$(cat "$s/online" 2>/dev/null)" = 1 ] && ac=1 ;;
+      Battery)
+        [ "$(cat "$s/scope" 2>/dev/null)" = Device ] && continue
+        bat=1
+        cap=$(cat "$s/capacity" 2>/dev/null)
+        [ "${cap:-100}" -ge 50 ] 2>/dev/null || low=1 ;;
+    esac
+  done
+  [ "$bat" = 0 ] || [ "$ac" = 1 ] || [ "$low" = 0 ]
+}
+
+# ---- the report --------------------------------------------------------------
+
+WARN=0
+LINES=
+add() { LINES="$LINES$1: $2
+"; }
+warn() { WARN=$((WARN + 1)); add "⚠ $1" "$2"; }
+log() { printf '%s %s\n' "$(date '+%H:%M:%S')" "$*" >> "$WORK/log"; }
+
+# Run a command as the owner with a clean environment; output to the log.
+as_owner() {
+  t=$1; shift
+  home=$(owner_home "$USER_NAME")
+  if [ -n "$R" ] || [ "$(id -u)" != 0 ]; then
+    # Tests and a fixture root: no user switch.
+    bounded "$t" env HOME="$home" PATH="$OWNER_PATH" NIRUX_AUTO=1 "$@" </dev/null
+  elif have runuser; then
+    bounded "$t" runuser -u "$USER_NAME" -- env -i HOME="$home" USER="$USER_NAME" LOGNAME="$USER_NAME" \
+      SHELL=/bin/sh LANG="${LANG:-C.UTF-8}" PATH="$OWNER_PATH" NIRUX_AUTO=1 "$@" </dev/null
+  else
+    # su without runuser (no PAM session shell): the command line is fixed.
+    q=
+    for a in "$@"; do q="$q '$(printf '%s' "$a" | sed "s/'/'\\\\''/g")'"; done
+    bounded "$t" su -s /bin/sh "$USER_NAME" -c "exec env -i HOME='$home' USER='$USER_NAME' LOGNAME='$USER_NAME' SHELL=/bin/sh PATH='$OWNER_PATH' NIRUX_AUTO=1$q" </dev/null
+  fi
+}
+owner_step() { # NAME TIMEOUT COMMAND... : output in $WORK/out and the log
+  name=$1; shift
+  [ "$NOW" = 0 ] || say "== $name"
+  log "== $name"
+  as_owner "$@" > "$WORK/out" 2>&1
+  st=$?
+  cat "$WORK/out" >> "$WORK/log"
+  log "== $name: exit $st"
+  return "$st"
+}
+
+# The owner's snapshot ids, sorted (their names start with the time).
+snapshots() {
+  as_owner 20 sh -c 'for f in "$1"/*.tar.gz; do [ -f "$f" ] && basename "$f" .tar.gz; done' sh \
+    "$(owner_home "$USER_NAME")/.local/state/nirux/snapshots" 2>/dev/null | grep -E '^[A-Za-z0-9._-]+$' | LC_ALL=C sort
+}
+# Lines of a doctor run that report a problem (versions and paths change
+# between runs and are not problems).
+doctor_failures() {
+  grep -E '^(missing |broken |not running |no |could not |capture dependency missing|capture x11grab missing|configuration candidate rejected|incorrect |PAM service|bar ownership|backlight present but|Bluetooth BlueZ SPA missing)|[Ee]rror:|invalid' "$1" 2>/dev/null |
+    grep -vE '^missing optional |^no backlight device|^no default audio sink' | LC_ALL=C sort -u
+}
+
+# ---- system packages (root, the distribution's own tools) --------------------
+
+system_upgrade() {
+  case $(distro) in
+    debian)
+      bounded 900 apt-get update -q >> "$WORK/log" 2>&1 &&
+        bounded 5400 env DEBIAN_FRONTEND=noninteractive apt-get -y -q \
+          -o Dpkg::Options::=--force-confdef -o Dpkg::Options::=--force-confold full-upgrade >> "$WORK/log" 2>&1 ;;
+    arch)
+      bounded 900 pacman -Sy --noconfirm >> "$WORK/log" 2>&1 &&
+        bounded 900 pacman -S --needed --noconfirm archlinux-keyring >> "$WORK/log" 2>&1 &&
+        bounded 5400 pacman -Su --noconfirm >> "$WORK/log" 2>&1 ;;
+    void)
+      # xbps updates itself first; then everything else.
+      bounded 900 xbps-install -Suy xbps >> "$WORK/log" 2>&1
+      bounded 5400 xbps-install -Suy >> "$WORK/log" 2>&1 ;;
+    *) return 2 ;;
+  esac
+}
+# Count packages that can still be upgraded (for the report).
+upgradable() {
+  case $(distro) in
+    debian) apt list --upgradable 2>/dev/null | grep -vc '^Listing' ;;
+    arch) pacman -Qu 2>/dev/null | grep -c . ;;
+    void) xbps-install -Mun 2>/dev/null | grep -c . ;;
+  esac
+}
+# Package names the user's NIRUX asked for, read as the user (root never
+# opens a path in the user's home), validated, repository packages only.
+wanted_packages() {
+  as_owner 30 sh -c 'f=$1; [ -f "$f" ] && [ ! -L "$f" ] && head -c 4096 "$f"' sh "$PREFIX_DIR/share/nirux/wanted-packages" 2>/dev/null |
+    while IFS= read -r p; do
+      printf '%s\n' "$p" | grep -Eqx '[a-z0-9][A-Za-z0-9+._-]*' && say "$p"
+    done | head -n 64 | tr '\n' ' ' | sed 's/ $//'
+}
+# The allowlist, if it is a regular root-owned file nobody else can write.
+allowed_packages() {
+  [ -f "$ALLOW" ] && [ ! -L "$ALLOW" ] || return 1
+  if [ -z "$R" ]; then
+    [ "$(stat -c %u "$ALLOW" 2>/dev/null)" = 0 ] || return 1
+    case "$(stat -c %A "$ALLOW" 2>/dev/null)" in ?????w????|????????w?) return 1 ;; esac
+  fi
+  grep -Ex '[a-z0-9][A-Za-z0-9+._-]*' "$ALLOW"
+}
+install_wanted() {
+  # shellcheck disable=SC2086 # validated names, one per word
+  case $(distro) in
+    debian) bounded 3600 env DEBIAN_FRONTEND=noninteractive apt-get install -y -q --no-install-recommends $1 >> "$WORK/log" 2>&1 ;;
+    arch) bounded 3600 pacman -S --needed --noconfirm $1 >> "$WORK/log" 2>&1 ;;
+    void) bounded 3600 xbps-install -Sy $1 >> "$WORK/log" 2>&1 ;;
+    *) return 2 ;;
+  esac
+}
+
+# ---- Discord (the checkup's webhook) -----------------------------------------
+
+json_escape() { sed 's/\\/\\\\/g; s/"/\\"/g' | awk '{ printf "%s\\n", $0 }'; }
+post_discord() {
+  [ -s "$HOOK" ] && have curl || return 1
+  url=$(head -n 1 "$HOOK")
+  case "$url" in https://discord.com/api/webhooks/*|https://discordapp.com/api/webhooks/*) ;; *) return 1 ;; esac
+  body="{\"content\":\"$(printf '%s' "$1" | head -c 1900 | json_escape)\"}"
+  printf 'url = "%s"\n' "$url" | bounded 30 curl -K - -fsS -H 'Content-Type: application/json' \
+    --data-binary "$body" -o /dev/null 2>/dev/null
+}
+
+save_report() {
+  mkdir -p "$STATE" && chmod 755 "$STATE"
+  stamp=$(date +%Y%m%d-%H%M%S)
+  {
+    say "$SUMMARY"
+    printf '%s' "$LINES"
+    say ''
+    say '---- log ----'
+    tail -n 400 "$WORK/log" 2>/dev/null
+  } > "$STATE/report-$stamp.txt"
+  chmod 644 "$STATE/report-$stamp.txt"
+  ln -sf "report-$stamp.txt" "$STATE/latest"
+  ls -1 "$STATE"/report-*.txt 2>/dev/null | sort -r | tail -n +$((KEEP + 1)) | while read -r old; do rm -f "$old"; done
+}
+finish() { # STATUS-WORD
+  if [ "$WARN" = 0 ]; then st=OK; else st="$WARN warning$( [ "$WARN" = 1 ] || say s)"; fi
+  SUMMARY="NIRUX nightly update: $(host) · $(date '+%Y-%m-%d %H:%M') · $1 · $st"
+  save_report
+  say "$SUMMARY"
+  printf '%s' "$LINES"
+  mode=$(conf discord warnings)
+  if [ "$mode" = always ] || { [ "$mode" = warnings ] && [ "$WARN" -gt 0 ]; }; then
+    if [ "$WARN" = 0 ]; then icon="✅"; else icon="⚠️"; fi
+    post_discord "$icon **$(host)** · NIRUX nightly update · $1 · $st
+$(printf '%s' "$LINES")" || :
+  fi
+}
+
+# ---- one run -----------------------------------------------------------------
+
+run() {
+  SCHEDULED=0 NOW=0
+  for a in "$@"; do case "$a" in --scheduled) SCHEDULED=1 ;; --now) NOW=1 ;; esac; done
+  if [ "$(id -u)" != 0 ] && [ -z "$R" ]; then say 'nirux-autoupdate: run needs root (use: nirux autoupdate run-now)' >&2; return 1; fi
+  mkdir -p "${LOCKDIR%/*}" 2>/dev/null
+  mkdir "$LOCKDIR" 2>/dev/null || { say 'nirux-autoupdate: another run is in progress' >&2; return 1; }
+  WORK=$(mktemp -d "${TMPDIR:-/tmp}/nirux-autoupdate.XXXXXX") || { rmdir "$LOCKDIR"; return 1; }
+  trap 'rm -rf "$WORK"; rmdir "$LOCKDIR" 2>/dev/null' EXIT
+  trap 'exit 130' INT
+  trap 'exit 143' TERM HUP
+  : > "$WORK/log"
+  mkdir -p "$STATE"
+  if [ "$SCHEDULED" = 1 ]; then
+    [ "$(conf enabled yes)" = yes ] || { say 'nightly update disabled'; return 0; }
+    in_window || { say 'outside the update window; nothing to do'; return 0; }
+    ran_today && { say 'already ran today'; return 0; }
+  fi
+  USER_NAME=$(owner) || { add Skipped "no valid user= in $CONF"; finish skipped; return 1; }
+  home=$(owner_home "$USER_NAME")
+  [ -n "$home" ] && [ -d "$home" ] || { add Skipped "no home for $USER_NAME"; finish skipped; return 1; }
+  case "$home" in *"'"*|*'"'*|*'\'*) add Skipped "unusual home path for $USER_NAME"; finish skipped; return 1 ;; esac
+  PREFIX_DIR=$(owner_prefix "$USER_NAME")
+  NIRUX=$PREFIX_DIR/bin/nirux
+  OWNER_PATH=$PREFIX_DIR/bin:${TEST_PATH:-/usr/local/bin:/usr/bin:/bin}
+  # A skipped run leaves no report (runit tries again every quarter hour).
+  if [ "$NOW" = 0 ] && someone_logged_in; then
+    say "$(date '+%Y-%m-%d %H:%M') skipped: somebody is logged in" | tee "$STATE/last-skip"
+    return 0
+  fi
+  if ! power_ok; then
+    say "$(date '+%Y-%m-%d %H:%M') skipped: on battery below 50 %" | tee "$STATE/last-skip"
+    return 0
+  fi
+  date +%Y-%m-%d > "$STATE/last-day"
+  log "user $USER_NAME, NIRUX $NIRUX"
+
+  # 1. System packages, as root.
+  if system_upgrade; then add System "packages upgraded"
+  else
+    warn System "the package upgrade failed (see the log)"
+  fi
+  left=$(upgradable 2>/dev/null || :)
+  [ "${left:-0}" = 0 ] 2>/dev/null || add System "$left packages still upgradable"
+
+  # 2. NIRUX, extras and apps, as the user.
+  if ! as_owner 10 test -x "$NIRUX"; then
+    warn NIRUX "no NIRUX at $NIRUX"
+    finish failed
+    return 1
+  fi
+  before_version=$(as_owner 20 "$NIRUX" --version 2>/dev/null | awk '{ print $2 }')
+  before_gen=$(as_owner 10 readlink "$PREFIX_DIR/share/nirux/current" 2>/dev/null)
+  owner_step 'doctor (before)' 600 "$NIRUX" doctor
+  cp "$WORK/out" "$WORK/doctor-before"
+  # The restore point: `nirux update` saves a snapshot before it changes
+  # the configuration (and `nirux extras update` before an extra changes).
+  # Only an update that changes something makes one, so nightly runs do not
+  # push your own snapshots out of the kept ones.
+  snapshots > "$WORK/snaps-before"
+  if owner_step 'nirux update --auto' 5400 "$NIRUX" update --auto; then
+    after_version=$(as_owner 20 "$NIRUX" --version 2>/dev/null | awk '{ print $2 }')
+    if [ "$after_version" != "$before_version" ]; then add NIRUX "$before_version → $after_version"
+    else add NIRUX "$after_version (current)"; fi
+  else
+    warn NIRUX "nirux update --auto failed; the installed version was kept"
+  fi
+  wanted=$(wanted_packages)
+  refused=
+  if [ -n "$wanted" ]; then
+    allowed_packages > "$WORK/allowed" 2>/dev/null || : > "$WORK/allowed"
+    ok=
+    for p in $wanted; do
+      if grep -qxF -- "$p" "$WORK/allowed"; then ok="${ok:+$ok }$p"; else refused="${refused:+$refused }$p"; fi
+    done
+    wanted=$ok
+  fi
+  if [ -n "$refused" ]; then
+    # Left in the user's list, which nirux status shows as waiting for
+    # "nirux update" (that run installs them with sudo, and lists them here).
+    warn Packages "not in $ALLOW, left for nirux update: $refused"
+    # shellcheck disable=SC2086 # validated names, one per word
+    as_owner 10 sh -c 'f=$1; shift; printf "%s\n" "$@" > "$f.new" && mv -f "$f.new" "$f"' sh \
+      "$PREFIX_DIR/share/nirux/wanted-packages" $refused || :
+  fi
+  if [ -n "$wanted" ]; then
+    if install_wanted "$wanted"; then
+      add Packages "installed for NIRUX: $wanted"
+      [ -n "$refused" ] || as_owner 10 rm -f "$PREFIX_DIR/share/nirux/wanted-packages" || :
+      owner_step 'nirux update --auto (again)' 5400 "$NIRUX" update --auto ||
+        warn NIRUX 'the second nirux update --auto failed'
+    else
+      warn Packages "could not install: $wanted"
+    fi
+  fi
+  if as_owner 10 test -s "$PREFIX_DIR/share/nirux/extras-selected"; then
+    if owner_step 'extras update' 3600 "$NIRUX" extras update; then add Extras updated
+    else warn Extras 'nirux extras update failed (see the log)'; fi
+  fi
+  owner_step 'doctor (after)' 600 "$NIRUX" doctor
+  cp "$WORK/out" "$WORK/doctor-after"
+  pending=$(as_owner 10 sh -c 'cat "$1" 2>/dev/null | head -n 20' sh "$PREFIX_DIR/share/nirux/pending-system" | grep -c . || :)
+  [ "${pending:-0}" = 0 ] || add Pending "$pending system change(s) wait for: nirux update"
+
+  snapshots > "$WORK/snaps-after"
+  snap=$(LC_ALL=C comm -13 "$WORK/snaps-before" "$WORK/snaps-after" | head -n 1)
+
+  # 3. Worse than before: go back.
+  doctor_failures "$WORK/doctor-before" > "$WORK/fail-before"
+  doctor_failures "$WORK/doctor-after" > "$WORK/fail-after"
+  new_fail=$(LC_ALL=C comm -13 "$WORK/fail-before" "$WORK/fail-after" | head -n 5)
+  if [ -n "$new_fail" ]; then
+    warn Doctor "new problems after the update: $(printf '%s' "$new_fail" | tr '\n' ';')"
+    after_gen=$(as_owner 10 readlink "$PREFIX_DIR/share/nirux/current" 2>/dev/null)
+    if [ -n "$before_gen" ] && [ "$after_gen" != "$before_gen" ]; then
+      if owner_step rollback 300 "$NIRUX" rollback; then add Restored "program generation back to ${before_gen##*/}"
+      else warn Restored 'nirux rollback failed'; fi
+    fi
+    if [ -n "$snap" ]; then
+      if owner_step restore 300 "$NIRUX" restore "$snap" --yes; then add Restored "configuration from snapshot $snap"
+      else warn Restored "nirux restore $snap failed"; fi
+    fi
+    finish restored
+    return 0
+  fi
+  add Doctor 'no new problems'
+  finish updated
+  return 0
+}
+
+status() {
+  say "Nightly update: $(conf enabled yes) (settings: $CONF)"
+  say "User: $(conf user '?'), window $(conf window 03:00-05:00), Discord: $(conf discord warnings)"
+  if [ -f "$STATE/latest" ]; then say "Last run: $(head -n 1 "$STATE/latest")"
+  else say 'Last run: never'; fi
+  if [ -f "$STATE/last-skip" ]; then say "Last skip: $(cat "$STATE/last-skip")"; fi
+}
+set_enabled() {
+  [ "$(id -u)" = 0 ] || [ -n "$R" ] || { say "$1 needs root (use: nirux autoupdate $1)" >&2; return 1; }
+  value=yes; [ "$1" = enable ] || value=no
+  [ -f "$CONF" ] || { say "no $CONF; run nirux update first" >&2; return 1; }
+  if grep -q '^[[:space:]]*enabled[[:space:]]*=' "$CONF"; then
+    sed -i "s/^[[:space:]]*enabled[[:space:]]*=.*/enabled=$value/" "$CONF"
+  else
+    say "enabled=$value" >> "$CONF"
+  fi
+  say "Nightly update ${1}d"
+}
+
+case "${1:-}" in
+  run) shift; run "$@" ;;
+  run-now) run --now ;;
+  loop) loop ;;
+  due) due ;;
+  status) status ;;
+  last) if [ -f "$STATE/latest" ]; then cat "$STATE/latest"; else say 'The nightly update has not run yet.'; fi ;;
+  enable|disable) set_enabled "$1" ;;
+  *) say 'usage: nirux-autoupdate run [--scheduled] | run-now | loop | due | status | last | enable | disable' >&2; exit 2 ;;
+esac

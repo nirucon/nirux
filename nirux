@@ -2,7 +2,7 @@
 # NIRUX: install a complete X11 desktop, or maintain an existing installation.
 set -eu
 
-VERSION=0.12.267
+VERSION=0.12.268
 PREFIX=${NIRUX_PREFIX:-$HOME/.local}
 BIN=$PREFIX/bin
 STATE=$PREFIX/share/nirux
@@ -58,15 +58,20 @@ sudo_secret_forget() {
 }
 SUDO_ASK_LATER=0
 TRAPS_ARMED=0
-# Pinned upstream release. The archive is verified before extraction, and the
-# extracted browser is still checked for shared libraries and its reported
-# version before the stable link is switched.
-HELIUM_VERSION=0.19.4.1
+# Pinned upstream releases: the minimum NIRUX installs. `nirux update` follows
+# each app's newest stable upstream release when it publishes a checksum
+# (NIRUX_APPS=pinned or --apps pinned keeps the pins). Every archive is
+# verified before extraction, and the extracted program is still checked for
+# shared libraries and its reported version before the stable link is
+# switched. OpenCode 2 comes from opencode.ai (the GitHub anomalyco/opencode
+# releases are OpenCode 1); its binary is identical to the npm package
+# @opencode/cli-linux-x64, whose sha512 integrity anchors the pin.
+HELIUM_VERSION=0.21.2.1
+HELIUM_SHA256=e55c253e082f78fb5ae094ca465a59e06882fd7c87ebf383165beb3560e0b519
 LOCALSEND_VERSION=1.18.2
 LOCALSEND_SHA256=287690a9a8eb6da9c83cc97b3e3030ac67daf32a7331fcf307d0939300658d16
-OPENCODE_VERSION=2.1.3
-OPENCODE_SHA256=f1561a5fa724b781d97e9bf86eb6aceb82b56ef91fa19c03a2cd7b24c36028ab
-HELIUM_SHA256=6ca6e4a00fef5916821fb1af8a9607cc6b386f678a7eb422e55f19116ba30469
+OPENCODE_VERSION=2.2.7
+OPENCODE_SHA256=89a6cee227b54bc011179c528a5e63176032462b1a5e21723b616801cddc2ca7
 BROWSER_CHOICE=
 WALLPAPER_CHOICE=
 BROWSER_EFFECTIVE=keep
@@ -87,6 +92,11 @@ BROWSER_ADDON_CHOICE=
 BROWSER_ADDON_EFFECTIVE=keep
 BROWSER_ADDON_EXPLICIT=0
 EXTRAS_SELECTED=$STATE/extras-selected
+# nirux update --auto (the nightly update) sets this; see auto_root.
+NIRUX_AUTO=${NIRUX_AUTO:-0}
+PENDING_SYSTEM=$STATE/pending-system
+WANTED_PACKAGES=$STATE/wanted-packages
+SYSTEM_SUMS=$STATE/system-sums
 
 say() { printf '%s\n' "$*"; }
 die() { say "nirux: $*" >&2; sudo_secret_forget; exit 1; }
@@ -97,6 +107,7 @@ usage() {
   say "                    [--localsend yes|no] [--opencode yes|no] [--tailscale yes|no] [--icons none|papirus]"
   say "       nirux update [--no-packages] [--release VERSION] [--browser helium|none|keep] [--browser-addon bonjourr|none|keep]"
   say "                    [--wallpapers all|default] [--localsend yes|no] [--opencode yes|no] [--icons keep|none|papirus]"
+  say "                    [--apps latest|pinned] [--auto]"
   say "       nirux login-wallpaper [list|set FILE|reset|sync]"
   say "       nirux wallpapers [status|download [themes|signature|extras|all|theme NAME]|style art|signature|toggle|remove]"
   say "       nirux layout list|save NAME|apply NAME|rotate OUTPUT normal|left|right|inverted|auto"
@@ -111,6 +122,8 @@ usage() {
   say "       nirux snapshot [--note TEXT] | snapshot list | restore [ID|latest] [--dry-run]"
   say "       nirux manual [TOPIC] | manual --list | manual --path"
   say "       nirux checkup [--dry-run] | last | status | enable | disable | discord set|test"
+  say "       nirux autoupdate [status|last|enable|disable|run-now]"
+  say "       nirux whats-new [--notify] | resume-check [--notify] | clean [--yes] [--dry-run]"
   say "       nirux update-shutdown [--yes] [--dry-run] [--no-power]"
   say "       nirux update-reboot [--yes] [--dry-run] [--no-power]"
   say "       nirux rollback | gc [--keep N] [--dry-run] | status | doctor [--fix [--yes]] | uninstall [--purge] | --version | --help"
@@ -123,6 +136,8 @@ usage() {
   say "--minimal/--no-packages: binaries and integration only; required OS packages must already exist."
   say "Updates check and install missing runtime packages from the downloaded release unless --no-packages is given."
   say "Every update first saves a snapshot of your configuration (nirux snapshot list; nirux restore)."
+  say "Apps (Helium, LocalSend, OpenCode) follow their newest verified upstream release; --apps pinned keeps the NIRUX pins."
+  say "--auto: the nightly update (nirux autoupdate): no questions, no sudo; root steps wait for the next nirux update."
 }
 cleanup() {
   if [ -n "${SUDO_KEEPALIVE_PID:-}" ]; then
@@ -279,8 +294,19 @@ sudo_with_secret() {
 as_root() {
   # Integration tests exercise the target-apply subprocess against a temporary
   # system root. Production never sets this variable.
-  if [ "${NIRUX_TEST_AS_ROOT:-0}" = 1 ]; then "$@"; return; fi
-  if [ "$(id -u)" = 0 ]; then "$@"; return; fi
+  if [ "${NIRUX_TEST_AS_ROOT:-0}" = 1 ]; then
+    "$@" || return $?
+    [ "$1" != install ] || system_sum_note "$@"
+    return 0
+  fi
+  # The nightly update never asks for a password: what needs root is checked
+  # as this user and, when it would change something, left for later.
+  if [ "$NIRUX_AUTO" = 1 ]; then auto_root "$@"; return; fi
+  if [ "$(id -u)" = 0 ]; then
+    "$@" || return $?
+    [ "$1" != install ] || system_sum_note "$@"
+    return 0
+  fi
   command -v sudo >/dev/null 2>&1 || die "install sudo and grant this user access, then retry"
   # A supplied password is replayed through askpass for every command. Relying
   # on a sudo timestamp created from a piped password is not portable: sudo can
@@ -328,10 +354,9 @@ as_root() {
   # keeps the prompt out of the log.
   if [ "${SUDO_ASK_LATER:-0}" = 1 ] && [ -n "${SUDO_SECRET:-}" ]; then
     sudo_refresh
-    sudo -n "$@"
-  else
-    sudo -n "$@"
   fi
+  sudo -n "$@" || return $?
+  [ "$1" != install ] || system_sum_note "$@"
 }
 # Bookworm ships libcups2/libgtk-3-0/libasound2; trixie renamed them to *t64.
 # Pick whichever name this apt knows about so one source supports both.
@@ -627,6 +652,8 @@ sidplayfp_aur_makepkg() {
 }
 provision_sidplayfp_aur() {
   [ "$OS" = arch ] || return 0
+  # An AUR build needs sudo for pacman -U; the nightly update leaves it.
+  [ "$NIRUX_AUTO" = 0 ] || return 0
   if distribution_package_present sidplayfp || command -v sidplayfp >/dev/null 2>&1; then return 0; fi
   if [ -f "$(sidplayfp_aur_marker)" ]; then
     say "sidplayfp is not installed (an earlier AUR build failed); NIRULOCK plays no pause music."
@@ -722,6 +749,13 @@ provision_packages() {
       missing=$(resolved_missing_packages)
       if [ -z "$missing" ]; then say 'OS runtime packages are present'; provision_sidplayfp_aur; return; fi
       if [ "${NIRUX_PACKAGES_DRY_RUN:-0}" = 1 ]; then say "would install missing: $missing"; provision_sidplayfp_aur; return; fi
+      # The nightly update has no sudo: the root helper installs these from
+      # the distribution's repositories and runs the update once more.
+      if [ "$NIRUX_AUTO" = 1 ]; then
+        # shellcheck disable=SC2086 # fixed package names, one per word
+        auto_want_packages $missing
+        return 0
+      fi
       # One argument on purpose: install_packages splits this fixed package
       # list, exactly as it does for the full list.
       # shellcheck disable=SC2086
@@ -2492,6 +2526,8 @@ install_config() {
   upgrade_bar_privacy_module "$cfg_candidate"
   add_localsend_rule "$cfg_candidate"
   upgrade_obsolete_default_browser "$cfg_candidate"
+  add_missing_key "$cfg_candidate" bar follow_default_modules true
+  follow_default_bar_modules "$cfg_candidate" "$cfg_example" "$cfg_target"
   cfg_after=$(sha256sum "$cfg_candidate" | cut -d ' ' -f1)
   if [ "$cfg_before" = "$cfg_after" ]; then
     rm -f "$cfg_candidate"; CONFIG_CANDIDATE=
@@ -3475,17 +3511,35 @@ browser_install() {
     say "Using the existing Helium at $external; NIRUX will not overwrite it."
     return 0
   fi
-  if browser_managed; then
-    installed=$(browser_installed_version || :)
-    if [ "$installed" = "$HELIUM_VERSION" ]; then
+  installed=
+  if browser_managed; then installed=$(browser_installed_version || :); fi
+  [ -n "${WORK:-}" ] || die 'browser installation requires a working directory'
+  mkdir -p "$WORK/download/helium" || die 'could not create the Helium download directory'
+  # The newest upstream release, when it is newer than the pin and verified.
+  if app_upstream helium "$HELIUM_VERSION"; then
+    if [ -n "$installed" ] && version_at_least "$installed" "$AL_VERSION"; then
       browser_write_desktop
-      say "Managed Helium $HELIUM_VERSION is already installed"
+      say "Managed Helium $installed is current"
       return 0
     fi
+    bi_version=$AL_VERSION
+    bi_archive=$WORK/download/helium/helium-$bi_version-x86_64_linux.tar.xz
+    say "Downloading Helium $bi_version (newest upstream release)"
+    if fetch "https://github.com/imputnet/helium-linux/releases/download/$bi_version/helium-$bi_version-x86_64_linux.tar.xz" "$bi_archive" &&
+       app_digest_ok "$bi_archive" "$AL_DIGEST" &&
+       ( SUDO_SECRET_BORROWED=1 HELIUM_VERSION=$bi_version HELIUM_SHA256=${AL_DIGEST#sha256:}
+         browser_install_archive "$bi_archive" ); then
+      return 0
+    fi
+    say "nirux: Helium $bi_version could not be downloaded or verified; using the pinned version instead." >&2
   fi
-  [ -n "${WORK:-}" ] || die 'browser installation requires a working directory'
+  if [ -n "$installed" ] && version_at_least "$installed" "$HELIUM_VERSION"; then
+    browser_write_desktop
+    if [ "$installed" = "$HELIUM_VERSION" ]; then say "Managed Helium $HELIUM_VERSION is already installed"
+    else say "Keeping managed Helium $installed (the minimum is $HELIUM_VERSION)"; fi
+    return 0
+  fi
   archive=$WORK/download/helium/helium-$HELIUM_VERSION-x86_64_linux.tar.xz
-  mkdir -p "$WORK/download/helium" || die 'could not create the Helium download directory'
   say "Downloading Helium $HELIUM_VERSION"
   fetch "https://github.com/imputnet/helium-linux/releases/download/$HELIUM_VERSION/helium-$HELIUM_VERSION-x86_64_linux.tar.xz" "$archive"
   browser_install_archive "$archive"
@@ -3516,21 +3570,39 @@ localsend_install() {
   # LocalSend is a large external application, like Helium. It is installed
   # from the official verified tarball, not Flatpak or AppImage.
   [ "${NIRUX_TEST_AS_ROOT:-0}" = 1 ] && return 0
-  [ -x "$STATE/localsend/current/localsend_app" ] &&
-    [ "$(localsend_installed_version)" = "$LOCALSEND_VERSION" ] && {
-      mkdir -p "$BIN" || die 'could not create the command directory'
-      ln -sfn "$STATE/localsend/current/localsend_app" "$BIN/localsend" || die 'could not link LocalSend'
-      localsend_write_desktop
-      say "Managed LocalSend $LOCALSEND_VERSION is already installed"
-      return 0
-    }
+  ls_installed=
+  [ ! -x "$STATE/localsend/current/localsend_app" ] || ls_installed=$(localsend_installed_version || :)
   [ -n "${WORK:-}" ] || die 'LocalSend installation requires a working directory'
-  archive=$WORK/download/localsend/LocalSend-$LOCALSEND_VERSION-linux-x86-64.tar.gz
   mkdir -p "$WORK/download/localsend" || die 'could not create the LocalSend download directory'
+  if app_upstream localsend "$LOCALSEND_VERSION" &&
+     { [ -z "$ls_installed" ] || ! version_at_least "$ls_installed" "$AL_VERSION"; }; then
+    ls_up=$AL_VERSION
+    ls_archive=$WORK/download/localsend/LocalSend-$ls_up-linux-x86-64.tar.gz
+    say "Downloading LocalSend $ls_up (newest upstream release)"
+    if fetch "https://github.com/localsend/localsend/releases/download/v$ls_up/LocalSend-$ls_up-linux-x86-64.tar.gz" "$ls_archive" &&
+       app_digest_ok "$ls_archive" "$AL_DIGEST" &&
+       ( SUDO_SECRET_BORROWED=1; localsend_install_archive "$ls_archive" "$ls_up" ); then
+      return 0
+    fi
+    say "nirux: LocalSend $ls_up could not be downloaded or verified; using the pinned version instead." >&2
+  fi
+  if [ -n "$ls_installed" ] && version_at_least "$ls_installed" "$LOCALSEND_VERSION"; then
+    mkdir -p "$BIN" || die 'could not create the command directory'
+    ln -sfn "$STATE/localsend/current/localsend_app" "$BIN/localsend" || die 'could not link LocalSend'
+    localsend_write_desktop
+    say "Managed LocalSend $ls_installed is already installed"
+    return 0
+  fi
+  archive=$WORK/download/localsend/LocalSend-$LOCALSEND_VERSION-linux-x86-64.tar.gz
   say "Downloading LocalSend $LOCALSEND_VERSION"
   fetch "https://github.com/localsend/localsend/releases/download/v$LOCALSEND_VERSION/LocalSend-$LOCALSEND_VERSION-linux-x86-64.tar.gz" "$archive"
   actual=$(sha256sum "$archive" | cut -d ' ' -f1)
   [ "$actual" = "$LOCALSEND_SHA256" ] || die 'LocalSend checksum mismatch; current installation kept'
+  localsend_install_archive "$archive" "$LOCALSEND_VERSION"
+}
+# Install a verified LocalSend ARCHIVE of VERSION.
+localsend_install_archive() {
+  archive=$1 ls_version=$2
   unpack=$WORK/localsend-unpack
   rm -rf "$unpack"
   mkdir -p "$unpack" || die 'could not create the LocalSend extraction directory'
@@ -3539,8 +3611,8 @@ localsend_install() {
   load_output=$(LD_TRACE_LOADED_OBJECTS=1 "$unpack/localsend_app" 2>&1 || :)
   missing_libs=$(printf '%s\n' "$load_output" | awk '/not found/ {print $1}' | sort -u)
   [ -z "$missing_libs" ] || die "LocalSend needs missing shared libraries: $(printf '%s' "$missing_libs" | tr '\n' ' ')"
-  destination=$STATE/localsend/$LOCALSEND_VERSION
-  staging=$STATE/localsend/.$LOCALSEND_VERSION.$$
+  destination=$STATE/localsend/$ls_version
+  staging=$STATE/localsend/.$ls_version.$$
   mkdir -p "$STATE/localsend" || die 'could not create the LocalSend directory'
   rm -rf "$staging"
   mv "$unpack" "$staging" || die 'could not stage the LocalSend files'
@@ -3555,7 +3627,7 @@ localsend_install() {
   if [ -f "$icon" ]; then
     install -m 644 "$icon" "$PREFIX/share/icons/hicolor/256x256/apps/localsend.png" || :
   fi
-  printf '%s\n' "$LOCALSEND_VERSION" > "$STATE/localsend-version"
+  printf '%s\n' "$ls_version" > "$STATE/localsend-version"
   for old in "$STATE/localsend"/*; do
     [ -d "$old" ] || continue
     [ -L "$old" ] && continue
@@ -3563,7 +3635,7 @@ localsend_install() {
     rm -rf "$old"
   done
   localsend_write_desktop
-  say "Installed managed LocalSend $LOCALSEND_VERSION"
+  say "Installed managed LocalSend $ls_version"
 }
 
 localsend_remove_managed() {
@@ -3598,35 +3670,64 @@ opencode_install() {
     say "Using the existing OpenCode at $(command -v opencode); NIRUX will not overwrite it."
     return 0
   fi
-  [ -x "$STATE/opencode/current/opencode" ] &&
-    [ "$(opencode_installed_version)" = "$OPENCODE_VERSION" ] && {
-      mkdir -p "$BIN" || die 'could not create the command directory'
-      ln -sfn "$STATE/opencode/current/opencode" "$BIN/opencode" || die 'could not link OpenCode'
-      say "Managed OpenCode $OPENCODE_VERSION is already installed"
-      return 0
-    }
+  oc_installed=
+  [ ! -x "$STATE/opencode/current/opencode" ] || oc_installed=$(opencode_installed_version || :)
   [ -n "${WORK:-}" ] || die 'OpenCode installation requires a working directory'
-  archive=$WORK/download/opencode/opencode-linux-x64.tar.gz
   mkdir -p "$WORK/download/opencode" || die 'could not create the OpenCode download directory'
+  # OpenCode 2's newest release, the version opencode.ai's installer picks,
+  # from the npm registry that publishes its sha512.
+  if app_upstream opencode "$OPENCODE_VERSION" &&
+     { [ -z "$oc_installed" ] || ! version_at_least "$oc_installed" "$AL_VERSION"; }; then
+    oc_up=$AL_VERSION
+    oc_scope=${AL_EXTRA:-@opencode}
+    oc_archive=$WORK/download/opencode/cli-linux-x64-$oc_up.tgz
+    say "Downloading OpenCode $oc_up (newest upstream release)"
+    if fetch "https://registry.npmjs.org/$oc_scope/cli-linux-x64/-/cli-linux-x64-$oc_up.tgz" "$oc_archive" &&
+       app_digest_ok "$oc_archive" "$AL_DIGEST" &&
+       ( SUDO_SECRET_BORROWED=1; opencode_install_archive "$oc_archive" "$oc_up" npm ); then
+      return 0
+    fi
+    say "nirux: OpenCode $oc_up could not be downloaded or verified; using the pinned version instead." >&2
+  fi
+  if [ -n "$oc_installed" ] && version_at_least "$oc_installed" "$OPENCODE_VERSION"; then
+    mkdir -p "$BIN" || die 'could not create the command directory'
+    ln -sfn "$STATE/opencode/current/opencode" "$BIN/opencode" || die 'could not link OpenCode'
+    say "Managed OpenCode $oc_installed is already installed"
+    return 0
+  fi
+  archive=$WORK/download/opencode/opencode-linux-x64.tar.gz
   say "Downloading OpenCode $OPENCODE_VERSION"
   fetch "https://opencode.ai/files/bin/$OPENCODE_VERSION/opencode-linux-x64.tar.gz" "$archive"
   actual=$(sha256sum "$archive" | cut -d ' ' -f1)
   [ "$actual" = "$OPENCODE_SHA256" ] || die 'OpenCode checksum mismatch; current installation kept'
+  opencode_install_archive "$archive" "$OPENCODE_VERSION" tar
+}
+# Install a verified OpenCode ARCHIVE of VERSION; FORMAT tar (opencode.ai) or npm.
+opencode_install_archive() {
+  archive=$1 oc_version=$2 oc_format=$3
   unpack=$WORK/opencode-unpack
   rm -rf "$unpack"
   mkdir -p "$unpack" || die 'could not create the OpenCode extraction directory'
   tar -xzf "$archive" -C "$unpack" || die 'could not extract the OpenCode archive'
+  # The npm package keeps the program in package/bin.
+  if [ "$oc_format" = npm ]; then
+    [ -f "$unpack/package/bin/opencode" ] && [ ! -L "$unpack/package/bin/opencode" ] ||
+      die 'OpenCode package is missing the executable'
+    mv "$unpack/package/bin/opencode" "$unpack/opencode.bin" && rm -rf "$unpack/package" &&
+      mv "$unpack/opencode.bin" "$unpack/opencode" || die 'could not unpack the OpenCode package'
+    chmod 755 "$unpack/opencode" || die 'could not unpack the OpenCode package'
+  fi
   [ -x "$unpack/opencode" ] || die 'OpenCode archive is missing the executable'
   load_output=$(LD_TRACE_LOADED_OBJECTS=1 "$unpack/opencode" 2>&1 || :)
   missing_libs=$(printf '%s\n' "$load_output" | awk '/not found/ {print $1}' | sort -u)
   [ -z "$missing_libs" ] || die "OpenCode needs missing shared libraries: $(printf '%s' "$missing_libs" | tr '\n' ' ')"
   reported=$("$unpack/opencode" --version 2>&1) || die 'the extracted OpenCode executable cannot start'
   case "$reported" in
-    *"$OPENCODE_VERSION"*) ;;
+    *"$oc_version"*) ;;
     *) die "OpenCode reports an unexpected version: $reported" ;;
   esac
-  destination=$STATE/opencode/$OPENCODE_VERSION
-  staging=$STATE/opencode/.$OPENCODE_VERSION.$$
+  destination=$STATE/opencode/$oc_version
+  staging=$STATE/opencode/.$oc_version.$$
   mkdir -p "$STATE/opencode" || die 'could not create the OpenCode directory'
   rm -rf "$staging"
   mv "$unpack" "$staging" || die 'could not stage the OpenCode files'
@@ -3636,14 +3737,14 @@ opencode_install() {
   ln -s "$destination" "$STATE/opencode/current" || die 'could not activate OpenCode'
   mkdir -p "$BIN" || die 'could not create the command directory'
   ln -sfn "$STATE/opencode/current/opencode" "$BIN/opencode" || die 'could not link OpenCode'
-  printf '%s\n' "$OPENCODE_VERSION" > "$STATE/opencode-version"
+  printf '%s\n' "$oc_version" > "$STATE/opencode-version"
   for old in "$STATE/opencode"/*; do
     [ -d "$old" ] || continue
     [ -L "$old" ] && continue
     [ "$old" = "$destination" ] && continue
     rm -rf "$old"
   done
-  say "Installed managed OpenCode $OPENCODE_VERSION"
+  say "Installed managed OpenCode $oc_version"
 }
 
 opencode_remove_managed() {
@@ -4132,6 +4233,7 @@ apply_target_release() {
   release_optional_file nirux "$RELEASE" nirux-terminal.tar.xz
   release_optional_file nirux "$RELEASE" nirux-sounds.tar.xz
   release_optional_file nirux "$RELEASE" nirux-integration.tar.xz
+  release_optional_file nirux "$RELEASE" CHANGELOG.md
   release_optional_file nirux "$RELEASE" niruwallpaper.desktop
   release_optional_file nirux "$RELEASE" niruwallpaper.png
   release_optional_file nirux "$RELEASE" nirudisplay.desktop
@@ -4184,6 +4286,8 @@ apply_target_release() {
   [ -n "${rule_user:-}" ] || rule_user=${SUDO_USER:-$(id -un)}
   install_wifi_rule
   install_checkup
+  install_autoupdate
+  install_sleep_hook
   install_login_wallpaper_rule
   install_wallpaper_app
   install_display_app
@@ -4197,11 +4301,16 @@ apply_target_release() {
   install_battery_rule
   install_void_udev_replay
   say 'Activating the new program generation...'
+  wn_previous=$(installed_version)
+  [ ! -f "$WORK/download/nirux/CHANGELOG.md" ] ||
+    install -m 444 "$WORK/download/nirux/CHANGELOG.md" "$WORK/generation/CHANGELOG.md" || :
   activate
+  [ "$operation" != update ] || whats_new_record "$wn_previous" "$VERSION"
   start_selected_dm
   APPLY_OK=1
   trap - EXIT INT TERM HUP
   rm -rf "$WORK/apply-backup"
+  auto_finished
   apply_to_running_session 'Applied through the target installer.'
   refresh_running_theme
   tailscale_setup
@@ -4245,6 +4354,7 @@ stage_release() {
   release_optional_file nirux "$RELEASE" nirux-terminal.tar.xz
   release_optional_file nirux "$RELEASE" nirux-sounds.tar.xz
   release_optional_file nirux "$RELEASE" nirux-integration.tar.xz
+  release_optional_file nirux "$RELEASE" CHANGELOG.md
   release_optional_file nirux "$RELEASE" niruwallpaper.desktop
   release_optional_file nirux "$RELEASE" niruwallpaper.png
   release_optional_file nirux "$RELEASE" nirudisplay.desktop
@@ -5478,8 +5588,10 @@ install_nirulogin() {
       as_root readlink "$ROOT/etc/systemd/system/display-manager.service" > "$WORK/previous-dm"
       write_system "$ROOT/etc/nirulogin-previous-display-manager" "$WORK/previous-dm"
     fi
-    as_root rm -f "$ROOT/etc/systemd/system/display-manager.service"
-    as_root ln -s /lib/systemd/system/greetd.service "$ROOT/etc/systemd/system/display-manager.service"
+    if [ "$(readlink "$ROOT/etc/systemd/system/display-manager.service" 2>/dev/null)" != /lib/systemd/system/greetd.service ]; then
+      as_root rm -f "$ROOT/etc/systemd/system/display-manager.service"
+      as_root ln -s /lib/systemd/system/greetd.service "$ROOT/etc/systemd/system/display-manager.service"
+    fi
   fi
   say 'Installed NIRU Login greeter'
 }
@@ -5675,6 +5787,8 @@ remove_greeters() {
   remove_system "$ROOT/etc/sudoers.d/zz-nirux-wifi"
   remove_system "$ROOT/usr/libexec/nirux-wifi"
   remove_checkup
+  remove_autoupdate
+  remove_sleep_hook
   remove_void_elogind_activation
   remove_void_udev_replay
   remove_system "$ROOT$TOUCHPAD_RULE"
@@ -6278,6 +6392,8 @@ status() {
     say 'installed local power polkit rule'
   else say 'missing local power polkit rule'; result=1; fi
   browser_status || result=1
+  apps_status
+  pending_status
   if [ -f "$EXTRAS_SELECTED" ] && [ -s "$EXTRAS_SELECTED" ]; then
     say "extras selected: $(tr '\n' ' ' < "$EXTRAS_SELECTED")"
   fi
@@ -6752,6 +6868,20 @@ rollback() {
   say 'Log out and back in to use the restored WM and session (or run niructl restart-wm in it, when both generations have NIRUWM 0.23.0 or later).'
   say 'Configuration files are not part of a rollback: see nirux snapshot list and nirux restore.'
 }
+# --auto: when the latest release is the installed one, only the apps that
+# follow upstream are updated; no new generation and no snapshot.
+auto_current_release() {
+  if [ -z "$RELEASE" ]; then
+    fetch https://api.github.com/repos/nirucon/nirux/releases/latest "$WORK/latest.json" || return 1
+    RELEASE=$(sed -n 's/.*"tag_name": *"v\([0-9.]*\)".*/\1/p' "$WORK/latest.json" | head -n 1)
+  fi
+  [ -n "$RELEASE" ] && [ "$RELEASE" = "$(installed_version)" ] && [ -L "$STATE/current" ] || return 1
+  say "NIRUX $RELEASE is current; checking the apps."
+  browser_install
+  if [ "$LOCALSEND_EFFECTIVE" = yes ]; then localsend_install; fi
+  if [ "$OPENCODE_EFFECTIVE" = yes ]; then opencode_install; fi
+  return 0
+}
 install_or_update() {
   operation=$1; shift
   packages=1; DM=auto; RELEASE=${NIRUX_RELEASE:-}
@@ -6768,6 +6898,9 @@ install_or_update() {
       --tailscale) shift; [ "$#" -gt 0 ] || die 'missing tailscale value'; TAILSCALE_CHOICE=$1; TAILSCALE_EXPLICIT=1 ;;
       --icons) shift; [ "$#" -gt 0 ] || die 'missing icons value'; ICONS_CHOICE=$1; ICONS_EXPLICIT=1 ;;
       --release) shift; [ "$#" -gt 0 ] || die 'missing release version'; RELEASE=${1#v} ;;
+      --apps) shift; [ "$#" -gt 0 ] || die 'missing apps value'
+        case "$1" in latest|pinned) NIRUX_APPS=$1; export NIRUX_APPS ;; *) die 'apps must be latest or pinned' ;; esac ;;
+      --auto) NIRUX_AUTO=1; export NIRUX_AUTO ;;
       *) die "unknown option: $1" ;;
     esac
     shift
@@ -6776,6 +6909,9 @@ install_or_update() {
     ''|all|default) ;;
     *) die 'wallpapers must be all or default' ;;
   esac
+  [ "$NIRUX_AUTO" = 0 ] || [ "$operation" = update ] || die '--auto is for nirux update only'
+  # The nightly update never waits for an answer.
+  [ "$NIRUX_AUTO" = 0 ] || exec </dev/null
   case "$operation" in
     update) say "Updating NIRUX... please hold. Checking packages, releases and components." ;;
     install) say "Installing NIRUX... please hold. Checking packages and releases." ;;
@@ -6808,6 +6944,8 @@ install_or_update() {
   # downloaded. Updates skip this and let the newly verified release provision
   # its own package list below.
   if [ "$operation" = install ] && [ "$packages" = 1 ]; then install_packages; fi
+  if [ "$NIRUX_AUTO" = 1 ] && auto_current_release; then return 0; fi
+  auto_reset
   stage_release
   # The configuration as it was before this update. The target installer of a
   # newer release takes it itself when the running one predates snapshots.
@@ -6859,6 +6997,8 @@ install_or_update() {
   [ -n "${rule_user:-}" ] || rule_user=${SUDO_USER:-$(id -un)}
   install_wifi_rule
   install_checkup
+  install_autoupdate
+  install_sleep_hook
   install_login_wallpaper_rule
   install_wallpaper_app
   install_display_app
@@ -6872,6 +7012,7 @@ install_or_update() {
   install_void_udev_replay
   activate
   start_selected_dm
+  auto_finished
   apply_to_running_session 'Updated.'
   refresh_running_theme
   tailscale_setup
@@ -8566,6 +8707,853 @@ stage_manual() {
   find "$WORK/generation/manual" -type f -exec chmod 444 {} +
   rm -rf "$manual_unpack"
 }
+# ── The nightly update: nirux update --auto (docs: manual chapter 11) ───────
+# The root helper /usr/libexec/nirux-autoupdate runs this as the user, with no
+# terminal and no password. Everything that needs root is checked here as the
+# user; a step that would change the system is not run but written to
+# $PENDING_SYSTEM ("Run nirux update once to finish"), and packages the
+# release needs go to $WANTED_PACKAGES, which the root helper installs from
+# the distribution's repositories before it runs this update once more.
+#
+# Root-only files (sudoers rules, a polkit directory) cannot be read by the
+# user, so every file NIRUX installs through sudo is recorded in $SYSTEM_SUMS
+# (SHA-256 and path). Unchanged files are then recognised without reading them.
+system_sum_note() {
+  ssn_src='' ssn_dst=''
+  shift
+  while [ "$#" -gt 0 ]; do
+    case "$1" in
+      -d) return 0 ;;
+      -m|-o|-g) shift ;;
+      -*) ;;
+      *) if [ -z "$ssn_src" ]; then ssn_src=$1; else ssn_dst=$1; fi ;;
+    esac
+    shift
+  done
+  [ -n "$ssn_dst" ] && [ -f "$ssn_src" ] || return 0
+  ssn_sum=$(sha256sum "$ssn_src" 2>/dev/null | cut -d ' ' -f1) || return 0
+  mkdir -p "$STATE" 2>/dev/null || return 0
+  {
+    awk -v p="$ssn_dst" '{ q = $0; sub(/^[^ ]* /, "", q); if (q != p) print }' "$SYSTEM_SUMS" 2>/dev/null || :
+    say "$ssn_sum $ssn_dst"
+  } > "$SYSTEM_SUMS.$$" && mv -f "$SYSTEM_SUMS.$$" "$SYSTEM_SUMS" || rm -f "$SYSTEM_SUMS.$$"
+  return 0
+}
+# Is FILE known to hold exactly SOURCE (or, without SOURCE, any recorded file)?
+system_sum_known() {
+  ssk_line=$(awk -v p="$1" '{ q = $0; sub(/^[^ ]* /, "", q); if (q == p) { print $1; exit } }' "$SYSTEM_SUMS" 2>/dev/null) || ssk_line=
+  [ -n "$ssk_line" ] || return 1
+  [ -n "${2:-}" ] || return 0
+  [ "$ssk_line" = "$(sha256sum "$2" 2>/dev/null | cut -d ' ' -f1)" ]
+}
+auto_pending() {
+  mkdir -p "$STATE" 2>/dev/null || return 0
+  grep -qxF -- "$1" "$PENDING_SYSTEM" 2>/dev/null || say "$1" >> "$PENDING_SYSTEM"
+}
+# The last path argument of a command, which is what it changes.
+auto_last_path() {
+  alp=
+  for alp_arg in "$@"; do case "$alp_arg" in -*) ;; *) alp=$alp_arg ;; esac; done
+  say "$alp"
+}
+auto_mode_of() { stat -c %a "$1" 2>/dev/null | sed 's/^0*//'; }
+# as_root in --auto mode. Reading commands run as the user; a change that is
+# already in place succeeds without root; anything else is recorded as pending
+# and reported as done, so the rest of the update goes on.
+auto_root() {
+  ar_cmd=$1
+  case "$ar_cmd" in
+    test|grep|cat|stat|readlink|sha256sum|id) "$@"; return ;;
+    true) return 1 ;;
+    rmdir|udevadm) return 0 ;;
+    systemctl)
+      ar_now=0 ar_unit=
+      for ar_arg in "$@"; do
+        case "$ar_arg" in --now) ar_now=1 ;; systemctl|-*) ;; *) ar_unit=$ar_arg ;; esac
+      done
+      case "${2:-}" in
+        is-active|is-enabled|status|cat|show|list-timers|list-units) "$@"; return ;;
+        daemon-reload) return 0 ;;
+        enable)
+          systemctl is-enabled --quiet "$ar_unit" 2>/dev/null &&
+            { [ "$ar_now" = 0 ] || systemctl is-active --quiet "$ar_unit" 2>/dev/null; } && return 0 ;;
+        start) systemctl is-active --quiet "$ar_unit" 2>/dev/null && return 0 ;;
+        disable) systemctl is-enabled --quiet "$ar_unit" 2>/dev/null || return 0 ;;
+      esac
+      auto_pending "systemctl $2 $ar_unit"
+      return 0 ;;
+    chmod)
+      ar_want=$(say "$2" | sed 's/^0*//')
+      [ "$(auto_mode_of "$3")" = "$ar_want" ] && return 0
+      if ! stat "$3" >/dev/null 2>&1 && system_sum_known "$3"; then return 0; fi
+      auto_pending "set the mode of $3 to $2"
+      return 0 ;;
+    mkdir) [ -d "$(auto_last_path "$@")" ] && return 0 ;;
+    install)
+      ar_dir=0 ar_mode='' ar_src='' ar_dst=''
+      shift
+      while [ "$#" -gt 0 ]; do
+        case "$1" in
+          -d) ar_dir=1 ;;
+          -m) ar_mode=$(say "$2" | sed 's/^0*//'); shift ;;
+          -o|-g) shift ;;
+          -*) ;;
+          *) if [ "$ar_dir" = 1 ]; then [ -d "$1" ] || ar_dst=$1
+             elif [ -z "$ar_src" ]; then ar_src=$1; else ar_dst=$1; fi ;;
+        esac
+        shift
+      done
+      if [ "$ar_dir" = 1 ]; then
+        [ -z "$ar_dst" ] && return 0
+        auto_pending "create $ar_dst"
+        return 0
+      fi
+      if [ -r "$ar_dst" ] && same_file "$ar_src" "$ar_dst" &&
+         { [ -z "$ar_mode" ] || [ "$(auto_mode_of "$ar_dst")" = "$ar_mode" ]; }; then
+        return 0
+      fi
+      if [ ! -r "$ar_dst" ] && system_sum_known "$ar_dst" "$ar_src"; then return 0; fi
+      auto_pending "update $ar_dst"
+      return 0 ;;
+    ln)
+      ar_dst=$(auto_last_path "$@")
+      ar_src=
+      for ar_arg in "$@"; do
+        case "$ar_arg" in ln|-*) ;; *) [ -n "$ar_src" ] || ar_src=$ar_arg ;; esac
+      done
+      [ -L "$ar_dst" ] && [ "$(readlink "$ar_dst")" = "$ar_src" ] && return 0
+      auto_pending "link $ar_dst"
+      return 0 ;;
+    rm)
+      ar_any=
+      for ar_arg in "$@"; do
+        case "$ar_arg" in rm|-*) ;; *) if [ -e "$ar_arg" ] || [ -L "$ar_arg" ]; then ar_any=$ar_arg; fi ;; esac
+      done
+      [ -z "$ar_any" ] && return 0
+      auto_pending "remove $ar_any"
+      return 0 ;;
+    cp|mv|chown|sed|usermod|tee) auto_pending "$ar_cmd $(auto_last_path "$@")"; return 0 ;;
+    apt-get|env|pacman|xbps-install|xbps-remove) auto_pending 'install system packages'; return 0 ;;
+  esac
+  auto_pending "$ar_cmd $(auto_last_path "$@")"
+  return 0
+}
+# Start of a full --auto run: what the last run left is worked out again.
+auto_reset() {
+  [ "$NIRUX_AUTO" = 1 ] || return 0
+  rm -f "$PENDING_SYSTEM" "$WANTED_PACKAGES"
+}
+# A normal update did everything with sudo; nothing is waiting any more.
+auto_finished() {
+  [ "$NIRUX_AUTO" = 1 ] || rm -f "$PENDING_SYSTEM" "$WANTED_PACKAGES"
+}
+# Packages a release needs, for the root helper to install. Names only.
+auto_want_packages() {
+  mkdir -p "$STATE" || return 1
+  for awp in "$@"; do
+    case "$awp" in ''|-*|[!a-z0-9]*|*[!A-Za-z0-9+._-]*) continue ;; esac
+    grep -qxF -- "$awp" "$WANTED_PACKAGES" 2>/dev/null || say "$awp" >> "$WANTED_PACKAGES"
+  done
+  say "Packages for the nightly update to install: $*"
+}
+# One line per waiting item, for status, the bar and the what's-new notice.
+pending_lines() {
+  if [ -s "$WANTED_PACKAGES" ]; then say "install packages: $(tr '\n' ' ' < "$WANTED_PACKAGES" | sed 's/ $//')"; fi
+  if [ -s "$PENDING_SYSTEM" ]; then cat "$PENDING_SYSTEM"; fi
+  return 0
+}
+pending_status() {
+  pending_lines > "${TMPDIR:-/tmp}/.nirux-pending.$$" 2>/dev/null || :
+  if [ -s "${TMPDIR:-/tmp}/.nirux-pending.$$" ]; then
+    say "pending system changes ($(grep -c . "${TMPDIR:-/tmp}/.nirux-pending.$$")): run nirux update once to finish"
+    head -n 8 "${TMPDIR:-/tmp}/.nirux-pending.$$" | sed 's/^/  /'
+  fi
+  rm -f "${TMPDIR:-/tmp}/.nirux-pending.$$"
+}
+
+# ── What's new (docs: manual chapter 11) ────────────────────────────────────
+WHATS_NEW=$STATE/whats-new
+WHATS_NEW_SHOWN=$STATE/whats-new-shown
+# changelog_highlights FILE FROM TO: the bold lead phrase (or else the first
+# sentence) of every bullet in the entries newer than FROM up to TO, newest
+# first, at most six lines.
+changelog_highlights() {
+  [ -f "$1" ] || return 0
+  awk -v from="$2" -v to="$3" '
+    function newer(a, b,    x, y, n, m, i) {
+      n = split(a, x, "."); m = split(b, y, ".")
+      for (i = 1; i <= (n > m ? n : m); i++) {
+        if ((x[i] + 0) > (y[i] + 0)) return 1
+        if ((x[i] + 0) < (y[i] + 0)) return 0
+      }
+      return 0
+    }
+    function flush(    t, lead) {
+      if (!take || bullet == "") { bullet = ""; return }
+      t = bullet; bullet = ""
+      if (t ~ /^\*\*/) {
+        lead = substr(t, 3); sub(/\*\*.*/, "", lead)
+      } else {
+        lead = t; sub(/\. .*/, "", lead)
+      }
+      gsub(/`/, "", lead); sub(/[.:]+$/, "", lead)
+      if (length(lead) > 72) lead = substr(lead, 1, 69) "..."
+      if (lead != "" && count < 6) { print lead; count++ }
+    }
+    /^## [0-9]/ {
+      flush(); v = $2
+      take = (from == "" || newer(v, from)) && (to == "" || !newer(v, to))
+      next
+    }
+    /^- / { flush(); bullet = substr($0, 3); next }
+    /^  [^ ]/ && bullet != "" { line = $0; sub(/^  /, "", line); bullet = bullet " " line; next }
+    /^[[:space:]]*$/ { flush(); next }
+    END { flush() }
+  ' "$1"
+}
+# Called by an update that changed the NIRUX version (FROM -> TO).
+whats_new_record() {
+  wn_from=$1 wn_to=$2
+  [ -n "$wn_from" ] && [ "$wn_from" != "$wn_to" ] || return 0
+  wn_log=$WORK/download/nirux/CHANGELOG.md
+  [ -f "$wn_log" ] || wn_log=$STATE/current/CHANGELOG.md
+  mkdir -p "$STATE" || return 0
+  {
+    say "version $wn_to"
+    say "from $wn_from"
+    changelog_highlights "$wn_log" "$wn_from" "$wn_to"
+  } > "$WHATS_NEW.$$" && mv -f "$WHATS_NEW.$$" "$WHATS_NEW" || rm -f "$WHATS_NEW.$$"
+}
+whats_new_lines() {
+  sed '1,2d' "$WHATS_NEW" 2>/dev/null || :
+}
+whats_new_command() {
+  wn_notify=0
+  for wn_arg in "$@"; do
+    case "$wn_arg" in
+      --notify) wn_notify=1 ;;
+      -h|--help) say 'usage: nirux whats-new [--notify]'; return 0 ;;
+      *) die "unknown whats-new option: $wn_arg" ;;
+    esac
+  done
+  wn_version=$(sed -n 's/^version //p' "$WHATS_NEW" 2>/dev/null | head -n 1)
+  if [ "$wn_notify" = 0 ]; then
+    if [ -n "$wn_version" ]; then
+      say "NIRUX $wn_version: what's new (since $(sed -n 's/^from //p' "$WHATS_NEW" | head -n 1))"
+      whats_new_lines | sed 's/^/  - /'
+    else
+      say "NIRUX $VERSION"
+      changelog_highlights "$STATE/current/CHANGELOG.md" "" "$VERSION" | head -n 6 | sed 's/^/  - /'
+    fi
+    pending_status
+    say 'Everything: nirux manual (and CHANGELOG.md in the release notes).'
+    return 0
+  fi
+  # --notify: once per version, in a graphical session, never twice.
+  [ -n "$wn_version" ] || return 0
+  [ "$(cat "$WHATS_NEW_SHOWN" 2>/dev/null)" != "$wn_version" ] || return 0
+  [ -n "${DISPLAY:-}" ] || return 0
+  command -v notify-send >/dev/null 2>&1 || return 0
+  wn_body=$(whats_new_lines | sed 's/^/• /')
+  if [ -n "$(pending_lines)" ]; then
+    wn_body="${wn_body:+$wn_body
+}Run nirux update once to finish (system changes are waiting)."
+  fi
+  [ -n "$wn_body" ] || wn_body='See nirux manual for what changed.'
+  say "$wn_version" > "$WHATS_NEW_SHOWN" || return 0
+  wn_answer=$(timeout 900 notify-send -a NIRUX --action=manual='Open the manual' --wait \
+    "NIRUX $wn_version: what's new" "$wn_body" 2>/dev/null) ||
+    { notify-send -a NIRUX "NIRUX $wn_version: what's new" "$wn_body" >/dev/null 2>&1 || :; return 0; }
+  if [ "$wn_answer" = manual ]; then manual_command manual; fi
+  return 0
+}
+
+# ── After resume (docs: manual chapter 13) ──────────────────────────────────
+# NIRUWM starts `nirux resume-check --notify` a few seconds after the machine
+# wakes. User level only and bounded: the whole run stays under 20 seconds.
+RESUME_LOG=${XDG_STATE_HOME:-$HOME/.local/state}/nirux/resume-check.log
+resume_bounded() { rb_t=$1; shift; if command -v timeout >/dev/null 2>&1; then timeout "$rb_t" "$@"; else "$@"; fi; }
+resume_left() { say $((RESUME_DEADLINE - $(date +%s))); }
+resume_wifi_connected() {
+  resume_bounded 3 nmcli -t -f TYPE,STATE device 2>/dev/null | grep -q '^wifi:connected'
+}
+resume_network() {
+  command -v nmcli >/dev/null 2>&1 || { RC_NET=skipped; return 0; }
+  RC_NET=ok
+  resume_bounded 5 nmcli networking connectivity check >/dev/null 2>&1 || :
+  [ "$(resume_bounded 3 nmcli radio wifi 2>/dev/null)" = enabled ] || return 0
+  resume_bounded 3 nmcli -t -f TYPE device 2>/dev/null | grep -qx wifi || return 0
+  # A wired link that works is enough; only a lone Wi-Fi is waited for.
+  rn_i=0
+  while [ "$rn_i" -lt "${NIRUX_RESUME_WAIT:-10}" ] && ! resume_wifi_connected; do
+    [ "$(resume_left)" -gt 8 ] || break
+    sleep 1; rn_i=$((rn_i + 1))
+  done
+  resume_wifi_connected && return 0
+  if resume_bounded 3 nmcli -t -f TYPE,STATE device 2>/dev/null | grep -q '^ethernet:connected'; then return 0; fi
+  resume_bounded 3 nmcli radio wifi off >/dev/null 2>&1 || :
+  sleep 1
+  resume_bounded 3 nmcli radio wifi on >/dev/null 2>&1 || :
+  rn_i=0
+  while [ "$rn_i" -lt 6 ] && [ "$(resume_left)" -gt 1 ]; do
+    if resume_wifi_connected; then RC_NET=wifi-reconnected; RC_SAY="${RC_SAY}Wi-Fi reconnected after sleep.
+"; return 0; fi
+    sleep 1; rn_i=$((rn_i + 1))
+  done
+  RC_NET=wifi-down
+  RC_SAY="${RC_SAY}Wi-Fi did not reconnect after sleep; choose a network in the Wi-Fi menu.
+"
+}
+resume_audio() {
+  command -v wpctl >/dev/null 2>&1 || { RC_AUDIO=skipped; return 0; }
+  if resume_bounded 3 wpctl status >/dev/null 2>&1; then RC_AUDIO=ok; return 0; fi
+  if command -v systemctl >/dev/null 2>&1 && resume_bounded 3 systemctl --user cat wireplumber.service >/dev/null 2>&1; then
+    resume_bounded 8 systemctl --user restart pipewire pipewire-pulse wireplumber >/dev/null 2>&1 || :
+  else
+    # Void: the session starts PipeWire itself (niruwm-session); restart only
+    # this session's helpers, the same way.
+    for ra_name in pipewire-pulse wireplumber pipewire; do
+      for ra_pid in $(pgrep -u "$(id -u)" -x "$ra_name" 2>/dev/null); do
+        ra_rt=$(tr '\0' '\n' < "/proc/$ra_pid/environ" 2>/dev/null | sed -n 's/^XDG_RUNTIME_DIR=//p')
+        [ "$ra_rt" = "${XDG_RUNTIME_DIR:-}" ] || continue
+        kill "$ra_pid" 2>/dev/null || :
+      done
+    done
+    sleep 0.5
+    for ra_name in pipewire wireplumber pipewire-pulse; do
+      command -v "$ra_name" >/dev/null 2>&1 || continue
+      doctor_spawn "$ra_name"
+      [ "$ra_name" != pipewire ] || sleep 1
+    done
+  fi
+  sleep 1
+  if resume_bounded 3 wpctl status >/dev/null 2>&1; then
+    RC_AUDIO=restarted; RC_SAY="${RC_SAY}Sound restarted after sleep.
+"
+  else
+    RC_AUDIO=failed; RC_SAY="${RC_SAY}Sound did not come back after sleep; try: nirux doctor --fix
+"
+  fi
+}
+resume_screens() {
+  RC_SCREENS=skipped
+  [ -n "${DISPLAY:-}" ] && [ -x "$BIN/niructl" ] || return 0
+  resume_bounded 3 "$BIN/niructl" display auto status 2>/dev/null | grep -q '^automatic: on' || return 0
+  if resume_bounded 6 "$BIN/niructl" display auto run >/dev/null 2>&1; then RC_SCREENS=applied; else RC_SCREENS=failed; fi
+}
+resume_tailscale() {
+  command -v tailscale >/dev/null 2>&1 || { RC_TS=skipped; return 0; }
+  rt_i=0
+  while :; do
+    rt_out=$(resume_bounded 3 tailscale status 2>&1) && { RC_TS=ok; return 0; }
+    case "$rt_out" in *'Logged out'*|*stopped*|*'NeedsLogin'*) RC_TS=off; return 0 ;; esac
+    rt_i=$((rt_i + 1))
+    [ "$rt_i" -lt 3 ] && [ "$(resume_left)" -gt 4 ] || break
+    sleep 2
+  done
+  RC_TS=down
+  RC_SAY="${RC_SAY}Tailscale is not connected after sleep.
+"
+}
+resume_check_command() {
+  rc_notify=0
+  for rc_arg in "$@"; do
+    case "$rc_arg" in
+      --notify) rc_notify=1 ;;
+      -h|--help) say 'usage: nirux resume-check [--notify]'; return 0 ;;
+      *) die "unknown resume-check option: $rc_arg" ;;
+    esac
+  done
+  RESUME_DEADLINE=$(( $(date +%s) + ${NIRUX_RESUME_SECONDS:-18} ))
+  RC_SAY='' RC_NET=skipped RC_AUDIO=skipped RC_SCREENS=skipped RC_TS=skipped
+  resume_network
+  resume_audio
+  resume_screens
+  resume_tailscale
+  rc_line="$(date '+%Y-%m-%d %H:%M:%S') network=$RC_NET audio=$RC_AUDIO screens=$RC_SCREENS tailscale=$RC_TS"
+  mkdir -p "${RESUME_LOG%/*}" 2>/dev/null || :
+  { tail -n 49 "$RESUME_LOG" 2>/dev/null || :; say "$rc_line"; } > "$RESUME_LOG.$$" 2>/dev/null &&
+    mv -f "$RESUME_LOG.$$" "$RESUME_LOG" 2>/dev/null || rm -f "$RESUME_LOG.$$"
+  if [ "$rc_notify" = 0 ]; then
+    say "$rc_line"
+    printf '%s' "$RC_SAY"
+    return 0
+  fi
+  [ -n "$RC_SAY" ] && command -v notify-send >/dev/null 2>&1 || return 0
+  rc_first=$(printf '%s' "$RC_SAY" | head -n 1)
+  rc_rest=$(printf '%s' "$RC_SAY" | sed '1d')
+  resume_bounded 5 notify-send -a NIRUX "$rc_first" "$rc_rest" >/dev/null 2>&1 || :
+}
+
+# ── nirux clean (docs: manual chapter 13) ───────────────────────────────────
+# What can be freed, how much, one question, then the clean-up. Never user
+# documents: caches, old packages, the journal above 200 MB, thumbnails, old
+# NIRUX generations and snapshots beyond what NIRUX keeps, and trash older
+# than 30 days. The root steps use the normal sudo prompt.
+clean_kib() { du -skx "$@" 2>/dev/null | awk '{ s += $1 } END { print s + 0 }'; }
+clean_human() { snapshot_human $(( ${1:-0} * 1024 )); }
+clean_trash_old() { # list trash entries (info files) older than 30 days
+  clean_trash=${XDG_DATA_HOME:-$HOME/.local/share}/Trash
+  [ -d "$clean_trash/info" ] || return 0
+  find "$clean_trash/info" -maxdepth 1 -type f -name '*.trashinfo' -mtime +30 2>/dev/null
+}
+clean_command() {
+  cl_yes=0 cl_dry=0
+  for cl_arg in "$@"; do
+    case "$cl_arg" in
+      --yes|-y) cl_yes=1 ;;
+      --dry-run|-n) cl_dry=1 ;;
+      -h|--help) say 'usage: nirux clean [--yes] [--dry-run]'; return 0 ;;
+      *) die "unknown clean option: $cl_arg (nirux clean --help)" ;;
+    esac
+  done
+  OS=$( (distro) 2>/dev/null ) || OS=unknown
+  cl_root=${NIRUX_SYSTEM_ROOT:-}
+  : > "${TMPDIR:-/tmp}/.nirux-clean.$$" || die 'could not create a temporary file'
+  cl_plan=${TMPDIR:-/tmp}/.nirux-clean.$$
+  cl_total=0
+  cl_add() { printf '%s\t%s\t%s\n' "$1" "$2" "$3" >> "$cl_plan"; cl_total=$((cl_total + $2)); }
+  case "$OS" in
+    debian) cl_add pkg "$(clean_kib "$cl_root/var/cache/apt/archives")" 'package cache (apt-get clean)' ;;
+    arch)
+      if command -v paccache >/dev/null 2>&1; then cl_add pkg "$(clean_kib "$cl_root/var/cache/pacman/pkg")" 'old packages (paccache -rk1; up to this size)'
+      else cl_add pkg "$(clean_kib "$cl_root/var/cache/pacman/pkg")" 'package cache (pacman -Sc; up to this size)'; fi ;;
+    void) cl_add pkg "$(clean_kib "$cl_root/var/cache/xbps")" 'obsolete packages (xbps-remove -O; up to this size)' ;;
+  esac
+  if command -v journalctl >/dev/null 2>&1 && [ -d "$cl_root/run/systemd/system" ]; then
+    cl_j=$(journalctl --disk-usage 2>/dev/null | sed -n 's/.* \([0-9.]*\)\([KMGT]\)B\{0,1\} .*/\1 \2/p' | head -n 1 |
+      awk '{ m = ($2 == "K") ? 1 : ($2 == "M") ? 1024 : ($2 == "G") ? 1048576 : 1073741824; v = $1 * m - 204800; print (v > 0) ? int(v) : 0 }')
+    [ "${cl_j:-0}" -gt 0 ] 2>/dev/null && cl_add journal "$cl_j" 'system journal above 200 MB'
+  fi
+  cl_thumbs=${XDG_CACHE_HOME:-$HOME/.cache}/thumbnails
+  [ -d "$cl_thumbs" ] && cl_add thumbs "$(clean_kib "$cl_thumbs")" "thumbnails ($cl_thumbs)"
+  cl_gen=$(gc_generations "${NIRUX_KEEP_GENERATIONS:-5}" 1 2>/dev/null | sed -n 's/^remove //p' || :)
+  if [ -n "$cl_gen" ]; then
+    # shellcheck disable=SC2086 # one generation directory per word
+    cl_add generations "$(cd "$STATE/generations" 2>/dev/null && clean_kib $cl_gen)" "old NIRUX generations ($(say $cl_gen | wc -w | tr -d ' '))"
+  fi
+  cl_trash_n=$(clean_trash_old | grep -c . || :)
+  if [ "$cl_trash_n" -gt 0 ]; then
+    cl_trash_kib=0
+    for cl_info in $(clean_trash_old | sed 's|.*/||; s|\.trashinfo$||'); do
+      cl_trash_kib=$((cl_trash_kib + $(clean_kib "$clean_trash/files/$cl_info")))
+    done
+    cl_add trash "$cl_trash_kib" "$cl_trash_n items in the trash older than 30 days"
+  fi
+  say 'nirux clean can free:'
+  awk -F '\t' '{ printf "%s\t%s\n", $2, $3 }' "$cl_plan" | while IFS="$TAB" read -r cl_k cl_text; do
+    printf '  %10s  %s\n' "$(clean_human "$cl_k")" "$cl_text"
+  done
+  say "  about $(clean_human "$cl_total") in all. Your own files are not touched."
+  if [ "$cl_dry" = 1 ]; then rm -f "$cl_plan"; say 'Dry run: nothing was changed.'; return 0; fi
+  if [ "$cl_yes" != 1 ]; then
+    [ -t 0 ] || { rm -f "$cl_plan"; die 'nirux clean needs a terminal to ask, or --yes'; }
+    if ! nirux_confirm 'Clean up now? Some steps ask for your sudo password. [y/N] '; then
+      rm -f "$cl_plan"; say 'Nothing was changed.'; return 1
+    fi
+  fi
+  cl_before=$(df -Pk / "$HOME" 2>/dev/null | awk 'NR > 1 && !seen[$1]++ { s += $4 } END { print s + 0 }')
+  while IFS="$TAB" read -r cl_id _cl_k _cl_text; do
+    case "$cl_id" in
+      pkg)
+        case "$OS" in
+          debian) as_root apt-get clean || say 'could not clean the package cache' ;;
+          arch)
+            if command -v paccache >/dev/null 2>&1; then as_root paccache -rk1 || say 'paccache failed'
+            else as_root pacman -Sc --noconfirm || say 'pacman -Sc failed'; fi ;;
+          void) as_root xbps-remove -Oy || say 'xbps-remove -O failed' ;;
+        esac ;;
+      journal) as_root journalctl --vacuum-size=200M >/dev/null 2>&1 || say 'could not vacuum the journal' ;;
+      thumbs) find "$cl_thumbs" -xdev -mindepth 1 -type f -delete 2>/dev/null || : ;;
+      generations) gc_generations "${NIRUX_KEEP_GENERATIONS:-5}" 0 >/dev/null 2>&1 || say 'could not remove old generations' ;;
+      trash)
+        for cl_info in $(clean_trash_old); do
+          cl_name=${cl_info##*/}; cl_name=${cl_name%.trashinfo}
+          rm -rf "${clean_trash:?}/files/$cl_name" && rm -f "$cl_info"
+        done ;;
+    esac
+  done < "$cl_plan"
+  # Snapshots beyond [snapshots] keep (normally rotated already).
+  snapshot_rotate >/dev/null 2>&1 || :
+  rm -f "$cl_plan"
+  cl_after=$(df -Pk / "$HOME" 2>/dev/null | awk 'NR > 1 && !seen[$1]++ { s += $4 } END { print s + 0 }')
+  cl_freed=$((cl_after - cl_before))
+  [ "$cl_freed" -gt 0 ] || cl_freed=0
+  say "Done: $(clean_human "$cl_freed") freed."
+  df -h / "$HOME" 2>/dev/null | awk 'NR == 1 || !seen[$1]++' | sed 's/^/  /'
+}
+
+# ── Bar modules follow the NIRUX default (docs: manual chapter 4) ───────────
+# [bar] follow_default_modules = true (the default): `nirux update` sets
+# `modules` to the list of the shipped example when it differs. The file as it
+# was is kept in NIRUWM's config history first, so `niructl config undo`
+# brings the old list back; false keeps your own list.
+bar_modules_line() {
+  awk '
+    /^\[bar\]/ { inside = 1; next }
+    inside && /^\[/ { inside = 0 }
+    inside && /^modules *= *\[/ {
+      line = $0
+      while (line !~ /\]/ && (getline more) > 0) line = line " " more
+      sub(/[[:space:]]*#.*$/, "", line)
+      print line
+      exit
+    }
+  ' "$1"
+}
+bar_modules_norm() { tr -d ' \t' | sed 's/,]/]/'; }
+config_history_keep() { # FILE: copy into NIRUWM's history unless an identical copy is there
+  ch_dir=${XDG_STATE_HOME:-$HOME/.local/state}/niruwm/config-history
+  mkdir -p "$ch_dir" || return 1
+  for ch_old in "$ch_dir"/*.toml; do
+    [ -f "$ch_old" ] || continue
+    same_file "$1" "$ch_old" && return 0
+  done
+  ch_stamp=$(date +%Y%m%d-%H%M%S)
+  ch_n=0
+  while [ -e "$ch_dir/$ch_stamp-$(printf '%02d' "$ch_n").toml" ]; do ch_n=$((ch_n + 1)); done
+  cp "$1" "$ch_dir/.$$.tmp" && mv -f "$ch_dir/.$$.tmp" "$ch_dir/$ch_stamp-$(printf '%02d' "$ch_n").toml"
+}
+follow_default_bar_modules() {
+  fd_file=$1 fd_example=$2 fd_original=$3
+  [ "$(toml_value "$fd_file" bar follow_default_modules)" != false ] || return 0
+  fd_want=$(bar_modules_line "$fd_example")
+  fd_have=$(bar_modules_line "$fd_file")
+  [ -n "$fd_want" ] && [ -n "$fd_have" ] || return 0
+  [ "$(say "$fd_want" | bar_modules_norm)" != "$(say "$fd_have" | bar_modules_norm)" ] || return 0
+  config_history_keep "$fd_original" || say 'nirux: warning: could not keep the old configuration in the history' >&2
+  fd_mode=$(stat -c %a "$fd_file") || die "could not read permissions for $fd_file"
+  fd_tmp=$(mktemp "$fd_file.nirux-follow.XXXXXX") || die "could not stage $fd_file"
+  awk -v new="$fd_want" '
+    /^\[bar\]/ { inside = 1; print; next }
+    inside && /^\[/ { inside = 0 }
+    inside && /^modules *= *\[/ {
+      print new
+      while ($0 !~ /\]/ && (getline more) > 0) { $0 = more }
+      next
+    }
+    { print }
+  ' "$fd_file" > "$fd_tmp" && chmod "$fd_mode" "$fd_tmp" && mv -f "$fd_tmp" "$fd_file" || {
+    rm -f "$fd_tmp"
+    die "could not update the bar modules in $fd_file; original kept"
+  }
+  say 'Bar modules set to the NIRUX default list (niructl config undo goes back; [bar] follow_default_modules = false keeps your own list).'
+}
+
+# ── Apps outside the package manager (docs: manual chapter 11) ──────────────
+# Helium, LocalSend and OpenCode follow their newest stable upstream release
+# when it publishes a checksum for the archive: GitHub's asset digest, or the
+# npm registry's integrity for OpenCode 2. The answer is cached for an hour.
+# The pins above stay the minimum: nothing is installed below them, and when
+# the lookup, the checksum or the download fails the installed version (or
+# the pin) is kept. NIRUX_APPS=pinned (nirux update --apps pinned) never asks.
+APPS_CACHE=${XDG_CACHE_HOME:-$HOME/.cache}/nirux/apps-latest
+apps_mode() { case "${NIRUX_APPS:-latest}" in pinned) say pinned ;; *) say latest ;; esac; }
+# A bounded request to an upstream API (tests replace this function).
+apps_api() {
+  command -v curl >/dev/null 2>&1 || return 1
+  curl -fsSL --proto '=https' --connect-timeout 10 --max-time 20 -o "$2" "$1" 2>/dev/null
+}
+# app_github_latest JSON TAG-PREFIX ASSET-FORMAT: "VERSION sha256:HEX" of the
+# release, or nothing. The asset name is built here, never taken from JSON.
+app_github_latest() {
+  agl_tokens=$(tr -d '\n\r' < "$1" | grep -oE '"(tag_name|name|digest|prerelease|draft)": *("[^"]*"|true|false)') || return 1
+  agl_tag=$(say "$agl_tokens" | sed -n 's/^"tag_name": *"\(.*\)"$/\1/p' | head -n 1)
+  say "$agl_tokens" | grep -qE '^"(prerelease|draft)": *true' && return 1
+  agl_version=${agl_tag#"$2"}
+  valid_version "$agl_version" || return 1
+  # shellcheck disable=SC2059 # the format is a fixed asset pattern
+  agl_asset=$(printf "$3" "$agl_version")
+  agl_digest=$(say "$agl_tokens" | awk -v want="$agl_asset" '
+    /^"name":/ { n = $0; sub(/^"name": *"/, "", n); sub(/"$/, "", n); cur = n; next }
+    /^"digest":/ && cur == want { d = $0; sub(/^"digest": *"/, "", d); sub(/"$/, "", d); print d; exit }')
+  case "$agl_digest" in sha256:*) ;; *) return 1 ;; esac
+  agl_hex=${agl_digest#sha256:}
+  [ "${#agl_hex}" = 64 ] || return 1
+  case "$agl_hex" in *[!0-9a-f]*) return 1 ;; esac
+  say "$agl_version sha256:$agl_hex"
+}
+# OpenCode 2: the version opencode.ai's own installer uses, and the sha512 of
+# that version's npm package.
+app_opencode_latest() {
+  aol_tmp=$1
+  apps_api https://opencode.ai/update/api/latest/cli/npm "$aol_tmp/meta" || return 1
+  aol_version=$(sed -n 's/.*"version": *"\([^"]*\)".*/\1/p' "$aol_tmp/meta" | head -n 1)
+  aol_package=$(sed -n 's/.*"package": *"\([^"]*\)".*/\1/p' "$aol_tmp/meta" | head -n 1)
+  valid_version "$aol_version" || return 1
+  case "$aol_package" in @opencode/cli) aol_scope=@opencode ;; @opencode-ai/cli) aol_scope=@opencode-ai ;; *) return 1 ;; esac
+  apps_api "https://registry.npmjs.org/$aol_scope%2fcli-linux-x64/$aol_version" "$aol_tmp/npm" || return 1
+  grep -q "\"name\": *\"$aol_scope/cli-linux-x64\"" "$aol_tmp/npm" || return 1
+  grep -q "\"version\": *\"$aol_version\"" "$aol_tmp/npm" || return 1
+  aol_b64=$(sed -n 's/.*"integrity": *"sha512-\([A-Za-z0-9+\/=]*\)".*/\1/p' "$aol_tmp/npm" | head -n 1)
+  [ -n "$aol_b64" ] || return 1
+  aol_hex=$(say "$aol_b64" | base64 -d 2>/dev/null | od -An -v -tx1 | tr -d ' \n')
+  [ "${#aol_hex}" = 128 ] || return 1
+  say "$aol_version sha512:$aol_hex $aol_scope"
+}
+# app_latest APP: sets AL_VERSION, AL_DIGEST (ALGO:HEX) and AL_EXTRA.
+app_latest() {
+  AL_VERSION='' AL_DIGEST='' AL_EXTRA=''
+  [ "$(apps_mode)" = latest ] || return 1
+  al_now=$(date +%s)
+  al_line=$(awk -v a="$1" '$1 == a { line = $0 } END { print line }' "$APPS_CACHE" 2>/dev/null) || al_line=
+  al_when=$(say "$al_line" | awk '{ print $2 }')
+  case "$al_when" in ''|*[!0-9]*) al_when=0 ;; esac
+  if [ "$al_when" -gt 0 ] && [ $((al_now - al_when)) -lt "${NIRUX_APPS_CACHE_SECONDS:-3600}" ] && [ "$al_when" -le "$al_now" ]; then
+    al_result=$(say "$al_line" | cut -d ' ' -f 3-)
+  else
+    al_tmp=$(mktemp -d "${TMPDIR:-/tmp}/nirux-apps.XXXXXX") || return 1
+    al_result=
+    case "$1" in
+      helium)
+        apps_api https://api.github.com/repos/imputnet/helium-linux/releases/latest "$al_tmp/json" &&
+          al_result=$(app_github_latest "$al_tmp/json" '' 'helium-%s-x86_64_linux.tar.xz') ;;
+      localsend)
+        apps_api https://api.github.com/repos/localsend/localsend/releases/latest "$al_tmp/json" &&
+          al_result=$(app_github_latest "$al_tmp/json" v 'LocalSend-%s-linux-x86-64.tar.gz') ;;
+      opencode) al_result=$(app_opencode_latest "$al_tmp") ;;
+    esac
+    rm -rf "$al_tmp"
+    [ -n "$al_result" ] || al_result=-
+    mkdir -p "${APPS_CACHE%/*}" 2>/dev/null &&
+      { awk -v a="$1" '$1 != a' "$APPS_CACHE" 2>/dev/null || :; say "$1 $al_now $al_result"; } > "$APPS_CACHE.$$" &&
+      mv -f "$APPS_CACHE.$$" "$APPS_CACHE" 2>/dev/null || rm -f "$APPS_CACHE.$$"
+  fi
+  [ "$al_result" != - ] && [ -n "$al_result" ] || return 1
+  AL_VERSION=$(say "$al_result" | awk '{ print $1 }')
+  AL_DIGEST=$(say "$al_result" | awk '{ print $2 }')
+  AL_EXTRA=$(say "$al_result" | awk '{ print $3 }')
+  valid_version "$AL_VERSION" && [ -n "$AL_DIGEST" ]
+}
+# app_upstream APP PIN: true when a verified upstream release newer than PIN
+# exists (AL_* describe it). OpenCode stays on the pin's major version.
+app_upstream() {
+  app_latest "$1" || return 1
+  [ "$AL_VERSION" != "$2" ] && version_at_least "$AL_VERSION" "$2" || return 1
+  if [ "$1" = opencode ] && [ "${AL_VERSION%%.*}" != "${2%%.*}" ]; then return 1; fi
+  return 0
+}
+# app_digest_ok FILE ALGO:HEX
+app_digest_ok() {
+  case "$2" in
+    sha256:*) [ "$(sha256sum "$1" 2>/dev/null | cut -d ' ' -f1)" = "${2#sha256:}" ] ;;
+    sha512:*) [ "$(sha512sum "$1" 2>/dev/null | cut -d ' ' -f1)" = "${2#sha512:}" ] ;;
+    *) return 1 ;;
+  esac
+}
+# app_keep APP INSTALLED PIN: an installed version at or above the pin stays.
+app_keep() {
+  [ -n "$2" ] && version_at_least "$2" "$3" || return 1
+  say "Keeping $1 $2 (the upstream release could not be used; the minimum is $3)."
+}
+# Installed and newest versions of the apps, for nirux status.
+apps_status() {
+  for as_app in helium localsend opencode; do
+    case "$as_app" in
+      helium) browser_managed || continue; as_inst=$(browser_installed_version || :); as_pin=$HELIUM_VERSION ;;
+      localsend) as_inst=$(localsend_installed_version 2>/dev/null || :); [ -n "$as_inst" ] || continue; as_pin=$LOCALSEND_VERSION ;;
+      opencode) opencode_managed || continue; as_inst=$(opencode_installed_version 2>/dev/null || :); as_pin=$OPENCODE_VERSION ;;
+    esac
+    if [ "$(apps_mode)" = pinned ]; then as_latest="pinned $as_pin (NIRUX_APPS=pinned)"
+    elif app_latest "$as_app"; then as_latest="latest $AL_VERSION"
+    else as_latest="latest unknown (pin $as_pin)"; fi
+    say "app $as_app: installed ${as_inst:-unknown}, $as_latest"
+  done
+}
+
+# ── Nightly update and sleep hook installation (docs: manual chapter 11) ────
+AUTOUPDATE_HELPER=/usr/libexec/nirux-autoupdate
+SLEEP_HOOK_SYSTEMD=/usr/lib/systemd/system-sleep/nirux
+# Void's elogind runs the hooks in /usr/libexec/elogind/system-sleep; other
+# elogind builds use /usr/lib/elogind/system-sleep.
+sleep_hook_dir() {
+  if [ "${OS:-$(distro)}" = void ] && [ ! -d "$ROOT/run/systemd/system" ]; then
+    for sh_dir in /usr/libexec/elogind/system-sleep /usr/lib/elogind/system-sleep /usr/lib64/elogind/system-sleep; do
+      [ -d "$ROOT$sh_dir" ] && { say "$sh_dir"; return 0; }
+    done
+    for sh_dir in /usr/libexec/elogind /usr/lib/elogind; do
+      [ -d "$ROOT$sh_dir" ] && { say "$sh_dir/system-sleep"; return 0; }
+    done
+    say /usr/libexec/elogind/system-sleep
+  else
+    say "${SLEEP_HOOK_SYSTEMD%/*}"
+  fi
+}
+integration_file() { # NAME -> path of ./checkup/NAME from the release integration archive
+  if_archive=$WORK/download/nirux/nirux-integration.tar.xz
+  if [ -f "$if_archive" ] && [ ! -f "$WORK/checkup-integration/checkup/$1" ]; then
+    mkdir -p "$WORK/checkup-integration"
+    tar -xJf "$if_archive" -C "$WORK/checkup-integration" "./checkup/$1" 2>/dev/null || :
+  fi
+  [ -f "$WORK/checkup-integration/checkup/$1" ] || return 1
+  say "$WORK/checkup-integration/checkup/$1"
+}
+install_sleep_hook() {
+  sl_source=$(integration_file nirux-sleep) || return 0
+  { say '#!/bin/sh'; say "# NIRUX owner: $PREFIX"; sed '1d' "$sl_source"; } > "$WORK/sleep-hook"
+  sl_dir=$(sleep_hook_dir)
+  write_system "$ROOT$sl_dir/nirux" "$WORK/sleep-hook"
+  as_root chmod 0755 "$ROOT$sl_dir/nirux" || die 'could not secure the sleep hook'
+}
+remove_sleep_hook() {
+  for sl_dir in "${SLEEP_HOOK_SYSTEMD%/*}" /usr/libexec/elogind/system-sleep /usr/lib/elogind/system-sleep /usr/lib64/elogind/system-sleep; do
+    remove_system "$ROOT$sl_dir/nirux"
+  done
+}
+# Every package name this NIRUX may install on this distribution: the runtime
+# list (TLP or not), the browser libraries, the display managers, Papirus,
+# Tailscale and the graphics drivers, with Debian's t64 library renames. The
+# nightly update installs a package NIRUX asks for only when it is listed.
+autoupdate_package_list() {
+  {
+    say curl ca-certificates tailscale
+    distribution_packages_for "$1"
+    browser_packages_for "$1"
+    icons_packages_for "$1"
+    case "$1" in
+      arch) say mesa sddm qt5-declarative lightdm lightdm-gtk-greeter greetd ;;
+      debian) say libgl1-mesa-dri sddm lightdm lightdm-gtk-greeter greetd xserver-xorg-legacy libcups2 libcups2t64 libgtk-3-0 libgtk-3-0t64 libasound2 libasound2t64 ;;
+      void) say mesa-dri sddm lightdm lightdm-gtk-greeter greetd ;;
+    esac
+  } | tr ' ' '\n' | awk -v os="$1" '
+    /^[a-z0-9][A-Za-z0-9+._-]*$/ { print; if (os == "debian" && $0 ~ /^lib/ && $0 !~ /t64$/) print $0 "t64" }' |
+    LC_ALL=C sort -u
+}
+# Written only by an interactive update or install (with sudo), never by --auto.
+install_autoupdate_packages() {
+  [ "$NIRUX_AUTO" = 0 ] || return 0
+  {
+    say "# NIRUX owner: $PREFIX"
+    say "# Packages the nightly update may install for NIRUX $VERSION on ${OS:-$(distro)}."
+    say '# Replaced by every nirux update; do not edit.'
+    autoupdate_package_list "${OS:-$(distro)}"
+  } > "$WORK/autoupdate-packages"
+  write_system "$ROOT/etc/nirux/autoupdate-packages" "$WORK/autoupdate-packages"
+  as_root chmod 0644 "$ROOT/etc/nirux/autoupdate-packages" || die 'could not secure the nightly update package list'
+}
+install_autoupdate() {
+  [ -n "${rule_user:-}" ] || return 0
+  au_source=$(integration_file nirux-autoupdate) || return 0
+  { say '#!/bin/sh'; say "# NIRUX owner: $PREFIX"; sed '1d' "$au_source"; } > "$WORK/autoupdate-helper"
+  write_system "$ROOT$AUTOUPDATE_HELPER" "$WORK/autoupdate-helper"
+  as_root chmod 0755 "$ROOT$AUTOUPDATE_HELPER" || die 'could not secure the autoupdate helper'
+  install_autoupdate_packages
+  au_conf=$ROOT/etc/nirux/autoupdate.conf
+  if ! as_root test -f "$au_conf"; then
+    {
+      say "# NIRUX owner: $PREFIX"
+      say '# NIRUX nightly update (nirux autoupdate --help). Edit with sudo, or use'
+      say '# nirux autoupdate enable|disable.'
+      say 'enabled=yes'
+      say "user=$rule_user"
+      say '# Local time; a run starts only when nobody is logged in.'
+      say 'window=03:00-05:00'
+      say '# discord: warnings, always or off (the webhook of nirux checkup discord set)'
+      say 'discord=warnings'
+    } > "$WORK/autoupdate-conf"
+    write_system "$au_conf" "$WORK/autoupdate-conf"
+  fi
+  {
+    say "# NIRUX owner: $PREFIX"
+    say '# Only the root-owned nightly update helper, with fixed arguments.'
+    say "$rule_user ALL=(root) NOPASSWD: $AUTOUPDATE_HELPER run-now, $AUTOUPDATE_HELPER enable, $AUTOUPDATE_HELPER disable"
+  } > "$WORK/autoupdate-sudoers"
+  if command -v visudo >/dev/null 2>&1; then
+    visudo_out=$(visudo -cf "$WORK/autoupdate-sudoers" 2>&1) ||
+      die "generated autoupdate sudoers rule is invalid; nothing was installed: $visudo_out"
+  fi
+  au_sudoers=$ROOT/etc/sudoers.d/zz-nirux-autoupdate
+  if ! { [ -f "$au_sudoers" ] && [ "$(as_root cat "$au_sudoers" 2>/dev/null)" = "$(cat "$WORK/autoupdate-sudoers")" ]; }; then
+    write_system "$au_sudoers" "$WORK/autoupdate-sudoers"
+  fi
+  as_root chmod 0440 "$au_sudoers" || die 'could not secure the autoupdate sudoers rule'
+  if [ "${OS:-$(distro)}" = void ]; then
+    {
+      say '#!/bin/sh'
+      say "# NIRUX owner: $PREFIX"
+      say 'exec 2>&1'
+      say "exec chpst -n 10 $AUTOUPDATE_HELPER loop"
+    } > "$WORK/autoupdate-run"
+    write_system "$ROOT/etc/sv/nirux-autoupdate/run" "$WORK/autoupdate-run"
+    as_root chmod 0755 "$ROOT/etc/sv/nirux-autoupdate/run"
+    [ -e "$ROOT/var/service/nirux-autoupdate" ] || [ -n "$ROOT" ] ||
+      as_root ln -s /etc/sv/nirux-autoupdate "$ROOT/var/service/nirux-autoupdate"
+  else
+    {
+      say "# NIRUX owner: $PREFIX"
+      say '[Unit]'
+      say 'Description=NIRUX nightly update (only when nobody is logged in)'
+      say 'After=network-online.target'
+      say 'Wants=network-online.target'
+      say '[Service]'
+      say 'Type=oneshot'
+      say "ExecStart=$AUTOUPDATE_HELPER run --scheduled"
+      say 'TimeoutStartSec=3h'
+      say 'Nice=10'
+      say 'IOSchedulingClass=best-effort'
+      say 'IOSchedulingPriority=7'
+    } > "$WORK/autoupdate-service"
+    {
+      say "# NIRUX owner: $PREFIX"
+      say '[Unit]'
+      say 'Description=NIRUX nightly update (03:00, no catch-up when missed)'
+      say '[Timer]'
+      say 'OnCalendar=*-*-* 03:00:00'
+      say 'RandomizedDelaySec=30min'
+      say 'Persistent=false'
+      say '[Install]'
+      say 'WantedBy=timers.target'
+    } > "$WORK/autoupdate-timer"
+    write_system "$ROOT/etc/systemd/system/nirux-autoupdate.service" "$WORK/autoupdate-service"
+    write_system "$ROOT/etc/systemd/system/nirux-autoupdate.timer" "$WORK/autoupdate-timer"
+    if [ -z "$ROOT" ] && command -v systemctl >/dev/null 2>&1; then
+      as_root systemctl daemon-reload >/dev/null 2>&1 || :
+      as_root systemctl enable --now nirux-autoupdate.timer >/dev/null 2>&1 ||
+        say 'Could not enable the nightly update timer; run: sudo systemctl enable --now nirux-autoupdate.timer'
+    fi
+  fi
+}
+remove_autoupdate() {
+  if [ -z "$ROOT" ] && command -v systemctl >/dev/null 2>&1 && [ -f /etc/systemd/system/nirux-autoupdate.timer ]; then
+    as_root systemctl disable --now nirux-autoupdate.timer >/dev/null 2>&1 || :
+  fi
+  if [ -L "$ROOT/var/service/nirux-autoupdate" ]; then as_root rm -f "$ROOT/var/service/nirux-autoupdate"; fi
+  remove_system "$ROOT/etc/sv/nirux-autoupdate/run"
+  as_root rmdir "$ROOT/etc/sv/nirux-autoupdate" 2>/dev/null || :
+  remove_system "$ROOT/etc/systemd/system/nirux-autoupdate.timer"
+  remove_system "$ROOT/etc/systemd/system/nirux-autoupdate.service"
+  remove_system "$ROOT/etc/sudoers.d/zz-nirux-autoupdate"
+  remove_system "$ROOT/etc/nirux/autoupdate-packages"
+  remove_system "$ROOT$AUTOUPDATE_HELPER"
+}
+# `nirux autoupdate status | last | enable | disable | run-now`
+autoupdate_command() {
+  au_conf=/etc/nirux/autoupdate.conf
+  case "${1:-status}" in
+    -h|--help)
+      say 'usage: nirux autoupdate status | last | enable | disable | run-now'
+      say 'The nightly update runs between 03:00 and 05:00 when nobody is logged in.'
+      say "Settings: $au_conf (enabled, user, window, discord). Reports: /var/lib/nirux/autoupdate/"
+      return 0 ;;
+  esac
+  [ -x "$AUTOUPDATE_HELPER" ] || die 'the nightly update is not installed yet; run nirux update'
+  case "${1:-status}" in
+    status)
+      [ "$#" -le 1 ] || die 'usage: nirux autoupdate status'
+      "$AUTOUPDATE_HELPER" status
+      if command -v systemctl >/dev/null 2>&1 && [ -f /etc/systemd/system/nirux-autoupdate.timer ]; then
+        systemctl list-timers nirux-autoupdate.timer --no-pager 2>/dev/null | sed -n '2p' | awk 'NF { print "Next run: " $1, $2, $3 }'
+      elif [ -e /var/service/nirux-autoupdate ]; then
+        say 'Next run: tonight in the window (runit service nirux-autoupdate)'
+      fi
+      pending_status ;;
+    last) "$AUTOUPDATE_HELPER" last ;;
+    enable|disable|run-now)
+      [ "$#" = 1 ] || die "usage: nirux autoupdate $1"
+      sudo "$AUTOUPDATE_HELPER" "$1" ;;
+    *) die "unknown autoupdate command: $1 (nirux autoupdate --help)" ;;
+  esac
+}
 main() {
   # The bootstrap keeps the one sudo password in a private file, never in the
   # environment: a program NIRUX starts can read its own environment, and a
@@ -8621,6 +9609,10 @@ main() {
     sync) shift; sync_command "$@" ;;
     snapshot) shift; snapshot_command "$@" ;;
     checkup) shift; checkup_command "$@" ;;
+    autoupdate) shift; autoupdate_command "$@" ;;
+    whats-new) shift; whats_new_command "$@" ;;
+    resume-check) shift; resume_check_command "$@" ;;
+    clean) shift; clean_command "$@" ;;
     restore) shift; restore_command "$@" ;;
     update-shutdown) shift; update_power_command shutdown "$@" ;;
     update-reboot) shift; update_power_command reboot "$@" ;;

@@ -39,7 +39,7 @@ Choose and order the modules with `[bar] modules`. A module without a provider h
 | `wifi` | Wi-Fi radio and connection; `!` means radio off or not connected | Opens the Wi-Fi selector (`nirulauncher --wifi`) | |
 | `bluetooth` | Off, on or the connected device | Information; footer opens devices | Right: power on/off. Middle: device selector |
 | `powerprofile` | Active power profile (needs `power-profiles-daemon`) | Information | Right: next profile. Middle: `nirulauncher --power` |
-| `battery` | Aggregated charge and state; laptops only | Charge, state and remaining time | |
+| `battery` | Aggregated charge and state; laptops only | Charge, state, remaining time, battery health (percent of the design capacity), charge cycles and a graph of the last 24 hours | |
 | `mode` | Active work mode (focus/presentation) and minutes left, and *studio* while studio mode is on | Shows `niructl mode stop` or `niructl studio off` | |
 | `tasks` | Running or waiting NIRU/OpenCode tasks (`niructl task list`) | Recent states; footer opens NIRU Actions | |
 | `agent` | OpenCode entry | Opens a one-line prompt (`nirulauncher --agent`) | |
@@ -51,12 +51,13 @@ Choose and order the modules with `[bar] modules`. A module without a provider h
 | `privacy` | A red `●` while an app uses the microphone, a camera or NIRUCLIP screen recording; nothing otherwise. The panel names the apps (`microphone: NIRUDICTATE`, `camera: cheese`) | Status | |
 | `recording` | NIRUCLIP: `● rec MM:SS`, `○ paused MM:SS`, `· cam off` / `· cam !` on a camera problem | Status; footer opens the capture view | Right: stop and save (or recover an interrupted one). Middle: `nirulauncher --clip` |
 | `share` | NIRUSHARE entry | Opens the inbox (`nirulauncher --share`) | |
-| `updates` | Available package upgrades (`apt`, `pacman` or `xbps`) | Details and the command to run | |
+| `updates` | Available package upgrades (`apt`, `pacman` or `xbps`); hidden when there are none. With `niruxupdate` in the list it counts only system packages | Details and the command to run | |
 | `niruxupdate` | A newer NIRUX release, or an installed one that needs a new login; silent otherwise | The command to run (it never installs anything) | |
 | `pulse` | CPU and memory | Graph of the last minute | |
 | `uptime` | Uptime | Memory use and the fullest file system | |
 | `sun` | Sunrise and sunset for the top-level coordinates | Details | |
 | `weather` | Cached temperature, condition and rain | Eight-hour timeline | |
+| `disk` | Hidden until `/` or your home folder is `disk_warn` percent full (default 90); then a red disk icon with the percentage | Used and free space; `Enter` or a click opens a terminal with `nirux clean`, which shows what it would remove and asks first | |
 | `quicksettings` | A gear | Panel; `Enter` or a click on it opens Quick Settings | |
 | `clock` | Date and time | Calendar (see below) | |
 
@@ -68,8 +69,16 @@ The `wifi` module is added automatically after `network` when a Wi-Fi adapter ex
 
 ```toml
 [bar]
-modules = ["workspaces", "dictation", "privacy", "recording", "scratchpad", "layout", "media", "volume", "microphone", "brightness", "display", "tailscale", "network", "wifi", "mode", "battery", "niruxupdate", "agent", "nirusec", "dnd", "quicksettings", "share", "clock"]
+modules = ["workspaces", "dictation", "privacy", "recording", "scratchpad", "layout", "media", "volume", "microphone", "brightness", "display", "tailscale", "network", "wifi", "mode", "battery", "updates", "niruxupdate", "agent", "nirusec", "dnd", "disk", "quicksettings", "share", "clock"]
+follow_default_modules = true
 ```
+
+**The list follows the NIRUX default.** With `follow_default_modules = true` (the
+default) every `nirux update` sets `modules` to the list above when yours differs,
+so new modules arrive by themselves. Your file as it was is kept in the settings
+history first: `niructl config undo` brings your own list back. Set
+`follow_default_modules = false` to keep your own list; `nirux update` then never
+changes it. `nirux update` adds the key to `[bar]` when it is missing.
 
 The privacy dot counts PipeWire capture streams from a real microphone (not sound
 visualisers such as CAVA, which listen to the output), camera streams and processes that
@@ -300,6 +309,7 @@ All keys live in `[bar]` in `~/.config/niruwm/config.toml`. The file is strict: 
 | `update_check_minutes` | `30` | Minutes between package update checks |
 | `microphone_visibility` | `"always"` | `"muted"` hides a healthy, unmuted input |
 | `battery`, `network`, `wifi` | `true` | Switch those modules off without editing `modules` |
+| `disk_warn` | `90` | Percent used (1 to 99) at which the `disk` module appears |
 | `tray` | `true` | Own the system tray |
 | `transparent` | `true` | See-through through the compositor |
 | `opacity` | `94` | Percent used when `transparent` is true |
