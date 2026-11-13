@@ -21,7 +21,7 @@ printf 'testhost\n' > "$R/etc/hostname"
 printf 'enabled=yes\nuser=%s\nwindow=00:00-23:59\ndiscord=warnings\n' "$U" > "$R/etc/nirux/autoupdate.conf"
 
 # Stub system tools: record every call.
-for tool in apt-get apt curl loginctl who; do
+for tool in apt-get apt curl loginctl who pgrep; do
   cat > "$T/bin/$tool" <<EOF
 #!/bin/sh
 printf '%s %s\n' "$tool" "\$*" >> "$T/calls"
@@ -29,7 +29,14 @@ case "$tool \$1" in
   "apt list") printf 'Listing...\n' ;;
   "curl -K") cat > "$T/curl-config" ;;
   "loginctl list-sessions") [ -f "$T/session" ] && cat "$T/session" ;;
-  "loginctl show-session") case "\$*" in *Class*) cat "$T/session-class" ;; *State*) echo active ;; esac ;;
+  "loginctl show-session") case "\$*" in
+      *Class*) cat "$T/session-class" ;; *State*) echo active ;;
+      *Remote*) cat "$T/session-remote" 2>/dev/null || echo no ;;
+      *Type*) cat "$T/session-type" 2>/dev/null || echo x11 ;;
+      *LockedHint*) cat "$T/session-locked" 2>/dev/null || echo no ;;
+      *User*) echo 1000 ;;
+    esac ;;
+  "pgrep -u") [ -f "$T/nirulock" ] || exit 1 ;;
 esac
 exit 0
 EOF
@@ -80,6 +87,20 @@ echo greeter > "$T/session-class"
 (unset NIRUX_AUTOUPDATE_SESSIONS; sh "$HELPER" due) || fail 'due check failed'
 echo user > "$T/session-class"
 (unset NIRUX_AUTOUPDATE_SESSIONS; sh "$HELPER" run --scheduled) | grep -q 'skipped: somebody is logged in' || fail 'a loginctl user session did not skip the run'
+# A locked desktop is away: by LockedHint, or by NIRULOCK running for the user.
+echo yes > "$T/session-locked"
+(unset NIRUX_AUTOUPDATE_SESSIONS; sh "$HELPER" in-use >/dev/null) && fail 'a locked desktop (LockedHint) counted as in use'
+echo no > "$T/session-locked"; touch "$T/nirulock"
+(unset NIRUX_AUTOUPDATE_SESSIONS; sh "$HELPER" in-use >/dev/null) && fail 'a desktop locked by NIRULOCK counted as in use'
+# A remote (SSH) or text console login always counts, locked or not.
+echo yes > "$T/session-remote"
+(unset NIRUX_AUTOUPDATE_SESSIONS; sh "$HELPER" in-use >/dev/null) || fail 'an SSH session did not count'
+# startx from a console is a "tty" session: locked when NIRULOCK runs.
+echo no > "$T/session-remote"; echo tty > "$T/session-type"
+(unset NIRUX_AUTOUPDATE_SESSIONS; sh "$HELPER" in-use >/dev/null) && fail 'a startx session locked by NIRULOCK counted as in use'
+rm -f "$T/nirulock"
+(unset NIRUX_AUTOUPDATE_SESSIONS; sh "$HELPER" in-use >/dev/null) || fail 'a text console login did not count'
+rm -f "$T/session-type"
 echo greeter > "$T/session-class"
 
 # On battery below 50 % without the charger: skipped.

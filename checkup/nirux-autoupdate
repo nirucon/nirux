@@ -1,6 +1,6 @@
 #!/bin/sh
 # NIRUX nightly update: system packages, NIRUX, extras and apps, while nobody
-# is logged in.
+# is using the computer (a locked desktop counts as away).
 #
 # Installed root-owned as /usr/libexec/nirux-autoupdate and run by root from a
 # systemd timer (03:00 with a random delay of up to 30 minutes, no catch-up)
@@ -14,6 +14,7 @@
 #   nirux-autoupdate run-now             a run now, even with a session open
 #   nirux-autoupdate loop                runit service: run when due, else sleep
 #   nirux-autoupdate due                 exit 0 when a scheduled run is due
+#   nirux-autoupdate in-use              'in use' (exit 0) or 'away' (exit 1) now
 #   nirux-autoupdate status | last       settings and the last run; the report
 #   nirux-autoupdate enable | disable    switch it on or off (root)
 #
@@ -106,16 +107,36 @@ loop() {
   done
 }
 
-# Somebody is logged in: a session of class "user" (a greeter does not
-# count), or anyone in who(1). ssh logins count too.
+# Somebody is using the computer: an SSH or text console login, or a desktop
+# session whose screen is not locked. A greeter does not count, and neither
+# does a desktop left locked (LockedHint, or NIRULOCK running for that user),
+# so a computer that stays logged in overnight is still updated. The update
+# never logs anybody out or restarts the window manager: new NIRUWM programs
+# start with the next login or WM restart. Without loginctl, anyone in who(1)
+# counts.
 someone_logged_in() {
   if [ -n "${NIRUX_AUTOUPDATE_SESSIONS:-}" ]; then [ "$NIRUX_AUTOUPDATE_SESSIONS" != 0 ]; return; fi
   if have loginctl; then
     for s in $(bounded 10 loginctl list-sessions --no-legend 2>/dev/null | awk '{ print $1 }'); do
       class=$(bounded 5 loginctl show-session "$s" -p Class --value 2>/dev/null)
       state=$(bounded 5 loginctl show-session "$s" -p State --value 2>/dev/null)
-      [ "$class" = user ] && [ "$state" != closing ] && return 0
+      [ "$class" = user ] && [ "$state" != closing ] || continue
+      remote=$(bounded 5 loginctl show-session "$s" -p Remote --value 2>/dev/null)
+      type=$(bounded 5 loginctl show-session "$s" -p Type --value 2>/dev/null)
+      [ "$remote" = yes ] && return 0
+      # A desktop reports its lock through logind; startx from a console
+      # (common on Void) is a "tty" session, so NIRULOCK running for the
+      # user counts as locked for any local session.
+      case "$type" in
+        x11|wayland|mir)
+          locked=$(bounded 5 loginctl show-session "$s" -p LockedHint --value 2>/dev/null)
+          [ "$locked" = yes ] && continue ;;
+      esac
+      uid=$(bounded 5 loginctl show-session "$s" -p User --value 2>/dev/null)
+      [ -n "$uid" ] && have pgrep && pgrep -u "$uid" -x nirulock >/dev/null 2>&1 && continue
+      return 0
     done
+    return 1
   fi
   [ -n "$(who 2>/dev/null | head -n 1)" ]
 }
@@ -307,7 +328,7 @@ run() {
   OWNER_PATH=$PREFIX_DIR/bin:${TEST_PATH:-/usr/local/bin:/usr/bin:/bin}
   # A skipped run leaves no report (runit tries again every quarter hour).
   if [ "$NOW" = 0 ] && someone_logged_in; then
-    say "$(date '+%Y-%m-%d %H:%M') skipped: somebody is logged in" | tee "$STATE/last-skip"
+    say "$(date '+%Y-%m-%d %H:%M') skipped: somebody is logged in and active" | tee "$STATE/last-skip"
     return 0
   fi
   if ! power_ok; then
@@ -416,6 +437,8 @@ status() {
   if [ -f "$STATE/latest" ]; then say "Last run: $(head -n 1 "$STATE/latest")"
   else say 'Last run: never'; fi
   if [ -f "$STATE/last-skip" ]; then say "Last skip: $(cat "$STATE/last-skip")"; fi
+  if someone_logged_in; then say 'Now: in use (the run waits; a locked screen counts as away)'
+  else say 'Now: away (a run may start in the window)'; fi
 }
 set_enabled() {
   [ "$(id -u)" = 0 ] || [ -n "$R" ] || { say "$1 needs root (use: nirux autoupdate $1)" >&2; return 1; }
@@ -434,8 +457,9 @@ case "${1:-}" in
   run-now) run --now ;;
   loop) loop ;;
   due) due ;;
+  in-use) if someone_logged_in; then say 'in use'; else say 'away'; exit 1; fi ;;
   status) status ;;
   last) if [ -f "$STATE/latest" ]; then cat "$STATE/latest"; else say 'The nightly update has not run yet.'; fi ;;
   enable|disable) set_enabled "$1" ;;
-  *) say 'usage: nirux-autoupdate run [--scheduled] | run-now | loop | due | status | last | enable | disable' >&2; exit 2 ;;
+  *) say 'usage: nirux-autoupdate run [--scheduled] | run-now | loop | due | in-use | status | last | enable | disable' >&2; exit 2 ;;
 esac

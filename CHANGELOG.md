@@ -2,6 +2,14 @@
 
 Earlier releases are described in their release notes and commit messages.
 
+## 0.12.273 (2026-11-13)
+
+- **The nightly update also runs behind a locked screen.** A desktop session
+  that is left locked overnight now counts as away, so computers that stay
+  logged in are updated too. An unlocked desktop, an SSH login or a text
+  console still makes it wait, and it never logs you out or restarts the window
+  manager. `nirux autoupdate` shows whether the computer counts as in use now.
+
 ## 0.12.272 (2026-11-13)
 
 - **A night light that glides.** NIRUWM 0.30.0 adds `mode = "gradual"`, now the

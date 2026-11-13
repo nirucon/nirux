@@ -329,10 +329,17 @@ Every NIRUX computer updates itself at night, on by default: the system packages
 (`apt-get full-upgrade`, `pacman -Syu`, `xbps-install -Su`), NIRUX, the selected
 extras and the apps above. It starts at 03:00 (a random delay of up to half an
 hour on systemd; every quarter hour between 03:00 and 05:00 on Void) and only
-when **nobody is logged in**: no user session in `loginctl` (the login screen does
-not count) and no one in `who`, SSH included. On battery it waits for the charger
+when **nobody is using the computer**. A desktop session left **locked** counts
+as away (the lock screen is up: NIRULOCK runs, or logind's locked hint), so a
+computer that stays logged in overnight is still updated. An unlocked desktop,
+an SSH login or a text console login makes it wait; the login screen does not
+count. Without `loginctl`, anyone in `who` makes it wait. On battery it waits for the charger
 or at least 50 %. A computer that is off at night simply updates the next night.
-It never restarts the computer and never touches a running session.
+It never restarts the computer and never touches a running session: it does
+not log you out or restart the window manager, so new NIRUWM programs start
+with your next login or `niructl restart-wm`, and Helium uses a new version
+after you restart it. `nirux autoupdate` shows whether the computer counts as
+in use right now.
 
 A run checks with `nirux doctor`, runs `nirux update --auto` (which saves a
 configuration snapshot before it changes anything, like every update), `nirux
