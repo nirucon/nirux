@@ -347,6 +347,19 @@ nirufetch
 nirufetch --plain
 ```
 
+### niruio
+
+`niruio` ("niru in out") shows every output, input, program and camera, what
+WirePlumber remembers per media role and program, and a sound doctor that
+explains silence and offers a fix. `Super+Shift+A` opens it as a floating
+window; the launcher's sound view has an "Open NIRUIO" row.
+
+```sh
+niruio                     # the interface
+niruio doctor --brief      # why is nothing heard, recorded or filmed
+niruio reset --silencing   # reset remembered mutes (for example every video in mpv)
+```
+
 ### Webapps
 
 `niruwebapp` creates normal desktop applications backed by an already installed

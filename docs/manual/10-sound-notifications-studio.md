@@ -1,6 +1,6 @@
 # Sound, notifications and studio mode
 
-This chapter covers volume, outputs and the microphone, media keys, the NIRUX event sounds, notifications and Do Not Disturb (NIRUNOTIFY), and the session modes that keep the screen awake or silence the desktop: keep awake, focus and presentation mode, and studio mode for recording. Bluetooth and power profiles are at the end.
+This chapter covers volume, outputs and the microphone, NIRUIO (every device, program and camera, and the sound doctor), media keys, the NIRUX event sounds, notifications and Do Not Disturb (NIRUNOTIFY), and the session modes that keep the screen awake or silence the desktop: keep awake, focus and presentation mode, and studio mode for recording. Bluetooth and power profiles are at the end.
 
 ## Change the volume
 
@@ -74,6 +74,59 @@ niructl audio mic-test 5 --keep     # keep the WAV file and print its path (with
 The test records through `pw-record` (or `arecord` when PipeWire is missing) and prints the peak and RMS level in dBFS, whether it clipped, and a verdict. The recording is deleted afterwards unless you pass `--keep`.
 
 The bar's `microphone` module shows the input state: right-click mutes, scroll changes the gain, middle-click opens the source selector.
+
+## NIRUIO: devices, programs, cameras and the sound doctor
+
+*(NIRUIO 0.1.0)*
+
+NIRUIO ("niru in out") is the sound tool of NIRUX: one terminal window with every output, input, program and camera, what WirePlumber remembers, and a doctor that explains silence. Open it with `Super+Shift+A`, the **Open NIRUIO** row of the launcher's sound view (`nirulauncher --sound`) or the actions view, or from a terminal:
+
+```sh
+niruio                    # the interface, on the Out tab
+niruio cameras            # on a tab: out, in, apps, cameras, cards
+niruio --tab doctor       # saved and doctor need --tab (they are also commands)
+niruio --window           # in its own floating window, what Super+Shift+A runs
+```
+
+The window floats and is centred. Everything works with the keyboard and the mouse: click a tab or a row, click a volume bar to set it, scroll to change, right-click to mute.
+
+| Tab | What it shows and does |
+|---|---|
+| **Out** | Every output (built-in, HDMI and DisplayPort, USB, Bluetooth) with a live level meter: volume up to 150 %, mute, left/right balance, the default output, the port (speakers, headphones) with `p` and the card profile with `P` |
+| **In** | Every input with a meter: gain, mute, default, ALSA boost (`b`/`B`) where the card has one, a five second test (`t` records, `y` plays it back) with peak, RMS and clipping, and every input of a multichannel interface with its own meter. `n` chooses the inputs NIRUCLIP records (it writes `mic` and `mic_channels` in NIRUCLIP's config) |
+| **Apps** | Which program plays or records, on which device, its level, volume and mute; `o` moves it to another output or input |
+| **Cameras** | Every camera, which program has it open, formats, the camera's controls (brightness, exposure, focus, white balance ...; `Enter` to adjust, `0` resets one), a live preview with `v`, and `n` makes it NIRUCLIP's camera |
+| **Cards** | Card profiles and ports. A Bluetooth headset switches between hi-fi playback (A2DP) and headset mode with microphone (HFP/HSP); the codec is shown |
+| **Saved** | What WirePlumber remembers per media role and per program, with the entries that silence something in red. `Enter` resets one to 100 % unmuted, `R` resets every silencing entry |
+| **Doctor** | Problems with one fix each: `Enter` applies it, `F` applies all, `r` checks again |
+
+`?` lists every key, `q` quits. Meters run only for the tab you look at, and the camera is only opened while its preview is on and the Cameras tab shows.
+
+### Why every video was silent: remembered volume
+
+WirePlumber remembers volume and mute per *media role* and per program, in `~/.local/state/wireplumber/stream-properties` (`restore-stream` on Debian 12). mpv tags the sound of every video with the role `Movie`. Mute one video once, and WirePlumber mutes every video after it, in every player that uses that role, until someone unmutes it again. The same happens with a role or program turned down to almost nothing.
+
+The **Saved** tab and the doctor show such entries; the doctor also names the entry behind a muted program that is playing right now. A reset goes through WirePlumber itself: NIRUIO briefly creates a silent stream with the same role or program name, linked only to a private null sink, sets it to 100 % and unmutes it, and WirePlumber stores that. Nothing is played. Editing the file by hand does not work while WirePlumber runs, because it writes its own copy back.
+
+```sh
+niruio saved                                  # every remembered entry; "<- silences" marks the problem ones
+niruio reset --silencing                      # reset all of those
+niruio reset 'Output/Audio:media.role:Movie'  # or one
+```
+
+### The sound doctor
+
+`niruio doctor` answers "why is nothing heard", "why is nothing recorded" and "why is the camera missing". It follows the sound from the program's stream to the remembered role or program setting, the output or input device (muted, turned down, no default), the card profile and port (a `stereo-fallback` profile, a port with nothing plugged in, a card switched off), ALSA switches that are off behind PipeWire's back, and the device itself; for cameras it checks presence, access (the `video` group) and which program holds them.
+
+```sh
+niruio doctor            # every finding with its fix; exit status 1 when there is a problem
+niruio doctor --brief    # one line per problem or warning
+niruio doctor --json
+niruio doctor --fix      # apply every fix for problems and warnings
+niruio status [--json]   # default devices, programs, cameras and the number of problems
+```
+
+`nirux doctor` runs `niruio doctor --brief` and offers `niruio doctor --fix` in `nirux doctor --fix`.
 
 ## Event sounds
 
@@ -289,7 +342,7 @@ niructl bluetooth connect AA:BB:CC:DD:EE:FF
 niructl bluetooth disconnect AA:BB:CC:DD:EE:FF
 ```
 
-`connect` only accepts a paired device. A connected headset appears as an output; switch to it with `niructl audio output next` or the launcher's sound view. `nirulauncher --bluetooth` lists the devices with actions, and the bar's `bluetooth` module shows the state (right-click toggles power).
+`connect` only accepts a paired device. A connected headset appears as an output; switch to it with `niructl audio output next` or the launcher's sound view. NIRUIO's **Cards** tab switches a headset between hi-fi playback (A2DP, no microphone) and headset mode (HFP/HSP, with microphone, lower quality) and shows the codec; pairing stays in the launcher. `nirulauncher --bluetooth` lists the devices with actions, and the bar's `bluetooth` module shows the state (right-click toggles power).
 
 ## Power profiles
 

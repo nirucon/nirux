@@ -74,6 +74,7 @@ verified generation, at the versions pinned in [manifest](manifest).
 | [niruwebapp](https://github.com/nirucon/niruwebapp) | Web apps in their own windows with isolated or shared profiles | alpha |
 | [nirufetch](https://github.com/nirucon/nirufetch) | NIRU-styled system summary for the terminal | beta |
 | [nirushare](https://github.com/nirucon/nirushare) | Trusted text and image sharing over Tailscale, and to your own Discord webhooks (preview first, Undo) | alpha |
+| [niruio](https://github.com/nirucon/niruio) | Sound outputs, inputs, programs and cameras with live meters, remembered volumes and a sound doctor, in the terminal (`Super+Shift+A`) | beta |
 
 ### Extras
 

@@ -2,7 +2,7 @@
 # NIRUX: install a complete X11 desktop, or maintain an existing installation.
 set -eu
 
-VERSION=0.12.273
+VERSION=0.12.274
 PREFIX=${NIRUX_PREFIX:-$HOME/.local}
 BIN=$PREFIX/bin
 STATE=$PREFIX/share/nirux
@@ -11,7 +11,7 @@ NIRUX_CONFIG=${XDG_CONFIG_HOME:-$HOME/.config}/nirux
 SOUNDS_STATE=$STATE/sounds
 SOUNDS_CONFIG=$NIRUX_CONFIG/sounds.toml
 ROOT=${NIRUX_SYSTEM_ROOT:-}
-PROGRAMS="niruwm niructl niruidle nirubar niruscreensaver nirulock nirulauncher nirunotify nirushot niruclip nirufetch niruwebapp niruwallpaper nirudisplay niruthemeselector niruwm-session niruclipboard nirugestured nirulogin nirushare nirux"
+PROGRAMS="niruwm niructl niruidle nirubar niruscreensaver nirulock nirulauncher nirunotify nirushot niruclip nirufetch niruwebapp niruwallpaper nirudisplay niruthemeselector niruwm-session niruclipboard nirugestured nirulogin nirushare niruio nirux"
 WORK=
 POLICY_TARGET=
 POLICY_BACKUP=
@@ -6827,6 +6827,7 @@ doctor_fix_text() {
     idle) say 'start niruidle (screen saver, idle lock) for this session' ;;
     nightlight) say 'start the night-light schedule for this session' ;;
     audio) say 'restart PipeWire and WirePlumber (user services)' ;;
+    niruio) say 'apply the NIRUIO sound fixes: unmute, reset remembered mutes, ports and profiles (niruio doctor --fix)' ;;
     hwvideo) say 'install the hardware video packages and turn on hardware video decoding in Helium (sudo)' ;;
   esac
 }
@@ -6848,6 +6849,7 @@ doctor_fix_one() {
     idle) doctor_spawn "$BIN/niruidle" ;;
     nightlight) doctor_spawn "$BIN/niructl" nightlight watch ;;
     audio) systemctl --user restart pipewire pipewire-pulse wireplumber ;;
+    niruio) "$BIN/niruio" doctor --fix ;;
     hwvideo) OS=$(distro) && packages=1 && hwvideo_apply && [ -s "$STATE/helium-flags" ] ;;
     *) return 1 ;;
   esac
@@ -6945,6 +6947,20 @@ doctor() {
       if command -v systemctl >/dev/null 2>&1 && systemctl --user cat wireplumber.service >/dev/null 2>&1; then
         doctor_offer audio
       fi
+    fi
+  fi
+  # NIRUIO follows the sound from the program to the device. Its most common
+  # find is a media role WirePlumber remembers as muted (mpv tags the sound of
+  # every video as "Movie"), which silences a whole kind of program.
+  if [ -x "$BIN/niruio" ]; then
+    niruio_rc=0
+    niruio_out=$("$BIN/niruio" doctor --brief 2>/dev/null) || niruio_rc=$?
+    if [ -n "$niruio_out" ]; then
+      printf '%s\n' "$niruio_out" | sed 's/^/sound: /'
+      if printf '%s\n' "$niruio_out" | grep -q ' (fix: '; then doctor_offer niruio; fi
+      [ "$niruio_rc" = 0 ] || result=1
+    else
+      say 'sound: niruio doctor found nothing to report'
     fi
   fi
   bluez_spa=

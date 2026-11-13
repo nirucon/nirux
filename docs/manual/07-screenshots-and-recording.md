@@ -208,6 +208,8 @@ Inputs are numbered from 1 like the labels on the interface. `all`, or no settin
 
 In the launcher's Capture view (`nirulauncher --clip`) a **Mic inputs** row appears only when such an interface is present. `Enter` opens a list of all inputs, each input as mono and each pair (1+2, 3+4 ...) as stereo. The choice is remembered per interface in `~/.local/state/nirulauncher/clip-inputs.tsv` and passed to every recording started from the Capture view, including profiles that use that interface and set no `mic_channels` of their own. NIRUCLIP's config is never written.
 
+NIRUIO's **In** tab shows a meter for every input of the interface and sets the inputs NIRUCLIP records for every recording: select the interface and press `n`. That writes `mic` and `mic_channels` at the top of `~/.config/niruclip/config.toml`; a profile with its own `mic_channels` still wins. See [NIRUIO](10-sound-notifications-studio.md#niruio-devices-programs-cameras-and-the-sound-doctor).
+
 ## Use the camera
 
 ```sh
@@ -216,6 +218,8 @@ niruclip --preview --camera-shape circle --mirror   # live preview of the overla
 ```
 
 The countdown and the running recording check the camera. They detect a privacy image (for example a crossed-out camera), a frozen picture, a camera that sends no frames, or one another program uses, and report it in a notification, in `--status`, in the bar (`· cam off`, `· cam !`) and in the launcher.
+
+To see every camera, which program holds it, its formats and its controls (brightness, exposure, focus, white balance and the others it has), and a live preview, open NIRUIO's **Cameras** tab (`Super+Shift+A`, then `4`). `n` there makes the selected camera NIRUCLIP's default (`camera =` at the top of its config); the camera is only opened while the preview is on. See [NIRUIO](10-sound-notifications-studio.md#niruio-devices-programs-cameras-and-the-sound-doctor).
 
 **Camera recovery.** If the camera is unplugged or stops sending frames:
 

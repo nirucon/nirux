@@ -9,6 +9,7 @@
 | `Super+O` | Find files in the home folder |
 | `Ctrl+Alt+W` | Jump to a visible window by its label |
 | `Super+Shift+N` | Quick note to the inbox (also to Discord or a device) |
+| `Super+Shift+A` | Sound, microphones and cameras (NIRUIO) |
 | `Super+Shift+B` / `Super+Shift+M` / `Super+Shift+P` / `Super+Shift+Q` / `Super+Ctrl+T` | Unified launcher: apps, windows, actions and settings |
 | `Alt+Tab` / `` Super+` `` / `Super+W` | Window switcher |
 | `Super+Enter` | Open a terminal |

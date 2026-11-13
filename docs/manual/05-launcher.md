@@ -240,7 +240,7 @@ Each settings view is a front end over the same `niructl`, `nirux` and system pr
 | `--displays` | Display profiles with preview, keep and revert, rotation |
 | `--power` | Power profiles |
 | `--themes` | Theme list; `Enter` applies |
-| `--sound` | Outputs, inputs, streams, event sounds and per-app notification sounds |
+| `--sound` | Outputs, inputs, streams, event sounds and per-app notification sounds; **Open NIRUIO** for every device, program and camera and the sound doctor |
 | `--microphone` | Input source, mute, gain and a microphone test |
 | `--timing` | Idle, lock and display-off minutes; `Enter` on a value lets you type new minutes |
 | `--input` | Keyboard layout and repeat, pointer settings, reset |

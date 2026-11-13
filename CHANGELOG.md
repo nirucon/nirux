@@ -2,6 +2,34 @@
 
 Earlier releases are described in their release notes and commit messages.
 
+## 0.12.274 (2026-11-14)
+
+- **NIRUIO, the new sound tool** (core component, NIRUIO 0.1.0). One terminal
+  window with every output, input, program and camera: live level meters,
+  volume up to 150 %, mute, balance, the default device, ports and card
+  profiles, ALSA microphone boost, a five second mic test, a meter per input of
+  a multichannel interface such as the UMC1820, and moving a program to
+  another device. `Super+Shift+A` (NIRUWM 0.31.1) opens it as a centred
+  floating window, and the launcher's sound and actions views have an
+  **Open NIRUIO** row (NIRU Launcher 0.15.0).
+- **Remembered mutes are visible and reversible.** WirePlumber remembers volume
+  and mute per media role and per program; one muted video in mpv mutes every
+  video after it, because mpv tags them all as `Movie`. NIRUIO's Saved tab and
+  `niruio saved` list these entries, and a reset (`niruio reset --silencing`)
+  goes through WirePlumber itself, without playing anything.
+- **A sound doctor.** `niruio doctor` follows the sound from the program to the
+  device: the remembered role or program setting, a muted or silent device, a
+  fallback card profile, an unplugged port, an ALSA switch that is off, a
+  missing device, and for cameras access and which program holds them. Each
+  finding has a fix; `niruio doctor --fix` applies them. `nirux doctor` shows
+  its findings and `nirux doctor --fix` offers its fixes.
+- **Cameras and NIRUCLIP.** NIRUIO's Cameras tab shows which program holds a
+  camera, its formats and its controls (brightness, exposure, focus, white
+  balance), a live preview (pictures in kitty), and sets NIRUCLIP's camera; the
+  In tab sets the inputs NIRUCLIP records from a multichannel interface.
+- **Bluetooth headsets** switch between hi-fi playback and headset mode with a
+  microphone in NIRUIO's Cards tab, with the codec shown.
+
 ## 0.12.273 (2026-11-13)
 
 - **The nightly update also runs behind a locked screen.** A desktop session
