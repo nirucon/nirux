@@ -6951,8 +6951,10 @@ doctor() {
   fi
   # NIRUIO follows the sound from the program to the device. Its most common
   # find is a media role WirePlumber remembers as muted (mpv tags the sound of
-  # every video as "Movie"), which silences a whole kind of program.
-  if [ -x "$BIN/niruio" ]; then
+  # every video as "Movie"), which silences a whole kind of program. Only
+  # where this user's PipeWire runs: without it (a container, a fresh SSH
+  # login before the desktop) the check above already covers the session.
+  if [ -x "$BIN/niruio" ] && [ -S "${XDG_RUNTIME_DIR:-/run/user/$(id -u)}/pipewire-0" ]; then
     niruio_rc=0
     niruio_out=$("$BIN/niruio" doctor --brief 2>/dev/null) || niruio_rc=$?
     if [ -n "$niruio_out" ]; then
