@@ -88,6 +88,11 @@ terminal = ["kitty"]
 # Bound to Super+Shift+Enter. Empty means the terminal above.
 terminal_alt = []
 # Super+B starts this. Install/select a browser.
+# Hardware video decoding in the NIRUX-managed Helium is set in a NIRUX-only
+# file, ~/.config/nirux/browser.toml, because this file refuses unknown keys:
+#   [browser]
+#   hardware_video = "auto"   # auto (AMD/Intel on, NVIDIA off), on, off
+# nirux update applies it; nirux doctor shows the GPU and the result.
 browser = ["helium"]
 # Super+P and the native action launcher.
 launcher = ["nirulauncher", "--apps"]

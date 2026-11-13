@@ -1258,7 +1258,8 @@ browser_policy_set helium
 browser_install > "$browser_test/install-first.log" 2>&1 || { cat "$browser_test/install-first.log" >&2; fail 'managed Helium install failed'; }
 [ -x "$BIN/helium" ] || fail 'Helium front link was not created'
 [ "$("$BIN/helium" --version)" = 'Helium 99.9.9 (test)' ] || fail 'installed Helium version is wrong'
-[ "$(readlink "$BIN/helium")" = "$STATE/browser-current/helium" ] || fail 'Helium link is not owned by the browser state'
+browser_launcher_owned "$BIN/helium" || fail 'Helium launcher is not owned by NIRUX'
+grep -qF "exec '$STATE/browser-current/helium'" "$BIN/helium" || fail 'Helium launcher does not start the managed browser state'
 desktop=$PREFIX/share/applications/helium.desktop
 grep -qF "Exec=\"$BIN/helium\"" "$desktop" || fail 'Helium desktop entry does not use the managed command'
 browser_install > "$browser_test/install-second.log" 2>&1 || fail 'reusing the installed Helium failed'

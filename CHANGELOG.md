@@ -2,6 +2,24 @@
 
 Earlier releases are described in their release notes and commit messages.
 
+## 0.12.271 (unreleased)
+
+- **Video on the graphics card in Helium.** Videos in the managed Helium are
+  decoded by the GPU instead of the CPU (measured: 1080p H264, VP9 and AV1 from
+  about 95 % of a core to about 32 %); web calls such as Teams use the same
+  decoder. NIRUX finds the
+  card that drives the display, installs its VA-API and Vulkan drivers, checks
+  them with `vainfo` and `vulkaninfo`, and only then starts Helium with the
+  Vulkan video path. AMD and Intel are on by default, NVIDIA is opt-in;
+  `[browser] hardware_video = "auto"|"on"|"off"` in the new NIRUX-only
+  `~/.config/nirux/browser.toml`. `nirux doctor` shows the card, the formats it
+  decodes and the flags; `nirux doctor --fix` installs what is missing.
+- **A Helium launcher.** `~/.local/bin/helium` is now a small NIRUX launcher
+  that adds these flags (your own flags still win), not a link; it is
+  rewritten on every install and update.
+- The nightly update may now install Void packages whose names start with a
+  capital letter (`Vulkan-Tools`).
+
 ## 0.12.270 (2026-11-13)
 
 - **Presenting you can see.** NIRUPRES 2.4.0: the fade in and out now show in

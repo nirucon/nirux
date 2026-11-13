@@ -93,13 +93,15 @@ echo 1 > "$R/sys/class/power_supply/AC/online"
 # names in the root-owned allowlist are installed; a list in the user's home
 # is never read.
 : > "$T/calls"
-printf '# NIRUX owner: x\nfake-pkg\nlib2.0-dev\n' > "$R/etc/nirux/autoupdate-packages"
-printf 'fake-pkg\n-oops\nUpper\nfoo;rm\nlib2.0-dev\nnot-listed\n' > "$T/want"
+# Void names can start with a capital (Vulkan-Tools); a leading dash or
+# underscore and shell characters are refused.
+printf '# NIRUX owner: x\nfake-pkg\nlib2.0-dev\nVulkan-Tools\n' > "$R/etc/nirux/autoupdate-packages"
+printf 'fake-pkg\n-oops\n_under\nfoo;rm\nlib2.0-dev\nVulkan-Tools\nnot-listed\n' > "$T/want"
 printf 'not-listed\n' > "$H/.local/share/nirux/autoupdate-packages"
 out=$(sh "$HELPER" run --scheduled) || fail "the run failed: $out"
 printf '%s\n' "$out" | grep -q '^NIRUX nightly update: testhost .* updated · 1 warning' || fail "no summary with the refusal: $out"
 grep -q 'apt-get -y -q -o Dpkg::Options::=--force-confdef -o Dpkg::Options::=--force-confold full-upgrade' "$T/calls" || fail 'no non-interactive full-upgrade'
-grep -qx 'apt-get install -y -q --no-install-recommends fake-pkg lib2.0-dev' "$T/calls" || fail "wanted packages not installed as validated, allowed names: $(grep 'apt-get install' "$T/calls")"
+grep -qx 'apt-get install -y -q --no-install-recommends fake-pkg lib2.0-dev Vulkan-Tools' "$T/calls" || fail "wanted packages not installed as validated, allowed names: $(grep 'apt-get install' "$T/calls")"
 grep 'apt-get install' "$T/calls" | grep -q not-listed && fail 'a package outside the allowlist was installed'
 [ "$(cat "$H/.local/share/nirux/wanted-packages")" = not-listed ] || fail 'a refused package does not stay waiting for nirux update'
 printf '%s\n' "$out" | grep -q 'not in .*autoupdate-packages, left for nirux update: not-listed' || fail "the refused package is not reported: $out"

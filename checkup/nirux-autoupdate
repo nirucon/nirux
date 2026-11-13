@@ -217,7 +217,7 @@ upgradable() {
 wanted_packages() {
   as_owner 30 sh -c 'f=$1; [ -f "$f" ] && [ ! -L "$f" ] && head -c 4096 "$f"' sh "$PREFIX_DIR/share/nirux/wanted-packages" 2>/dev/null |
     while IFS= read -r p; do
-      printf '%s\n' "$p" | grep -Eqx '[a-z0-9][A-Za-z0-9+._-]*' && say "$p"
+      printf '%s\n' "$p" | grep -Eqx '[A-Za-z0-9][A-Za-z0-9+._-]*' && say "$p"
     done | head -n 64 | tr '\n' ' ' | sed 's/ $//'
 }
 # The allowlist, if it is a regular root-owned file nobody else can write.
@@ -227,7 +227,7 @@ allowed_packages() {
     [ "$(stat -c %u "$ALLOW" 2>/dev/null)" = 0 ] || return 1
     case "$(stat -c %A "$ALLOW" 2>/dev/null)" in ?????w????|????????w?) return 1 ;; esac
   fi
-  grep -Ex '[a-z0-9][A-Za-z0-9+._-]*' "$ALLOW"
+  grep -Ex '[A-Za-z0-9][A-Za-z0-9+._-]*' "$ALLOW"
 }
 install_wanted() {
   # shellcheck disable=SC2086 # validated names, one per word

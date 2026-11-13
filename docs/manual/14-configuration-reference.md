@@ -64,6 +64,7 @@ These are not generated from an example file. The chapters describe them.
 | File | Chapter |
 |---|---|
 | `~/.config/nirux/fleet.toml`, `snapshots.toml`, `sync.toml` | [Keeping NIRUX up to date](11-updates.md) |
+| `~/.config/nirux/browser.toml` (`[browser] hardware_video`) | [Keeping NIRUX up to date](11-updates.md#hardware-video-in-helium) |
 | `~/.config/nirux/sounds/EVENT.ogg` | [Sound, notifications and studio mode](10-sound-notifications-studio.md) |
 | `~/.config/niru/quotes.txt`, `~/.config/niru/quotes/` | [Lock screen and screensaver](06-lock-and-screensaver.md) |
 | `~/.config/niruwm/themes/NAME.toml` | [Themes and wallpapers](08-themes-and-wallpapers.md) |
@@ -103,12 +104,12 @@ remove the `#` to use it. The full annotated file follows each table.
 | `(top level)` | `master_ratio` | `0.55` | Each workspace keeps its own ratio after Super+H/L; this is only the default. |
 | `(top level)` | `terminal` | `["kitty"]` | Commands are argument lists, never passed through a shell. |
 | `(top level)` | `terminal_alt` | `[]` | Bound to Super+Shift+Enter. |
-| `(top level)` | `browser` | `["helium"]` | Super+B starts this. |
-| `(top level)` | `launcher` | `["nirulauncher", "--apps"]` | Super+P and the native action launcher. |
-| `(top level)` | `font_size` | `15.0` |  |
-| `(top level)` | `font_path` | `"/path/to/your/monospace.ttf"` (commented example) |  |
-| `(top level)` | `weather_latitude` | `59.33` | At the top level, not under [bar]: NIRUWM reads this file too and refuses fields it does not know, so a setting only the bar uses still h... |
-| `(top level)` | `weather_longitude` | `18.07` |  |
+| `[browser]` | `browser` | `["helium"]` | hardware_video = "auto"   # auto (AMD/Intel on, NVIDIA off), on, off nirux update applies it; nirux doctor shows the GPU and the result. |
+| `[browser]` | `launcher` | `["nirulauncher", "--apps"]` | Super+P and the native action launcher. |
+| `[browser]` | `font_size` | `15.0` |  |
+| `[browser]` | `font_path` | `"/path/to/your/monospace.ttf"` (commented example) |  |
+| `[browser]` | `weather_latitude` | `59.33` | At the top level, not under [bar]: NIRUWM reads this file too and refuses fields it does not know, so a setting only the bar uses still h... |
+| `[browser]` | `weather_longitude` | `18.07` |  |
 | `[wallpaper]` | `enabled` | `true` |  |
 | `[wallpaper]` | `dir` | `"~/Pictures/Wallpapers"` | Directory to draw from. |
 | `[wallpaper]` | `mode` | `"random"` | random = a new picture each rotation fixed  = one picture, chosen once and kept single = always file |
@@ -296,6 +297,11 @@ terminal = ["kitty"]
 # Bound to Super+Shift+Enter. Empty means the terminal above.
 terminal_alt = []
 # Super+B starts this. Install/select a browser.
+# Hardware video decoding in the NIRUX-managed Helium is set in a NIRUX-only
+# file, ~/.config/nirux/browser.toml, because this file refuses unknown keys:
+#   [browser]
+#   hardware_video = "auto"   # auto (AMD/Intel on, NVIDIA off), on, off
+# nirux update applies it; nirux doctor shows the GPU and the result.
 browser = ["helium"]
 # Super+P and the native action launcher.
 launcher = ["nirulauncher", "--apps"]

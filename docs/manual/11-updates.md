@@ -63,6 +63,76 @@ update then restarts the bar only and says so: log out and back in once, and fro
 on updates apply without logging out. `nirux status` says when the running WM is
 still the old generation, and whether `niructl restart-wm` can activate it.
 
+## Hardware video in Helium
+
+Video in Helium, and the video in Teams calls, is decoded by the graphics card
+instead of the processor when the card can do it. `nirux install` and `nirux
+update` set it up for the managed Helium:
+
+1. Find the graphics card that drives the display. On a computer with two
+   cards (a laptop with Intel and NVIDIA, a desktop with an idle Intel chip and
+   an AMD card) this is the one the screen is connected to, else the integrated
+   one.
+2. Install the video driver and the tools to check it, through the normal
+   package step (sudo):
+
+   | Distribution | AMD | Intel | Always |
+   |---|---|---|---|
+   | Debian | `mesa-va-drivers` | `intel-media-va-driver` | `vainfo`, `vulkan-tools`, `mesa-vulkan-drivers` |
+   | Arch | `mesa`, `vulkan-radeon` | `intel-media-driver`, `vulkan-intel` | `libva-utils`, `vulkan-tools`, `vulkan-mesa-implicit-layers` |
+   | Void | `mesa-vaapi`, `mesa-vulkan-radeon` | `intel-media-driver`, `mesa-vulkan-intel` | `libva-utils`, `Vulkan-Tools`, `mesa-vulkan-overlay-layer` |
+
+3. Check the card: `vainfo` must list decoding (H264, VP9, AV1 or HEVC) on its
+   render node, and Vulkan must see the same card. Only then does Helium get
+   the flags `--use-angle=vulkan` and
+   `--enable-features=Vulkan,VulkanFromANGLE,DefaultANGLEVulkan,VaapiIgnoreDriverChecks`.
+   On a computer with two cards NIRUX also keeps the video decoder and Vulkan on
+   the chosen card.
+
+Restart Helium after an update that turns it on. A video in a format the card
+cannot decode still plays: Helium decodes it in software, as before. Hardware
+video encoding is not turned on; it failed in tests.
+
+`~/.local/bin/helium` is a small NIRUX launcher. It reads
+the flags from `~/.local/share/nirux/helium-flags` and starts Helium with them
+in front of your own arguments, so a flag you give yourself wins. When the card
+the flags were made for is gone (an unplugged external GPU), Helium starts
+without them. A Helium that NIRUX did not install is not changed.
+
+**The setting** lives in `~/.config/nirux/browser.toml`. It is a NIRUX file, not
+part of `config.toml`, because NIRUWM and NIRUBAR refuse keys they do not know:
+
+```toml
+[browser]
+# auto: AMD and Intel on, NVIDIA off (the default, also without this file)
+# on:   NVIDIA too (needs the proprietary driver and nvidia-vaapi-driver;
+#       experimental, Chromium does not support it)
+# off:  never; Helium starts as upstream ships it
+hardware_video = "auto"
+```
+
+Run `nirux update` after a change. The open-source nouveau driver and the old
+`radeon` kernel driver are not supported.
+
+**Check it** with `nirux doctor`:
+
+```text
+hardware video: GPU AMD 0x150e (amdgpu, 0000:c4:00.0, /dev/dri/renderD128), setting auto
+hardware video: VA-API ok, decodes H264 HEVC VP9 AV1; Vulkan sees the GPU
+hardware video: Helium flags enabled (--use-angle=vulkan --enable-features=Vulkan,VulkanFromANGLE,DefaultANGLEVulkan,VaapiIgnoreDriverChecks)
+```
+
+When it is off, doctor says why (no supported card, NVIDIA, a package missing,
+no decoding on the card). When only packages are missing, `nirux doctor --fix`
+installs them and turns it on. In Helium, `chrome://gpu` shows *Video Decode:
+Hardware accelerated* and, under *Video Acceleration Information*, the formats;
+`chrome://media-internals` names `VaapiVideoDecoder` for a playing video.
+
+The nightly update installs these packages too. It asks for them in the
+nightly run, and installs them when the list of packages it may install (written
+by `nirux update`) names them, so the first `nirux update` after 0.12.271 adds
+them to that list.
+
 ## Update everything, then power off or restart
 
 ```sh
