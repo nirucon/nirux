@@ -74,17 +74,17 @@ These are not generated from an example file. The chapters describe them.
 
 <!-- generated: config (tools/manual-gen.sh; do not edit by hand) -->
 
-The example configuration files of NIRUX 0.12.268 and its components, with every
+The example configuration files of NIRUX 0.12.269 and its components, with every
 key they set or show. A value marked *commented example* is off by default:
 remove the `#` to use it. The full annotated file follows each table.
 
 | File | Read by | Example from |
 |---|---|---|
-| [`~/.config/niruwm/config.toml`](#configniruwmconfigtoml) | niruwm, nirubar, niruidle, niructl | nirux 0.12.268 `config.example.toml` |
-| [`~/.config/niruwm/appearance.toml`](#configniruwmappearancetoml) | the whole suite | nirux 0.12.268 `appearance.example.toml` |
-| [`~/.config/nirux/sounds.toml`](#configniruxsoundstoml) | nirux, nirunotify | nirux 0.12.268 `sounds.example.toml` |
-| [`~/.config/niruwm/displays.toml`](#configniruwmdisplaystoml) | niruwm, niructl, nirudisplay | nirux 0.12.268 `displays.example.toml` |
-| [`~/.config/nirubar/config.toml`](#confignirubarconfigtoml) | nirubar | nirubar 0.26.1 `weather.example.toml` |
+| [`~/.config/niruwm/config.toml`](#configniruwmconfigtoml) | niruwm, nirubar, niruidle, niructl | nirux 0.12.269 `config.example.toml` |
+| [`~/.config/niruwm/appearance.toml`](#configniruwmappearancetoml) | the whole suite | nirux 0.12.269 `appearance.example.toml` |
+| [`~/.config/nirux/sounds.toml`](#configniruxsoundstoml) | nirux, nirunotify | nirux 0.12.269 `sounds.example.toml` |
+| [`~/.config/niruwm/displays.toml`](#configniruwmdisplaystoml) | niruwm, niructl, nirudisplay | nirux 0.12.269 `displays.example.toml` |
+| [`~/.config/nirubar/config.toml`](#confignirubarconfigtoml) | nirubar | nirubar 0.27.0 `weather.example.toml` |
 | [`~/.config/nirulauncher/config.toml`](#confignirulauncherconfigtoml) | nirulauncher | nirulauncher 0.14.0 `config.example.toml` |
 | [`~/.config/nirunotify/config.toml`](#confignirunotifyconfigtoml) | nirunotify | nirunotify 0.6.0 `config.example.toml` |
 | [`~/.config/nirufetch/config.toml`](#confignirufetchconfigtoml) | nirufetch | nirufetch 0.3.0 `config.example.toml` |
@@ -166,6 +166,7 @@ remove the `#` to use it. The full annotated file follows each table.
 | `[bar]` | `modules` | `["workspaces", "dictation", "privacy", "recording", "scra...` | Weather settings live in ~/.config/nirubar/config.toml; see weather.example.toml. |
 | `[bar]` | `follow_default_modules` | `true` | true (default): nirux update keeps modules on the default list above, so new modules arrive by themselves (your old file is kept in t... |
 | `[bar]` | `disk_warn` | `90` | Percent used (1-99) at which the "disk" module appears. |
+| `[bar]` | `presenting_hide` | `["media", "notifications", "agent", "share", "tailscale",...` | While you present (niructl present on; NIRUPRES does it for you) these modules disappear from the bar, so a shared screen shows no medi... |
 | `[bar]` | `microphone_visibility` | `"always"` | Missing input/provider stays visible even with "muted" visibility. |
 | `[bar]` | `tags` | `["1", "2", "3", "4", "5", "6", "7", "8", "9", "10"]` | Numbered (default): |
 | `[bar]` | `tags` | `["\uf015", "\uf121", "\uf086", "\uf0c0", "\uf001", "\uf03...` (commented example) | Icon labels: comment out the numbered line and uncomment this one. |
@@ -536,6 +537,11 @@ modules = ["workspaces", "dictation", "privacy", "recording", "scratchpad", "lay
 follow_default_modules = true
 # Percent used (1-99) at which the "disk" module appears. Default 90.
 disk_warn = 90
+# While you present (`niructl present on`; NIRUPRES does it for you) these
+# modules disappear from the bar, so a shared screen shows no media titles,
+# notifications, updates or other private status. They come back when
+# presenting ends. Set [] to keep them all.
+presenting_hide = ["media", "notifications", "agent", "share", "tailscale", "updates", "niruxupdate", "nirusec", "dictation", "tasks", "weather"]
 # Missing input/provider stays visible even with "muted" visibility.
 microphone_visibility = "always" # "always" or "muted"
 # Left: information. Right: mute. Scroll: gain (never unmutes).

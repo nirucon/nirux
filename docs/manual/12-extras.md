@@ -10,7 +10,7 @@ A normal `nirux install` or `nirux update` never installs an extra. You ask for 
 |---|---|---|---|
 | [niruorg](#niruorg-file-manager) | 0.6.1 | Two-pane file manager for local folders, servers and cloud remotes | beta |
 | [nirunote](#nirunote-markdown-editor) | 0.7.1 | Minimal Markdown editor and viewer | beta |
-| [nirupres](#nirupres-presentations) | 2.2.1 | Presentation studio | beta |
+| [nirupres](#nirupres-presentations) | 2.3.0 | Presentation studio | beta |
 | [nplay](#nplay-terminal-music-player) | 1.8.2 | Terminal music, radio and podcast player; also fully standalone | beta |
 | [niruamp](#niruamp-graphical-frontend-for-nplay) | 0.5.2 | Winamp-inspired graphical frontend for NPLAY (requires NPLAY) | alpha |
 | [niruflow](#niruflow-maintenance-and-cleanup) | 0.6.1 | Local maintenance and automation | alpha |
@@ -152,6 +152,39 @@ nirupres --check-config
 | `B` / `W` | Black / white screen |
 | `S` / `Z` | Spotlight / zoom |
 | `Esc` | End the presentation |
+| `Ctrl+-` / `Ctrl++` | Smaller / larger speaker notes in the presenter view |
+
+### Presenting in Teams, Meet or Zoom
+
+Share the **window**, never the entire screen. In the browser's share dialog
+choose the **Window** tab and the window named `AUDIENCE · share this ·
+NIRUPRES`. The presenter view is called `PRIVATE presenter · do not share` and
+has a red "PRIVATE · NOT FOR SHARING" bar, also in the dialog's thumbnail.
+
+- **One screen (laptop):** F5 asks for *Laptop presenter* (the presenter view
+  fills the screen and the 16:9 audience window waits behind it, still shared
+  live) or *Slides only*. "Remember my choice" keeps the answer.
+- **Docked:** the audience window goes full screen on the other screen and the
+  presenter view stays on yours.
+- **Share check:** before an online presentation NIRUPRES says which window to
+  pick and flashes a green "SHARED WINDOW · AUDIENCE" frame on it for 5 s.
+  The timer starts when you press Start.
+- **Switch workspaces freely.** NIRUWM keeps the audience window live for the
+  share while you look at other workspaces (`_NIRUWM_KEEP_MAPPED`); nothing
+  from them reaches the audience. Come back to NIRUPRES to change slides; the
+  presenter view has the keyboard at once.
+- **Presenting mode:** NIRUPRES runs `niructl present on`, which turns on Do
+  Not Disturb and hides the private bar modules (`[bar] presenting_hide`);
+  both come back when the presentation ends, also if NIRUPRES crashes.
+- The presenter view shows the current and next slide, a large timer with
+  pace, the clock, `x / y` and the speaker notes (at least a third of the
+  height; `A−`/`A+` sizes are remembered).
+
+Text in a layout shrinks until it fits and is never drawn outside its box;
+when it still does not fit it ends with "…", and lists say "+N more". Deck
+health marks such slides with an orange **FIT** badge. New layouts: CODE,
+IMAGE + CAPTION and THREE COLUMN (columns separated by `|||`); TABLE wraps its
+cells.
 
 There is no config file to edit; choices are stored as small JSON files in `~/.local/share/nirupres/`. Talk recordings go to `~/Videos/` (`NIRUPRES_TALK_DIR` changes that). Talk mode needs NIRUCLIP, which is alpha. Full documentation: [github.com/nirucon/nirupres](https://github.com/nirucon/nirupres).
 

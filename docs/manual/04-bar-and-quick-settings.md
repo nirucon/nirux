@@ -310,6 +310,7 @@ All keys live in `[bar]` in `~/.config/niruwm/config.toml`. The file is strict: 
 | `microphone_visibility` | `"always"` | `"muted"` hides a healthy, unmuted input |
 | `battery`, `network`, `wifi` | `true` | Switch those modules off without editing `modules` |
 | `disk_warn` | `90` | Percent used (1 to 99) at which the `disk` module appears |
+| `presenting_hide` | `media`, `notifications`, `agent`, `share`, `tailscale`, `updates`, `niruxupdate`, `nirusec`, `dictation`, `tasks`, `weather` | Modules hidden while you present (`niructl present on`, NIRUPRES does it); `[]` keeps all |
 | `tray` | `true` | Own the system tray |
 | `transparent` | `true` | See-through through the compositor |
 | `opacity` | `94` | Percent used when `transparent` is true |

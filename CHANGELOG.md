@@ -2,6 +2,23 @@
 
 Earlier releases are described in their release notes and commit messages.
 
+## 0.12.269 (2026-11-13)
+
+- **Safe presenting in Teams.** NIRUPRES 2.3.0 names its windows so the share
+  dialog cannot mix them up (`AUDIENCE · share this · NIRUPRES` and a red
+  `PRIVATE presenter · do not share`), checks the share before you start, and
+  gives a laptop presenter view with notes, next slide and timer on one screen.
+- **Switch workspaces while you present.** NIRUWM keeps the shared audience
+  window live while you look elsewhere (`_NIRUWM_KEEP_MAPPED`); before, the
+  audience saw a frozen slide.
+- **Presenting mode.** `niructl present on|off|status` turns on Do Not Disturb
+  and hides private bar modules (`[bar] presenting_hide`); NIRUPRES uses it and
+  it ends by itself if NIRUPRES stops.
+- **Slides that fit.** Text shrinks to fit its box and never spills over;
+  deck health marks slides that do not fit. New layouts: CODE, IMAGE +
+  CAPTION, THREE COLUMN; tables wrap.
+- NIRUWM 0.28.0, NIRUBAR 0.27.0, NIRUPRES 2.3.0 (extra).
+
 ## 0.12.268 (2026-11-13)
 
 - **Nightly updates.** Between 03:00 and 05:00, when nobody is logged in, the

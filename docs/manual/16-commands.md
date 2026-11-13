@@ -142,7 +142,7 @@ niructl keys --markdown        # the keys in effect, as Markdown
 
 <!-- generated: niructl (tools/manual-gen.sh; do not edit by hand) -->
 
-Every form `niructl` accepts, from its usage text (NIRUWM 0.27.1). Run `niructl`
+Every form `niructl` accepts, from its usage text (NIRUWM 0.28.0). Run `niructl`
 without arguments to print it.
 
 - `niructl status`
@@ -183,6 +183,7 @@ without arguments to print it.
 - `niructl urgent [list|--json|focus]`
 - `niructl swallow on|off|toggle|status`
 - `niructl studio on|off|toggle|status`
+- `niructl present on [--pid PID]|off|status`
 - `niructl powerprofile status|list|set NAME|next|auto|watch`
 - `niructl do ACTION [ARG...]|do goto MONITOR TAG [WINDOW]|do --list [--json]`
 - `niructl lock [--manual|--silent|--reason NAME]`
