@@ -2,6 +2,16 @@
 
 Earlier releases are described in their release notes and commit messages.
 
+## 0.12.275 (2026-11-14)
+
+- **The sound doctor leaves working fallback profiles alone** (NIRUIO 0.1.1).
+  A card in a fallback profile is reported once, not once per output and
+  input, and only as information when its outputs and inputs work, as on the
+  HP ZBook 8 G1a. It never offers Pro Audio or a profile that would lose the
+  speakers or the microphone, so `niruio doctor --fix` and `nirux doctor --fix`
+  no longer change such a card. Information and warnings never make
+  `nirux doctor` fail; only real problems do.
+
 ## 0.12.274 (2026-11-14)
 
 - **NIRUIO, the new sound tool** (core component, NIRUIO 0.1.0). One terminal

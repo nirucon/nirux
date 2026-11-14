@@ -1,5 +1,5 @@
 schema 1
-suite 0.12.274
+suite 0.12.275
 niruwm 0.31.1
 nirubar 0.28.0
 niruscreensaver 0.14.1
@@ -15,4 +15,4 @@ niruthemeselector 0.3.0
 niruwebapp 0.2.0
 nirufetch 0.3.0
 nirushare 0.4.0
-niruio 0.1.0
+niruio 0.1.1

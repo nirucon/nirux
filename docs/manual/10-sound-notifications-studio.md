@@ -77,7 +77,7 @@ The bar's `microphone` module shows the input state: right-click mutes, scroll c
 
 ## NIRUIO: devices, programs, cameras and the sound doctor
 
-*(NIRUIO 0.1.0)*
+*(NIRUIO 0.1.1)*
 
 NIRUIO ("niru in out") is the sound tool of NIRUX: one terminal window with every output, input, program and camera, what WirePlumber remembers, and a doctor that explains silence. Open it with `Super+Shift+A`, the **Open NIRUIO** row of the launcher's sound view (`nirulauncher --sound`) or the actions view, or from a terminal:
 
@@ -116,7 +116,7 @@ niruio reset 'Output/Audio:media.role:Movie'  # or one
 
 ### The sound doctor
 
-`niruio doctor` answers "why is nothing heard", "why is nothing recorded" and "why is the camera missing". It follows the sound from the program's stream to the remembered role or program setting, the output or input device (muted, turned down, no default), the card profile and port (a `stereo-fallback` profile, a port with nothing plugged in, a card switched off), ALSA switches that are off behind PipeWire's back, and the device itself; for cameras it checks presence, access (the `video` group) and which program holds them.
+`niruio doctor` answers "why is nothing heard", "why is nothing recorded" and "why is the camera missing". It follows the sound from the program's stream to the remembered role or program setting, the output or input device (muted, turned down, no default), the card profile and port (a fallback profile that lost an output or input, a port with nothing plugged in, a card switched off; a fallback profile that works is only noted, and Pro Audio or a profile that would lose a device is never offered), ALSA switches that are off behind PipeWire's back, and the device itself; for cameras it checks presence, access (the `video` group) and which program holds them.
 
 ```sh
 niruio doctor            # every finding with its fix; exit status 1 when there is a problem
