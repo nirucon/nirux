@@ -2,6 +2,16 @@
 
 Earlier releases are described in their release notes and commit messages.
 
+## 0.12.277 (2026-11-14)
+
+- **No keyring prompt after login** (NIRUWM 0.31.3). The session hook added in
+  0.12.276 woke the keyring that PAM starts at login even where that keyring
+  could not unlock, and it then asked for a password, while the machine's own
+  unlock (here a D-Bus service that unlocks the keyring by itself) never got
+  to run. The hook is gone, and the session starts exactly as in NIRUWM 0.31.1.
+  The keyring package and NIRU Login's PAM lines stay: where the keyring has
+  the login password, logging in is all it takes.
+
 ## 0.12.276 (2026-11-14)
 
 - **Saved logins survive a reboot.** NIRUX now installs gnome-keyring on Arch,
