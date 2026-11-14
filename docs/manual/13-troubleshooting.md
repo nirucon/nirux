@@ -95,6 +95,7 @@ current settings and shows the same notification. Fix the line, then
 | `nirux status` says system changes are waiting | The nightly update left root steps for you: run `nirux update` once. See [Keeping NIRUX up to date](11-updates.md). |
 | Downloads from GitHub fail | NIRUX falls back to the GitLab mirror by itself; see [Keeping NIRUX up to date](11-updates.md). |
 | Wi-Fi cannot be controlled | See [WIFI.md](https://github.com/nirucon/nirux/blob/main/docs/WIFI.md) for the supported backends and their limits. |
+| An app (such as the Nextcloud client) asks for its login after every reboot | NIRUX installs gnome-keyring, and the login screen unlocks it with your password. After it was first installed (for example by an update), log out and in once. `nirux doctor` says whether the keyring runs. Automatic login without a password cannot unlock it. |
 
 ## Try a new login screen safely
 

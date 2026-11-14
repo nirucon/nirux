@@ -33,6 +33,11 @@ display manager:
 ./nirux install --display-manager auto|startx|nirulogin|sddm|lightdm
 ```
 
+The runtime packages include **gnome-keyring**, a small store for saved logins.
+The login screen unlocks it with your password, so apps such as the Nextcloud
+client keep their logins across reboots. It needs a few megabytes of memory and
+no processor time while idle.
+
 **Tailscale** (default yes) joins the computer to your private network, so
 `nirux fleet`, nirushare and SSH reach it from your other machines. The
 installer installs and starts it and shows a link: open it on any device to add

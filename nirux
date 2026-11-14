@@ -2,7 +2,7 @@
 # NIRUX: install a complete X11 desktop, or maintain an existing installation.
 set -eu
 
-VERSION=0.12.275
+VERSION=0.12.276
 PREFIX=${NIRUX_PREFIX:-$HOME/.local}
 BIN=$PREFIX/bin
 STATE=$PREFIX/share/nirux
@@ -404,9 +404,9 @@ distribution_packages_for() {
   # The root-owned, restricted standalone Wi-Fi helper uses the system Python.
   case "$1" in arch) say python ;; debian|void) say python3 ;; esac
   case "$1" in
-    arch) say "xorg-server xorg-xinit xorg-xauth xorg-xrandr xorg-xset xorg-xprop xorg-xdpyinfo xorg-xwininfo xorg-xrdb xorg-xsetroot xorg-setxkbmap xorg-xinput xf86-input-libinput libinput-tools xkeyboard-config noto-fonts-emoji ttf-liberation noto-fonts udisks2 gvfs gvfs-mtp gvfs-smb gvfs-afc gvfs-nfs gvfs-dnssd glib2 xarchiver 7zip unzip zip unrar-free exfatprogs dbus pam pipewire pipewire-audio pipewire-pulse pipewire-alsa wireplumber alsa-utils alsa-ucm-conf rtkit fontconfig libglvnd ttf-dejavu ttf-jetbrains-mono-nerd kitty fish polkit-gnome libayatana-appindicator libayatana-indicator ayatana-ido bluez bluez-utils power-profiles-daemon dunst picom feh maim slop xdotool xclip tesseract tesseract-data-swe tesseract-data-eng ffmpeg v4l-utils xorg-xrandr xorg-xprop pcmanfm playerctl libnotify brightnessctl gammastep iproute2 iw xdg-utils xdg-user-dirs unzip procps-ng util-linux smartmontools pacman-contrib" ;;
-    debian) say "xserver-xorg xserver-xorg-input-libinput xinput libinput-tools xinit xauth x11-xserver-utils x11-utils x11-xkb-utils xkb-data fonts-liberation fonts-noto-core udisks2 gvfs gvfs-backends gvfs-fuse libglib2.0-bin xarchiver 7zip unzip zip unrar-free exfatprogs dbus-x11 dbus-user-session libpam0g pipewire pipewire-pulse pipewire-alsa wireplumber alsa-utils alsa-ucm-conf rtkit fontconfig libgles2 fonts-dejavu-core fonts-font-awesome fonts-jetbrains-mono fonts-noto-color-emoji kitty fish lxpolkit libayatana-appindicator3-1 libayatana-indicator3-7 libayatana-ido3-0.4-0 bluez libspa-0.2-bluetooth power-profiles-daemon dunst picom feh maim slop xdotool xclip tesseract-ocr tesseract-ocr-swe tesseract-ocr-eng ffmpeg sidplayfp v4l-utils x11-utils pcmanfm playerctl libnotify-bin brightnessctl gammastep iproute2 iw rfkill xdg-utils xdg-user-dirs unzip procps util-linux smartmontools" ;;
-    void) say "xorg-minimal xinit xauth xrandr xset xprop xdpyinfo xwininfo xrdb xsetroot setxkbmap xinput libinput xkeyboard-config liberation-fonts-ttf noto-fonts-ttf udisks2 gvfs gvfs-mtp gvfs-smb gvfs-afc glib xarchiver 7zip unzip zip exfatprogs dbus elogind pam pam-base pipewire wireplumber alsa-utils alsa-ucm-conf rtkit fontconfig libglvnd dejavu-fonts-ttf nerd-fonts-symbols-ttf noto-fonts-emoji kitty fish-shell polkit-gnome libayatana-appindicator libayatana-indicator ayatana-ido bluez libspa-bluetooth power-profiles-daemon dunst picom feh maim slop xdotool xclip tesseract-ocr tesseract-ocr-swe tesseract-ocr-eng ffmpeg sidplayfp v4l-utils xrandr xprop pcmanfm playerctl libnotify brightnessctl gammastep iproute2 iw xdg-utils xdg-user-dirs unzip procps-ng util-linux smartmontools" ;;
+    arch) say "xorg-server xorg-xinit xorg-xauth xorg-xrandr xorg-xset xorg-xprop xorg-xdpyinfo xorg-xwininfo xorg-xrdb xorg-xsetroot xorg-setxkbmap xorg-xinput xf86-input-libinput libinput-tools xkeyboard-config noto-fonts-emoji ttf-liberation noto-fonts udisks2 gvfs gvfs-mtp gvfs-smb gvfs-afc gvfs-nfs gvfs-dnssd glib2 xarchiver 7zip unzip zip unrar-free exfatprogs dbus pam pipewire pipewire-audio pipewire-pulse pipewire-alsa wireplumber alsa-utils alsa-ucm-conf rtkit fontconfig libglvnd ttf-dejavu ttf-jetbrains-mono-nerd kitty fish polkit-gnome libayatana-appindicator libayatana-indicator ayatana-ido bluez bluez-utils power-profiles-daemon dunst picom feh maim slop xdotool xclip tesseract tesseract-data-swe tesseract-data-eng ffmpeg v4l-utils xorg-xrandr xorg-xprop pcmanfm playerctl libnotify brightnessctl gammastep iproute2 iw xdg-utils xdg-user-dirs unzip procps-ng util-linux smartmontools pacman-contrib gnome-keyring" ;;
+    debian) say "xserver-xorg xserver-xorg-input-libinput xinput libinput-tools xinit xauth x11-xserver-utils x11-utils x11-xkb-utils xkb-data fonts-liberation fonts-noto-core udisks2 gvfs gvfs-backends gvfs-fuse libglib2.0-bin xarchiver 7zip unzip zip unrar-free exfatprogs dbus-x11 dbus-user-session libpam0g pipewire pipewire-pulse pipewire-alsa wireplumber alsa-utils alsa-ucm-conf rtkit fontconfig libgles2 fonts-dejavu-core fonts-font-awesome fonts-jetbrains-mono fonts-noto-color-emoji kitty fish lxpolkit libayatana-appindicator3-1 libayatana-indicator3-7 libayatana-ido3-0.4-0 bluez libspa-0.2-bluetooth power-profiles-daemon dunst picom feh maim slop xdotool xclip tesseract-ocr tesseract-ocr-swe tesseract-ocr-eng ffmpeg sidplayfp v4l-utils x11-utils pcmanfm playerctl libnotify-bin brightnessctl gammastep iproute2 iw rfkill xdg-utils xdg-user-dirs unzip procps util-linux smartmontools gnome-keyring libpam-gnome-keyring" ;;
+    void) say "xorg-minimal xinit xauth xrandr xset xprop xdpyinfo xwininfo xrdb xsetroot setxkbmap xinput libinput xkeyboard-config liberation-fonts-ttf noto-fonts-ttf udisks2 gvfs gvfs-mtp gvfs-smb gvfs-afc glib xarchiver 7zip unzip zip exfatprogs dbus elogind pam pam-base pipewire wireplumber alsa-utils alsa-ucm-conf rtkit fontconfig libglvnd dejavu-fonts-ttf nerd-fonts-symbols-ttf noto-fonts-emoji kitty fish-shell polkit-gnome libayatana-appindicator libayatana-indicator ayatana-ido bluez libspa-bluetooth power-profiles-daemon dunst picom feh maim slop xdotool xclip tesseract-ocr tesseract-ocr-swe tesseract-ocr-eng ffmpeg sidplayfp v4l-utils xrandr xprop pcmanfm playerctl libnotify brightnessctl gammastep iproute2 iw xdg-utils xdg-user-dirs unzip procps-ng util-linux smartmontools gnome-keyring" ;;
   esac
 }
 # Runtime libraries and extraction tools for the pinned Helium archive. These
@@ -5903,6 +5903,38 @@ install_login_picture() {
   return 1
 }
 
+# gnome-keyring unlocks the login keyring with the password typed at NIRU
+# Login, so apps such as the Nextcloud client remember their logins. Debian's
+# greetd PAM file already has these lines; Arch's and Void's do not. Each line
+# starts with "-", so PAM skips it on a machine without the module.
+NIRUX_KEYRING_PAM_MARK='# NIRUX keyring:'
+ensure_greetd_keyring_pam() {
+  gkp=$ROOT/etc/pam.d/greetd
+  as_root test -f "$gkp" || return 0
+  as_root grep -q 'pam_gnome_keyring\.so' "$gkp" 2>/dev/null && return 0
+  as_root cat "$gkp" > "$WORK/greetd-pam" || return 1
+  { say ''; say "$NIRUX_KEYRING_PAM_MARK unlock the login keyring with the login password"; say '-auth       optional    pam_gnome_keyring.so'; say '-session    optional    pam_gnome_keyring.so auto_start'; } >> "$WORK/greetd-pam"
+  as_root install -m 644 "$WORK/greetd-pam" "$gkp"
+  say 'NIRU Login unlocks the keyring at login'
+}
+# Remove only the lines ensure_greetd_keyring_pam added.
+remove_greetd_keyring_pam() {
+  gkp=$ROOT/etc/pam.d/greetd
+  as_root test -f "$gkp" || return 0
+  as_root grep -qF "$NIRUX_KEYRING_PAM_MARK" "$gkp" 2>/dev/null || return 0
+  as_root cat "$gkp" | awk -v mark="$NIRUX_KEYRING_PAM_MARK" '
+    { line[NR] = $0 }
+    END {
+      for (i = 1; i <= NR; i++) if (index(line[i], mark) == 1) {
+        drop[i] = 1
+        if (i > 1 && line[i - 1] == "") drop[i - 1] = 1
+        for (j = i + 1; j <= NR && line[j] ~ /pam_gnome_keyring\.so/; j++) drop[j] = 1
+      }
+      for (i = 1; i <= NR; i++) if (!(i in drop)) print line[i]
+    }' > "$WORK/greetd-pam" || return 1
+  as_root install -m 644 "$WORK/greetd-pam" "$gkp"
+}
+
 install_nirulogin() {
   [ -x "$WORK/generation/bin/nirulogin" ] || die 'staged nirulogin is missing'
   greeter_user=
@@ -5948,6 +5980,7 @@ install_nirulogin() {
   fi
   { say "# NIRULOGIN owner: $PREFIX"; say '[terminal]'; say 'vt = 7'; say ''; say '[general]'; say 'source_profile = false'; say ''; say '[default_session]'; say "command = \"env HOME=/var/lib/greetd /usr/bin/startx /usr/local/bin/nirulogin -- :0 vt7\""; say "user = \"$greeter_user\""; } > "$WORK/nirulogin-greetd.toml"
   write_system "$ROOT/etc/greetd/config.toml" "$WORK/nirulogin-greetd.toml"
+  ensure_greetd_keyring_pam
   if [ "$OS" = void ]; then
     [ -d "$ROOT/etc/sv/greetd" ] || die 'missing greetd runit service'
   else
@@ -6140,6 +6173,7 @@ remove_greeters() {
   esac
   as_root rm -f "$ROOT/etc/nirulogin-previous-display-manager"
   if [ "$nirulogin_installed" = 1 ]; then restore_xwrapper; fi
+  if [ "$nirulogin_installed" = 1 ]; then remove_greetd_keyring_pam; fi
   if [ -f "$ROOT/usr/local/bin/nirulogin" ]; then as_root rm -f "$ROOT/usr/local/bin/nirulogin"; fi
   if [ -f "$ROOT/usr/local/bin/nirulogin-session" ]; then as_root rm -f "$ROOT/usr/local/bin/nirulogin-session"; fi
   as_root rm -rf "$ROOT/var/lib/nirulogin"
@@ -6914,6 +6948,15 @@ doctor() {
       doctor_offer packages
     else
       say 'all NIRUX packages installed'
+    fi
+  fi
+  # The login unlocks the keyring. A keyring installed during this session
+  # (as by an update) starts at the next login, so only a note.
+  if [ -n "${DISPLAY:-}" ] && command -v gnome-keyring-daemon >/dev/null 2>&1; then
+    if pgrep -u "$(id -u)" -x gnome-keyring-d >/dev/null 2>&1; then
+      say 'keyring running (apps keep their saved logins)'
+    else
+      say 'keyring not running yet: log out and in once, then apps such as Nextcloud keep their logins'
     fi
   fi
   if [ -d /sys/class/backlight ] && [ -n "$(ls -A /sys/class/backlight 2>/dev/null)" ]; then

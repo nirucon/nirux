@@ -2,6 +2,18 @@
 
 Earlier releases are described in their release notes and commit messages.
 
+## 0.12.276 (2026-11-14)
+
+- **Saved logins survive a reboot.** NIRUX now installs gnome-keyring on Arch,
+  Debian and Void (with `libpam-gnome-keyring` on Debian), and NIRU Login
+  unlocks it with your password. Before, a machine without it
+  made the Nextcloud client ask for its login after every reboot. On Arch and
+  Void the greetd PAM file gets two marked lines once (Debian's file already
+  has them), and removing NIRU Login takes them out again. The session hands
+  its D-Bus to the keyring that PAM started, which Void needs (NIRUWM 0.31.2),
+  and starts nothing when no keyring runs. `nirux doctor` says whether the
+  keyring runs; after the first install, log out and in once.
+
 ## 0.12.275 (2026-11-14)
 
 - **The sound doctor leaves working fallback profiles alone** (NIRUIO 0.1.1).
