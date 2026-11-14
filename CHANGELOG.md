@@ -2,6 +2,28 @@
 
 Earlier releases are described in their release notes and commit messages.
 
+## 0.12.278 (2026-11-14)
+
+- **The compositor draws on the graphics card.** NIRUX's default
+  `~/.config/picom.conf` used picom's xrender backend, which draws every frame
+  on the processor inside Xorg. With empty workspaces, where only the wallpaper
+  shows, the screen stopped keeping up: workspace changes looked ignored and
+  the launcher stuttered, although NIRUWM switched at once. New files use
+  `backend = "glx"` with `vsync = true`. A picom.conf that NIRUX wrote and that
+  is still on xrender without a vsync line moves to glx once, at the next
+  update; the old file is kept as `picom.conf.bak-xrender-0.12.278`, your own
+  lines stay, and a later return to xrender is never undone. It applies at the
+  next login.
+- **Never without a compositor** (NIRUWM 0.31.4). Where glx cannot start, the
+  session and `niructl compositor on` run picom on xrender instead.
+- **The startup sound is heard on Void** (NIRUWM 0.31.4). It was played right
+  after login, before the default output and the sound card were ready, and
+  was lost. It now waits for them in the background.
+- **Lock screen music on Void** (NIRULOCK 0.26.1). Void's sidplayfp 3.2.3 is
+  built with sidlite only but still asks for reSIDfp, so every tune failed
+  ("Requested SID emulation not built in") and the lock stayed silent.
+  NIRULOCK reads what the player was built with and passes `--sidlite` there.
+
 ## 0.12.277 (2026-11-14)
 
 - **No keyring prompt after login** (NIRUWM 0.31.3). The session hook added in

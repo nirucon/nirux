@@ -142,7 +142,7 @@ niructl keys --markdown        # the keys in effect, as Markdown
 
 <!-- generated: niructl (tools/manual-gen.sh; do not edit by hand) -->
 
-Every form `niructl` accepts, from its usage text (NIRUWM 0.31.3). Run `niructl`
+Every form `niructl` accepts, from its usage text (NIRUWM 0.31.4). Run `niructl`
 without arguments to print it.
 
 - `niructl status`

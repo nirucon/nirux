@@ -2,7 +2,7 @@
 # NIRUX: install a complete X11 desktop, or maintain an existing installation.
 set -eu
 
-VERSION=0.12.277
+VERSION=0.12.278
 PREFIX=${NIRUX_PREFIX:-$HOME/.local}
 BIN=$PREFIX/bin
 STATE=$PREFIX/share/nirux
@@ -2497,7 +2497,8 @@ install_picom_config() {
   mkdir -p "$(dirname "$picom_conf")"
   cat > "$picom_conf" <<'EOF'
 # NIRUX default compositor. Edit or remove this file freely.
-backend = "xrender";
+backend = "glx";
+vsync = true;
 inactive-opacity = 0.94;
 active-opacity = 1.0;
 shadow = true;
@@ -2507,8 +2508,36 @@ EOF
   say "Created $picom_conf"
 }
 
+# NIRUX 0.12.278: the compositor draws on the graphics card. xrender drew
+# every frame on the processor, inside Xorg: with empty workspaces (only the
+# wallpaper) the screen stopped keeping up, so workspace changes looked
+# ignored and the launcher stuttered. A picom.conf that NIRUX wrote, still on
+# xrender and without a vsync line, moves to glx once; a copy is kept, and a
+# later change back to xrender is never undone. NIRUWM 0.31.4 falls back to
+# xrender by itself where glx cannot start.
+migrate_picom_backend() {
+  mpb_conf=${XDG_CONFIG_HOME:-$HOME/.config}/picom.conf
+  mpb_marker=$STATE/picom-glx-0.12.278
+  [ -f "$mpb_conf" ] && [ ! -L "$mpb_conf" ] || return 0
+  [ ! -e "$mpb_marker" ] || return 0
+  mkdir -p "$STATE" 2>/dev/null || return 0
+  if ! grep -qx '# NIRUX default compositor. Edit or remove this file freely.' "$mpb_conf" ||
+     ! grep -qx 'backend = "xrender";' "$mpb_conf" ||
+     grep -q '^[[:space:]]*vsync' "$mpb_conf"; then
+    : > "$mpb_marker"
+    return 0
+  fi
+  cp -p "$mpb_conf" "$mpb_conf.bak-xrender-0.12.278" || return 0
+  mpb_tmp=$(mktemp "$mpb_conf.nirux.XXXXXX") || return 0
+  awk '$0 == "backend = \"xrender\";" { print "backend = \"glx\";"; print "vsync = true;"; next } { print }' "$mpb_conf" > "$mpb_tmp" &&
+    chmod "$(stat -c %a "$mpb_conf")" "$mpb_tmp" && mv -f "$mpb_tmp" "$mpb_conf" || { rm -f "$mpb_tmp"; return 0; }
+  : > "$mpb_marker"
+  say "Compositor moved to the graphics card (glx); the previous picom.conf is $mpb_conf.bak-xrender-0.12.278. It applies at the next login."
+}
+
 install_config() {
   install_picom_config
+  migrate_picom_backend
   cfg_example="$WORK/download/nirux/config.example.toml"
   [ -f "$cfg_example" ] || { say 'config example missing; user configuration unchanged'; return 0; }
   mkdir -p "$STATE"
