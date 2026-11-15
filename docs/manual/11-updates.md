@@ -254,8 +254,9 @@ data are not copied: keep them in Nextcloud.
 Even inside those folders some things are left out: caches, browsers and chat
 apps (Helium, Chromium, Firefox, Discord, Signal: they sync or need a new login),
 downloaded programs, models and game assets (RetroArch's assets, databases,
-shaders and cores; its settings and playlists are kept), log files, and every
-file larger than 1 GB. Files you cannot read (owned by root, for example) are
+shaders and cores; its settings and playlists are kept), log files, backup files
+(`*.bak`, `*.bak-*`, `*.old`, `*.orig`, `*~` and the like, files or folders), and
+every file larger than 1 GB. Files you cannot read (owned by root, for example) are
 counted and skipped.
 
 **More or less.** `include = [ "Pictures", "Games/Saves" ]` adds paths;

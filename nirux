@@ -2,7 +2,7 @@
 # NIRUX: install a complete X11 desktop, or maintain an existing installation.
 set -eu
 
-VERSION=0.12.282
+VERSION=0.12.283
 PREFIX=${NIRUX_PREFIX:-$HOME/.local}
 BIN=$PREFIX/bin
 STATE=$PREFIX/share/nirux
@@ -10090,6 +10090,8 @@ BACKUP_EXCLUDES='.cache .local/share/Trash .local/share/nirux/generations .local
 .local/state/niruwm/wallpaper .config/net.imput.helium-headless .config/Nextcloud/logs
 .config/retroarch/assets .config/retroarch/database .config/retroarch/shaders
 .config/retroarch/cores .config/retroarch/thumbnails .config/retroarch/downloads'
+# Backup files, wherever they are: copies of copies do not belong in a copy.
+BACKUP_PATTERNS='*.bak *.bak-* *.bak.* *.bak[0-9]* *.old *.orig *.rej *~ *.swp *.part'
 # Never copied to a new computer: files that describe this machine's hardware
 # or NIRUX installation rather than you.
 MIGRATE_SKIP='.config/niruwm/displays.toml .config/nirux/backup.toml .local/state/wireplumber
@@ -10306,6 +10308,7 @@ backup_now() {
   backup_members "$WORK/members"
   [ -s "$WORK/members" ] || die 'nothing to back up: none of the settings paths exist'
   backup_exclude_list "$WORK/exclude"
+  for bn_p in $BACKUP_PATTERNS; do say "$bn_p"; done > "$WORK/patterns"
   bn_large=$(wc -l < "$WORK/backup-too-large" | tr -d ' ')
   bn_free=$(df -Pk "$bn_dir" | awk 'NR == 2 { print $4 }')
   [ "${bn_free:-0}" -gt 1048576 ] || die "less than 1 GB free in $bn_dir"
@@ -10323,7 +10326,7 @@ backup_now() {
   # because only the last command of a pipeline sets the pipeline's.
   # shellcheck disable=SC2086
   { $bn_nice tar -C "$HOME" --one-file-system --exclude-caches-all --anchored --no-wildcards \
-      --exclude-from="$WORK/exclude" --ignore-failed-read --totals -v --index-file="$WORK/index" \
+      --exclude-from="$WORK/exclude" --wildcards --exclude-from="$WORK/patterns" --ignore-failed-read --totals -v --index-file="$WORK/index" \
       --warning=no-file-changed --warning=no-file-removed --warning=no-file-ignored \
       --verbatim-files-from -T "$WORK/members" -cf - 2>"$WORK/tar.err"; echo "$?" > "$WORK/tar.rc"; } |
     $bn_nice zstd -q -T2 -6 | age -r "$bn_rcpt" > "$bn_part"

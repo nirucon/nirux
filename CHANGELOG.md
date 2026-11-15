@@ -2,6 +2,13 @@
 
 Earlier releases are described in their release notes and commit messages.
 
+## 0.12.283 (2026-11-15)
+
+- **Backup files stay out of a backup.** Files and folders named `*.bak`,
+  `*.bak-*`, `*.old`, `*.orig`, `*.rej`, `*~` or `*.swp` are left out of every
+  copy, in both modes: an old `retroarch.bak-<date>` folder made a copy three
+  times larger than it needed to be.
+
 ## 0.12.282 (2026-11-15)
 
 - **A backup holds your settings, not your data.** By default a copy now holds
