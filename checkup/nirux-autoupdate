@@ -400,6 +400,15 @@ run() {
     if owner_step 'extras update' 3600 "$NIRUX" extras update; then add Extras updated
     else warn Extras 'nirux extras update failed (see the log)'; fi
   fi
+  # A backup copy when one is due on a computer that takes part (nirux backup).
+  # It runs at the lowest priority and never changes the result of the update.
+  if ! as_owner 60 "$NIRUX" --help 2>/dev/null | grep -q 'nirux backup'; then
+    log '== backup: this NIRUX has no backup command'
+  elif owner_step 'backup' 7200 "$NIRUX" backup run --auto; then
+    grep -q '^Done: ' "$WORK/out" && add Backup "$(sed -n 's/^Done: //p' "$WORK/out" | head -n 1)"
+  else
+    warn Backup "nirux backup run --auto failed: $(tail -n 1 "$WORK/out")"
+  fi
   owner_step 'doctor (after)' 600 "$NIRUX" doctor
   cp "$WORK/out" "$WORK/doctor-after"
   pending=$(as_owner 10 sh -c 'cat "$1" 2>/dev/null | head -n 20' sh "$PREFIX_DIR/share/nirux/pending-system" | grep -c . || :)

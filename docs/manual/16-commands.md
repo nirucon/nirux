@@ -22,6 +22,13 @@ normal user, never in a root shell; it asks for sudo itself when it needs it.
 | `nirux snapshot [--note TEXT]` | Save a snapshot of your configuration |
 | `nirux snapshot list` | List the snapshots |
 | `nirux restore [ID\|latest] [--dry-run]` | Restore a configuration snapshot, after a preview and a y/N question |
+| `nirux backup [status]` | This computer's backup: on or off, the last copy, the copies kept |
+| `nirux backup setup` | Create or connect the backup key, then switch this computer on |
+| `nirux backup now` | Make a backup copy now |
+| `nirux backup list [HOST]` | The backup copies of every computer, or of HOST |
+| `nirux backup restore [HOST\|FILE] [--to DIR]` | Unpack a backup copy into a new directory |
+| `nirux backup off` | This computer takes no more backup copies |
+| `nirux migrate from HOST [--dry-run\|--yes]` | Bring HOST's settings, keys and files to this computer from its newest backup copy |
 | `nirux checkup [--dry-run]` | Run the weekly checkup now (or show what it would do) |
 | `nirux checkup last\|status\|enable\|disable` | The latest report, the schedule, or turn it on or off |
 | `nirux checkup discord set\|test` | Set the Discord webhook for the checkup report, or test it |

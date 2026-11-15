@@ -2,7 +2,7 @@
 # NIRUX: install a complete X11 desktop, or maintain an existing installation.
 set -eu
 
-VERSION=0.12.279
+VERSION=0.12.280
 PREFIX=${NIRUX_PREFIX:-$HOME/.local}
 BIN=$PREFIX/bin
 STATE=$PREFIX/share/nirux
@@ -120,6 +120,8 @@ usage() {
   say "       nirux fleet [status [--json]|update HOST...|--all|--behind|setup [HOST...]]"
   say "       nirux sync status [HOST...] | push HOST...|--all [ITEM...] | pull HOST [ITEM...] | items"
   say "       nirux snapshot [--note TEXT] | snapshot list | restore [ID|latest] [--dry-run]"
+  say "       nirux backup [status|setup|now|list [HOST]|restore [HOST|FILE] [--to DIR]|off]"
+  say "       nirux migrate from HOST [--dry-run|--yes]"
   say "       nirux manual [TOPIC] | manual --list | manual --path"
   say "       nirux checkup [--dry-run] | last | status | enable | disable | discord set|test"
   say "       nirux autoupdate [status|last|enable|disable|run-now]"

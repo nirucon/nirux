@@ -43,4 +43,5 @@ was edited by hand or not rebuilt.
 | `85-whats-new-clean` | `nirux whats-new`, `resume-check`, `clean` |
 | `86-bar-apps` | Bar module defaults and upstream app versions |
 | `87-sleep-autoupdate` | Installing the sleep hook and the nightly timer |
+| `88-backup` | `nirux backup` and `nirux migrate` |
 | `99-main` | Command dispatch |

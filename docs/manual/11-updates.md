@@ -218,6 +218,75 @@ strict = false    # true: an update stops when its snapshot fails
 A failed snapshot (a full disk, for example) only warns, unless `strict = true` or
 `NIRUX_SNAPSHOT_STRICT=1`.
 
+## Backup and moving to a new computer
+
+`nirux backup` keeps encrypted copies of your home directory in a folder that
+Nextcloud carries off the computer. A computer takes part only when you switch it
+on; nothing is copied before that.
+
+```sh
+nirux backup setup                 # once per computer: key, then on
+nirux backup                       # on or off, the last copy, the copies kept
+nirux backup now                   # a copy now
+nirux backup list                  # the copies of every computer
+nirux backup restore niruxwork --to ~/old-files   # unpack the newest copy
+nirux backup off                   # this computer takes no more copies
+nirux migrate from niruxwork       # a new computer takes the old one's settings
+```
+
+**A copy** is one file, `~/Nextcloud/Backup/nirux/<computer>/<computer>-<date>-<time>.tar.zst.age`:
+your home directory as tar, compressed with zstd and encrypted with
+[age](https://age-encryption.org). The two newest copies of each computer are kept.
+It is written as a `.part` file that Nextcloud does not upload, and renamed when it
+is complete. The nightly update makes it while you are away (the screen locked or
+the computer idle at night), at the lowest processor and disk priority, when one is
+due: weekly by default.
+
+**What is left out:** every Nextcloud folder (it is already off the computer),
+caches and directories marked as caches (a Rust `target/`, for example), the trash,
+browsers and chat apps (Helium, Chromium, Firefox, Discord, Signal: they sync or
+need a new login), games and Steam, ISO images, NIRUX's own program generations and
+downloaded apps, and every file larger than 1 GB. Files you cannot read (owned by
+root, for example) are counted and skipped.
+
+**The key.** `nirux backup setup` on the first computer creates a key and asks for a
+passphrase. The secret key is saved in `~/Nextcloud/Vault/nirux-backup-key.age`,
+encrypted with that passphrase, and the public key next to it (`.pub`). The other
+computers find both through Nextcloud and only need the public key to write a copy.
+The passphrase is asked only to restore or to move. Keep it safe: without it no copy
+can be opened.
+
+`~/.config/nirux/backup.toml` (written by `nirux backup setup`):
+
+```toml
+[backup]
+enabled = true                 # false: this computer takes no copies
+every = "weekly"               # or "daily"
+keep = 2                       # copies kept for this computer
+destination = "~/Nextcloud/Backup/nirux"
+key = "~/Nextcloud/Vault/nirux-backup-key.age"
+recipient = "age1..."          # the public key
+max_file_mb = 1024             # larger files are left out
+exclude = [ "Videos" ]         # more paths to leave out, relative to your home
+include = [ ]                  # paths to keep that the defaults leave out
+```
+
+**Restore** unpacks a copy into a new directory (`~/nirux-restore-...` unless you
+give `--to`) and never changes your home directory: copy back what you need.
+
+**Moving to a new computer.** Install it (niruboot and NIRUX), sign in to Nextcloud
+and let it sync `Backup` and `Vault`, then run `nirux migrate from OLD-COMPUTER`.
+It unpacks the old computer's newest copy, shows how many files it brings and how
+many would replace a file here (`--dry-run` lists them and stops), and copies them
+into your home after a `y`. Before that it takes a configuration snapshot, and every
+file it replaces is kept in `~/.local/state/nirux/migrate-<time>/`. It never copies
+the old computer's display settings (`displays.toml`), sound state, backup choice or
+NIRUX installation state: the new computer keeps its own. It then offers to install
+the extras the old computer had, and lists what is left: log out and in once, sign
+in to Nextcloud, Teams and the browser again, and link Signal from your phone. If
+your login password on the new computer differs from the old one, the keyring asks
+for the old password once; change it to the new one in Passwords and Keys.
+
 ## Several machines: fleet
 
 ```sh

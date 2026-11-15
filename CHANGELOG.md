@@ -2,6 +2,23 @@
 
 Earlier releases are described in their release notes and commit messages.
 
+## 0.12.280 (2026-11-15)
+
+- **Backup** (`nirux backup`). Encrypted, compressed copies of your home directory,
+  one file per copy, in `~/Nextcloud/Backup/nirux/<computer>/`; the two newest are
+  kept. A computer takes part only after `nirux backup setup` (or `enabled = true`
+  in `~/.config/nirux/backup.toml`). The nightly update makes a copy when one is
+  due, weekly by default, at the lowest priority. Nextcloud folders, caches,
+  browsers, games, ISO images and files over 1 GB are left out. The secret key lies
+  passphrase-protected in `~/Nextcloud/Vault`; computers need only the public key
+  to write a copy. `nirux backup restore` unpacks a copy into a new directory.
+- **Move to a new computer** (`nirux migrate from HOST`). Brings the old
+  computer's settings, keys and files from its newest copy, after a preview; keeps
+  the new computer's display, sound and backup settings, keeps every file it
+  replaces, takes a snapshot first and offers the old computer's extras.
+- The `nirux` script is now built from parts in `src/` (`tools/build.sh`); the
+  installed file is the same single script as before.
+
 ## 0.12.279 (2026-11-15)
 
 - **The keyring follows a new password.** On Arch and Void, `passwd` changed

@@ -58,6 +58,8 @@ main() {
     resume-check) shift; resume_check_command "$@" ;;
     clean) shift; clean_command "$@" ;;
     restore) shift; restore_command "$@" ;;
+    backup) shift; backup_command "$@" ;;
+    migrate) shift; migrate_command "$@" ;;
     update-shutdown) shift; update_power_command shutdown "$@" ;;
     update-reboot) shift; update_power_command reboot "$@" ;;
     manual) manual_command "$@" ;;

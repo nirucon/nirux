@@ -128,7 +128,7 @@ grep 'apt-get install' "$T/calls" | grep -q not-listed && fail 'a package outsid
 printf '%s\n' "$out" | grep -q 'not in .*autoupdate-packages, left for nirux update: not-listed' || fail "the refused package is not reported: $out"
 rm -f "$H/.local/share/nirux/wanted-packages"
 order=$(grep '^nirux ' "$T/calls" | grep -v -- '--version' | cut -d' ' -f2-3 | tr '\n' '|')
-[ "$order" = 'doctor|update --auto|update --auto|doctor|' ] || fail "wrong order of the user steps: $order"
+[ "$order" = 'doctor|update --auto|update --auto|--help|doctor|' ] || fail "wrong order of the user steps: $order"
 printf '%s\n' "$out" | grep -q 'NIRUX: 0.12.268 → 99.0.0' || fail 'the NIRUX version change is not reported'
 [ "$(cat "$st/last-day")" = "$(date +%Y-%m-%d)" ] || fail 'the run did not record the day'
 [ -f "$st/latest" ] || fail 'no report'
