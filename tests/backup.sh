@@ -1,5 +1,5 @@
 #!/bin/sh
-# NIRUX 0.12.280: nirux backup and nirux migrate. A computer takes part only
+# NIRUX 0.12.280-0.12.281: nirux backup and nirux migrate. A computer takes part only
 # when backup.toml says so; a copy is one encrypted, compressed file; the
 # newest copies are kept; what is left out stays out; restore never touches the
 # home directory; migrate leaves this computer's own files alone and keeps
@@ -36,7 +36,7 @@ echo 'OK   a computer takes part only after it opts in'
 # 2. Contents: kept and left out.
 mkdir -p "$HOME/.config/nirux" "$HOME/.config/niruwm" "$HOME/Documents" "$HOME/.ssh" "$HOME/.cache/x" \
   "$HOME/Games/g" "$HOME/Git/p/target" "$HOME/Nextcloud/n" "$HOME/.config/net.imput.helium/Default" \
-  "$HOME/.local/share/nirux/generations/a" "$HOME/.local/share/keyrings" "$HOME/Videos"
+  "$HOME/.local/share/nirux/generations/a" "$HOME/.local/share/keyrings" "$HOME/Videos" "$HOME/Pictures/raw"
 echo note > "$HOME/Documents/note.txt"
 echo 'id key' > "$HOME/.ssh/id_ed25519"; chmod 600 "$HOME/.ssh/id_ed25519"
 echo keyring > "$HOME/.local/share/keyrings/login.keyring"
@@ -45,7 +45,11 @@ echo 'Signature: 8a477f597d28d172789f06886806bc55' > "$HOME/Git/p/target/CACHEDI
 echo src > "$HOME/Git/p/main.rs"; echo cloud > "$HOME/Nextcloud/n/f"; echo web > "$HOME/.config/net.imput.helium/Default/h"
 echo gen > "$HOME/.local/share/nirux/generations/a/bin"; printf 'niruamp\n' > "$HOME/.local/share/nirux/extras-selected"
 echo 'monitors here' > "$HOME/.config/niruwm/displays.toml"; echo 'theme = "noir"' > "$HOME/.config/niruwm/theme-preferences.toml"
-echo video > "$HOME/Videos/clip"
+echo video > "$HOME/Videos/clip"; echo raw > "$HOME/Pictures/raw/r"
+mkdir -p "$HOME/Games/Saves/w3" "$HOME/Music" "$HOME/Docker/img" "$HOME/Downloads" "$HOME/.thunderbird/p/ImapMail/srv"
+echo save > "$HOME/Games/Saves/w3/slot1"; echo rom > "$HOME/Games/.rom"; echo song > "$HOME/Music/song"
+echo layer > "$HOME/Docker/img/l"; echo dl > "$HOME/Downloads/f"; echo prefs > "$HOME/.thunderbird/p/prefs.js"
+echo mail > "$HOME/.thunderbird/p/ImapMail/srv/INBOX"
 head -c 1100000 /dev/zero > "$HOME/Documents/large.bin"
 cat > "$HOME/.config/nirux/backup.toml" <<EOF
 [backup]
@@ -56,8 +60,8 @@ destination = "$DEST"
 key = "$KEY"
 recipient = "$RCPT"
 max_file_mb = 1
-exclude = [ "Videos" ]
-include = [ ]
+exclude = [ "Pictures/raw" ]
+include = [ "Games/Saves" ]
 EOF
 out=$(sh "$N" backup now 2>&1) || fail "backup failed: $out"
 printf '%s\n' "$out" | grep -q '^Done: old-' || fail "no done line: $out"
@@ -69,14 +73,15 @@ copy=$DEST/old/$copies
 head -c 21 "$copy" | grep -q 'age-encryption.org' || fail 'the copy is not an age file'
 age -d -i "$KEY" "$copy" | zstd -dq | tar -tf - > "$TEST/members"
 for keep in ./Documents/note.txt ./.ssh/id_ed25519 ./.local/share/keyrings/login.keyring ./Git/p/main.rs \
-  ./.local/share/nirux/extras-selected ./.config/niruwm/displays.toml; do
+  ./.local/share/nirux/extras-selected ./.config/niruwm/displays.toml ./Games/Saves/w3/slot1 ./.thunderbird/p/prefs.js; do
   grep -qx "$keep" "$TEST/members" || fail "missing from the copy: $keep"
 done
 for out_ in ./.cache/x/c ./Games/g/save ./Git/p/target/o ./Nextcloud/n/f ./.config/net.imput.helium/Default/h \
-  ./.local/share/nirux/generations/a/bin ./Videos/clip ./Documents/large.bin; do
+  ./.local/share/nirux/generations/a/bin ./Videos/clip ./Pictures/raw/r ./Documents/large.bin ./Games/.rom ./Music/song \
+  ./Docker/img/l ./Downloads/f ./.thunderbird/p/ImapMail/srv/INBOX; do
   grep -qx "$out_" "$TEST/members" && fail "in the copy but should be left out: $out_"
 done
-echo 'OK   one encrypted copy; settings, keys and files kept; caches, games, browsers, Nextcloud and large files left out'
+echo 'OK   one encrypted copy; settings, keys, files and included saves kept; caches, games, music, Docker, IMAP mail, browsers, Nextcloud and large files left out'
 
 # 3. Not due again right away; three copies leave the newest two.
 sh "$N" backup run --auto >/dev/null || fail 'the nightly run failed'

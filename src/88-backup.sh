@@ -14,16 +14,19 @@ BACKUP_LAST=${XDG_STATE_HOME:-$HOME/.local/state}/nirux/backup-last
 BACKUP_DEFAULT_DEST='~/Nextcloud/Backup/nirux'
 # shellcheck disable=SC2088
 BACKUP_DEFAULT_KEY='~/Nextcloud/Vault/nirux-backup-key.age'
-# Left out by default (paths relative to $HOME). Browsers and chat apps keep
-# their own sync or need a new login; games, ISO images, caches and programs
-# can be downloaded again. Directories with a CACHEDIR.TAG (Rust target/ and
+# Left out by default (paths relative to $HOME). The copy holds what makes the
+# computer yours: settings, keys, notes and your own files. Browsers and chat
+# apps keep their own sync or need a new login; games, music, films, downloads,
+# Docker, ISO images, caches, programs and mail kept on a server can be fetched
+# again. Directories with a CACHEDIR.TAG (Rust target/ and
 # others) are left out too, and so is every Nextcloud folder.
 BACKUP_EXCLUDES='.cache .local/share/Trash .local/share/nirux/generations .local/share/nirux/browsers
 .local/share/nirux/opencode .local/share/nirux/localsend .local/share/Steam .steam
 .local/share/umu .local/share/niruwebapp .local/share/niruflow/versions .local/share/flatpak
 .local/share/containers .var .config/net.imput.helium .config/chromium .config/google-chrome
 .config/BraveSoftware .mozilla .config/discord .config/Signal .rustup .cargo/registry .cargo/git
-.npm .local/share/pnpm Games ISO snap'
+.npm .local/share/pnpm Games ISO snap Music Videos Movies Downloads Docker
+.local/share/docker .local/share/lutris .local/share/bottles .local/share/heroic .wine'
 # Never copied to a new computer: files that describe this machine's hardware
 # or NIRUX installation rather than you.
 MIGRATE_SKIP='.config/niruwm/displays.toml .config/nirux/backup.toml .local/state/wireplumber
@@ -92,7 +95,8 @@ backup_write_config() { # ENABLED RECIPIENT: keeps the other keys of an existing
       say '# Files larger than this are left out.'
       say 'max_file_mb = 1024'
       say '# More paths to leave out, and paths to keep that the defaults leave out'
-      say '# (relative to your home), for example exclude = [ "Videos" ].'
+      say '# (relative to your home), for example exclude = [ "Pictures/raw" ] and'
+      say '# include = [ "Games/Saves" ].'
       say 'exclude = [ ]'
       say 'include = [ ]'
     } > "$BACKUP_CONFIG"
@@ -146,6 +150,29 @@ backup_setup() {
   if nirux_confirm 'Make the first copy now? [y/N] '; then backup_now; fi
 }
 
+# Paths relative to the home, one per line, as tar member names (./path).
+backup_rel_paths() { sed "s:^$HOME/*::; s:/*$::; s:^/*::" | grep -v '^$' | sed 's:^:./:' || :; }
+
+# Paths in include are kept although a default or exclude leaves them out. An
+# excluded folder that holds one is replaced by its other entries, level by
+# level, so include = [ "Games/Saves" ] keeps the saves and none of the games.
+backup_keep_includes() { # LIST
+  toml_list "$BACKUP_CONFIG" backup include | backup_rel_paths > "$WORK/backup-include"
+  while IFS= read -r ki; do
+    while ke=$(awk -v p="$ki" '$0 == p || index(p, $0 "/") == 1 { print; exit }' "$1") && [ -n "$ke" ]; do
+      awk -v e="$ke" '$0 != e' "$1" > "$1.new"
+      if [ "$ke" != "$ki" ] && [ -d "$HOME/${ke#./}" ] && [ ! -L "$HOME/${ke#./}" ]; then
+        kn=${ki#"$ke"/}; kn=${kn%%/*}
+        for kc in "$HOME/${ke#./}"/* "$HOME/${ke#./}"/.[!.]* "$HOME/${ke#./}"/..?*; do
+          [ -e "$kc" ] || [ -L "$kc" ] || continue
+          [ "${kc##*/}" = "$kn" ] || say "$ke/${kc##*/}"
+        done >> "$1.new"
+      fi
+      mv "$1.new" "$1"
+    done
+  done < "$WORK/backup-include"
+}
+
 # What tar leaves out: one member name per line (./path), matched exactly.
 backup_exclude_list() { # OUT
   bl_max=$(backup_value max_file_mb 1024)
@@ -157,7 +184,10 @@ backup_exclude_list() { # OUT
     sed -n 's/^[0-9]*\\Folders\\[0-9]*\\localPath=//p' "${XDG_CONFIG_HOME:-$HOME/.config}/Nextcloud/nextcloud.cfg" 2>/dev/null || :
     say "$(backup_dest)"
     say Nextcloud
-  } | sed "s:^$HOME/*::; s:/*$::; s:^/*::" | grep -v '^$' | sed 's:^:./:' | sort -u > "$1"
+    # Thunderbird's copy of IMAP mail: the server keeps it. Local folders stay.
+    for bl_p in "$HOME"/.thunderbird/*/ImapMail; do [ ! -d "$bl_p" ] || say "$bl_p"; done
+  } | backup_rel_paths | sort -u > "$1"
+  backup_keep_includes "$1"
   # Files larger than the limit, found outside the excluded paths.
   set -- "$1"
   bl_first=1

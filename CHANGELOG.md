@@ -2,6 +2,16 @@
 
 Earlier releases are described in their release notes and commit messages.
 
+## 0.12.281 (2026-11-15)
+
+- **Backup keeps what makes the computer yours, not media.** Music, videos,
+  films, downloads, Docker, Lutris, Heroic, Bottles and Wine are now left out
+  too, as is Thunderbird's copy of IMAP mail (the server keeps it). Settings,
+  keys, notes, projects, documents and pictures are kept as before.
+- **`include` in `backup.toml` works.** It was documented but did nothing.
+  `include = [ "Games/Saves" ]` now keeps the saves inside a folder that is
+  otherwise left out.
+
 ## 0.12.280 (2026-11-15)
 
 - **Backup** (`nirux backup`). Encrypted, compressed copies of your home directory,

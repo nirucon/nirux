@@ -242,12 +242,22 @@ is complete. The nightly update makes it while you are away (the screen locked o
 the computer idle at night), at the lowest processor and disk priority, when one is
 due: weekly by default.
 
+**What is kept:** what makes the computer yours: settings (`~/.config` and the
+dot folders), keys (SSH, GPG, the keyring), notes, scripts, projects and your
+own documents and pictures.
+
 **What is left out:** every Nextcloud folder (it is already off the computer),
 caches and directories marked as caches (a Rust `target/`, for example), the trash,
 browsers and chat apps (Helium, Chromium, Firefox, Discord, Signal: they sync or
-need a new login), games and Steam, ISO images, NIRUX's own program generations and
+need a new login), games (`~/Games`, Steam, Proton, Lutris, Heroic, Bottles,
+Wine), `~/Music`, `~/Videos`, `~/Movies`, `~/Downloads`, Docker (`~/Docker` and
+its data), ISO images, Thunderbird's copy of IMAP mail (the server keeps it; its
+settings and local folders are kept), NIRUX's own program generations and
 downloaded apps, and every file larger than 1 GB. Files you cannot read (owned by
 root, for example) are counted and skipped.
+
+To keep something the defaults leave out, add it to `include`: `include = [
+"Games/Saves" ]` keeps your saves but none of the games. `exclude` leaves out more.
 
 **The key.** `nirux backup setup` on the first computer creates a key and asks for a
 passphrase. The secret key is saved in `~/Nextcloud/Vault/nirux-backup-key.age`,
@@ -267,8 +277,8 @@ destination = "~/Nextcloud/Backup/nirux"
 key = "~/Nextcloud/Vault/nirux-backup-key.age"
 recipient = "age1..."          # the public key
 max_file_mb = 1024             # larger files are left out
-exclude = [ "Videos" ]         # more paths to leave out, relative to your home
-include = [ ]                  # paths to keep that the defaults leave out
+exclude = [ "Pictures/raw" ]   # more paths to leave out, relative to your home
+include = [ "Games/Saves" ]    # paths to keep that the defaults leave out
 ```
 
 **Restore** unpacks a copy into a new directory (`~/nirux-restore-...` unless you
