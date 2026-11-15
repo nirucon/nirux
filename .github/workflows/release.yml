@@ -17,6 +17,7 @@ jobs:
         run: sudo apt-get update && sudo apt-get install -y shellcheck
       - name: Shellcheck release scripts
         run: |
+          sh tools/build.sh --check
           sh -n nirux
           sh -n terminal/nirux-theme-hook
           for script in tests/*.sh; do sh -n "$script"; done
