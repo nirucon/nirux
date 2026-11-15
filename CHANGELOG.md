@@ -2,6 +2,14 @@
 
 Earlier releases are described in their release notes and commit messages.
 
+## 0.12.285 (2026-11-15)
+
+- **NIRUSCREENSAVER 0.15.0: the screensaver on every monitor.** With two or
+  more monitors the clock, the panel and the away time sit in the middle of
+  each one, not across the seam between them, and the bars no longer show
+  through: the saver raises itself again whenever the window manager restacks
+  its bars.
+
 ## 0.12.284 (2026-11-15)
 
 - **Fonts stay out of a backup.** `~/.local/share/fonts` is no longer part of

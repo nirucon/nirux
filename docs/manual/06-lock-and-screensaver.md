@@ -55,6 +55,8 @@ Only PAM authentication of the process owner unlocks. NIRUX installs the PAM ser
 
 For other suspends (lid close, a suspend from elsewhere) the session's sleep-lock helper locks first with reason `suspend`. It runs by default; `START_SLEEP_LOCK=0` in `~/.config/niruwm/session.conf` turns it off (restart the session after changing it).
 
+With several monitors the screensaver draws its clock, panel and away time in the middle of each monitor, and it stays above the bars and every other window (NIRUSCREENSAVER 0.15.0 and later; before that it was centred across all monitors and the bars could show through).
+
 A lock started while the screensaver is up (`niructl lock`, `Super+Shift+Escape`, a lid close) closes the screensaver first. Before NIRUWM 0.23.1 the screensaver kept the pointer, so such a lock failed.
 
 With external monitors connected (docked), logind ignores the lid (`HandleLidSwitchDocked=ignore` in `/etc/systemd/logind.conf`), so the laptop stays awake. Closing the lid then locks the screen without suspending (NIRUWM 0.23.3 and later). Turn that off with `lock_on_lid_close = false` under `[idle]` in `~/.config/niruwm/config.toml`. Undocked, closing the lid locks and suspends as above.
