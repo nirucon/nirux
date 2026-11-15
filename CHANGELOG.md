@@ -2,6 +2,11 @@
 
 Earlier releases are described in their release notes and commit messages.
 
+## 0.12.284 (2026-11-15)
+
+- **Fonts stay out of a backup.** `~/.local/share/fonts` is no longer part of
+  the default copy; add it with `include` if you want it.
+
 ## 0.12.283 (2026-11-15)
 
 - **Backup files stay out of a backup.** Files and folders named `*.bak`,

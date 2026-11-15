@@ -1,5 +1,5 @@
 #!/bin/sh
-# NIRUX 0.12.280-0.12.283: nirux backup and nirux migrate. A computer takes part only
+# NIRUX 0.12.280-0.12.284: nirux backup and nirux migrate. A computer takes part only
 # when backup.toml says so; a copy is one encrypted, compressed file; the
 # newest copies are kept; what is left out stays out; restore never touches the
 # home directory; migrate leaves this computer's own files alone and keeps
@@ -107,6 +107,7 @@ sed -i '/^what = /d' "$HOME/.config/nirux/backup.toml"
 mkdir -p "$HOME/.config/emu.bak-20261103/cores"; echo core > "$HOME/.config/emu.bak-20261103/cores/c"
 echo old > "$HOME/.config/niruwm/config.toml.bak"; echo old > "$HOME/.config/niruwm/theme-preferences.toml.bak-20261101"
 echo old > "$HOME/.config/picom.conf~"; echo log > "$HOME/.config/LOG.old"
+mkdir -p "$HOME/.local/share/fonts"; echo font > "$HOME/.local/share/fonts/f.ttf"
 echo 'alias ll="ls -l"' > "$HOME/.bashrc"; mkdir -p "$HOME/.local/bin"; echo '#!/bin/sh' > "$HOME/.local/bin/mine"
 sh "$N" backup status | grep -q 'settings$' || fail 'status does not name the default'
 out=$(sh "$N" backup now 2>&1) || fail "settings backup failed: $out"
@@ -119,7 +120,7 @@ done
 for out_ in ./Documents/note.txt ./Git/p/main.rs ./Pictures/raw/r ./Music/song ./.thunderbird/p/ImapMail/srv/INBOX \
   ./.config/net.imput.helium/Default/h ./.local/share/nirux/generations/a/bin ./Games/.rom \
   ./.config/emu.bak-20261103/cores/c ./.config/niruwm/config.toml.bak ./.config/picom.conf~ ./.config/LOG.old \
-  ./.config/niruwm/theme-preferences.toml.bak-20261101; do
+  ./.config/niruwm/theme-preferences.toml.bak-20261101 ./.local/share/fonts/f.ttf; do
   grep -qx "$out_" "$TEST/members" && fail "in the settings copy but should be left out: $out_"
 done
 echo 'OK   the default copy holds settings, keys, NIRUX and mail settings and the include list, no data or backup files'

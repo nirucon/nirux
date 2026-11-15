@@ -2,7 +2,7 @@
 # NIRUX: install a complete X11 desktop, or maintain an existing installation.
 set -eu
 
-VERSION=0.12.283
+VERSION=0.12.284
 PREFIX=${NIRUX_PREFIX:-$HOME/.local}
 BIN=$PREFIX/bin
 STATE=$PREFIX/share/nirux
@@ -10070,7 +10070,7 @@ BACKUP_DEFAULT_KEY='~/Nextcloud/Vault/nirux-backup-key.age'
 # What a copy holds by default (what = "settings"): what makes the computer
 # yours, not your data. Paths relative to $HOME; missing ones are skipped.
 BACKUP_SETTINGS='.config .local/bin .thunderbird .ssh .gnupg .password-store .local/share/keyrings
-.local/share/applications .local/share/fonts .local/share/nirux .local/share/niru*
+.local/share/applications .local/share/nirux .local/share/niru*
 .profile .bashrc .bash_profile .bash_logout .zshrc .zprofile .zshenv .xinitrc .xprofile
 .xsession .Xresources .Xdefaults .gitconfig .vimrc .tmux.conf .inputrc .face'
 # Left out (paths relative to $HOME). The copy holds what makes the

@@ -247,9 +247,9 @@ yours, not your data. That is `~/.config`, `~/.local/bin`, Thunderbird (its
 settings and local folders, not its copy of IMAP mail: the server keeps that),
 your keys (`~/.ssh`, `~/.gnupg`, the keyring, `~/.password-store`), NIRUX and the
 NIRU apps (`~/.local/share/nirux` and `~/.local/share/niru*`), your own launcher
-entries and fonts, and the shell and X files in your home (`.bashrc`, `.profile`,
-`.xinitrc`, `.gitconfig` and the like). Documents, pictures, projects and other
-data are not copied: keep them in Nextcloud.
+entries, and the shell and X files in your home (`.bashrc`, `.profile`,
+`.xinitrc`, `.gitconfig` and the like). Documents, pictures, projects, fonts and
+other data are not copied: keep them in Nextcloud.
 
 Even inside those folders some things are left out: caches, browsers and chat
 apps (Helium, Chromium, Firefox, Discord, Signal: they sync or need a new login),
