@@ -76,4 +76,27 @@ ensure_greetd_keyring_pam >/dev/null
 remove_greetd_keyring_pam
 [ ! -e "$PAM" ] || fail 'a PAM file was created'
 echo 'OK   without greetd nothing is written'
+# 5. passwd follows the keyring on Void (standalone) and Arch (include), and
+# Debian's common-password, which already has it, is left alone.
+PW=$ROOT/etc/pam.d/passwd
+printf '#%%PAM-1.0\npassword\trequired\tpam_unix.so\tsha512 shadow nullok\n' > "$PW"; cp "$PW" "$TEST/void.pw"
+ensure_passwd_keyring_pam >/dev/null
+grep -qx -- '-password   optional    pam_gnome_keyring.so' "$PW" || fail 'Void passwd line missing'
+[ "$(grep -n pam_gnome_keyring "$PW" | cut -d: -f1)" -gt "$(grep -n pam_unix "$PW" | cut -d: -f1)" ] || fail 'keyring line before pam_unix'
+cp "$PW" "$TEST/pw.once"; ensure_passwd_keyring_pam >/dev/null
+cmp -s "$PW" "$TEST/pw.once" || fail 'second run changed passwd'
+remove_passwd_keyring_pam
+cmp -s "$PW" "$TEST/void.pw" || fail 'remove did not restore the Void passwd file'
+printf 'password\trequired\tpam_unix.so\n' > "$ROOT/etc/pam.d/system-auth"
+printf '#%%PAM-1.0\nauth\t\tinclude\t\tsystem-auth\npassword\tinclude\t\tsystem-auth\n' > "$PW"
+ensure_passwd_keyring_pam >/dev/null
+grep -q -- '^-password.*pam_gnome_keyring' "$PW" || fail 'Arch passwd line missing'
+remove_passwd_keyring_pam
+printf 'password\toptional\tpam_gnome_keyring.so\n' > "$ROOT/etc/pam.d/common-password"
+printf '@include common-password\n' > "$PW"; cp "$PW" "$TEST/deb.pw"
+ensure_passwd_keyring_pam >/dev/null
+cmp -s "$PW" "$TEST/deb.pw" || fail 'Debian passwd was changed'
+rm -f "$PW"; ensure_passwd_keyring_pam >/dev/null
+[ ! -e "$PW" ] || fail 'a passwd PAM file was created'
+echo 'OK   passwd changes the keyring password on Arch and Void; Debian left alone'
 echo 'PASS keyring PAM'

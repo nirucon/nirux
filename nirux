@@ -2,7 +2,7 @@
 # NIRUX: install a complete X11 desktop, or maintain an existing installation.
 set -eu
 
-VERSION=0.12.278
+VERSION=0.12.279
 PREFIX=${NIRUX_PREFIX:-$HOME/.local}
 BIN=$PREFIX/bin
 STATE=$PREFIX/share/nirux
@@ -5937,21 +5937,31 @@ install_login_picture() {
 # greetd PAM file already has these lines; Arch's and Void's do not. Each line
 # starts with "-", so PAM skips it on a machine without the module.
 NIRUX_KEYRING_PAM_MARK='# NIRUX keyring:'
-ensure_greetd_keyring_pam() {
-  gkp=$ROOT/etc/pam.d/greetd
-  as_root test -f "$gkp" || return 0
-  as_root grep -q 'pam_gnome_keyring\.so' "$gkp" 2>/dev/null && return 0
-  as_root cat "$gkp" > "$WORK/greetd-pam" || return 1
-  { say ''; say "$NIRUX_KEYRING_PAM_MARK unlock the login keyring with the login password"; say '-auth       optional    pam_gnome_keyring.so'; say '-session    optional    pam_gnome_keyring.so auto_start'; } >> "$WORK/greetd-pam"
-  as_root install -m 644 "$WORK/greetd-pam" "$gkp"
-  say 'NIRU Login unlocks the keyring at login'
+# True when FILE, or a PAM file it includes, already calls pam_gnome_keyring.
+pam_has_keyring() {
+  pam_depth=${2:-0}
+  as_root test -f "$1" || return 1
+  as_root grep -q 'pam_gnome_keyring\.so' "$1" 2>/dev/null && return 0
+  [ "$pam_depth" -lt 3 ] || return 1
+  for pam_include in $(as_root cat "$1" 2>/dev/null | awk '$1 == "@include" {print $2} $2 == "include" || $2 == "substack" {print $3}'); do
+    pam_has_keyring "$ROOT/etc/pam.d/$pam_include" $((pam_depth + 1)) && return 0
+  done
+  return 1
 }
-# Remove only the lines ensure_greetd_keyring_pam added.
-remove_greetd_keyring_pam() {
-  gkp=$ROOT/etc/pam.d/greetd
-  as_root test -f "$gkp" || return 0
-  as_root grep -qF "$NIRUX_KEYRING_PAM_MARK" "$gkp" 2>/dev/null || return 0
-  as_root cat "$gkp" | awk -v mark="$NIRUX_KEYRING_PAM_MARK" '
+# Append marked keyring lines to a PAM file that has none; FILE WHY LINE...
+pam_keyring_add() {
+  pam_file=$1 pam_why=$2; shift 2
+  as_root test -f "$pam_file" || return 1
+  pam_has_keyring "$pam_file" && return 1
+  as_root cat "$pam_file" > "$WORK/keyring-pam" || return 1
+  { say ''; say "$NIRUX_KEYRING_PAM_MARK $pam_why"; for pam_line in "$@"; do say "$pam_line"; done; } >> "$WORK/keyring-pam"
+  as_root install -m 644 "$WORK/keyring-pam" "$pam_file"
+}
+# Remove only the lines pam_keyring_add wrote.
+pam_keyring_strip() {
+  as_root test -f "$1" || return 0
+  as_root grep -qF "$NIRUX_KEYRING_PAM_MARK" "$1" 2>/dev/null || return 0
+  as_root cat "$1" | awk -v mark="$NIRUX_KEYRING_PAM_MARK" '
     { line[NR] = $0 }
     END {
       for (i = 1; i <= NR; i++) if (index(line[i], mark) == 1) {
@@ -5960,9 +5970,26 @@ remove_greetd_keyring_pam() {
         for (j = i + 1; j <= NR && line[j] ~ /pam_gnome_keyring\.so/; j++) drop[j] = 1
       }
       for (i = 1; i <= NR; i++) if (!(i in drop)) print line[i]
-    }' > "$WORK/greetd-pam" || return 1
-  as_root install -m 644 "$WORK/greetd-pam" "$gkp"
+    }' > "$WORK/keyring-pam" || return 1
+  as_root install -m 644 "$WORK/keyring-pam" "$1"
 }
+ensure_greetd_keyring_pam() {
+  pam_keyring_add "$ROOT/etc/pam.d/greetd" 'unlock the login keyring with the login password' \
+    '-auth       optional    pam_gnome_keyring.so' '-session    optional    pam_gnome_keyring.so auto_start' &&
+    say 'NIRU Login unlocks the keyring at login'
+  return 0
+}
+remove_greetd_keyring_pam() { pam_keyring_strip "$ROOT/etc/pam.d/greetd"; }
+# passwd changes the login password; the keyring must follow it, or the next
+# login cannot unlock the keyring and apps ask for the old password. Debian's
+# common-password already does this; Arch's and Void's passwd do not.
+ensure_passwd_keyring_pam() {
+  pam_keyring_add "$ROOT/etc/pam.d/passwd" 'passwd also changes the login keyring password' \
+    '-password   optional    pam_gnome_keyring.so' &&
+    say 'passwd keeps the keyring password in step with the login password'
+  return 0
+}
+remove_passwd_keyring_pam() { pam_keyring_strip "$ROOT/etc/pam.d/passwd"; }
 
 install_nirulogin() {
   [ -x "$WORK/generation/bin/nirulogin" ] || die 'staged nirulogin is missing'
@@ -6222,6 +6249,7 @@ remove_greeters() {
   remove_sleep_hook
   remove_void_elogind_activation
   remove_void_udev_replay
+  remove_passwd_keyring_pam
   remove_system "$ROOT$TOUCHPAD_RULE"
   remove_system "$ROOT$BATTERY_RULE"
   remove_system "$ROOT/etc/sddm.conf.d/50-nirux.conf"
@@ -6759,6 +6787,7 @@ enable_services() {
   fi
   ensure_video_group
   install_backlight_rule
+  ensure_passwd_keyring_pam
 }
 check_pam() {
   [ -f "$ROOT/etc/pam.d/nirulock" ] || { say 'missing PAM service'; return 1; }

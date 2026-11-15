@@ -36,7 +36,8 @@ display manager:
 The runtime packages include **gnome-keyring**, a small store for saved logins.
 The login screen unlocks it with your password, so apps such as the Nextcloud
 client keep their logins across reboots. It needs a few megabytes of memory and
-no processor time while idle.
+no processor time while idle. Change your password with `passwd` in your own
+session and the keyring's password follows it.
 
 **Tailscale** (default yes) joins the computer to your private network, so
 `nirux fleet`, nirushare and SSH reach it from your other machines. The

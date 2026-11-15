@@ -96,6 +96,7 @@ current settings and shows the same notification. Fix the line, then
 | Downloads from GitHub fail | NIRUX falls back to the GitLab mirror by itself; see [Keeping NIRUX up to date](11-updates.md). |
 | Wi-Fi cannot be controlled | See [WIFI.md](https://github.com/nirucon/nirux/blob/main/docs/WIFI.md) for the supported backends and their limits. |
 | An app (such as the Nextcloud client) asks for its login after every reboot | NIRUX installs gnome-keyring, and the login screen unlocks it with your password. After it was first installed (for example by an update), log out and in once. `nirux doctor` says whether the keyring runs. Automatic login without a password cannot unlock it. |
+| Apps ask for the keyring password after you changed your login password | Change your password with `passwd` in your own session, and the keyring follows. A password set by root (`sudo passwd USER`) leaves the keyring on the old one: type the old password once when asked, then change the login keyring's password to the new one in Passwords and Keys (the `seahorse` package). |
 | Workspace changes look ignored or the launcher stutters, mostly on empty workspaces | The compositor cannot keep up. NIRUX's `~/.config/picom.conf` uses `backend = "glx"` with `vsync = true` (from 0.12.278); an older file on `xrender` moves once, with a copy. Try `niructl compositor off`: if that helps, set the glx lines yourself and run `niructl compositor off` and `on`. Where glx cannot start, NIRUWM uses xrender by itself. |
 
 ## Try a new login screen safely

@@ -2,6 +2,19 @@
 
 Earlier releases are described in their release notes and commit messages.
 
+## 0.12.279 (2026-11-15)
+
+- **The keyring follows a new password.** On Arch and Void, `passwd` changed
+  the login password but not the keyring's, so the next login could not
+  unlock the keyring and apps asked for the old password. NIRUX now adds one
+  marked line, `-password optional pam_gnome_keyring.so`, to
+  `/etc/pam.d/passwd` when neither that file nor a file it includes calls the
+  keyring module. Debian already does this in `common-password` and is left
+  alone. `nirux uninstall` removes only the line NIRUX added. Change your
+  password with `passwd` in your own session; a password set by root
+  (`sudo passwd USER`) cannot change the keyring, because the old password is
+  not known.
+
 ## 0.12.278 (2026-11-14)
 
 - **The compositor draws on the graphics card.** NIRUX's default
