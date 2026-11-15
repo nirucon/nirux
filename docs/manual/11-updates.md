@@ -220,7 +220,7 @@ A failed snapshot (a full disk, for example) only warns, unless `strict = true` 
 
 ## Backup and moving to a new computer
 
-`nirux backup` keeps encrypted copies of your home directory in a folder that
+`nirux backup` keeps encrypted copies of your settings, keys and mail settings in a folder that
 Nextcloud carries off the computer. A computer takes part only when you switch it
 on; nothing is copied before that.
 
@@ -235,29 +235,34 @@ nirux migrate from niruxwork       # a new computer takes the old one's settings
 ```
 
 **A copy** is one file, `~/Nextcloud/Backup/nirux/<computer>/<computer>-<date>-<time>.tar.zst.age`:
-your home directory as tar, compressed with zstd and encrypted with
+your settings (or your whole home directory) as tar, compressed with zstd and encrypted with
 [age](https://age-encryption.org). The two newest copies of each computer are kept.
 It is written as a `.part` file that Nextcloud does not upload, and renamed when it
 is complete. The nightly update makes it while you are away (the screen locked or
 the computer idle at night), at the lowest processor and disk priority, when one is
 due: weekly by default.
 
-**What is kept:** what makes the computer yours: settings (`~/.config` and the
-dot folders), keys (SSH, GPG, the keyring), notes, scripts, projects and your
-own documents and pictures.
+**What is kept** (`what = "settings"`, the default): what makes the computer
+yours, not your data. That is `~/.config`, `~/.local/bin`, Thunderbird (its
+settings and local folders, not its copy of IMAP mail: the server keeps that),
+your keys (`~/.ssh`, `~/.gnupg`, the keyring, `~/.password-store`), NIRUX and the
+NIRU apps (`~/.local/share/nirux` and `~/.local/share/niru*`), your own launcher
+entries and fonts, and the shell and X files in your home (`.bashrc`, `.profile`,
+`.xinitrc`, `.gitconfig` and the like). Documents, pictures, projects and other
+data are not copied: keep them in Nextcloud.
 
-**What is left out:** every Nextcloud folder (it is already off the computer),
-caches and directories marked as caches (a Rust `target/`, for example), the trash,
-browsers and chat apps (Helium, Chromium, Firefox, Discord, Signal: they sync or
-need a new login), games (`~/Games`, Steam, Proton, Lutris, Heroic, Bottles,
-Wine), `~/Music`, `~/Videos`, `~/Movies`, `~/Downloads`, Docker (`~/Docker` and
-its data), ISO images, Thunderbird's copy of IMAP mail (the server keeps it; its
-settings and local folders are kept), NIRUX's own program generations and
-downloaded apps, and every file larger than 1 GB. Files you cannot read (owned by
-root, for example) are counted and skipped.
+Even inside those folders some things are left out: caches, browsers and chat
+apps (Helium, Chromium, Firefox, Discord, Signal: they sync or need a new login),
+downloaded programs, models and game assets (RetroArch's assets, databases,
+shaders and cores; its settings and playlists are kept), log files, and every
+file larger than 1 GB. Files you cannot read (owned by root, for example) are
+counted and skipped.
 
-To keep something the defaults leave out, add it to `include`: `include = [
-"Games/Saves" ]` keeps your saves but none of the games. `exclude` leaves out more.
+**More or less.** `include = [ "Pictures", "Games/Saves" ]` adds paths;
+`exclude = [ ".config/retroarch" ]` leaves more out. `what = "home"` copies the whole
+home directory instead, except Nextcloud, caches, games and launchers (Steam,
+Proton, Lutris, Heroic, Bottles, Wine), `~/Music`, `~/Videos`, `~/Movies`,
+`~/Downloads`, Docker and ISO images.
 
 **The key.** `nirux backup setup` on the first computer creates a key and asks for a
 passphrase. The secret key is saved in `~/Nextcloud/Vault/nirux-backup-key.age`,
@@ -276,9 +281,10 @@ keep = 2                       # copies kept for this computer
 destination = "~/Nextcloud/Backup/nirux"
 key = "~/Nextcloud/Vault/nirux-backup-key.age"
 recipient = "age1..."          # the public key
+what = "settings"              # or "home": the whole home directory
 max_file_mb = 1024             # larger files are left out
-exclude = [ "Pictures/raw" ]   # more paths to leave out, relative to your home
-include = [ "Games/Saves" ]    # paths to keep that the defaults leave out
+exclude = [ ]                  # more paths to leave out, relative to your home
+include = [ "Games/Saves" ]    # more paths to keep, even inside a left-out folder
 ```
 
 **Restore** unpacks a copy into a new directory (`~/nirux-restore-...` unless you

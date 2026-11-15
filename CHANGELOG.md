@@ -2,6 +2,17 @@
 
 Earlier releases are described in their release notes and commit messages.
 
+## 0.12.282 (2026-11-15)
+
+- **A backup holds your settings, not your data.** By default a copy now holds
+  `~/.config`, `~/.local/bin`, Thunderbird (without its copy of IMAP mail), your
+  keys, NIRUX and the NIRU apps' files and the shell and X files in your home:
+  some hundred MB instead of several GB. Documents and pictures belong in
+  Nextcloud. Add paths with `include`, or set `what = "home"` in
+  `~/.config/nirux/backup.toml` for the whole home directory as before.
+- Program versions, Python environments, speech models, RetroArch assets,
+  Nextcloud logs and saved wallpapers are left out in both modes.
+
 ## 0.12.281 (2026-11-15)
 
 - **Backup keeps what makes the computer yours, not media.** Music, videos,

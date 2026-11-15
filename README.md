@@ -325,8 +325,8 @@ your own overrides and the keys of other programs.
 | `nirux rollback` | Switch back to the previous program generation |
 | `nirux snapshot [--note TEXT]` / `nirux snapshot list` | Save or list snapshots of your configuration (one is also taken before every update) |
 | `nirux restore [ID\|latest] [--dry-run]` | Restore a configuration snapshot, after a preview and a safety snapshot |
-| `nirux backup [setup\|now\|list\|restore\|off]` | Encrypted copies of your home directory in Nextcloud, two per computer, for computers that opt in (see the manual, chapter 11) |
-| `nirux migrate from HOST` | Bring an old computer's settings, keys and files to a new one from its newest backup copy |
+| `nirux backup [setup\|now\|list\|restore\|off]` | Encrypted copies of your settings, keys and mail settings in Nextcloud, two per computer, for computers that opt in (see the manual, chapter 11) |
+| `nirux migrate from HOST` | Bring an old computer's settings and keys to a new one from its newest backup copy |
 | `nirux gc [--keep N] [--dry-run]` | Prune old generations (also done after every update) |
 | `nirux update-shutdown` / `nirux update-reboot` | Update everything in a terminal, then power off / restart on success |
 | `nirux extras ...` | Optional extras, see above |

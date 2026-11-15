@@ -1,5 +1,5 @@
 #!/bin/sh
-# NIRUX 0.12.280-0.12.281: nirux backup and nirux migrate. A computer takes part only
+# NIRUX 0.12.280-0.12.282: nirux backup and nirux migrate. A computer takes part only
 # when backup.toml says so; a copy is one encrypted, compressed file; the
 # newest copies are kept; what is left out stays out; restore never touches the
 # home directory; migrate leaves this computer's own files alone and keeps
@@ -56,6 +56,7 @@ cat > "$HOME/.config/nirux/backup.toml" <<EOF
 enabled = true
 every = "weekly"
 keep = 2
+what = "home"
 destination = "$DEST"
 key = "$KEY"
 recipient = "$RCPT"
@@ -100,6 +101,23 @@ sh "$N" backup restore old --to "$TEST/restored" >/dev/null 2>&1 || fail 'restor
 [ "$(cat "$TEST/restored/Documents/note.txt")" = note ] || fail 'restored file has the wrong content'
 [ "$(cat "$HOME/Documents/note.txt")" = changed ] || fail 'restore changed the home directory'
 echo 'OK   restore unpacks into its own directory'
+
+# 4b. The default copy holds settings, keys and mail settings, not data.
+sed -i '/^what = /d' "$HOME/.config/nirux/backup.toml"
+echo 'alias ll="ls -l"' > "$HOME/.bashrc"; mkdir -p "$HOME/.local/bin"; echo '#!/bin/sh' > "$HOME/.local/bin/mine"
+sh "$N" backup status | grep -q 'settings$' || fail 'status does not name the default'
+out=$(sh "$N" backup now 2>&1) || fail "settings backup failed: $out"
+newest=$(ls "$DEST/old" | tail -n 1)
+age -d -i "$KEY" "$DEST/old/$newest" | zstd -dq | tar -tf - > "$TEST/members"
+for keep in ./.config/niruwm/theme-preferences.toml ./.ssh/id_ed25519 ./.local/share/keyrings/login.keyring \
+  ./.local/share/nirux/extras-selected ./.thunderbird/p/prefs.js ./.bashrc ./.local/bin/mine ./Games/Saves/w3/slot1; do
+  grep -qx "$keep" "$TEST/members" || fail "missing from the settings copy: $keep"
+done
+for out_ in ./Documents/note.txt ./Git/p/main.rs ./Pictures/raw/r ./Music/song ./.thunderbird/p/ImapMail/srv/INBOX \
+  ./.config/net.imput.helium/Default/h ./.local/share/nirux/generations/a/bin ./Games/.rom; do
+  grep -qx "$out_" "$TEST/members" && fail "in the settings copy but should be left out: $out_"
+done
+echo 'OK   the default copy holds settings, keys, NIRUX and mail settings and the include list, no data'
 
 # 5. Migrate to a new computer.
 use_home new

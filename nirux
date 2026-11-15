@@ -2,7 +2,7 @@
 # NIRUX: install a complete X11 desktop, or maintain an existing installation.
 set -eu
 
-VERSION=0.12.281
+VERSION=0.12.282
 PREFIX=${NIRUX_PREFIX:-$HOME/.local}
 BIN=$PREFIX/bin
 STATE=$PREFIX/share/nirux
@@ -10053,7 +10053,7 @@ autoupdate_command() {
 }
 
 # ── nirux backup and nirux migrate (docs: manual chapter 11) ────────────────
-# A backup is one file per run: the home directory as tar, compressed with
+# A backup is one file per run: your settings (or the whole home) as tar, compressed with
 # zstd and encrypted with age to a public key, written to a folder that
 # Nextcloud carries off the machine. Only the newest copies are kept per
 # computer. A computer takes part only when its own backup.toml says
@@ -10067,7 +10067,13 @@ BACKUP_LAST=${XDG_STATE_HOME:-$HOME/.local/state}/nirux/backup-last
 BACKUP_DEFAULT_DEST='~/Nextcloud/Backup/nirux'
 # shellcheck disable=SC2088
 BACKUP_DEFAULT_KEY='~/Nextcloud/Vault/nirux-backup-key.age'
-# Left out by default (paths relative to $HOME). The copy holds what makes the
+# What a copy holds by default (what = "settings"): what makes the computer
+# yours, not your data. Paths relative to $HOME; missing ones are skipped.
+BACKUP_SETTINGS='.config .local/bin .thunderbird .ssh .gnupg .password-store .local/share/keyrings
+.local/share/applications .local/share/fonts .local/share/nirux .local/share/niru*
+.profile .bashrc .bash_profile .bash_logout .zshrc .zprofile .zshenv .xinitrc .xprofile
+.xsession .Xresources .Xdefaults .gitconfig .vimrc .tmux.conf .inputrc .face'
+# Left out (paths relative to $HOME). The copy holds what makes the
 # computer yours: settings, keys, notes and your own files. Browsers and chat
 # apps keep their own sync or need a new login; games, music, films, downloads,
 # Docker, ISO images, caches, programs and mail kept on a server can be fetched
@@ -10079,7 +10085,11 @@ BACKUP_EXCLUDES='.cache .local/share/Trash .local/share/nirux/generations .local
 .local/share/containers .var .config/net.imput.helium .config/chromium .config/google-chrome
 .config/BraveSoftware .mozilla .config/discord .config/Signal .rustup .cargo/registry .cargo/git
 .npm .local/share/pnpm Games ISO snap Music Videos Movies Downloads Docker
-.local/share/docker .local/share/lutris .local/share/bottles .local/share/heroic .wine'
+.local/share/docker .local/share/lutris .local/share/bottles .local/share/heroic .wine
+.local/share/claude/versions .local/share/nirupres/.venv .local/share/nirudictate/models
+.local/state/niruwm/wallpaper .config/net.imput.helium-headless .config/Nextcloud/logs
+.config/retroarch/assets .config/retroarch/database .config/retroarch/shaders
+.config/retroarch/cores .config/retroarch/thumbnails .config/retroarch/downloads'
 # Never copied to a new computer: files that describe this machine's hardware
 # or NIRUX installation rather than you.
 MIGRATE_SKIP='.config/niruwm/displays.toml .config/nirux/backup.toml .local/state/wireplumber
@@ -10094,7 +10104,7 @@ backup_usage() {
   say '       nirux backup restore [HOST|FILE] [--to DIR]   unpack a copy into DIR'
   say '       nirux backup off            this computer takes no more copies'
   say '       nirux migrate from HOST [--dry-run|--yes]   bring HOST'"'"'s settings, keys and files here'
-  say "Settings: $BACKUP_CONFIG (enabled, every, keep, destination, key, exclude, include)."
+  say "Settings: $BACKUP_CONFIG (enabled, every, keep, what, destination, key, exclude, include)."
 }
 backup_path() {
   # shellcheck disable=SC2088
@@ -10145,11 +10155,14 @@ backup_write_config() { # ENABLED RECIPIENT: keeps the other keys of an existing
       say "destination = \"$BACKUP_DEFAULT_DEST\""
       say "key = \"$BACKUP_DEFAULT_KEY\""
       say 'recipient = ""'
+      say '# settings: .config, .local/bin, Thunderbird, keys, NIRUX and shell files.'
+      say '# home: the whole home directory except games, media, caches and programs.'
+      say 'what = "settings"'
       say '# Files larger than this are left out.'
       say 'max_file_mb = 1024'
       say '# More paths to leave out, and paths to keep that the defaults leave out'
-      say '# (relative to your home), for example exclude = [ "Pictures/raw" ] and'
-      say '# include = [ "Games/Saves" ].'
+      say '# (relative to your home), for example include = [ "Pictures", "Games/Saves" ]'
+      say '# and exclude = [ ".config/retroarch" ].'
       say 'exclude = [ ]'
       say 'include = [ ]'
     } > "$BACKUP_CONFIG"
@@ -10226,6 +10239,23 @@ backup_keep_includes() { # LIST
   done < "$WORK/backup-include"
 }
 
+backup_what() { case "$(backup_value what settings)" in home) say home ;; *) say settings ;; esac; }
+
+# What tar reads: the whole home, or the settings paths and include, one
+# ./path per line.
+backup_members() { # OUT
+  if [ "$(backup_what)" = home ]; then say . > "$1"; return 0; fi
+  {
+    for bm_p in $BACKUP_SETTINGS; do
+      for bm_f in "$HOME"/$bm_p; do [ -e "$bm_f" ] || [ -L "$bm_f" ] && say "$bm_f"; done
+    done
+    toml_list "$BACKUP_CONFIG" backup include | while IFS= read -r bm_p; do
+      bm_f=$(backup_path "$bm_p"); case "$bm_f" in /*) ;; *) bm_f=$HOME/$bm_f ;; esac
+      [ -e "$bm_f" ] && say "$bm_f"
+    done
+  } | backup_rel_paths | sort -u > "$1"
+}
+
 # What tar leaves out: one member name per line (./path), matched exactly.
 backup_exclude_list() { # OUT
   bl_max=$(backup_value max_file_mb 1024)
@@ -10249,8 +10279,13 @@ backup_exclude_list() { # OUT
     else set -- "$@" -o -path "$HOME/${bl_p#./}"; fi
   done < "$1"
   bl_out=$1; shift
-  find "$HOME" -xdev \( "$@" \) -prune -o -type f -size +"${bl_max}"M -print 2>/dev/null |
-    sed "s:^$HOME/:./:" > "$WORK/backup-too-large" || :
+  : > "$WORK/backup-too-large"
+  while IFS= read -r bl_m; do
+    case "$bl_m" in .) bl_m=$HOME ;; *) bl_m=$HOME/${bl_m#./} ;; esac
+    find "$bl_m" -xdev \( "$@" \) -prune -o -type f -size +"${bl_max}"M -print 2>/dev/null |
+      sed "s:^$HOME/:./:" >> "$WORK/backup-too-large" || :
+  done < "$WORK/members"
+  sort -u -o "$WORK/backup-too-large" "$WORK/backup-too-large"
   cat "$WORK/backup-too-large" >> "$bl_out"
 }
 
@@ -10268,6 +10303,8 @@ backup_now() {
   WORK=$(mktemp -d "${TMPDIR:-/tmp}/nirux-backup.XXXXXX") || { rmdir "$bn_lock"; die 'no temporary directory'; }
   # shellcheck disable=SC2064
   trap "rm -rf '$WORK'; rmdir '$bn_lock' 2>/dev/null" EXIT HUP INT TERM
+  backup_members "$WORK/members"
+  [ -s "$WORK/members" ] || die 'nothing to back up: none of the settings paths exist'
   backup_exclude_list "$WORK/exclude"
   bn_large=$(wc -l < "$WORK/backup-too-large" | tr -d ' ')
   bn_free=$(df -Pk "$bn_dir" | awk 'NR == 2 { print $4 }')
@@ -10275,7 +10312,8 @@ backup_now() {
   bn_name=$bn_host-$(date +%Y%m%d-%H%M%S).tar.zst.age
   # Written as .part (Nextcloud does not upload those), then renamed in one step.
   bn_part=$bn_dir/$bn_name.part
-  say "Backing up $HOME to $bn_dir ..."
+  if [ "$(backup_what)" = home ]; then say "Backing up $HOME to $bn_dir ..."
+  else say "Backing up settings, keys and mail settings from $HOME to $bn_dir ..."; fi
   bn_nice=''
   command -v nice >/dev/null 2>&1 && bn_nice='nice -n 19'
   command -v ionice >/dev/null 2>&1 && bn_nice="$bn_nice ionice -c 3"
@@ -10287,7 +10325,7 @@ backup_now() {
   { $bn_nice tar -C "$HOME" --one-file-system --exclude-caches-all --anchored --no-wildcards \
       --exclude-from="$WORK/exclude" --ignore-failed-read --totals -v --index-file="$WORK/index" \
       --warning=no-file-changed --warning=no-file-removed --warning=no-file-ignored \
-      -cf - . 2>"$WORK/tar.err"; echo "$?" > "$WORK/tar.rc"; } |
+      --verbatim-files-from -T "$WORK/members" -cf - 2>"$WORK/tar.err"; echo "$?" > "$WORK/tar.rc"; } |
     $bn_nice zstd -q -T2 -6 | age -r "$bn_rcpt" > "$bn_part"
   bn_rc=$?
   bn_tar=$(cat "$WORK/tar.rc" 2>/dev/null || say 9)
@@ -10324,7 +10362,7 @@ backup_due() {
 }
 
 backup_status() {
-  if backup_enabled; then say "backup: on for $(backup_host), $(backup_value every weekly), keeping $(backup_keep)"
+  if backup_enabled; then say "backup: on for $(backup_host), $(backup_value every weekly), keeping $(backup_keep), $(backup_what)"
   else say "backup: off for $(backup_host) (nirux backup setup switches it on)"; fi
   say "destination: $(backup_dest)/$(backup_host)"
   bs_t=$(backup_last_field time)
