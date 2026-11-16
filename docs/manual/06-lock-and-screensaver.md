@@ -1,6 +1,6 @@
 # Lock screen and screensaver
 
-NIRULOCK is the PAM lock screen and NIRUSCREENSAVER is the idle screen that comes before it. This chapter covers locking and unlocking, the idle timers, keeping the screen awake, the five layouts, the CAVA spectrum and quotes, and the optional SID pause music.
+NIRULOCK is the PAM lock screen and NIRUSCREENSAVER is the idle screen that comes before it. This chapter covers locking and unlocking, the idle timers, keeping the screen awake, the screensaver scenes, the five layouts, the CAVA spectrum and quotes, and the optional SID pause music.
 
 ## Lock the screen
 
@@ -140,13 +140,39 @@ again when they next start playing.
 
 ## The screensaver
 
-NIRUSCREENSAVER covers every screen with the date, a large clock, how long you have been away and, while music plays, a CAVA spectrum with the playing track. It is **not a lock**: any key or click dismisses it, and that key or click is swallowed so it never reaches the window underneath. Pointer motion does not dismiss it unless `dismiss_on_motion = true` (after 24 px).
+NIRUSCREENSAVER covers every screen with one of five scenes: by default the date, a large clock, how long you have been away and, while music plays, a CAVA spectrum with the playing track. It is **not a lock**: any key or click dismisses it, and that key or click is swallowed so it never reaches the window underneath. Pointer motion does not dismiss it unless `dismiss_on_motion = true` (after 24 px).
 
 ```sh
 niructl screensaver          # show it now on every monitor
 niruscreensaver --preview    # show it on one monitor only, to compare settings
+niruscreensaver --preview photos   # preview a scene without choosing it
 niruscreensaver --config     # print the effective settings
 ```
+
+## Choose a scene
+
+The launcher's **Screensaver** view (NIRUX Settings, or `nirulauncher --screensaver`) lists the scenes with what each shows, the chosen one first with a **Preview** row that shows it on this monitor. `Enter` on another scene chooses it. The rows below choose which scenes `shuffle` may pick and step through the clock layout, the clock panel, the track line, the seconds per photo and reduced motion. The same from a terminal (NIRUSCREENSAVER 0.16.0 and later):
+
+```sh
+niruscreensaver --list                      # the scenes, the chosen one, the shuffle list
+niruscreensaver --set scene dark-sid        # choose a scene
+niruscreensaver --shuffle toggle photos     # add or remove a scene from shuffle
+niruscreensaver --set photos_folder ~/Pictures/Trips
+```
+
+Changes are written to `~/.config/niruui/screensaver.toml` with its comments kept, and a value the screensaver would refuse is refused before anything is written. The next time the screensaver appears it reads the file.
+
+| Scene | Shows |
+|---|---|
+| `clock` | Default. The clock in one of the layouts below, with the spectrum or a quote |
+| `photos` | The pictures in `photos_folder` (default `~/Pictures/Wallpapers/NIRU`, the NIRUX wallpapers), each for `photos_seconds`, drifting slowly and crossfading, with a small clock in the corner. Without pictures the clock is shown |
+| `dark` | Black, with only the line "NIRUX - A MINIMAL X11 DESKTOP" gliding slowly across each screen |
+| `dark-sid` | As `dark`, with C64 SID tunes and the tune's title, composer and year under the line |
+| `shuffle` | One of the scenes in `shuffle` (default `clock`, `photos`, `dark`), a new pick every time |
+
+`dark-sid` uses the lock's [SID pause music](#sid-pause-music) player and folder (`[pause_music] folder` in `lock.toml`, default `~/Music/SID`; `sidplayfp` must be installed). It starts only when nothing else played during the first 2 seconds. Unlike the lock, it also plays when the screensaver starts by itself after the idle timeout, because choosing `dark-sid` is the choice to play. The music stops when the display goes off, when a key or click ends the screensaver, and when the idle lock takes over.
+
+`photos` reads PNG and JPEG files two folder levels deep; when a wallpaper exists as `-4k` and `-8k`, the 4K one is used. With several monitors every scene draws on each one. `reduced_motion = true` stops the photo drift and crossfade and moves the dark line once a minute instead of gliding.
 
 ## Choose a layout
 
@@ -278,14 +304,18 @@ nirulock --version
 
 | Key | Default | Meaning |
 |---|---|---|
-| `layout` | `"cava"` | As for the lock |
+| `scene` | `"clock"` | `clock`, `photos`, `dark`, `dark-sid` or `shuffle`; see [Choose a scene](#choose-a-scene) |
+| `shuffle` | `["clock", "photos", "dark"]` | The scenes `shuffle` picks from |
+| `photos_folder` | `"~/Pictures/Wallpapers/NIRU"` | Pictures for `photos` |
+| `photos_seconds` | `20` | Seconds per photo, 5 to 3600 |
+| `layout` | `"cava"` | The clock scene's layout, as for the lock |
 | `visualizer`, `visual`, `quotes` | `true`, `"auto"`, `["*"]` | As for the lock |
 | `show_media` | `true` | Artist and title of the playing track under the spectrum (needs `playerctl`) |
 | `font_size` | `22.0` | Text size |
 | `clock_size` | `88.0` | Clock size |
 | `show_away_after_seconds` | `60` | When the away time appears |
 | `dismiss_on_motion` | `false` | Dismiss after 24 px of pointer motion |
-| `reduced_motion` | `false` | No 300 ms fade-in |
+| `reduced_motion` | `false` | No 300 ms fade-in, no photo drift or crossfade, the dark line moves once a minute |
 | `show_hostname` | `false` | Machine name under the clock |
 
 ## Troubleshooting

@@ -75,22 +75,22 @@ These are not generated from an example file. The chapters describe them.
 
 <!-- generated: config (tools/manual-gen.sh; do not edit by hand) -->
 
-The example configuration files of NIRUX 0.12.287 and its components, with every
+The example configuration files of NIRUX 0.12.288 and its components, with every
 key they set or show. A value marked *commented example* is off by default:
 remove the `#` to use it. The full annotated file follows each table.
 
 | File | Read by | Example from |
 |---|---|---|
-| [`~/.config/niruwm/config.toml`](#configniruwmconfigtoml) | niruwm, nirubar, niruidle, niructl | nirux 0.12.287 `config.example.toml` |
-| [`~/.config/niruwm/appearance.toml`](#configniruwmappearancetoml) | the whole suite | nirux 0.12.287 `appearance.example.toml` |
-| [`~/.config/nirux/sounds.toml`](#configniruxsoundstoml) | nirux, nirunotify | nirux 0.12.287 `sounds.example.toml` |
-| [`~/.config/niruwm/displays.toml`](#configniruwmdisplaystoml) | niruwm, niructl, nirudisplay | nirux 0.12.287 `displays.example.toml` |
+| [`~/.config/niruwm/config.toml`](#configniruwmconfigtoml) | niruwm, nirubar, niruidle, niructl | nirux 0.12.288 `config.example.toml` |
+| [`~/.config/niruwm/appearance.toml`](#configniruwmappearancetoml) | the whole suite | nirux 0.12.288 `appearance.example.toml` |
+| [`~/.config/nirux/sounds.toml`](#configniruxsoundstoml) | nirux, nirunotify | nirux 0.12.288 `sounds.example.toml` |
+| [`~/.config/niruwm/displays.toml`](#configniruwmdisplaystoml) | niruwm, niructl, nirudisplay | nirux 0.12.288 `displays.example.toml` |
 | [`~/.config/nirubar/config.toml`](#confignirubarconfigtoml) | nirubar | nirubar 0.29.0 `weather.example.toml` |
-| [`~/.config/nirulauncher/config.toml`](#confignirulauncherconfigtoml) | nirulauncher | nirulauncher 0.16.0 `config.example.toml` |
+| [`~/.config/nirulauncher/config.toml`](#confignirulauncherconfigtoml) | nirulauncher | nirulauncher 0.17.0 `config.example.toml` |
 | [`~/.config/nirunotify/config.toml`](#confignirunotifyconfigtoml) | nirunotify | nirunotify 0.6.0 `config.example.toml` |
 | [`~/.config/nirufetch/config.toml`](#confignirufetchconfigtoml) | nirufetch | nirufetch 0.3.0 `config.example.toml` |
 | [`~/.config/niruui/lock.toml`](#configniruuilocktoml) | nirulock | nirulock 0.26.1 `config.example.toml` |
-| [`~/.config/niruui/screensaver.toml`](#configniruuiscreensavertoml) | niruscreensaver | niruscreensaver 0.15.0 `config.example.toml` |
+| [`~/.config/niruui/screensaver.toml`](#configniruuiscreensavertoml) | niruscreensaver | niruscreensaver 0.16.0 `config.example.toml` |
 | [`~/.config/nirushare/webhooks.toml`](#confignirusharewebhookstoml) | nirushare | nirushare 0.4.0 `webhooks.example.toml` |
 
 ### ~/.config/niruwm/config.toml
@@ -1803,7 +1803,11 @@ focus = "5a5a60"
 
 | Section | Key | Example value | Meaning |
 |---|---|---|---|
-| `(top level)` | `font_path` | `"/usr/share/fonts/truetype/dejavu/DejaVuSansMono.ttf"` (commented example) | ~/.config/niruui/screensaver.toml; every setting is optional. |
+| `(top level)` | `scene` | `"clock"` | What is shown: "clock"     the clock with the spectrum or a quote (the layouts below) "photos"    a slide show from photos_folder, slow d... |
+| `(top level)` | `shuffle` | `["clock", "photos", "dark"]` |  |
+| `(top level)` | `photos_folder` | `"~/Pictures/Wallpapers/NIRU"` | PNG and JPEG pictures, two folder levels deep. |
+| `(top level)` | `photos_seconds` | `20` |  |
+| `(top level)` | `font_path` | `"/usr/share/fonts/truetype/dejavu/DejaVuSansMono.ttf"` (commented example) |  |
 | `(top level)` | `font_size` | `22.0` |  |
 | `(top level)` | `clock_size` | `88.0` |  |
 | `(top level)` | `layout` | `"cava"` | minimal \| terminal \| runic \| corner \| cava cava uses the active NIRUX theme and visualises system audio through CAVA. |
@@ -1817,7 +1821,7 @@ focus = "5a5a60"
 | `(top level)` | `dpms_off_minutes` | `0` |  |
 | `(top level)` | `show_away_after_seconds` | `60` |  |
 | `(top level)` | `dismiss_on_motion` | `false` | A key or click always dismisses the screen. |
-| `(top level)` | `reduced_motion` | `false` | The screen fades in from black over 300 ms; true shows it at once. |
+| `(top level)` | `reduced_motion` | `false` | The screen fades in from black over 300 ms; true shows it at once, stops the photo drift and crossfade, and moves the dark line once a mi... |
 | `(top level)` | `show_hostname` | `false` | Show the machine's hostname under the clock. |
 | `[palette]` | `background` | `"000000"` |  |
 | `[palette]` | `foreground` | `"e5e5e5"` |  |
@@ -1829,6 +1833,26 @@ focus = "5a5a60"
 
 ```toml
 # ~/.config/niruui/screensaver.toml; every setting is optional.
+# Change it here or with `niruscreensaver --set KEY VALUE` (comments are
+# kept), or in the launcher: NIRUX Settings > Screensaver.
+
+# What is shown:
+#   "clock"     the clock with the spectrum or a quote (the layouts below)
+#   "photos"    a slide show from photos_folder, slow drift and crossfade,
+#               with a small clock; without pictures the clock is shown
+#   "dark"      black, only "NIRUX - A MINIMAL X11 DESKTOP" gliding across
+#               each screen
+#   "dark-sid"  as dark, with C64 SID tunes (sidplayfp, the folder from
+#               NIRULOCK's [pause_music], default ~/Music/SID) while nothing
+#               else plays
+#   "shuffle"   one of the scenes in `shuffle`, a new pick every time
+scene = "clock"
+shuffle = ["clock", "photos", "dark"]
+# PNG and JPEG pictures, two folder levels deep. A -4k file wins over the
+# same -8k file (the NIRUX wallpaper sets).
+photos_folder = "~/Pictures/Wallpapers/NIRU"
+photos_seconds = 20
+
 # font_path = "/usr/share/fonts/truetype/dejavu/DejaVuSansMono.ttf"
 font_size = 22.0
 clock_size = 88.0
@@ -1869,7 +1893,8 @@ show_away_after_seconds = 60
 # moved more than 24 px since the screen appeared.
 dismiss_on_motion = false
 
-# The screen fades in from black over 300 ms; true shows it at once.
+# The screen fades in from black over 300 ms; true shows it at once, stops
+# the photo drift and crossfade, and moves the dark line once a minute.
 reduced_motion = false
 
 # Show the machine's hostname under the clock. Off by default, so a screen in

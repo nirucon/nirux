@@ -224,7 +224,8 @@ without arguments to print it.
 | `nirubar` | `--check-config`, `--version`, `--modules [all\|add\|remove\|toggle\|move\|default]`, `--settings`, `--set KEY VALUE` (see [Arranging the bar](04-bar-and-quick-settings.md#arranging-the-bar)) |
 | `nirulauncher` | `--apps`, `--actions`, `--help` for every view; see [The launcher](05-launcher.md) |
 | `nirunotify` | `--check-config`; see [Sound, notifications and studio mode](10-sound-notifications-studio.md) |
-| `nirulock`, `niruscreensaver` | `--config`; see [Lock screen and screensaver](06-lock-and-screensaver.md) |
+| `nirulock` | `--config`; see [Lock screen and screensaver](06-lock-and-screensaver.md) |
+| `niruscreensaver` | `--config`, `--preview [SCENE]`, `--list`, `--settings`, `--set KEY VALUE`, `--shuffle add\|remove\|toggle SCENE`; see [Choose a scene](06-lock-and-screensaver.md#choose-a-scene) |
 | `niruio` | `status [--json]`, `doctor [--brief\|--json] [--fix]`, `saved [--json]`, `reset KEY\|--silencing`, `--window [TAB]`; see [NIRUIO](10-sound-notifications-studio.md#niruio-devices-programs-cameras-and-the-sound-doctor) |
 | `nirushot`, `niruclip` | See [Screenshots and recording](07-screenshots-and-recording.md) |
 | `nirudisplay`, `niruwallpaper`, `niruthemeselector` | Graphical; see [Displays](09-displays.md) and [Themes and wallpapers](08-themes-and-wallpapers.md) |

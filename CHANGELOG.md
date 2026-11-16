@@ -2,6 +2,25 @@
 
 Earlier releases are described in their release notes and commit messages.
 
+## 0.12.288 (2026-11-16)
+
+- **NIRUSCREENSAVER 0.16.0: choose what the screensaver shows.** Besides the
+  clock there are now four scenes:
+  - `photos`: a slide show of the NIRUX wallpapers (or any folder), drifting
+    slowly and crossfading, with a small clock in the corner.
+  - `dark`: black, with only "NIRUX - A MINIMAL X11 DESKTOP" gliding across
+    each screen.
+  - `dark-sid`: the same with C64 SID tunes, played like the lock's pause
+    music but also when the screensaver starts by itself. The music stops
+    when the display goes off, when you come back and when the lock takes
+    over.
+  - `shuffle`: a new pick from your list every time.
+- **NIRULAUNCHER 0.17.0: a Screensaver view** (NIRUX Settings,
+  `nirulauncher --screensaver`) to choose and preview a scene, pick what
+  shuffle may show and step through the clock and photo settings. The same
+  from a terminal with `niruscreensaver --set KEY VALUE`; the settings file
+  keeps its comments. See "Choose a scene" in `nirux manual screensaver`.
+
 ## 0.12.287 (2026-11-16)
 
 - Supersedes 0.12.286, which was tagged but never published: NIRUWM ships its
