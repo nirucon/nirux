@@ -2,6 +2,33 @@
 
 Earlier releases are described in their release notes and commit messages.
 
+## 0.12.289 (2026-11-16)
+
+- **NIRUWM 0.32.1: picture-in-picture.** `Super+Alt+P` puts the focused
+  window small in a corner of its screen, on every workspace there and above
+  the rest, without ever taking the focus; pressed again it goes back exactly
+  as it was. `Super+Ctrl+P` moves it to the next corner. YouTube's own PiP
+  button (Helium, Chromium, Brave, Firefox) lands in the corner by itself.
+  `[pip] size`, `corner` and `auto`; `niructl pip toggle|corner`.
+- **Smart gaps can be switched off.** A single tiled window still fills the
+  screen without gap or border; `smart_gaps = false` keeps them.
+- **A softer night light.** The gradual evening now fades in from daylight
+  over 15 minutes instead of jumping, starts at 5500 K and stops at a
+  moderate 3500 K at 22:00 (was 4500 K to 2700 K, which turned very red).
+  Super+N continues the glide instead of jumping to the deepest value.
+  Installations that still have the previous temperatures get the new ones
+  once (`niructl config undo` goes back).
+- **NIRUBAR 0.30.0: three new modules,** added to the default bar:
+  - `drives`: USB sticks and SD cards (hidden without one); right-click
+    unmounts and powers them off and says when they can be pulled out,
+    middle-click opens them. Fixed disks (fstab, crypttab) are never shown.
+  - `timer`: a focus and egg timer; scroll sets the minutes, right-click
+    starts and pauses, middle-click resets, a notice and a short sound at the
+    end, optional Do Not Disturb while it runs (`[timer]` in
+    `~/.config/nirubar/config.toml`).
+  - `headset`: the battery of connected Bluetooth devices, red with one
+    notice at 15 %.
+
 ## 0.12.288 (2026-11-16)
 
 - **NIRUSCREENSAVER 0.16.0: choose what the screensaver shows.** Besides the

@@ -8,7 +8,7 @@ This chapter covers the ten workspaces each screen has, moving windows between w
 - The workspace keys act on the focused screen. The focused screen is the one with the focused window, or the one the mouse pointer is on.
 - A workspace keeps its own layout, master ratio and master count (see [02-windows-and-layouts.md](02-windows-and-layouts.md)).
 - NIRUBAR shows the workspaces of its screen. A workspace with a window that asked for attention is drawn in the theme's attention colour.
-- A window belongs to one workspace at a time. To see a window on every workspace of its screen, make it sticky with `Super+Alt+S`.
+- A window belongs to one workspace at a time. To see a window on every workspace of its screen, make it sticky with `Super+Alt+S`, or put it small in a corner with `Super+Alt+P` (picture-in-picture, see [02-windows-and-layouts.md](02-windows-and-layouts.md#picture-in-picture-a-small-video-in-the-corner)).
 
 ## Switch workspaces
 

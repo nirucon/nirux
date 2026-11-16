@@ -75,17 +75,17 @@ These are not generated from an example file. The chapters describe them.
 
 <!-- generated: config (tools/manual-gen.sh; do not edit by hand) -->
 
-The example configuration files of NIRUX 0.12.288 and its components, with every
+The example configuration files of NIRUX 0.12.289 and its components, with every
 key they set or show. A value marked *commented example* is off by default:
 remove the `#` to use it. The full annotated file follows each table.
 
 | File | Read by | Example from |
 |---|---|---|
-| [`~/.config/niruwm/config.toml`](#configniruwmconfigtoml) | niruwm, nirubar, niruidle, niructl | nirux 0.12.288 `config.example.toml` |
-| [`~/.config/niruwm/appearance.toml`](#configniruwmappearancetoml) | the whole suite | nirux 0.12.288 `appearance.example.toml` |
-| [`~/.config/nirux/sounds.toml`](#configniruxsoundstoml) | nirux, nirunotify | nirux 0.12.288 `sounds.example.toml` |
-| [`~/.config/niruwm/displays.toml`](#configniruwmdisplaystoml) | niruwm, niructl, nirudisplay | nirux 0.12.288 `displays.example.toml` |
-| [`~/.config/nirubar/config.toml`](#confignirubarconfigtoml) | nirubar | nirubar 0.29.0 `weather.example.toml` |
+| [`~/.config/niruwm/config.toml`](#configniruwmconfigtoml) | niruwm, nirubar, niruidle, niructl | nirux 0.12.289 `config.example.toml` |
+| [`~/.config/niruwm/appearance.toml`](#configniruwmappearancetoml) | the whole suite | nirux 0.12.289 `appearance.example.toml` |
+| [`~/.config/nirux/sounds.toml`](#configniruxsoundstoml) | nirux, nirunotify | nirux 0.12.289 `sounds.example.toml` |
+| [`~/.config/niruwm/displays.toml`](#configniruwmdisplaystoml) | niruwm, niructl, nirudisplay | nirux 0.12.289 `displays.example.toml` |
+| [`~/.config/nirubar/config.toml`](#confignirubarconfigtoml) | nirubar | nirubar 0.30.0 `weather.example.toml` |
 | [`~/.config/nirulauncher/config.toml`](#confignirulauncherconfigtoml) | nirulauncher | nirulauncher 0.17.0 `config.example.toml` |
 | [`~/.config/nirunotify/config.toml`](#confignirunotifyconfigtoml) | nirunotify | nirunotify 0.6.0 `config.example.toml` |
 | [`~/.config/nirufetch/config.toml`](#confignirufetchconfigtoml) | nirufetch | nirufetch 0.3.0 `config.example.toml` |
@@ -99,6 +99,7 @@ remove the `#` to use it. The full annotated file follows each table.
 |---|---|---|---|
 | `(top level)` | `theme` | `"niru-noir"` | List them with: niructl themes |
 | `(top level)` | `gap` | `8` | Space between windows, in pixels. |
+| `(top level)` | `smart_gaps` | `true` | One tiled window on a workspace (or the monocle layout) fills the screen without gap or border. |
 | `(top level)` | `border_width` | `2` | Border around each window, in pixels. |
 | `(top level)` | `bar_height` | `28` | Height of the bar, in pixels. |
 | `(top level)` | `master_ratio` | `0.55` | Each workspace keeps its own ratio after Super+H/L; this is only the default. |
@@ -143,12 +144,12 @@ remove the `#` to use it. The full annotated file follows each table.
 | `[recipes.apps]` | `command` | `["helium"]` (commented example) |  |
 | `[nightlight]` | `latitude` | `59.33` | Night light: warm, reddish light in the evening. |
 | `[nightlight]` | `longitude` | `18.07` |  |
-| `[nightlight]` | `temperature` | `2700` | Night temperature in Kelvin (1000..10000), also what Super+N turns on. |
+| `[nightlight]` | `temperature` | `3500` | Night temperature in Kelvin (1000..10000), also what Super+N turns on. |
 | `[nightlight]` | `mode` | `"gradual"` | gradual: from sunset (not before not_before) glide to temperature by deepest_at, back to day_temperature by sunrise or off solar:   gamma... |
 | `[nightlight]` | `on` | `"20:00"` | fixed mode: switch on. |
 | `[nightlight]` | `off` | `"07:00"` | fixed mode: switch off. |
 | `[nightlight]` | `day_temperature` | `6500` | Daytime Kelvin in solar and gradual mode (6500 is neutral). |
-| `[nightlight]` | `start_temperature` | `4500` | gradual mode: Kelvin at the evening start. |
+| `[nightlight]` | `start_temperature` | `5500` | gradual mode: Kelvin at the evening start. |
 | `[nightlight]` | `not_before` | `"19:00"` | gradual mode: the evening never starts before this time. |
 | `[nightlight]` | `deepest_at` | `"22:00"` | gradual mode: temperature is reached here, or 1 hour after the start if later. |
 | `[brightness]` | `device` | `""` | Empty uses brightnessctl's default device; step is the up/down percentage. |
@@ -207,6 +208,9 @@ remove the `#` to use it. The full annotated file follows each table.
 | `[rules]` | `floating` | `true` (commented example) |  |
 | `[rules]` | `center` | `true` (commented example) |  |
 | `[rules]` | `description` | `"..." is what the cheat sheet (Super+/) shows for the key.` (commented example) | An entry with the same keys replaces the default; a new keys entry adds a binding. |
+| `[pip]` | `size` | `25` | Width as a percentage of the screen width (10 to 60); the height follows the window's own shape (16:9 when it has none). |
+| `[pip]` | `corner` | `"bottom-right"` | bottom-right, bottom-left, top-right or top-left. |
+| `[pip]` | `auto` | `true` | false leaves browser picture-in-picture windows where the browser puts them. |
 
 <details><summary>The annotated example file (config.example.toml)</summary>
 
@@ -287,6 +291,9 @@ theme = "niru-noir"
 # List them all with: niructl layouts
 # Space between windows, in pixels.
 gap = 8
+# One tiled window on a workspace (or the monocle layout) fills the screen
+# without gap or border. false keeps the gap and border for it too.
+smart_gaps = true
 # Border around each window, in pixels. 0 draws no borders.
 border_width = 2
 # Height of the bar, in pixels. The bar reserves exactly this much.
@@ -411,7 +418,8 @@ return_workspace = 1
 # ── Night light and brightness ─────────────────────────────────────────────
 [nightlight]
 # Night light: warm, reddish light in the evening. By default (gradual) it
-# starts at sunset, never before not_before, at start_temperature and glides
+# starts at sunset, never before not_before, fades in over 15 minutes to
+# start_temperature and glides
 # slowly to temperature, reached at deepest_at. In the morning it glides back
 # to day_temperature over 30 minutes, done by sunrise or off, whichever comes
 # first. Super+N or `niructl nightlight on|off|toggle` switch it by hand until
@@ -420,7 +428,7 @@ return_workspace = 1
 latitude = 59.33
 longitude = 18.07
 # Night temperature in Kelvin (1000..10000), also what Super+N turns on.
-temperature = 2700
+temperature = 3500
 # gradual: from sunset (not before not_before) glide to temperature by
 #          deepest_at, back to day_temperature by sunrise or off
 # solar:   gammastep follows the sun between day_temperature and temperature
@@ -434,7 +442,7 @@ off = "07:00"
 # Daytime Kelvin in solar and gradual mode (6500 is neutral).
 day_temperature = 6500
 # gradual mode: Kelvin at the evening start.
-start_temperature = 4500
+start_temperature = 5500
 # gradual mode: the evening never starts before this time.
 not_before = "19:00"
 # gradual mode: temperature is reached here, or 1 hour after the start if later.
@@ -560,8 +568,13 @@ position = "top"
 # nothing while there is no scratchpad.
 # "dictation" shows NIRUDICTATE (an extra): a red dot while it records, an
 # accent mark while it transcribes; nothing otherwise or when not installed.
+# "drives" shows removable USB sticks and SD cards (hidden without one):
+# right-click unmounts and powers them off safely, middle-click opens them.
+# "headset" shows the battery of connected Bluetooth devices (hidden without).
+# "timer" is a focus/egg timer: scroll sets minutes, right-click starts/pauses,
+# middle-click resets; [timer] in ~/.config/nirubar/config.toml.
 # Weather settings live in ~/.config/nirubar/config.toml; see weather.example.toml.
-modules = ["workspaces", "dictation", "privacy", "recording", "scratchpad", "layout", "media", "volume", "microphone", "brightness", "display", "tailscale", "network", "wifi", "mode", "battery", "updates", "niruxupdate", "agent", "nirusec", "dnd", "disk", "quicksettings", "share", "clock"]
+modules = ["workspaces", "dictation", "privacy", "recording", "scratchpad", "layout", "media", "volume", "microphone", "headset", "brightness", "display", "tailscale", "network", "wifi", "mode", "battery", "updates", "niruxupdate", "agent", "nirusec", "dnd", "timer", "disk", "drives", "quicksettings", "share", "clock"]
 # true (default): `nirux update` keeps `modules` on the default list above, so
 # new modules arrive by themselves (your old file is kept in the config history:
 # `niructl config undo`). false: your own `modules` list is never changed.
@@ -1059,6 +1072,21 @@ action = "shell nirushot --region"
 [[keys]]
 keys = "super+shift+Print"
 action = "shell nirushot --window"
+
+# ── Picture-in-picture ──────────────────────────────────────────────────────
+# Super+Alt+P makes the focused window small and floating in a corner of its
+# screen, on every workspace there, and puts it back as it was when pressed
+# again. Super+Ctrl+P moves it to the next corner. A browser's own
+# picture-in-picture window (YouTube's PiP button in Helium, Chromium or
+# Firefox) goes to the corner by itself.
+[pip]
+# Width as a percentage of the screen width (10 to 60); the height follows
+# the window's own shape (16:9 when it has none).
+size = 25
+# bottom-right, bottom-left, top-right or top-left.
+corner = "bottom-right"
+# false leaves browser picture-in-picture windows where the browser puts them.
+auto = true
 ```
 
 </details>

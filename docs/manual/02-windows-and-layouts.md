@@ -9,7 +9,7 @@ NIRUWM is a dwm-style tiling window manager. Every workspace has one layout, and
 - Most layouts have a **master area** (normally one large window) and a **stack** (the rest).
 - The order of windows matters: the first window in the order is the master, the rest follow in the stack.
 - A new window joins the end of the order, so the master stays where it is. In the Scroll layout a new window opens in the column right after the focused one.
-- A single tiled window fills the work area without gaps or a border. Monocle, and Scroll with one column, also draw no border.
+- A single tiled window fills the work area without gaps or a border (smart gaps). Monocle, and Scroll with one column, also draw no border. Set `smart_gaps = false` at the top of `config.toml` to keep the gap and border for it too.
 - Moving the mouse onto a window gives it the keyboard focus.
 
 The settings for all of this live in `~/.config/niruwm/config.toml`. After an edit, press `Super+R` or run `niructl reload`. See [14-configuration-reference.md](14-configuration-reference.md) for every key.
@@ -79,6 +79,7 @@ The ratio changes in steps of 0.05. Ratio and count belong to the focused worksp
 | Key | Default | Meaning |
 |---|---|---|
 | `gap` | `8` | Space between windows, in pixels |
+| `smart_gaps` | `true` | A single tiled window (or monocle) gets no gap and no border |
 | `border_width` | `2` | Border around each window, in pixels; `0` draws none |
 | `master_ratio` | `0.55` | Default master share for new workspaces |
 
@@ -122,6 +123,21 @@ For other steps, bind `move_float DX DY` or `resize_float DX DY` yourself, for e
 ## Sticky windows
 
 `Super+Alt+S` makes the focused window sticky: it stays visible on every workspace of its screen. A sticky window always floats, so it is useful for a small video, a clock or a chat window. Press `Super+Alt+S` again to make it normal. Scratchpads cannot be made sticky; they follow you anyway (see [03-workspaces-monitors-scratchpads.md](03-workspaces-monitors-scratchpads.md)).
+
+## Picture-in-picture: a small video in the corner
+
+`Super+Alt+P` makes the focused window small and floating in a corner of its screen. It stays visible on every workspace of that screen, above the other windows, and a workspace switch never moves the keyboard focus to it, so you keep working while a video, a video call or a build log plays in the corner. Press `Super+Alt+P` on it again to put it back exactly as it was: tiled or floating, at its old size, on the workspace you are looking at. `Super+Ctrl+P` moves it to the next corner (clockwise).
+
+**YouTube and other web video.** Use the browser's own picture-in-picture: the PiP button in YouTube's player, or right-click the video twice and choose *Picture in picture*. NIRUWM recognises the browser's PiP window (Helium, Chromium, Brave and Firefox) and puts it in the corner by itself, without taking the focus from the page. In a video call you can also put the whole call window in the corner with `Super+Alt+P`.
+
+```toml
+[pip]
+size = 25                # width in percent of the screen (10 to 60); the height keeps the window's shape
+corner = "bottom-right"  # bottom-right, bottom-left, top-right or top-left
+auto = true              # false: leave browser PiP windows where the browser puts them
+```
+
+`niructl pip toggle` and `niructl pip corner` do the same from a terminal or a script. A PiP window keeps its place through `niructl restart-wm`.
 
 ## Window rules
 

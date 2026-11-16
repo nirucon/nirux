@@ -289,7 +289,7 @@ add_missing_sections() {
   mig_file=$1
   mig_example=$2
   mig_added=""
-  for mig_section in nightlight brightness wallpaper autostart monitors idle bar; do
+  for mig_section in nightlight brightness wallpaper autostart monitors idle bar pip; do
     if config_has_section "$mig_file" "$mig_section"; then continue; fi
     mig_block=$(awk -v s="[$mig_section]" '
       $0 == s {found=1; print; next}

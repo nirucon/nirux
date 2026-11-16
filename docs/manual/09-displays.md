@@ -241,7 +241,7 @@ step = 5         # percent per up/down
 
 The night light makes the screen warmer and more reddish in the evening, which is easier on the eyes. By default it is gradual: it starts softly at sunset and grows warmer over the evening, so you hardly notice it change. Without a location it uses Stockholm's.
 
-`Super+N` switches it by hand, and that choice holds until the night starts or ends; then the schedule takes over again. Switching on gives the night temperature. During the evening glide `Super+N` switches it off.
+`Super+N` switches it by hand, and that choice holds until the night starts or ends; then the schedule takes over again. Switching on gives the night temperature; during a gradual night it continues the evening glide from where it is instead of jumping to the deepest value. During the evening glide `Super+N` switches it off.
 
 | Keys | Action |
 |---|---|
@@ -263,12 +263,12 @@ Night light uses `gammastep` and needs a location: `[nightlight] latitude` and `
 [nightlight]
 latitude = 59.33
 longitude = 18.07
-temperature = 2700         # Kelvin at night, and for "on"
+temperature = 3500         # Kelvin at night, and for "on"
 mode = "gradual"           # gradual (default), solar, fixed or manual
 on = "20:00"               # fixed mode: switch on
 off = "07:00"              # fixed mode: switch off; gradual: done by then
 day_temperature = 6500     # solar and gradual: daytime Kelvin
-start_temperature = 4500   # gradual: Kelvin at the evening start
+start_temperature = 5500   # gradual: Kelvin at the evening start
 not_before = "19:00"       # gradual: never start before this
 deepest_at = "22:00"       # gradual: temperature is reached here
 ```
@@ -284,18 +284,18 @@ deepest_at = "22:00"       # gradual: temperature is reached here
 
 ### How the gradual evening goes
 
-The evening starts at sunset, but never earlier than `not_before`. From there the temperature glides in small steps (every 30 seconds, too small to see) from `start_temperature` to `temperature`, which it reaches at `deepest_at`, and stays there through the night. When `deepest_at` is less than an hour after the start (a late summer sunset), the night temperature is reached one hour after the start instead. In the morning it glides back to `day_temperature` over 30 minutes, finished at sunrise or at `off`, whichever comes first, so the screen is never red after 07:00 on a dark winter morning. A time before noon in `not_before` or `deepest_at` means after midnight, for example `deepest_at = "00:30"`.
+The evening starts at sunset, but never earlier than `not_before`. It does not jump: over the first 15 minutes it fades in from daylight to `start_temperature`. From there the temperature glides in small steps (every 30 seconds, too small to see) from `start_temperature` to `temperature`, which it reaches at `deepest_at`, and stays there through the night. When `deepest_at` is less than an hour after the start (a late summer sunset), the night temperature is reached one hour after the start instead. In the morning it glides back to `day_temperature` over 30 minutes, finished at sunrise or at `off`, whichever comes first, so the screen is never red after 07:00 on a dark winter morning. A time before noon in `not_before` or `deepest_at` means after midnight, for example `deepest_at = "00:30"`.
 
 An example with the defaults in Stockholm:
 
 | Time | 10 December (sunset about 14:50, sunrise 08:40) | 20 June (sunset about 22:07, sunrise 03:30) |
 |---|---|---|
-| 19:00 | starts at 4500 K | day |
-| 20:30 | 3600 K | day |
-| 22:00 | 2700 K (deepest) | day |
-| 22:07 | 2700 K | starts at 4500 K |
-| 23:07 | 2700 K | 2700 K (one hour after the start) |
-| 03:00 to 03:30 | 2700 K | glides back to 6500 K |
+| 19:00 | starts, fades in to 5500 K by 19:15 | day |
+| 20:30 | 4500 K | day |
+| 22:00 | 3500 K (deepest) | day |
+| 22:07 | 3500 K | starts at 5500 K |
+| 23:07 | 3500 K | 3500 K (one hour after the start) |
+| 03:00 to 03:30 | 3500 K | glides back to 6500 K |
 | 06:30 to 07:00 | glides back to 6500 K (07:00 comes before sunrise) | day |
 
 `niructl nightlight status` shows the mode, tonight's start (and the sunset), the deepest time, the morning glide, the scheduled and current temperature and a `Super+N` choice that is still in force.
@@ -304,7 +304,7 @@ An example with the defaults in Stockholm:
 
 The watcher reads `config.toml` again a few seconds after you save it and applies the new settings at once, also when you switch between `manual` and a schedule; no new login is needed. A file with a mistake keeps the last good settings (the session log says so). In `manual` mode the watcher never changes the screen.
 
-NIRUX 0.12.264 moved installations that still had the old defaults (`manual`, 3400 K) to the schedule once, and NIRUX 0.12.272 moves installations that still have the previous `solar` defaults (2700 K, 20:00 and 07:00, 6500 K) to `gradual` once; the file as it was is kept, so `niructl config undo` goes back. Set `mode = "solar"` or `mode = "manual"` to choose otherwise; that is not changed again.
+NIRUX 0.12.264 moved installations that still had the old defaults (`manual`, 3400 K) to the schedule once, and NIRUX 0.12.272 moves installations that still have the previous `solar` defaults (2700 K, 20:00 and 07:00, 6500 K) to `gradual` once. NIRUX 0.12.289 makes a gradual night light that still has the previous temperatures (4500 K to 2700 K) softer once, 5500 K to 3500 K, because 2700 K is very red; the file as it was is kept, so `niructl config undo` goes back. For a warmer night, set `temperature` lower, for example 3000. Set `mode = "solar"` or `mode = "manual"` to choose otherwise; that is not changed again.
 
 ## See also
 

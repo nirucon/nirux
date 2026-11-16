@@ -149,7 +149,7 @@ niructl keys --markdown        # the keys in effect, as Markdown
 
 <!-- generated: niructl (tools/manual-gen.sh; do not edit by hand) -->
 
-Every form `niructl` accepts, from its usage text (NIRUWM 0.31.6). Run `niructl`
+Every form `niructl` accepts, from its usage text (NIRUWM 0.32.1). Run `niructl`
 without arguments to print it.
 
 - `niructl status`
@@ -193,6 +193,7 @@ without arguments to print it.
 - `niructl present on [--pid PID]|off|status`
 - `niructl powerprofile status|list|set NAME|next|auto|watch`
 - `niructl do ACTION [ARG...]|do goto MONITOR TAG [WINDOW]|do --list [--json]`
+- `niructl pip toggle|corner`
 - `niructl lock [--manual|--silent|--reason NAME]`
 - `niructl screensaver`
 - `niructl logout`
@@ -221,7 +222,7 @@ without arguments to print it.
 | Program | Most useful commands |
 |---|---|
 | `niruwm` | `--check-config`, `--version` |
-| `nirubar` | `--check-config`, `--version`, `--modules [all\|add\|remove\|toggle\|move\|default]`, `--settings`, `--set KEY VALUE` (see [Arranging the bar](04-bar-and-quick-settings.md#arranging-the-bar)) |
+| `nirubar` | `--check-config`, `--version`, `--modules [all\|add\|remove\|toggle\|move\|default]`, `--settings`, `--set KEY VALUE` (see [Arranging the bar](04-bar-and-quick-settings.md#arranging-the-bar)), `--timer status\|start\|pause\|toggle\|reset\|set N` (see [The timer](04-bar-and-quick-settings.md#the-timer)), `--drives list\|open\|eject` |
 | `nirulauncher` | `--apps`, `--actions`, `--help` for every view; see [The launcher](05-launcher.md) |
 | `nirunotify` | `--check-config`; see [Sound, notifications and studio mode](10-sound-notifications-studio.md) |
 | `nirulock` | `--config`; see [Lock screen and screensaver](06-lock-and-screensaver.md) |

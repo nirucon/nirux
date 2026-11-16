@@ -68,6 +68,8 @@
 | Keys | Action |
 |---|---|
 | `Super+Alt+S` | Sticky (on every workspace) on or off |
+| `Super+Alt+P` | Picture-in-picture: small in a corner on every workspace, or back |
+| `Super+Ctrl+P` | Picture-in-picture to the next corner |
 | `Super+Shift+J` / `Super+Shift+Down` / `Super+Shift+Right` | Move the window down the stack |
 | `Super+Shift+K` / `Super+Shift+Up` / `Super+Shift+Left` | Move the window up the stack |
 | `Super+Shift+U` | Go to the window that asked for attention (urgent) |

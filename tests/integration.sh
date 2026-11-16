@@ -505,10 +505,11 @@ grep -qx 'theme_dir = "~/Pictures/Wallpapers/NIRU"' "$i06/config/niruwm/config.t
 grep -q 'scale = "not-a-real-setting"' "$i06/config/niruwm/config.toml" || fail 'multiline string was changed'
 [ "$(wc -l < "$i06/validators.log")" = 2 ] || fail 'candidate was not validated by both components'
 # 0.12.264 moved the old manual/3400 defaults to solar; 0.12.272 moves the
-# solar defaults on to gradual in the same run.
+# solar defaults on to gradual and 0.12.289 makes them softer, in the same run.
 grep -qx 'mode = "gradual"' "$i06/config/niruwm/config.toml" || fail 'old default night light was not moved to the gradual schedule'
 grep -qx 'deepest_at = "22:00"' "$i06/config/niruwm/config.toml" || fail 'gradual night-light keys were not added'
-grep -qx 'temperature = 2700' "$i06/config/niruwm/config.toml" || fail 'old default night light temperature was not changed'
+grep -qx 'temperature = 3500' "$i06/config/niruwm/config.toml" || fail 'old default night light temperature was not made softer'
+grep -qx 'start_temperature = 5500' "$i06/config/niruwm/config.toml" || fail 'old default night light start was not made softer'
 grep -qx 'charge_limit = 80' "$i06/config/niruwm/config.toml" || fail 'battery section was not added'
 printf '[nightlight]\nmode = "manual"\ntemperature = 3400\n' > "$i06/nightlight-again.toml"
 upgrade_nightlight_schedule "$i06/nightlight-again.toml" >/dev/null
@@ -1836,7 +1837,7 @@ cp "$fd/config.toml" "$fd/original.toml"
   follow_default_bar_modules "$fd/config.toml" "$SOURCE/config.example.toml" "$fd/original.toml"
 ) > "$fd/log"
 [ "$(bar_modules_line "$fd/config.toml")" = "$(bar_modules_line "$SOURCE/config.example.toml")" ] || fail 'bar modules did not follow the default list'
-grep -q '"disk", "quicksettings"' "$fd/config.toml" || fail 'followed list lacks the disk module'
+grep -q '"disk", "drives", "quicksettings"' "$fd/config.toml" || fail 'followed list lacks the disk and drives modules'
 [ "$(find "$fd/state/niruwm/config-history" -name '*-[0-9][0-9].toml' | wc -l)" = 1 ] || fail 'the old configuration was not kept exactly once'
 # Arch's base image has no `cmp`: compare by checksum.
 [ "$(sha256sum "$fd/original.toml" | cut -d ' ' -f1)" = \

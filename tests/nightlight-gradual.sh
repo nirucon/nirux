@@ -97,4 +97,48 @@ for k in start_temperature not_before deepest_at; do
 done
 [ "$(key "$SOURCE/config.example.toml" mode)" = gradual ] || fail "config.example.toml is not gradual"
 
+# 7. NIRUX 0.12.289: a gradual night light with the previous temperatures is
+#    made softer once (5500 K to 3500 K); the history keeps the old file.
+SOFT=$STATE/nightlight-soft-0.12.289
+rm -f "$SOFT"
+printf '[nightlight]\nmode = "gradual"\ntemperature = 2700 # night\nstart_temperature = 4500\n\n[bar]\ntemperature = 2700\n' > "$TEST/soft.toml"
+cp "$TEST/soft.toml" "$TEST/soft.orig"
+before=$(history_count)
+upgrade_nightlight_softer "$TEST/soft.toml" "$TEST/soft.orig" > "$TEST/soft.log"
+[ "$(key "$TEST/soft.toml" temperature)" = 3500 ] || fail "the night was not made softer"
+[ "$(key "$TEST/soft.toml" start_temperature)" = 5500 ] || fail "the start was not made softer"
+[ "$(toml_value "$TEST/soft.toml" bar temperature)" = 2700 ] || fail "another section was changed"
+[ "$(history_count)" -gt "$before" ] || fail "the old file was not kept in the history"
+grep -q 'Night light is softer' "$TEST/soft.log" || fail "the softer night was not reported"
+[ -e "$SOFT" ] || fail "no marker after the softer night"
+
+# 8. Once only, and a chosen temperature is kept.
+sed 's/^temperature = 3500/temperature = 2700/' "$TEST/soft.toml" > "$TEST/again.toml"
+upgrade_nightlight_softer "$TEST/again.toml" > /dev/null
+[ "$(key "$TEST/again.toml" temperature)" = 2700 ] || fail "a warmer night chosen later was undone"
+for variant in 'temperature = 3000' 'start_temperature = 5000' 'mode = "solar"'; do
+  rm -f "$SOFT"
+  name=${variant%% *}
+  {
+    printf '[nightlight]\n'
+    for line in 'mode = "gradual"' 'temperature = 2700' 'start_temperature = 4500'; do
+      if [ "${line%% *}" = "$name" ]; then printf '%s\n' "$variant"; else printf '%s\n' "$line"; fi
+    done
+  } > "$TEST/softchoice.toml"
+  cp "$TEST/softchoice.toml" "$TEST/softchoice.before"
+  upgrade_nightlight_softer "$TEST/softchoice.toml" > /dev/null
+  same_file "$TEST/softchoice.toml" "$TEST/softchoice.before" || fail "a chosen $variant was changed"
+done
+
+# 9. The previous solar defaults end up gradual and softer in one update.
+rm -f "$MARKER" "$SOFT"
+cp "$TEST/old.orig" "$TEST/both.toml"
+upgrade_nightlight_gradual "$TEST/both.toml" > /dev/null
+upgrade_nightlight_softer "$TEST/both.toml" > /dev/null
+[ "$(key "$TEST/both.toml" mode)" = gradual ] || fail "solar defaults did not become gradual"
+[ "$(key "$TEST/both.toml" temperature)" = 3500 ] || fail "solar defaults did not get the softer night"
+[ "$(key "$TEST/both.toml" start_temperature)" = 5500 ] || fail "solar defaults did not get the softer start"
+[ "$(key "$SOURCE/config.example.toml" temperature)" = 3500 ] || fail "config.example.toml night is not 3500 K"
+[ "$(key "$SOURCE/config.example.toml" start_temperature)" = 5500 ] || fail "config.example.toml start is not 5500 K"
+
 printf 'nightlight-gradual: ok\n'

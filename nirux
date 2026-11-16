@@ -2,7 +2,7 @@
 # NIRUX: install a complete X11 desktop, or maintain an existing installation.
 set -eu
 
-VERSION=0.12.288
+VERSION=0.12.289
 PREFIX=${NIRUX_PREFIX:-$HOME/.local}
 BIN=$PREFIX/bin
 STATE=$PREFIX/share/nirux
@@ -1058,7 +1058,7 @@ add_missing_sections() {
   mig_file=$1
   mig_example=$2
   mig_added=""
-  for mig_section in nightlight brightness wallpaper autostart monitors idle bar; do
+  for mig_section in nightlight brightness wallpaper autostart monitors idle bar pip; do
     if config_has_section "$mig_file" "$mig_section"; then continue; fi
     mig_block=$(awk -v s="[$mig_section]" '
       $0 == s {found=1; print; next}
@@ -2417,6 +2417,51 @@ upgrade_nightlight_gradual() {
   : > "$ng_marker"
 }
 
+# 0.12.289: the gradual night light is softer by default (NIRUWM 0.32): it
+# glides from 5500 K to 3500 K instead of 4500 K to 2700 K. A gradual
+# [nightlight] that still has the previous temperatures gets the new ones once,
+# with the file as it was kept in the config history (`niructl config undo`).
+# Any other temperature is a choice and is kept; the marker makes it once only.
+upgrade_nightlight_softer() {
+  file=$1 ns_original=${2:-$1}
+  ns_marker=$STATE/nightlight-soft-0.12.289
+  [ -e "$ns_marker" ] && return 0
+  mkdir -p "$STATE"
+  if awk '
+    function val(line) { sub(/^[^=]*=[[:space:]]*/, "", line); sub(/[[:space:]]*#.*$/, "", line); sub(/[[:space:]]+$/, "", line); return line }
+    /^[[:space:]]*\[nightlight\][[:space:]]*(#.*)?$/ { inside = 1; seen = 1; next }
+    /^[[:space:]]*\[/ { inside = 0 }
+    inside && /^[[:space:]]*mode[[:space:]]*=/ { mode = val($0) }
+    inside && /^[[:space:]]*temperature[[:space:]]*=/ { temp = val($0) }
+    inside && /^[[:space:]]*start_temperature[[:space:]]*=/ { start = val($0) }
+    END {
+      # A missing key is the previous default; 5500 is what an install that
+      # lacked the key was just given.
+      ok = seen && (mode == "\"gradual\"" || mode == "") && (temp == "2700" || temp == "") &&
+        (start == "4500" || start == "5500" || start == "")
+      exit !ok
+    }
+  ' "$file"; then
+    config_history_keep "$ns_original" || say 'nirux: warning: could not keep the old configuration in the history' >&2
+    ns_mode=$(stat -c %a "$file") || die "could not read permissions for $file"
+    ns_tmp=$(mktemp "$file.nirux-nightlight.XXXXXX") || die "could not stage $file"
+    awk '
+      /^[[:space:]]*\[nightlight\][[:space:]]*(#.*)?$/ { inside = 1; print; next }
+      /^[[:space:]]*\[/ { inside = 0 }
+      inside && /^[[:space:]]*temperature[[:space:]]*=/ { print "temperature = 3500"; next }
+      inside && /^[[:space:]]*start_temperature[[:space:]]*=/ { print "start_temperature = 5500"; next }
+      { print }
+    ' "$file" > "$ns_tmp" && chmod "$ns_mode" "$ns_tmp" && mv -f "$ns_tmp" "$file" || {
+      rm -f "$ns_tmp"
+      die "could not update the night light in $file; original kept"
+    }
+    add_missing_key "$file" nightlight temperature 3500
+    add_missing_key "$file" nightlight start_temperature 5500
+    say 'Night light is softer: it now glides from 5500 K to 3500 K (niructl config undo goes back; set temperature lower for a warmer night).'
+  fi
+  : > "$ns_marker"
+}
+
 # 0.12.266: the privacy dot (microphone, camera, screen recording in use) is
 # added to an existing bar once, next to the recording module; removing it
 # afterwards is respected.
@@ -2583,15 +2628,19 @@ install_config() {
   cfg_before=$(sha256sum "$cfg_candidate" | cut -d ' ' -f1)
   add_missing_sections "$cfg_candidate" "$cfg_example"
   add_missing_top_key "$cfg_candidate" restore_session false
+  add_missing_top_key "$cfg_candidate" smart_gaps true
   add_missing_top_key "$cfg_candidate" weather_latitude 59.33
   add_missing_top_key "$cfg_candidate" weather_longitude 18.07
   add_missing_key "$cfg_candidate" nightlight mode '"gradual"'
   add_missing_key "$cfg_candidate" nightlight on '"20:00"'
   add_missing_key "$cfg_candidate" nightlight off '"07:00"'
   add_missing_key "$cfg_candidate" nightlight day_temperature 6500
-  add_missing_key "$cfg_candidate" nightlight start_temperature 4500
+  add_missing_key "$cfg_candidate" nightlight start_temperature 5500
   add_missing_key "$cfg_candidate" nightlight not_before '"19:00"'
   add_missing_key "$cfg_candidate" nightlight deepest_at '"22:00"'
+  add_missing_key "$cfg_candidate" pip size 25
+  add_missing_key "$cfg_candidate" pip corner '"bottom-right"'
+  add_missing_key "$cfg_candidate" pip auto true
   add_missing_key "$cfg_candidate" brightness device '""'
   add_missing_key "$cfg_candidate" brightness step 5
   add_missing_key "$cfg_candidate" bar title_delay_seconds 0
@@ -2609,6 +2658,7 @@ install_config() {
   upgrade_default_wallpaper_paths "$cfg_candidate"
   upgrade_nightlight_schedule "$cfg_candidate"
   upgrade_nightlight_gradual "$cfg_candidate" "$cfg_target"
+  upgrade_nightlight_softer "$cfg_candidate" "$cfg_target"
   add_battery_section "$cfg_candidate"
   upgrade_bar_privacy_module "$cfg_candidate"
   add_localsend_rule "$cfg_candidate"

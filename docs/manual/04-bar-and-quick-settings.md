@@ -32,6 +32,7 @@ Choose and order the modules with `[bar] modules`. A module without a provider h
 | `media` | Playing title with a progress hairline; long titles scroll | Track information | Right: play/pause. Scroll up: previous, down: next. Middle: switch to the next player |
 | `volume` | Output level or mute | Information | Right: mute. Scroll: volume up/down 5 %. Middle: microphone mute |
 | `microphone` | Input mute and gain (not a recording indicator) | Information | Right: mute. Scroll: gain. Middle: input selector (`nirulauncher --microphone`) |
+| `headset` | Battery of connected Bluetooth devices (headphones, mouse, keyboard) that report it; the lowest percent, red at 15 % or less. Hidden otherwise | Each device and its percent | Middle: device selector (`nirulauncher --bluetooth`) |
 | `brightness` | Backlight percentage; hidden without a readable backlight | Information | |
 | `display` | This bar's screen position (`Left`, `Center`, `Right`, `Top`, `Bottom`, diagonals or `Mirror`) | Outputs; footer opens display profiles | Middle: `nirulauncher --displays` |
 | `tailscale` | Online Tailscale peers; only when `tailscale` is installed | Peer state; footer opens `nirulauncher --tailscale` | |
@@ -57,7 +58,9 @@ Choose and order the modules with `[bar] modules`. A module without a provider h
 | `uptime` | Uptime | Memory use and the fullest file system | |
 | `sun` | Sunrise and sunset for the top-level coordinates | Details | |
 | `weather` | Cached temperature, condition and rain | Eight-hour timeline | |
+| `timer` | An hourglass; `MM:SS` while it runs, a pause mark while paused | State and the controls | Scroll: set the length (25 minutes by default; while running, add or take a minute). Right: start, pause, resume. Middle: reset |
 | `disk` | Hidden until `/` or your home folder is `disk_warn` percent full (default 90); then a red disk icon with the percentage | Used and free space; `Enter` or a click opens a terminal with `nirux clean`, which shows what it would remove and asks first | |
+| `drives` | Removable USB sticks, SD cards and external disks: the label, or a count for several; hidden when none is attached. A disk in `/etc/fstab` or `crypttab`, or mounted outside `/media`, is never shown | Label, size, mount point and free space; `Enter` opens the first drive | Right: unmount and power off every drive, then a notice that it can be removed (or why not, for example in use). Middle: mount if needed and open in the file manager |
 | `quicksettings` | A gear | Panel; `Enter` or a click on it opens Quick Settings | |
 | `clock` | Date and time | Calendar (see below) | |
 
@@ -69,7 +72,7 @@ The `wifi` module is added automatically after `network` when a Wi-Fi adapter ex
 
 ```toml
 [bar]
-modules = ["workspaces", "dictation", "privacy", "recording", "scratchpad", "layout", "media", "volume", "microphone", "brightness", "display", "tailscale", "network", "wifi", "mode", "battery", "updates", "niruxupdate", "agent", "nirusec", "dnd", "disk", "quicksettings", "share", "clock"]
+modules = ["workspaces", "dictation", "privacy", "recording", "scratchpad", "layout", "media", "volume", "microphone", "headset", "brightness", "display", "tailscale", "network", "wifi", "mode", "battery", "updates", "niruxupdate", "agent", "nirusec", "dnd", "timer", "disk", "drives", "quicksettings", "share", "clock"]
 follow_default_modules = true
 ```
 
@@ -87,6 +90,25 @@ screen-capture programs, and the panel says so. NIRUX 0.12.266 adds `privacy` to
 existing bar once; if you remove it, it stays removed.
 
 To add a module, put its name in the list where you want it. To remove one, delete its name. Then press `Super+R` (or run `niructl reload`).
+
+### The timer
+
+The `timer` module is a focus and egg timer. Scroll on it to choose the length, right-click to start, and a notice that stays (and a short sound) tells you when the time is up. Every bar on every screen shows the same timer, and it keeps running through `niructl restart-bar`. Settings live in `~/.config/nirubar/config.toml`:
+
+```toml
+[timer]
+minutes = 25    # the length it starts with (1 to 180)
+sound = true    # a short sound when the time is up
+dnd = false     # true: Do Not Disturb while it runs, put back afterwards
+```
+
+`nirubar --timer status|start|pause|toggle|reset|set MINUTES` does the same from a terminal or a key binding.
+
+### Removable drives and headset battery
+
+`drives` and `headset` stay invisible until they have something to show, so they cost nothing on a desk without USB sticks or Bluetooth headphones. Right-click `drives` before you pull a stick out: it waits until everything is written, powers the drive off and says when it can be removed. `nirubar --drives list|open|eject` does the same from a terminal. `headset` sends one notice per device when its battery drops to 15 %, and not again until it has been charged.
+
+NIRUX 0.12.289 adds `headset`, `timer` and `drives` to the default list.
 
 ### Arranging the bar
 
