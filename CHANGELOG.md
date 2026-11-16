@@ -2,8 +2,10 @@
 
 Earlier releases are described in their release notes and commit messages.
 
-## 0.12.286 (2026-11-16)
+## 0.12.287 (2026-11-16)
 
+- Supersedes 0.12.286, which was tagged but never published: NIRUWM ships its
+  own NIRUBAR, and it is now 0.29.0 too (NIRUWM 0.31.6).
 - **NIRUBAR 0.29.0: the same space after every icon.** Icons wider than a
   character (display, layout, brightness, Tailscale, updates, Wi-Fi) covered
   the space after them, so the text looked glued to the icon. They now take
