@@ -2,6 +2,21 @@
 
 Earlier releases are described in their release notes and commit messages.
 
+## 0.12.286 (2026-11-16)
+
+- **NIRUBAR 0.29.0: the same space after every icon.** Icons wider than a
+  character (display, layout, brightness, Tailscale, updates, Wi-Fi) covered
+  the space after them, so the text looked glued to the icon. They now take
+  two character cells and sit centred in them. Works with any Nerd Font
+  version, on Debian, Arch and Void.
+- **Arrange the bar without editing the file.** NIRULAUNCHER 0.16.0 adds a
+  Bar view (NIRUX Settings, `nirulauncher --bar`): Enter turns a module on or
+  off, Alt+Up/Down moves it, and rows switch position, icons, window title,
+  date, time, tray and panels. The same from a terminal with `nirubar
+  --modules ...` and `nirubar --set KEY VALUE`. The configuration file stays
+  the only description of the bar, with its comments; an arranged list sets
+  `follow_default_modules = false`, so updates keep it.
+
 ## 0.12.285 (2026-11-15)
 
 - **NIRUSCREENSAVER 0.15.0: the screensaver on every monitor.** With two or

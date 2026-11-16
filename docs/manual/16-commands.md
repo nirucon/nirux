@@ -221,7 +221,7 @@ without arguments to print it.
 | Program | Most useful commands |
 |---|---|
 | `niruwm` | `--check-config`, `--version` |
-| `nirubar` | `--check-config`, `--version` |
+| `nirubar` | `--check-config`, `--version`, `--modules [all\|add\|remove\|toggle\|move\|default]`, `--settings`, `--set KEY VALUE` (see [Arranging the bar](04-bar-and-quick-settings.md#arranging-the-bar)) |
 | `nirulauncher` | `--apps`, `--actions`, `--help` for every view; see [The launcher](05-launcher.md) |
 | `nirunotify` | `--check-config`; see [Sound, notifications and studio mode](10-sound-notifications-studio.md) |
 | `nirulock`, `niruscreensaver` | `--config`; see [Lock screen and screensaver](06-lock-and-screensaver.md) |

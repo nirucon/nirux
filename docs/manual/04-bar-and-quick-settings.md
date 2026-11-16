@@ -88,6 +88,27 @@ existing bar once; if you remove it, it stays removed.
 
 To add a module, put its name in the list where you want it. To remove one, delete its name. Then press `Super+R` (or run `niructl reload`).
 
+### Arranging the bar
+
+The launcher's **Bar** view (NIRUX Settings, or `nirulauncher --bar`) lists every module with what it shows: the ones on the bar first, in their order, then the rest. `Enter` turns a module on or off, `Alt+Up` and `Alt+Down` move the selected one. The rows below switch the position (top or bottom), icons, window title, date, time, tray and panels on click, and **Use the NIRUX default modules** puts the default list back.
+
+The same from a terminal:
+
+```sh
+nirubar --modules                  # the modules on the bar, in order
+nirubar --modules all              # every module: name, on or off, what it shows
+nirubar --modules add pulse 3      # add a module, last or at a position
+nirubar --modules remove pulse     # also: toggle NAME
+nirubar --modules move clock up    # up, down, first, last or a position
+nirubar --modules default          # the NIRUX list again, followed by updates
+nirubar --settings                 # position, title, icons, date, time, tray, popups
+nirubar --set position bottom      # change one of them
+```
+
+Both write `[bar]` in `~/.config/niruwm/config.toml` and nothing else: comments and other keys stay, a file that would no longer load is never written, and the bar reloads at once. The file as it was goes into the settings history (`niructl config undo`). A list you arrange this way is your own, so `follow_default_modules` becomes `false` and `nirux update` keeps it; `--modules default` (or the default row in the view) follows the NIRUX list again.
+
+Icons that are wider than a character, such as the display, layout and brightness icons, take two character cells and sit centred in them (NIRUBAR 0.29 and later), so every module has the same space between its icon and its text.
+
 ## Change the workspace labels
 
 Pick a preset with `workspace_layout`, or write your own `tags`. Only the labels change: there are always ten workspaces and `Super+1` to `Super+0` still select them.
