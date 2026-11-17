@@ -2,6 +2,14 @@
 
 Earlier releases are described in their release notes and commit messages.
 
+## 0.12.291 (2026-11-17)
+
+- **The night light no longer turns deep red during the evening (NIRUWM
+  0.32.3).** The gradual schedule changes the temperature a little every 30
+  seconds, and each change was laid on top of the previous one instead of
+  replacing it, so the screen got redder and redder than the schedule said.
+  Each step now starts from a neutral screen, so 3500 K looks like 3500 K.
+
 ## 0.12.290 (2026-11-17)
 
 - **The shutdown sound is heard again (NIRUWM 0.32.2).** Logging out,
