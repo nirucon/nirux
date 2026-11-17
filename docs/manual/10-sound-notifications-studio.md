@@ -159,7 +159,7 @@ nirux sounds play volume-up --level 70
 
 To use your own sound for an event, put an Ogg file at `~/.config/nirux/sounds/EVENT.ogg`, for example `~/.config/nirux/sounds/startup.ogg`. A replaced `volume-up` or `volume-down` plays the same file at every level.
 
-Startup and shutdown sounds are part of the session and take effect at the next login.
+Startup and shutdown sounds are part of the session and take effect at the next login. The startup sound plays once the sound card is ready after login. The shutdown sound plays when you log out, shut down or restart from NIRUX (the power menu, `niructl power`), and the logout waits for it, at most about 3.5 seconds; with sounds off nothing waits.
 
 ### Per-app notification sounds
 

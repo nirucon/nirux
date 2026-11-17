@@ -2,6 +2,14 @@
 
 Earlier releases are described in their release notes and commit messages.
 
+## 0.12.290 (2026-11-17)
+
+- **The shutdown sound is heard again (NIRUWM 0.32.2).** Logging out,
+  shutting down or restarting ends every process in the session at once, the
+  sound server too, so the shutdown sound was cut off before it started
+  (always on Void, where the session runs its own PipeWire). NIRUX now plays
+  it first and waits for it, at most about 3.5 seconds.
+
 ## 0.12.289 (2026-11-16)
 
 - **NIRUWM 0.32.1: picture-in-picture.** `Super+Alt+P` puts the focused
