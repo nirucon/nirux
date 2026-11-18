@@ -2,6 +2,15 @@
 
 Earlier releases are described in their release notes and commit messages.
 
+## 0.12.295 (2026-11-18)
+
+- **NIRUX ascii is centred on every screen and follows the theme
+  (NIRUSCREENSAVER 0.17.1).** The banner is centred and sized for each
+  monitor, shifted a little each time so the same pixels do not stay lit,
+  and takes the theme's accent colour when it reads on black. It is erased
+  backwards at a calm pace, line first, and the screen stays black for a few
+  seconds before it is typed again.
+
 ## 0.12.294 (2026-11-18)
 
 - **A new screensaver scene, NIRUX ascii (NIRUSCREENSAVER 0.17.0).**
