@@ -77,7 +77,7 @@ The bar's `microphone` module shows the input state: right-click mutes, scroll c
 
 ## NIRUIO: devices, programs, cameras and the sound doctor
 
-*(NIRUIO 0.1.1)*
+*(NIRUIO 0.2.0)*
 
 NIRUIO ("niru in out") is the sound tool of NIRUX: one terminal window with every output, input, program and camera, what WirePlumber remembers, and a doctor that explains silence. Open it with `Super+Shift+A`, the **Open NIRUIO** row of the launcher's sound view (`nirulauncher --sound`) or the actions view, or from a terminal:
 
@@ -127,6 +127,17 @@ niruio status [--json]   # default devices, programs, cameras and the number of 
 ```
 
 `nirux doctor` runs `niruio doctor --brief` and offers `niruio doctor --fix` in `nirux doctor --fix`.
+
+### A microphone or output that is missing after a restart
+
+Some laptops load firmware for their speaker amplifiers while the sound service starts. If WirePlumber meets the card at that moment, the card offers its output and its input only as separate profiles, and the microphone (or the speakers) is missing until the sound service is restarted. NIRUX handles this by itself: once after each login, `niruio heal --login` checks every card and, when one came up like that, restarts only WirePlumber so it probes the card again. Programs keep running and find their devices again within a second. When every card looks right it does nothing.
+
+```sh
+niruio heal           # check now and probe a card again if it lost a direction
+niruio heal --force   # probe every card again, even when all looks right
+```
+
+What it did is written to `~/.local/state/niruio/heal.log`. `niruio doctor` shows such a card as a warning ("the microphone is missing") with the fix "probe again". On Void, where the session starts PipeWire itself, the session also stops the restarted WirePlumber at logout.
 
 ## Event sounds
 

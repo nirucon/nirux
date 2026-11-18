@@ -2,6 +2,19 @@
 
 Earlier releases are described in their release notes and commit messages.
 
+## 0.12.292 (2026-11-18)
+
+- **The microphone no longer disappears after a restart (NIRUIO 0.2.0,
+  NIRUWM 0.32.4).** On some laptops the speaker amplifiers load their
+  firmware while the sound service starts. WirePlumber then met the sound
+  card half ready, kept only a profile with the speakers, and the microphone
+  was gone (the bar showed "none") until the sound service was restarted.
+  After each login NIRUX now checks once whether a card came up without its
+  microphone or its output, and if so probes it again by restarting only
+  WirePlumber. It does nothing when every card looks right. `niruio heal`
+  does the same by hand, `niruio heal --force` probes every card again, and
+  `niruio doctor` warns about such a card with the same fix.
+
 ## 0.12.291 (2026-11-17)
 
 - **The night light no longer turns deep red during the evening (NIRUWM

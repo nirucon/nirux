@@ -149,7 +149,7 @@ niructl keys --markdown        # the keys in effect, as Markdown
 
 <!-- generated: niructl (tools/manual-gen.sh; do not edit by hand) -->
 
-Every form `niructl` accepts, from its usage text (NIRUWM 0.32.3). Run `niructl`
+Every form `niructl` accepts, from its usage text (NIRUWM 0.32.4). Run `niructl`
 without arguments to print it.
 
 - `niructl status`
@@ -227,7 +227,7 @@ without arguments to print it.
 | `nirunotify` | `--check-config`; see [Sound, notifications and studio mode](10-sound-notifications-studio.md) |
 | `nirulock` | `--config`; see [Lock screen and screensaver](06-lock-and-screensaver.md) |
 | `niruscreensaver` | `--config`, `--preview [SCENE]`, `--list`, `--settings`, `--set KEY VALUE`, `--shuffle add\|remove\|toggle SCENE`; see [Choose a scene](06-lock-and-screensaver.md#choose-a-scene) |
-| `niruio` | `status [--json]`, `doctor [--brief\|--json] [--fix]`, `saved [--json]`, `reset KEY\|--silencing`, `--window [TAB]`; see [NIRUIO](10-sound-notifications-studio.md#niruio-devices-programs-cameras-and-the-sound-doctor) |
+| `niruio` | `status [--json]`, `doctor [--brief\|--json] [--fix]`, `saved [--json]`, `reset KEY\|--silencing`, `heal [--login\|--force]`, `--window [TAB]`; see [NIRUIO](10-sound-notifications-studio.md#niruio-devices-programs-cameras-and-the-sound-doctor) |
 | `nirushot`, `niruclip` | See [Screenshots and recording](07-screenshots-and-recording.md) |
 | `nirudisplay`, `niruwallpaper`, `niruthemeselector` | Graphical; see [Displays](09-displays.md) and [Themes and wallpapers](08-themes-and-wallpapers.md) |
 
