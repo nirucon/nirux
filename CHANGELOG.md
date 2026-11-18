@@ -2,7 +2,7 @@
 
 Earlier releases are described in their release notes and commit messages.
 
-## 0.12.293 (2026-11-18)
+## 0.12.294 (2026-11-18)
 
 - **A new screensaver scene, NIRUX ascii (NIRUSCREENSAVER 0.17.0).**
   `ascii` shows a large NIRUX banner in ASCII with "A MINIMAL X11 DESKTOP"
