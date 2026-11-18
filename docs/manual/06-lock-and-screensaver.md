@@ -168,11 +168,13 @@ Changes are written to `~/.config/niruui/screensaver.toml` with its comments kep
 | `photos` | The pictures in `photos_folder` (default `~/Pictures/Wallpapers/NIRU`, the NIRUX wallpapers), each for `photos_seconds`, drifting slowly and crossfading, with a small clock in the corner. Without pictures the clock is shown |
 | `dark` | Black, with only the line "NIRUX - A MINIMAL X11 DESKTOP" gliding slowly across each screen |
 | `dark-sid` | As `dark`, with C64 SID tunes and the tune's title, composer and year under the line |
+| `ascii` | "NIRUX ascii": black, with a large NIRUX banner in ASCII and "A MINIMAL X11 DESKTOP" under it, typed out one character at a time behind a block cursor that blinks once a second when the text is done. After a minute it is erased backwards and typed again somewhere else (NIRUSCREENSAVER 0.17.0 and later) |
+| `ascii-sid` | As `ascii`, with C64 SID tunes like `dark-sid` and the tune under the text |
 | `shuffle` | One of the scenes in `shuffle` (default `clock`, `photos`, `dark`), a new pick every time |
 
-`dark-sid` uses the lock's [SID pause music](#sid-pause-music) player and folder (`[pause_music] folder` in `lock.toml`, default `~/Music/SID`; `sidplayfp` must be installed). It starts only when nothing else played during the first 2 seconds. Unlike the lock, it also plays when the screensaver starts by itself after the idle timeout, because choosing `dark-sid` is the choice to play. The music stops when the display goes off, when a key or click ends the screensaver, and when the idle lock takes over.
+`dark-sid` and `ascii-sid` use the lock's [SID pause music](#sid-pause-music) player and folder (`[pause_music] folder` in `lock.toml`, default `~/Music/SID`; `sidplayfp` must be installed). It starts only when nothing else played during the first 2 seconds. Unlike the lock, it also plays when the screensaver starts by itself after the idle timeout, because choosing `dark-sid` or `ascii-sid` is the choice to play. The music stops when the display goes off, when a key or click ends the screensaver, and when the idle lock takes over.
 
-`photos` reads PNG and JPEG files two folder levels deep; when a wallpaper exists as `-4k` and `-8k`, the 4K one is used. With several monitors every scene draws on each one. `reduced_motion = true` stops the photo drift and crossfade and moves the dark line once a minute instead of gliding.
+`photos` reads PNG and JPEG files two folder levels deep; when a wallpaper exists as `-4k` and `-8k`, the 4K one is used. With several monitors every scene draws on each one. `reduced_motion = true` stops the photo drift and crossfade and moves the dark line once a minute instead of gliding; `ascii` then shows the whole text at once, with a still cursor, in a new place every minute.
 
 ## Choose a layout
 
@@ -304,7 +306,7 @@ nirulock --version
 
 | Key | Default | Meaning |
 |---|---|---|
-| `scene` | `"clock"` | `clock`, `photos`, `dark`, `dark-sid` or `shuffle`; see [Choose a scene](#choose-a-scene) |
+| `scene` | `"clock"` | `clock`, `photos`, `dark`, `dark-sid`, `ascii`, `ascii-sid` or `shuffle`; see [Choose a scene](#choose-a-scene) |
 | `shuffle` | `["clock", "photos", "dark"]` | The scenes `shuffle` picks from |
 | `photos_folder` | `"~/Pictures/Wallpapers/NIRU"` | Pictures for `photos` |
 | `photos_seconds` | `20` | Seconds per photo, 5 to 3600 |

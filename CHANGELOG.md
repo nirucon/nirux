@@ -2,6 +2,17 @@
 
 Earlier releases are described in their release notes and commit messages.
 
+## 0.12.293 (2026-11-18)
+
+- **A new screensaver scene, NIRUX ascii (NIRUSCREENSAVER 0.17.0).**
+  `ascii` shows a large NIRUX banner in ASCII with "A MINIMAL X11 DESKTOP"
+  under it on a black screen, typed out one character at a time behind a
+  block cursor that blinks once a second when the text is done. After a
+  minute it is erased backwards and typed again somewhere else, so no pixel
+  stays lit. `ascii-sid` does the same with C64 SID tunes, like `dark-sid`.
+  Choose it in the launcher's Screensaver view or with
+  `niruscreensaver --set scene ascii`.
+
 ## 0.12.292 (2026-11-18)
 
 - **The microphone no longer disappears after a restart (NIRUIO 0.2.0,

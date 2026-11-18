@@ -90,7 +90,7 @@ remove the `#` to use it. The full annotated file follows each table.
 | [`~/.config/nirunotify/config.toml`](#confignirunotifyconfigtoml) | nirunotify | nirunotify 0.6.0 `config.example.toml` |
 | [`~/.config/nirufetch/config.toml`](#confignirufetchconfigtoml) | nirufetch | nirufetch 0.3.0 `config.example.toml` |
 | [`~/.config/niruui/lock.toml`](#configniruuilocktoml) | nirulock | nirulock 0.26.1 `config.example.toml` |
-| [`~/.config/niruui/screensaver.toml`](#configniruuiscreensavertoml) | niruscreensaver | niruscreensaver 0.16.0 `config.example.toml` |
+| [`~/.config/niruui/screensaver.toml`](#configniruuiscreensavertoml) | niruscreensaver | niruscreensaver 0.17.0 `config.example.toml` |
 | [`~/.config/nirushare/webhooks.toml`](#confignirusharewebhookstoml) | nirushare | nirushare 0.4.0 `webhooks.example.toml` |
 
 ### ~/.config/niruwm/config.toml
@@ -1873,6 +1873,10 @@ focus = "5a5a60"
 #   "dark-sid"  as dark, with C64 SID tunes (sidplayfp, the folder from
 #               NIRULOCK's [pause_music], default ~/Music/SID) while nothing
 #               else plays
+#   "ascii"     "NIRUX ascii": a large NIRUX banner in ASCII with "A MINIMAL
+#               X11 DESKTOP" under it, typed out behind a blinking cursor,
+#               erased and typed again elsewhere every minute
+#   "ascii-sid" as ascii, with C64 SID tunes like dark-sid
 #   "shuffle"   one of the scenes in `shuffle`, a new pick every time
 scene = "clock"
 shuffle = ["clock", "photos", "dark"]
