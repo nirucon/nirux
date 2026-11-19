@@ -588,7 +588,7 @@ SCRIPT
 }
 # A KEY is section.key (or a top-level key) in bare TOML names.
 fleet_valid_key() {
-  case "$1" in ''|.*|*.|*..*|*[!A-Za-z0-9_.-]*) return 1 ;; screensaver.) return 1 ;; *) return 0 ;; esac
+  case "$1" in ''|.*|*.|*..*|*[!A-Za-z0-9_.-]*) return 1 ;; *) return 0 ;; esac
 }
 # Set KEY ($3) to VALUE ($4) on host $1 (LOCAL $2 = 1 runs it here).
 # The tool's own output is kept in $FLEET_WORK/set.$1 for a failure report.
@@ -643,7 +643,7 @@ fleet_pending_background() {
   (cd / && "$fpb_self" fleet pending apply --quiet >> "$STATE/fleet-pending.log" 2>&1 < /dev/null &) || :
 }
 fleet_set() {
-  fs_key='' fs_value='' fs_hosts='' fs_n=0
+  fs_key='' fs_value='' fs_hosts=''
   while [ "$#" -gt 0 ]; do
     case "$1" in
       --help|-h) fleet_usage; return 0 ;;

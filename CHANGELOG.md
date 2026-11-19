@@ -2,7 +2,12 @@
 
 Earlier releases are described in their release notes and commit messages.
 
-## 0.12.296 (2026-11-19)
+## 0.12.297 (2026-11-19)
+
+- The release of 0.12.296 stopped at a script check; 0.12.297 is the same
+  release with that fixed.
+
+## 0.12.296 (2026-11-19, not published)
 
 - **One setting on every machine: `nirux fleet set KEY VALUE [HOST...]`.**
   It changes a NIRUWM setting such as `idle.screensaver_timeout` (through
