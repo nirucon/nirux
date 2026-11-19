@@ -2,6 +2,18 @@
 
 Earlier releases are described in their release notes and commit messages.
 
+## 0.12.300 (2026-11-19)
+
+- **An update never removes an app version that is running.** Updating
+  Helium removed the directory of the version that was still open. Helium
+  starts helper processes from that directory long after it started, so on
+  niruxwork the camera never came up in Teams until Helium was restarted.
+  Helium, LocalSend and OpenCode now keep an old version while any program
+  runs from it (also when its files were already replaced), say so in the
+  update and send a notice asking to restart the app; a later update removes
+  the old version. NIRUX's own program generations were already kept while
+  they run.
+
 ## 0.12.299 (2026-11-19)
 
 - **A retro NIRUX lock screen by default (NIRULOCK 0.28.0).** The new

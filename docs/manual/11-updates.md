@@ -47,6 +47,12 @@ program is started once to check its version, and only then is it switched in. T
 upstream answer is cached for an hour. The versions pinned in NIRUX are the
 minimum: if the lookup, the checksum or the download fails, the installed version
 is kept, and nothing is ever installed below the pin. Prereleases are never used.
+An app that is open while it is updated keeps running from its old version: the
+old files stay until nothing runs from them, and a later update removes them
+(NIRUX 0.12.300 and later; before, they were removed at once, so a long-running
+Helium could no longer start its camera helper and Teams showed no camera).
+The update says `Keeping helium-... while it runs`, and a notice asks you to
+restart the app; close all its windows and open it again to use the new version.
 `nirux update --apps pinned` (or `NIRUX_APPS=pinned`) keeps the pins; `nirux
 status` lists each app's installed and newest version.
 

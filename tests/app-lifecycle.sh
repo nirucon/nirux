@@ -35,3 +35,29 @@ remove_app opencode
 [ -x "$BIN/opencode" ] || { echo 'external OpenCode was removed' >&2; exit 1; }
 [ "$(app_policy opencode)" = no ] || { echo 'OpenCode removal did not persist opt-out' >&2; exit 1; }
 echo 'PASS: optional app choices, removal and external preservation'
+
+# An old app version that still runs is never removed: Helium starts helper
+# processes (the camera) from its own directory long after it started.
+fail() { echo "$1" >&2; exit 1; }
+mkdir -p "$T/fakebin"
+printf '#!/bin/sh\nprintf "%%s\\n" "$*" >> "%s/notices"\n' "$T" > "$T/fakebin/notify-send"
+chmod +x "$T/fakebin/notify-send"
+B=$STATE/browsers
+mkdir -p "$B/helium-1.0" "$B/helium-2.0" "$B/helium-3.0"
+cp "$(command -v sleep)" "$B/helium-1.0/helium"
+"$B/helium-1.0/helium" 30 & RUNNING=$!
+sleep 0.3
+OLD_PATH=$PATH
+export PATH="$T/fakebin:$PATH" DBUS_SESSION_BUS_ADDRESS=unix:path=$T/bus
+app_prune_versions "$B" "$B/helium-3.0" Helium 3.0 > "$T/prune.out" || fail 'prune failed'
+export PATH="$OLD_PATH"; unset DBUS_SESSION_BUS_ADDRESS
+[ -d "$B/helium-1.0" ] || fail 'the running Helium version was removed'
+[ ! -e "$B/helium-2.0" ] || fail 'an unused old version was kept'
+[ -d "$B/helium-3.0" ] || fail 'the new version was removed'
+grep -q 'Keeping helium-1.0 while it runs; restart Helium to use 3.0' "$T/prune.out" || fail "message: $(cat "$T/prune.out")"
+grep -q 'Restart Helium to finish its update' "$T/notices" 2>/dev/null || fail 'no restart notice was sent'
+kill "$RUNNING"; wait "$RUNNING" 2>/dev/null || :
+app_prune_versions "$B" "$B/helium-3.0" Helium 3.0 > "$T/prune.out" || fail 'second prune failed'
+[ ! -e "$B/helium-1.0" ] || fail 'the old version stayed after it stopped'
+[ -d "$B/helium-3.0" ] || fail 'the new version was removed later'
+echo 'PASS: a running old app version is kept until it stops'

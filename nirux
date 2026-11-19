@@ -2,7 +2,7 @@
 # NIRUX: install a complete X11 desktop, or maintain an existing installation.
 set -eu
 
-VERSION=0.12.299
+VERSION=0.12.300
 PREFIX=${NIRUX_PREFIX:-$HOME/.local}
 BIN=$PREFIX/bin
 STATE=$PREFIX/share/nirux
@@ -3696,12 +3696,61 @@ browser_install_archive() {
   ln -s "$destination" "$STATE/.browser-current.$$" || die 'could not link Helium'
   mv -Tf "$STATE/.browser-current.$$" "$STATE/browser-current" || die 'could not activate Helium'
   browser_write_launcher
-  for old in "$STATE/browsers"/helium-*; do
-    [ ! -d "$old" ] || [ "$old" = "$destination" ] || rm -rf "$old"
-  done
+  app_prune_versions "$STATE/browsers" "$destination" Helium "$HELIUM_VERSION"
   rm -rf "$unpack"
   browser_write_desktop
   say "Installed managed Helium $HELIUM_VERSION"
+}
+# ── Old app versions: never removed while they run ─────────────────────────
+# A running program keeps its files open by path: Helium starts a new helper
+# process (the camera, a GPU or audio service, a new renderer) from its own
+# directory long after it started. Removing the directory of the version that
+# runs broke the camera in Teams until Helium was restarted, so an old
+# version stays until nothing runs from it; a later update removes it.
+#
+# The processes of this user whose program lies under directory $1, as PIDs
+# (also a program whose file is already deleted). NIRUX_PROC is for tests.
+app_dir_running() {
+  ad_dir=$(cd "$1" 2>/dev/null && pwd -P) || return 0
+  for ad_exe in "${NIRUX_PROC:-/proc}"/[0-9]*/exe; do
+    ad_target=$(readlink "$ad_exe" 2>/dev/null) || continue
+    case "$ad_target" in
+      "$ad_dir"/*|"$1"/*) ad_pid=${ad_exe%/exe}; say "${ad_pid##*/}" ;;
+    esac
+  done
+}
+# Tell the running session that APP ($1) must be restarted to use version
+# $2, through NIRUNOTIFY, also when the update runs over SSH or at night (the
+# session bus of this user is used when the environment has none).
+app_restart_notice() {
+  command -v notify-send >/dev/null 2>&1 || return 0
+  an_bus=${DBUS_SESSION_BUS_ADDRESS:-}
+  if [ -z "$an_bus" ] && [ -S "${XDG_RUNTIME_DIR:-/run/user/$(id -u)}/bus" ]; then
+    an_bus=unix:path=${XDG_RUNTIME_DIR:-/run/user/$(id -u)}/bus
+  fi
+  [ -n "$an_bus" ] || return 0
+  DBUS_SESSION_BUS_ADDRESS=$an_bus timeout 5 notify-send -a NIRUX \
+    "Restart $1 to finish its update" \
+    "$1 $2 is installed. The $1 that runs now keeps working until you close all its windows and open it again." \
+    >/dev/null 2>&1 || :
+}
+# Remove the old versions under directory $1 except $2 (the new one) and
+# links. A version that runs stays; APP ($3) and its new VERSION ($4) are
+# named in the message and the notice.
+app_prune_versions() {
+  ap_notice=
+  for ap_old in "$1"/*; do
+    [ -d "$ap_old" ] || continue
+    [ -L "$ap_old" ] && continue
+    [ "$ap_old" = "$2" ] && continue
+    if [ -n "$(app_dir_running "$ap_old" | head -n 1)" ]; then
+      say "Keeping ${ap_old##*/} while it runs; restart $3 to use $4 (a later update removes the old one)."
+      ap_notice=1
+      continue
+    fi
+    rm -rf "$ap_old"
+  done
+  [ -z "$ap_notice" ] || app_restart_notice "$3" "$4"
 }
 browser_install() {
   [ "${BROWSER_EFFECTIVE:-keep}" = helium ] || return 0
@@ -4076,12 +4125,7 @@ localsend_install_archive() {
     install -m 644 "$icon" "$PREFIX/share/icons/hicolor/256x256/apps/localsend.png" || :
   fi
   printf '%s\n' "$ls_version" > "$STATE/localsend-version"
-  for old in "$STATE/localsend"/*; do
-    [ -d "$old" ] || continue
-    [ -L "$old" ] && continue
-    [ "$old" = "$destination" ] && continue
-    rm -rf "$old"
-  done
+  app_prune_versions "$STATE/localsend" "$destination" LocalSend "$ls_version"
   localsend_write_desktop
   say "Installed managed LocalSend $ls_version"
 }
@@ -4186,12 +4230,7 @@ opencode_install_archive() {
   mkdir -p "$BIN" || die 'could not create the command directory'
   ln -sfn "$STATE/opencode/current/opencode" "$BIN/opencode" || die 'could not link OpenCode'
   printf '%s\n' "$oc_version" > "$STATE/opencode-version"
-  for old in "$STATE/opencode"/*; do
-    [ -d "$old" ] || continue
-    [ -L "$old" ] && continue
-    [ "$old" = "$destination" ] && continue
-    rm -rf "$old"
-  done
+  app_prune_versions "$STATE/opencode" "$destination" OpenCode "$oc_version"
   say "Installed managed OpenCode $oc_version"
 }
 
