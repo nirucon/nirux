@@ -41,6 +41,8 @@ normal user, never in a root shell; it asks for sudo itself when it needs it.
 | `nirux fleet [status [--json]]` | Status of your other NIRUX machines |
 | `nirux fleet update HOST...\|--all\|--behind` | Update other machines over SSH, one at a time |
 | `nirux fleet setup [HOST...]` | Let this machine log in to the others with an SSH key |
+| `nirux fleet set KEY VALUE [HOST...]` | Change one setting on every machine; offline ones get it later |
+| `nirux fleet pending [apply\|clear [HOST]]` | Settings waiting for an offline machine |
 | `nirux sync status [HOST...] [--files]` | What differs between this machine and the others |
 | `nirux sync push HOST...\|--all [ITEM...]` | Copy settings from this machine (`--yes`, `--dry-run`) |
 | `nirux sync pull HOST [ITEM...]` | Copy settings from another machine to this one |
@@ -149,7 +151,7 @@ niructl keys --markdown        # the keys in effect, as Markdown
 
 <!-- generated: niructl (tools/manual-gen.sh; do not edit by hand) -->
 
-Every form `niructl` accepts, from its usage text (NIRUWM 0.32.4). Run `niructl`
+Every form `niructl` accepts, from its usage text (NIRUWM 0.33.0). Run `niructl`
 without arguments to print it.
 
 - `niructl status`
@@ -205,6 +207,7 @@ without arguments to print it.
 - `niructl dnd on|off|toggle|status`
 - `niructl audio status [--json]|outputs|sources [--json]|output ID|next|source ID|next|input ID|next|mute|mic-status [--json]|mic-mute [on|off|toggle]|mic-level up|down|set N|mic-test [SECONDS] [--json] [--keep]|volume up|down`
 - `niructl bluetooth status|list|power on|off|toggle|connect MAC|disconnect MAC`
+- `niructl proximity status|devices|set MAC|off|test [MAC]`
 - `niructl explain [--launcher]`
 - `niructl idle on|off|toggle|status [MINUTES]`
 - `niructl storage review [--json]|clean cache --yes`
@@ -212,7 +215,7 @@ without arguments to print it.
 - `niructl task list [--json]|clear`
 - `niructl windows rescue [--dry-run]`
 - `niructl battery status [--json]|apply|full|limit`
-- `niructl config history|diff [N|--all]|undo [STEPS] [--yes]|restore N [--yes]|reset SECTION|KEY|all [--yes]`
+- `niructl config get KEY|set KEY VALUE [--yes]|history|diff [N|--all]|undo [STEPS] [--yes]|restore N [--yes]|reset SECTION|KEY|all [--yes]`
 - `niructl input status [--json]|apply|set-keyboard LAYOUT [VARIANT]|set-repeat DELAY RATE|set-pointer natural|tap on|off|toggle natural|tap|set-speed VALUE|cycle-speed|reset`
 
 <!-- end generated: niructl -->

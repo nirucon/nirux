@@ -138,6 +138,53 @@ honor_app_inhibit = false
 An update that restarts NIRUIDLE drops the requests held so far; programs ask
 again when they next start playing.
 
+## Lock when your phone leaves
+
+NIRUIDLE can lock the session when your phone goes out of Bluetooth reach, for
+example when you walk away from the desk with it in your pocket (NIRUWM 0.33.0
+and later). It is off until you name the phone.
+
+```sh
+niructl proximity devices      # paired Bluetooth devices and their addresses
+niructl proximity set "Pixel 8"   # by name or by address (AA:BB:CC:DD:EE:FF)
+niructl proximity status       # the phone, the delay, and whether it answers now
+niructl proximity test         # ask the phone once and say how long it took
+niructl proximity off
+```
+
+Pair the phone first (Bluetooth in Quick Settings, or `bluetoothctl`). Every
+ten seconds NIRUIDLE pages the phone once, the way `l2ping` does but without
+root. It does not connect to anything on the phone, and the phone shows no
+prompt. When the phone has not answered for `proximity_lock_after` seconds
+(and at least twice in a row), the session locks.
+
+```toml
+[idle]
+proximity_device = "AA:BB:CC:DD:EE:FF"   # "" (the default) turns it off
+proximity_lock_after = 30                # seconds out of reach, 10 to 600
+```
+
+How it behaves:
+
+- It only locks after the phone has answered at least once since you logged
+  in or unlocked. Unlocking with the phone somewhere else does not lock again
+  right away; the phone has to come back first.
+- It also locks while a video plays, while `niructl idle on` or studio mode
+  keeps the screen awake: those are for someone in front of the screen.
+- When the phone comes back while the screen is locked, the display turns on
+  so the password prompt is ready. It **never unlocks**: you still type your
+  password.
+- With Bluetooth switched off, or no adapter, it does nothing at all (the
+  session log says `cannot check`).
+- The session log (`~/.local/state/niruwm/session.log`) has a line each time
+  the phone comes or goes: `niruidle: proximity: phone out of reach`.
+
+Bluetooth reaches through walls, often ten metres or more, so it locks when you
+have really left, not when you stand up. The ordinary idle ladder still runs
+beside it. A phone with Bluetooth switched off, or in flight mode, counts as
+gone. Some phones stop answering in deep sleep; if the screen locks while the
+phone lies on the desk, raise `proximity_lock_after`.
+
 ## The screensaver
 
 NIRUSCREENSAVER covers every screen with one of five scenes: by default the date, a large clock, how long you have been away and, while music plays, a CAVA spectrum with the playing track. It is **not a lock**: any key or click dismisses it, and that key or click is swallowed so it never reaches the window underneath. Pointer motion does not dismiss it unless `dismiss_on_motion = true` (after 24 px).

@@ -2,6 +2,24 @@
 
 Earlier releases are described in their release notes and commit messages.
 
+## 0.12.296 (2026-11-19)
+
+- **One setting on every machine: `nirux fleet set KEY VALUE [HOST...]`.**
+  It changes a NIRUWM setting such as `idle.screensaver_timeout` (through
+  the new `niructl config set`, which keeps comments and checks the whole
+  file first) or a screensaver setting (`screensaver.scene`) on this machine
+  and every other NIRUX machine at once. The running sessions reload at
+  once, also over SSH. A machine that is offline gets the setting later:
+  at the next `nirux fleet` command, login or wake-up here while it is
+  online. `nirux fleet pending` lists what waits.
+- **Lock when your phone leaves (NIRUWM 0.33.0).** With
+  `niructl proximity set NAME` the session locks when the paired phone has
+  been out of Bluetooth reach for 30 seconds, also while a video or
+  `niructl idle on` keeps the screen awake. It only locks after the phone
+  was seen since the login or unlock, wakes the display for the password
+  when the phone returns (it never unlocks) and does nothing with
+  Bluetooth off. Off by default; see the manual, chapter 6.
+
 ## 0.12.295 (2026-11-18)
 
 - **NIRUX ascii is centred on every screen and follows the theme

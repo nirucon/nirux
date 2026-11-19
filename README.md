@@ -330,7 +330,7 @@ your own overrides and the keys of other programs.
 | `nirux gc [--keep N] [--dry-run]` | Prune old generations (also done after every update) |
 | `nirux update-shutdown` / `nirux update-reboot` | Update everything in a terminal, then power off / restart on success |
 | `nirux extras ...` | Optional extras, see above |
-| `nirux fleet [status\|update\|setup]` | See and update your other NIRUX machines over SSH, see below |
+| `nirux fleet [status\|update\|setup\|set\|pending]` | See, update and configure your other NIRUX machines over SSH, see below |
 | `nirux sync [status\|push\|pull\|items]` | Compare and copy settings such as quotes, themes and lock settings between your machines |
 | `nirux sounds ...` | Event sounds: `status`, `list`, `on`, `off`, `toggle`, `test`, `play`, `app` |
 | `nirux wallpapers ...` | Download, inspect or remove optional wallpapers |
@@ -421,6 +421,7 @@ nirux fleet status --json    # the same, machine-readable
 nirux fleet update othala    # update named hosts one at a time
 nirux fleet update --behind  # ... or every host older than the latest release (--all: every online host)
 nirux fleet setup            # one time: let this machine log in to the others with an SSH key
+nirux fleet set idle.screensaver_timeout 5   # one setting on every machine; offline ones get it later
 ```
 
 The machines are the Linux peers of your Tailscale network that have NIRUX

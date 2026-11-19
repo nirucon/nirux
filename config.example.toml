@@ -297,12 +297,19 @@ workspaces = 10
 # ask the screensaver, the idle lock and display-off to wait while they play.
 # A video left playing then keeps the screen from locking by itself; manual
 # lock, lid close and suspend still lock. false ignores such requests.
+#
+# proximity_device: the Bluetooth address of your phone. When it has been out
+# of reach for proximity_lock_after seconds (10 to 600), the session locks; when
+# it comes back the display wakes for the password (it never unlocks). Empty
+# turns it off. Set it with: niructl proximity devices; niructl proximity set NAME
 
 [idle]
 screensaver_timeout = 15
 lock_after_screensaver = 15
 dpms_off_after_lock = 15
 honor_app_inhibit = true
+proximity_device = ""
+proximity_lock_after = 30
 
 # ── Bar ─────────────────────────────────────────────────────────────────────
 [bar]

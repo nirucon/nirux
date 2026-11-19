@@ -76,6 +76,8 @@ whats_new_command() {
     say 'Everything: nirux manual (and CHANGELOG.md in the release notes).'
     return 0
   fi
+  # --notify runs at login: settings waiting for another host go out now.
+  fleet_pending_background
   # --notify: once per version, in a graphical session, never twice.
   [ -n "$wn_version" ] || return 0
   [ "$(cat "$WHATS_NEW_SHOWN" 2>/dev/null)" != "$wn_version" ] || return 0
@@ -201,6 +203,7 @@ resume_check_command() {
   mkdir -p "${RESUME_LOG%/*}" 2>/dev/null || :
   { tail -n 49 "$RESUME_LOG" 2>/dev/null || :; say "$rc_line"; } > "$RESUME_LOG.$$" 2>/dev/null &&
     mv -f "$RESUME_LOG.$$" "$RESUME_LOG" 2>/dev/null || rm -f "$RESUME_LOG.$$"
+  [ "$rc_notify" = 0 ] || fleet_pending_background
   if [ "$rc_notify" = 0 ]; then
     say "$rc_line"
     printf '%s' "$RC_SAY"

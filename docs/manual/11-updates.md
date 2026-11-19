@@ -353,6 +353,36 @@ exclude = ["proxmox"]             # never listed
 
 `NIRUX_FLEET_TIMEOUT` sets the SSH connect timeout in seconds (default 5).
 
+### One setting on every machine
+
+```sh
+nirux fleet set idle.screensaver_timeout 5          # every NIRUX machine
+nirux fleet set idle.lock_after_screensaver 5 othala void
+nirux fleet set screensaver.scene ascii              # the screensaver's own file
+nirux fleet pending                                  # what waits for an offline machine
+nirux fleet pending clear [HOST]
+```
+
+`nirux fleet set KEY VALUE` changes one setting on this machine and every other
+NIRUX machine, or only on the hosts you name. A key like `idle.screensaver_timeout`
+goes to `~/.config/niruwm/config.toml` through `niructl config set` on each host:
+comments are kept, the file must still load, and a key NIRUWM does not know is
+refused there with the reason. The running session reloads at once, also over SSH.
+A key that starts with `screensaver.` goes to `~/.config/niruui/screensaver.toml`
+through `niruscreensaver --set`.
+
+A machine that is offline gets the setting later. It is kept in
+`~/.local/share/nirux/fleet-pending` on this machine and sent when this machine
+next runs a `nirux fleet` command, logs in or wakes from sleep while the other one
+is online (the login and wake-up delivery is logged to
+`~/.local/share/nirux/fleet-pending.log`). A newer value for the same key replaces
+the waiting one. `nirux fleet status` says when something is waiting.
+
+The value is read as TOML when it can be (`5`, `true`, `["a", "b"]`) and as text
+otherwise, so `nirux fleet set theme niru-nord` needs no quotes. On one machine,
+`niructl config set KEY VALUE` does the same, and `niructl config get KEY` shows
+the current value.
+
 ## Share settings between machines: sync
 
 ```sh

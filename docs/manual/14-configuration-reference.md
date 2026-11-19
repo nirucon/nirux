@@ -75,16 +75,16 @@ These are not generated from an example file. The chapters describe them.
 
 <!-- generated: config (tools/manual-gen.sh; do not edit by hand) -->
 
-The example configuration files of NIRUX 0.12.295 and its components, with every
+The example configuration files of NIRUX 0.12.296 and its components, with every
 key they set or show. A value marked *commented example* is off by default:
 remove the `#` to use it. The full annotated file follows each table.
 
 | File | Read by | Example from |
 |---|---|---|
-| [`~/.config/niruwm/config.toml`](#configniruwmconfigtoml) | niruwm, nirubar, niruidle, niructl | nirux 0.12.295 `config.example.toml` |
-| [`~/.config/niruwm/appearance.toml`](#configniruwmappearancetoml) | the whole suite | nirux 0.12.295 `appearance.example.toml` |
-| [`~/.config/nirux/sounds.toml`](#configniruxsoundstoml) | nirux, nirunotify | nirux 0.12.295 `sounds.example.toml` |
-| [`~/.config/niruwm/displays.toml`](#configniruwmdisplaystoml) | niruwm, niructl, nirudisplay | nirux 0.12.295 `displays.example.toml` |
+| [`~/.config/niruwm/config.toml`](#configniruwmconfigtoml) | niruwm, nirubar, niruidle, niructl | nirux 0.12.296 `config.example.toml` |
+| [`~/.config/niruwm/appearance.toml`](#configniruwmappearancetoml) | the whole suite | nirux 0.12.296 `appearance.example.toml` |
+| [`~/.config/nirux/sounds.toml`](#configniruxsoundstoml) | nirux, nirunotify | nirux 0.12.296 `sounds.example.toml` |
+| [`~/.config/niruwm/displays.toml`](#configniruwmdisplaystoml) | niruwm, niructl, nirudisplay | nirux 0.12.296 `displays.example.toml` |
 | [`~/.config/nirubar/config.toml`](#confignirubarconfigtoml) | nirubar | nirubar 0.30.0 `weather.example.toml` |
 | [`~/.config/nirulauncher/config.toml`](#confignirulauncherconfigtoml) | nirulauncher | nirulauncher 0.17.0 `config.example.toml` |
 | [`~/.config/nirunotify/config.toml`](#confignirunotifyconfigtoml) | nirunotify | nirunotify 0.6.0 `config.example.toml` |
@@ -167,6 +167,8 @@ remove the `#` to use it. The full annotated file follows each table.
 | `[idle]` | `lock_after_screensaver` | `15` |  |
 | `[idle]` | `dpms_off_after_lock` | `15` |  |
 | `[idle]` | `honor_app_inhibit` | `true` |  |
+| `[idle]` | `proximity_device` | `""` |  |
+| `[idle]` | `proximity_lock_after` | `30` |  |
 | `[bar]` | `enabled` | `true` | The bar is a separate process; NIRUWM starts it from PATH. |
 | `[bar]` | `position` | `"top"` | Screen edge: "top" (default) or "bottom". |
 | `[bar]` | `modules` | `["workspaces", "dictation", "privacy", "recording", "scra...` | Weather settings live in ~/.config/nirubar/config.toml; see weather.example.toml. |
@@ -514,12 +516,19 @@ workspaces = 10
 # ask the screensaver, the idle lock and display-off to wait while they play.
 # A video left playing then keeps the screen from locking by itself; manual
 # lock, lid close and suspend still lock. false ignores such requests.
+#
+# proximity_device: the Bluetooth address of your phone. When it has been out
+# of reach for proximity_lock_after seconds (10 to 600), the session locks; when
+# it comes back the display wakes for the password (it never unlocks). Empty
+# turns it off. Set it with: niructl proximity devices; niructl proximity set NAME
 
 [idle]
 screensaver_timeout = 15
 lock_after_screensaver = 15
 dpms_off_after_lock = 15
 honor_app_inhibit = true
+proximity_device = ""
+proximity_lock_after = 30
 
 # ── Bar ─────────────────────────────────────────────────────────────────────
 [bar]

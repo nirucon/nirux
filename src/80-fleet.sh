@@ -5,11 +5,19 @@
 # fish, which does not understand sh syntax in an ssh command line.
 FLEET_CONFIG=$NIRUX_CONFIG/fleet.toml
 FLEET_KNOWN=$STATE/fleet-known
+# Settings waiting for a host that was offline: "HOST<TAB>KEY<TAB>VALUE<TAB>EPOCH".
+FLEET_PENDING=$STATE/fleet-pending
 FLEET_WORK=
 fleet_usage() {
   say "Usage: nirux fleet [status] [--json]"
   say "       nirux fleet update HOST...|--all|--behind"
   say "       nirux fleet setup [HOST...]"
+  say "       nirux fleet set KEY VALUE [HOST...]"
+  say "       nirux fleet pending [apply|clear [HOST]]"
+  say "KEY is a NIRUWM key such as idle.screensaver_timeout (niructl config set) or"
+  say "screensaver.KEY for ~/.config/niruui/screensaver.toml (niruscreensaver --set)."
+  say "A host that is offline gets the setting later: at the next nirux fleet command,"
+  say "login or wake-up on this machine while it is online (nirux fleet pending)."
   say "Hosts: Linux peers from Tailscale that have NIRUX, or [fleet] hosts/exclude in $FLEET_CONFIG."
 }
 fleet_cleanup() { [ -z "$FLEET_WORK" ] || rm -rf "$FLEET_WORK"; }
@@ -325,6 +333,7 @@ fleet_status() {
   fleet_collect
   if [ "$fleet_json" = 1 ]; then fleet_print_json; return 0; fi
   fleet_note
+  fleet_apply_pending 1
   [ -s "$FLEET_WORK/rows" ] || { say 'No NIRUX hosts found.'; return 0; }
   fleet_print_table
   if [ -s "$FLEET_WORK/hidden-offline" ]; then
@@ -338,6 +347,7 @@ fleet_status() {
     say "or list a machine that is not a NIRUX desktop under exclude in $FLEET_CONFIG."
   fi
   [ -n "$FLEET_LATEST" ] || say 'Latest release unknown (GitHub could not be reached).'
+  [ ! -s "$FLEET_PENDING" ] || say "Waiting for offline hosts: $(cut -f 1 "$FLEET_PENDING" | sort -u | tr '\n' ' ')(nirux fleet pending)"
 }
 # One short health summary from disk use %, free KiB, failed units, stale
 # sessions and lock state: "ok" or the problems, comma separated.
@@ -553,6 +563,164 @@ fleet_setup() {
   [ -z "$fleet_failed" ] || { say "Setup failed for:$fleet_failed"; return 1; }
   say 'All hosts accept the key. Try: nirux fleet status'
 }
+# Quote $1 for sh: the value travels to the host inside a script on stdin,
+# never on the ssh command line, which a fish login shell would parse.
+fleet_quote() { printf "'%s'" "$(printf '%s' "$1" | sed "s/'/'\\\\''/g")"; }
+# The script that sets KEY ($1) to VALUE ($2) on a host. The running session's
+# DISPLAY is borrowed, so NIRUWM reloads at once even over SSH.
+fleet_set_script() {
+  case "$1" in
+    screensaver.*) fs_cmd="\"\$HOME/.local/bin/niruscreensaver\" --set $(fleet_quote "${1#screensaver.}") $(fleet_quote "$2")" ;;
+    *) fs_cmd="\"\$HOME/.local/bin/niructl\" config set $(fleet_quote "$1") $(fleet_quote "$2") --yes" ;;
+  esac
+  cat <<SCRIPT
+if [ -z "\${DISPLAY:-}" ]; then
+  wm=\$(pgrep -o -u "\$(id -u)" -x niruwm 2>/dev/null)
+  if [ -n "\$wm" ] && [ -r "/proc/\$wm/environ" ]; then
+    for v in DISPLAY XAUTHORITY; do
+      x=\$(tr '\\0' '\\n' < "/proc/\$wm/environ" | sed -n "s/^\$v=//p" | head -n 1)
+      [ -z "\$x" ] || export "\$v=\$x"
+    done
+  fi
+fi
+$fs_cmd < /dev/null
+SCRIPT
+}
+# A KEY is section.key (or a top-level key) in bare TOML names.
+fleet_valid_key() {
+  case "$1" in ''|.*|*.|*..*|*[!A-Za-z0-9_.-]*) return 1 ;; screensaver.) return 1 ;; *) return 0 ;; esac
+}
+# Set KEY ($3) to VALUE ($4) on host $1 (LOCAL $2 = 1 runs it here).
+# The tool's own output is kept in $FLEET_WORK/set.$1 for a failure report.
+fleet_set_one() {
+  fs_out=$FLEET_WORK/set.$1
+  if [ "$2" = 1 ]; then
+    fleet_set_script "$3" "$4" | sh -s > "$fs_out" 2>&1
+  else
+    fleet_set_script "$3" "$4" | fleet_timeout 60 \
+      ssh -o BatchMode=yes -o ConnectTimeout="${NIRUX_FLEET_TIMEOUT:-5}" "$1" sh -s > "$fs_out" 2>&1
+  fi
+}
+fleet_set_failed() {
+  say "== $1: FAILED: $(grep -v '^[-+@ ]' "$FLEET_WORK/set.$1" 2>/dev/null | grep . | tail -n 1)"
+}
+# Queue KEY=VALUE for an offline host; a newer value for the same key wins.
+fleet_queue() {
+  mkdir -p "$STATE" || return 1
+  { [ ! -f "$FLEET_PENDING" ] || awk -F '\t' -v h="$1" -v k="$2" '!($1 == h && $2 == k)' "$FLEET_PENDING"
+    printf '%s\t%s\t%s\t%s\n' "$1" "$2" "$3" "$(date +%s)"; } > "$FLEET_PENDING.tmp.$$" &&
+    mv -f "$FLEET_PENDING.tmp.$$" "$FLEET_PENDING"
+}
+# Apply queued settings to the hosts in $FLEET_WORK/rows that are online now.
+# QUIET ($1 = 1) prints only what was applied or failed.
+fleet_apply_pending() {
+  [ -s "$FLEET_PENDING" ] || return 0
+  fp_keep=$FLEET_WORK/pending.keep
+  : > "$fp_keep"
+  fp_tab=$(printf '\t')
+  while IFS="$fp_tab" read -r fp_h fp_k fp_v fp_t; do
+    fp_state=$(fleet_row_field "$fp_h" 3)
+    if [ "$fp_state" = online ]; then
+      if fleet_set_one "$fp_h" "$(fleet_row_field "$fp_h" 2)" "$fp_k" "$fp_v"; then
+        say "== $fp_h: $fp_k = $fp_v (waiting since it was offline)"
+        continue
+      fi
+      fleet_set_failed "$fp_h"
+    elif [ "$fp_state" = nonirux ]; then
+      [ "${1:-0}" = 1 ] || say "== $fp_h: NIRUX is gone there; dropped $fp_k"
+      continue
+    fi
+    printf '%s\t%s\t%s\t%s\n' "$fp_h" "$fp_k" "$fp_v" "$fp_t" >> "$fp_keep"
+  done < "$FLEET_PENDING"
+  if [ -s "$fp_keep" ]; then mv -f "$fp_keep" "$FLEET_PENDING"; else rm -f "$FLEET_PENDING" "$fp_keep"; fi
+}
+# At login and wake-up (NIRUWM's whats-new and resume-check hooks): deliver
+# waiting settings in the background, logged to $STATE/fleet-pending.log.
+fleet_pending_background() {
+  [ -s "$FLEET_PENDING" ] || return 0
+  fpb_self=$HOME/.local/bin/nirux
+  [ -x "$fpb_self" ] || return 0
+  (cd / && "$fpb_self" fleet pending apply --quiet >> "$STATE/fleet-pending.log" 2>&1 < /dev/null &) || :
+}
+fleet_set() {
+  fs_key='' fs_value='' fs_hosts='' fs_n=0
+  while [ "$#" -gt 0 ]; do
+    case "$1" in
+      --help|-h) fleet_usage; return 0 ;;
+      --) shift; break ;;
+      *) break ;;
+    esac
+  done
+  [ "$#" -ge 2 ] || die 'usage: nirux fleet set KEY VALUE [HOST...]'
+  fs_key=$1 fs_value=$2; shift 2
+  fleet_valid_key "$fs_key" || die "not a key: $fs_key (write section.key, for example idle.screensaver_timeout)"
+  case "$fs_value" in *"$(printf '\t')"*|*"
+"*) die 'a value cannot contain tabs or line breaks' ;; esac
+  for fs_h in "$@"; do fleet_valid_host "$fs_h" || die "invalid host name: $fs_h"; fs_hosts="$fs_hosts $fs_h"; done
+  fleet_work
+  say 'Checking the fleet...'
+  fleet_collect
+  fleet_note
+  fleet_apply_pending 1
+  if [ -z "$fs_hosts" ]; then
+    fs_hosts=$(awk -F '|' '$3 == "online" || $3 == "offline" || $3 == "noaccess" { print $1 }' "$FLEET_WORK/rows" | tr '\n' ' ')
+    [ -n "$fs_hosts" ] || die 'no NIRUX hosts found (nirux fleet status)'
+  fi
+  for fs_h in $fs_hosts; do
+    [ -z "$(fleet_row_field "$fs_h" 1)" ] || continue
+    fleet_probe "$fs_h" 0
+    fleet_classify "$fs_h" '?' 0 config
+  done
+  fs_done='' fs_queued='' fs_failed='' fs_skipped=''
+  for fs_h in $fs_hosts; do
+    case "$(fleet_row_field "$fs_h" 3)" in
+      online)
+        if fleet_set_one "$fs_h" "$(fleet_row_field "$fs_h" 2)" "$fs_key" "$fs_value"; then
+          say "== $fs_h: $fs_key = $fs_value"
+          fs_done="$fs_done $fs_h"
+          # A value set now replaces an older one waiting for this host.
+          if [ -f "$FLEET_PENDING" ]; then
+            awk -F '\t' -v h="$fs_h" -v k="$fs_key" '!($1 == h && $2 == k)' "$FLEET_PENDING" > "$FLEET_PENDING.tmp.$$" &&
+              mv -f "$FLEET_PENDING.tmp.$$" "$FLEET_PENDING"
+          fi
+        else
+          fleet_set_failed "$fs_h"; fs_failed="$fs_failed $fs_h"
+        fi ;;
+      offline)
+        fleet_queue "$fs_h" "$fs_key" "$fs_value" || die "could not write $FLEET_PENDING"
+        say "== $fs_h: offline; set when it is next online"
+        fs_queued="$fs_queued $fs_h" ;;
+      noaccess) say "== $fs_h: no SSH access, skipped (nirux fleet setup $fs_h)"; fs_skipped="$fs_skipped $fs_h" ;;
+      nonirux) say "== $fs_h: NIRUX is not installed there, skipped"; fs_skipped="$fs_skipped $fs_h" ;;
+      *) say "== $fs_h: not a known fleet host, skipped"; fs_skipped="$fs_skipped $fs_h" ;;
+    esac
+  done
+  say "Fleet set $fs_key: set:${fs_done:- none}; waiting:${fs_queued:- none}; failed:${fs_failed:- none}; skipped:${fs_skipped:- none}"
+  [ -z "$fs_failed" ]
+}
+fleet_pending() {
+  case "${1:-list}" in
+    list)
+      [ -s "$FLEET_PENDING" ] || { say 'No settings are waiting for an offline host.'; return 0; }
+      say 'Waiting for these hosts to come online:'
+      awk -F '\t' '{ printf "  %-16s %s = %s\n", $1, $2, $3 }' "$FLEET_PENDING" ;;
+    apply)
+      [ -s "$FLEET_PENDING" ] || return 0
+      fleet_work
+      fleet_collect
+      fleet_apply_pending "$([ "${2:-}" = --quiet ] && echo 1 || echo 0)" ;;
+    clear)
+      [ -f "$FLEET_PENDING" ] || { say 'Nothing is waiting.'; return 0; }
+      if [ -n "${2:-}" ]; then
+        awk -F '\t' -v h="$2" '$1 != h' "$FLEET_PENDING" > "$FLEET_PENDING.tmp.$$" && mv -f "$FLEET_PENDING.tmp.$$" "$FLEET_PENDING"
+        [ -s "$FLEET_PENDING" ] || rm -f "$FLEET_PENDING"
+        say "Cleared the waiting settings for $2."
+      else
+        rm -f "$FLEET_PENDING"; say 'Cleared all waiting settings.'
+      fi ;;
+    *) die "unknown fleet pending command: $1 (apply or clear)" ;;
+  esac
+}
 fleet_command() {
   fleet_action=${1:-status}
   [ "$#" = 0 ] || shift
@@ -561,7 +729,9 @@ fleet_command() {
     status) fleet_status "$@" ;;
     update) fleet_update "$@" ;;
     setup) fleet_setup "$@" ;;
+    set) fleet_set "$@" ;;
+    pending) fleet_pending "$@" ;;
     --help|-h|help) fleet_usage ;;
-    *) die "unknown fleet command: $fleet_action (status, update or setup)" ;;
+    *) die "unknown fleet command: $fleet_action (status, update, setup, set or pending)" ;;
   esac
 }

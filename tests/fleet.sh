@@ -301,6 +301,57 @@ printf 'denied\n' > "$FAKE/hosts/golf/mode"
 printf 'y\n' | nirux fleet setup golf > "$TEST/out" 2>&1 || fail "named setup"
 grep -q 'use your existing key' "$TEST/out" && [ "$(wc -l < "$FAKE/keygen.log")" = 1 ] || fail "existing key reused"
 [ "$(sort -u "$FAKE/tailscale.log")" = 'status --json' ] || fail "tailscale settings touched"
+# --- set and pending -----------------------------------------------------------
+# Fake niructl and niruscreensaver log their arguments, one per line, on the host.
+fake_tools() {
+  for t in niructl niruscreensaver; do
+    cat > "$FAKE/hosts/$1/home/.local/bin/$t" <<TOOL
+#!/bin/sh
+[ ! -f "\$FAKE/hosts/$1/setfail" ] || { echo "niructl: idle.x = 5 would not load" >&2; exit 1; }
+{ printf '$t'; for a; do printf ' [%s]' "\$a"; done; printf '\n'; } >> "\$FAKE/hosts/$1/set.log"
+TOOL
+    chmod +x "$FAKE/hosts/$1/home/.local/bin/$t"
+  done
+}
+for h in alpha bravo carol; do fake_tools "$h"; done
+printf 'denied\n' > "$FAKE/hosts/golf/mode"
+setlog() { cat "$FAKE/hosts/$1/set.log" 2>/dev/null; }
+nirux fleet set idle.screensaver_timeout 5 > "$TEST/out" 2>&1 < /dev/null || { cat "$TEST/out"; fail "fleet set failed"; }
+for h in alpha bravo carol; do
+  [ "$(setlog "$h")" = 'niructl [config] [set] [idle.screensaver_timeout] [5] [--yes]' ] || fail "$h set: $(setlog "$h")"
+done
+grep -q '== delta: offline; set when it is next online' "$TEST/out" || { cat "$TEST/out"; fail "delta not queued"; }
+grep -q '== golf: no SSH access, skipped' "$TEST/out" || { cat "$TEST/out"; fail "golf should be skipped"; }
+grep -q 'set: alpha bravo carol; waiting: delta; failed: none; skipped: golf' "$TEST/out" || { cat "$TEST/out"; fail "set summary"; }
+nirux fleet pending > "$TEST/out"
+grep -q 'delta *idle.screensaver_timeout = 5' "$TEST/out" || { cat "$TEST/out"; fail "pending list"; }
+# A newer value for the same key replaces the waiting one; quotes survive.
+nirux fleet set idle.screensaver_timeout 7 delta > /dev/null 2>&1 < /dev/null || fail "second queue"
+nirux fleet set theme "it's \$HOME; \`x\`" alpha > "$TEST/out" 2>&1 < /dev/null || { cat "$TEST/out"; fail "quoted value"; }
+[ "$(setlog alpha | tail -n 1)" = "niructl [config] [set] [theme] [it's \$HOME; \`x\`] [--yes]" ] || fail "quoting: $(setlog alpha | tail -n 1)"
+nirux fleet set screensaver.scene ascii bravo > /dev/null 2>&1 < /dev/null || fail "screensaver key"
+[ "$(setlog bravo | tail -n 1)" = 'niruscreensaver [--set] [scene] [ascii]' ] || fail "screensaver set: $(setlog bravo | tail -n 1)"
+[ "$(grep -c '^delta' "$HOME/.local/share/nirux/fleet-pending")" = 1 ] &&
+  grep -q '^delta	idle.screensaver_timeout	7	' "$HOME/.local/share/nirux/fleet-pending" || fail "newer value should replace the waiting one"
+nirux fleet set 'idle;x' 5 > /dev/null 2>&1 && fail "bad key accepted"
+nirux fleet set idle.x > /dev/null 2>&1 && fail "missing value accepted"
+touch "$FAKE/hosts/carol/setfail"
+nirux fleet set idle.x 5 carol > "$TEST/out" 2>&1 < /dev/null && fail "a failed set must fail the command"
+grep -q '== carol: FAILED: niructl: idle.x = 5 would not load' "$TEST/out" || { cat "$TEST/out"; fail "set failure report"; }
+rm -f "$FAKE/hosts/carol/setfail"
+# delta comes online: the next fleet command delivers what waited.
+make_host delta 0.12.243; fake_tools delta
+sed 's/"delta.tail0.ts.net.", "OS": "linux", "Online": false/"delta.tail0.ts.net.", "OS": "linux", "Online": true/' "$FAKE/tailscale.json" > "$FAKE/ts.new" && mv "$FAKE/ts.new" "$FAKE/tailscale.json"
+nirux fleet status > "$TEST/out" 2>&1 || { cat "$TEST/out"; fail "status with pending"; }
+[ "$(setlog delta)" = 'niructl [config] [set] [idle.screensaver_timeout] [7] [--yes]' ] || { cat "$TEST/out"; fail "pending not delivered: $(setlog delta)"; }
+grep -q '== delta: idle.screensaver_timeout = 7 (waiting since it was offline)' "$TEST/out" || fail "delivery message"
+[ ! -f "$HOME/.local/share/nirux/fleet-pending" ] || fail "delivered settings still waiting"
+nirux fleet pending | grep -q 'No settings are waiting' || fail "pending after delivery"
+nirux fleet set idle.x 1 delta > /dev/null 2>&1 < /dev/null || fail "set delta"
+printf 'delta\tidle.y\t2\t1\n' > "$HOME/.local/share/nirux/fleet-pending"
+nirux fleet pending clear delta | grep -q 'Cleared the waiting settings for delta' || fail "pending clear"
+[ ! -f "$HOME/.local/share/nirux/fleet-pending" ] || fail "pending clear left a file"
+[ ! -f "$FAKE/violations" ] || fail "a remote command contained shell syntax: $(cat "$FAKE/violations")"
 nirux fleet bogus > /dev/null 2>&1 && fail "unknown fleet command accepted"
 nirux fleet --help | grep -q 'nirux fleet update HOST' || fail "fleet help"
 nirux --help | grep -q 'nirux fleet' || fail "usage lists fleet"
