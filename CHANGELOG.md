@@ -2,7 +2,14 @@
 
 Earlier releases are described in their release notes and commit messages.
 
-## 0.12.302 (2026-11-19)
+## 0.12.303 (2026-11-19)
+
+- NIRULOGIN 0.3.1: the 0.3.0 login screen was built against a newer C
+  library than Debian 12, Debian 13 and Void have, so 0.12.302 could not be
+  installed there (an update stopped safely and kept the installed version).
+  Everything else is as in 0.12.302 below.
+
+## 0.12.302 (2026-11-19, withdrawn)
 
 - **Meeting check: `Super+Alt+M` or `nirux meet-check`.** In about five
   seconds it checks the camera (one picture, thrown away), the speakers, the
