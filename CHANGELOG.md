@@ -4,7 +4,7 @@ Earlier releases are described in their release notes and commit messages.
 
 ## 0.12.304 (2026-11-19)
 
-- **The NIRUX boot look (NIRUSPLASH 0.1.0, new).** The computer now starts
+- **The NIRUX boot look (NIRUSPLASH 0.1.1, new).** The computer now starts
   in the same style as the lock and login screens. The GRUB menu shows the
   NIRUX banner and every installed kernel straight in the menu, so another
   kernel is one arrow key away. The boot splash types the banner in, and an
