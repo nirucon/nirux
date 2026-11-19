@@ -364,7 +364,7 @@ position = "top"
 # "timer" is a focus/egg timer: scroll sets minutes, right-click starts/pauses,
 # middle-click resets; [timer] in ~/.config/nirubar/config.toml.
 # Weather settings live in ~/.config/nirubar/config.toml; see weather.example.toml.
-modules = ["workspaces", "dictation", "privacy", "recording", "scratchpad", "layout", "media", "volume", "microphone", "headset", "brightness", "display", "tailscale", "network", "wifi", "mode", "battery", "updates", "niruxupdate", "agent", "nirusec", "dnd", "timer", "disk", "drives", "quicksettings", "share", "clock"]
+modules = ["workspaces", "dictation", "privacy", "recording", "scratchpad", "layout", "media", "volume", "microphone", "headset", "brightness", "display", "tailscale", "network", "wifi", "mode", "battery", "updates", "niruxupdate", "restart", "agent", "nirusec", "dnd", "timer", "disk", "drives", "quicksettings", "share", "clock"]
 # true (default): `nirux update` keeps `modules` on the default list above, so
 # new modules arrive by themselves (your old file is kept in the config history:
 # `niructl config undo`). false: your own `modules` list is never changed.
@@ -375,7 +375,7 @@ disk_warn = 90
 # modules disappear from the bar, so a shared screen shows no media titles,
 # notifications, updates or other private status. They come back when
 # presenting ends. Set [] to keep them all.
-presenting_hide = ["media", "notifications", "agent", "share", "tailscale", "updates", "niruxupdate", "nirusec", "dictation", "tasks", "weather"]
+presenting_hide = ["media", "notifications", "agent", "share", "tailscale", "updates", "niruxupdate", "restart", "nirusec", "dictation", "tasks", "weather"]
 # Missing input/provider stays visible even with "muted" visibility.
 microphone_visibility = "always" # "always" or "muted"
 # Left: information. Right: mute. Scroll: gain (never unmutes).
@@ -562,6 +562,13 @@ action = "launcher_keys"
 [[keys]]
 keys = "super+period"
 action = "launcher_emoji"
+
+# Ready for a call? Camera, microphone, speakers, apps that need a restart and
+# the way to Teams, checked in a few seconds; the answer comes as a notice.
+[[keys]]
+keys = "super+alt+m"
+action = "shell nirux meet-check --notify"
+description = "Meeting check: camera, microphone, speakers, network"
 
 # Pick a color from the screen (arrows move 1 px, Shift 10 px; Tab switches
 # hex/rgb/hsl; Esc cancels). The color is copied; the last 10 are in the

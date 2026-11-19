@@ -75,19 +75,19 @@ These are not generated from an example file. The chapters describe them.
 
 <!-- generated: config (tools/manual-gen.sh; do not edit by hand) -->
 
-The example configuration files of NIRUX 0.12.301 and its components, with every
+The example configuration files of NIRUX 0.12.302 and its components, with every
 key they set or show. A value marked *commented example* is off by default:
 remove the `#` to use it. The full annotated file follows each table.
 
 | File | Read by | Example from |
 |---|---|---|
-| [`~/.config/niruwm/config.toml`](#configniruwmconfigtoml) | niruwm, nirubar, niruidle, niructl | nirux 0.12.301 `config.example.toml` |
-| [`~/.config/niruwm/appearance.toml`](#configniruwmappearancetoml) | the whole suite | nirux 0.12.301 `appearance.example.toml` |
-| [`~/.config/nirux/sounds.toml`](#configniruxsoundstoml) | nirux, nirunotify | nirux 0.12.301 `sounds.example.toml` |
-| [`~/.config/niruwm/displays.toml`](#configniruwmdisplaystoml) | niruwm, niructl, nirudisplay | nirux 0.12.301 `displays.example.toml` |
-| [`~/.config/nirubar/config.toml`](#confignirubarconfigtoml) | nirubar | nirubar 0.30.0 `weather.example.toml` |
+| [`~/.config/niruwm/config.toml`](#configniruwmconfigtoml) | niruwm, nirubar, niruidle, niructl | nirux 0.12.302 `config.example.toml` |
+| [`~/.config/niruwm/appearance.toml`](#configniruwmappearancetoml) | the whole suite | nirux 0.12.302 `appearance.example.toml` |
+| [`~/.config/nirux/sounds.toml`](#configniruxsoundstoml) | nirux, nirunotify | nirux 0.12.302 `sounds.example.toml` |
+| [`~/.config/niruwm/displays.toml`](#configniruwmdisplaystoml) | niruwm, niructl, nirudisplay | nirux 0.12.302 `displays.example.toml` |
+| [`~/.config/nirubar/config.toml`](#confignirubarconfigtoml) | nirubar | nirubar 0.31.0 `weather.example.toml` |
 | [`~/.config/nirulauncher/config.toml`](#confignirulauncherconfigtoml) | nirulauncher | nirulauncher 0.17.0 `config.example.toml` |
-| [`~/.config/nirunotify/config.toml`](#confignirunotifyconfigtoml) | nirunotify | nirunotify 0.6.0 `config.example.toml` |
+| [`~/.config/nirunotify/config.toml`](#confignirunotifyconfigtoml) | nirunotify | nirunotify 0.7.0 `config.example.toml` |
 | [`~/.config/nirufetch/config.toml`](#confignirufetchconfigtoml) | nirufetch | nirufetch 0.3.0 `config.example.toml` |
 | [`~/.config/niruui/lock.toml`](#configniruuilocktoml) | nirulock | nirulock 0.28.0 `config.example.toml` |
 | [`~/.config/niruui/screensaver.toml`](#configniruuiscreensavertoml) | niruscreensaver | niruscreensaver 0.17.1 `config.example.toml` |
@@ -583,7 +583,7 @@ position = "top"
 # "timer" is a focus/egg timer: scroll sets minutes, right-click starts/pauses,
 # middle-click resets; [timer] in ~/.config/nirubar/config.toml.
 # Weather settings live in ~/.config/nirubar/config.toml; see weather.example.toml.
-modules = ["workspaces", "dictation", "privacy", "recording", "scratchpad", "layout", "media", "volume", "microphone", "headset", "brightness", "display", "tailscale", "network", "wifi", "mode", "battery", "updates", "niruxupdate", "agent", "nirusec", "dnd", "timer", "disk", "drives", "quicksettings", "share", "clock"]
+modules = ["workspaces", "dictation", "privacy", "recording", "scratchpad", "layout", "media", "volume", "microphone", "headset", "brightness", "display", "tailscale", "network", "wifi", "mode", "battery", "updates", "niruxupdate", "restart", "agent", "nirusec", "dnd", "timer", "disk", "drives", "quicksettings", "share", "clock"]
 # true (default): `nirux update` keeps `modules` on the default list above, so
 # new modules arrive by themselves (your old file is kept in the config history:
 # `niructl config undo`). false: your own `modules` list is never changed.
@@ -594,7 +594,7 @@ disk_warn = 90
 # modules disappear from the bar, so a shared screen shows no media titles,
 # notifications, updates or other private status. They come back when
 # presenting ends. Set [] to keep them all.
-presenting_hide = ["media", "notifications", "agent", "share", "tailscale", "updates", "niruxupdate", "nirusec", "dictation", "tasks", "weather"]
+presenting_hide = ["media", "notifications", "agent", "share", "tailscale", "updates", "niruxupdate", "restart", "nirusec", "dictation", "tasks", "weather"]
 # Missing input/provider stays visible even with "muted" visibility.
 microphone_visibility = "always" # "always" or "muted"
 # Left: information. Right: mute. Scroll: gain (never unmutes).
@@ -781,6 +781,13 @@ action = "launcher_keys"
 [[keys]]
 keys = "super+period"
 action = "launcher_emoji"
+
+# Ready for a call? Camera, microphone, speakers, apps that need a restart and
+# the way to Teams, checked in a few seconds; the answer comes as a notice.
+[[keys]]
+keys = "super+alt+m"
+action = "shell nirux meet-check --notify"
+description = "Meeting check: camera, microphone, speakers, network"
 
 # Pick a color from the screen (arrows move 1 px, Shift 10 px; Tab switches
 # hex/rgb/hsl; Esc cancels). The color is copied; the last 10 are in the
@@ -1193,7 +1200,11 @@ reduced = false
 | `[sounds.system]` | `lock` | `false` |  |
 | `[sounds.system]` | `unlock` | `false` |  |
 | `[sounds.system]` | `lock-typing` | `true` | Typewriter keys while you type the password in NIRULOCK. |
+| `[sounds.system]` | `meet-ready` | `true` | The result of nirux meet-check: ready for a call, or something to fix. |
+| `[sounds.system]` | `meet-problem` | `true` |  |
 | `[sounds.notifications]` | `enabled` | `true` |  |
+| `[sounds.notifications]` | `timer-done` | `true` |  |
+| `[sounds.notifications]` | `reminder` | `true` |  |
 | `[sounds.feedback]` | `enabled` | `true` |  |
 | `[sounds.feedback]` | `volume-up` | `true` |  |
 | `[sounds.feedback]` | `volume-down` | `true` |  |
@@ -1203,6 +1214,10 @@ reduced = false
 | `[sounds.feedback]` | `brightness-up` | `false` |  |
 | `[sounds.feedback]` | `brightness-down` | `false` |  |
 | `[sounds.feedback]` | `screenshot` | `true` |  |
+| `[sounds.feedback]` | `mic-mute` | `true` | The microphone muted and live again (niructl audio mic-mute). |
+| `[sounds.feedback]` | `mic-unmute` | `true` |  |
+| `[sounds.feedback]` | `record-start` | `true` | A screen recording (NIRUCLIP) starts and stops. |
+| `[sounds.feedback]` | `record-stop` | `true` |  |
 | `[sounds.feedback]` | `rate_limit_ms` | `80` |  |
 | `[sounds.power]` | `enabled` | `true` |  |
 | `[sounds.power]` | `power-plug` | `true` |  |
@@ -1226,6 +1241,9 @@ reduced = false
 | `[sounds.dictation]` | `dictation-stop` | `true` |  |
 | `[sounds.dictation]` | `dictation-done` | `false` |  |
 | `[sounds.dictation]` | `dictation-error` | `true` |  |
+| `[sounds.network]` | `enabled` | `true` |  |
+| `[sounds.network]` | `network-down` | `true` |  |
+| `[sounds.network]` | `network-up` | `true` |  |
 | `[sounds.apps]` | `thunderbird` | `"mail"` |  |
 | `[sounds.apps]` | `signal` | `"chat"` |  |
 
@@ -1251,11 +1269,17 @@ lock = false
 unlock = false
 # Typewriter keys while you type the password in NIRULOCK.
 lock-typing = true
+# The result of `nirux meet-check`: ready for a call, or something to fix.
+meet-ready = true
+meet-problem = true
 
 # Notification sounds (the notification key in [sounds] above and the app
-# sounds in [sounds.apps]). Do Not Disturb silences these and nothing else.
+# sounds in [sounds.apps]), the bar timer and calendar reminders. Do Not
+# Disturb silences notifications and reminders; a timer you set still sounds.
 [sounds.notifications]
 enabled = true
+timer-done = true
+reminder = true
 
 # Feedback for keys you press. Volume ticks play on the new level, so you
 # hear how loud it is; holding a key plays at most one tick per rate_limit_ms.
@@ -1269,6 +1293,12 @@ unmute = true
 brightness-up = false
 brightness-down = false
 screenshot = true
+# The microphone muted and live again (niructl audio mic-mute).
+mic-mute = true
+mic-unmute = true
+# A screen recording (NIRUCLIP) starts and stops.
+record-start = true
+record-stop = true
 rate_limit_ms = 80
 
 # Charger and battery. battery-low and battery-critical sound once per
@@ -1304,6 +1334,13 @@ dictation-start = true
 dictation-stop = true
 dictation-done = false
 dictation-error = true
+
+# The connection is lost (no default route for a few seconds) and back.
+# Never at login or right after a resume, and a flapping link is one sound.
+[sounds.network]
+enabled = true
+network-down = true
+network-up = true
 
 # Per-app notification sounds. The key is the app name a notification is sent
 # with (see `nirunotify --history`), compared case-insensitively. The value is

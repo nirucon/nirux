@@ -18,7 +18,9 @@ mkdir -p "$HOME" "$SOUNDS" "$TEST/bin"
 for name in startup notification update shutdown mail chat auth-fail lock unlock lock-typing \
   volume-up volume-down volume-limit mute unmute brightness-up brightness-down screenshot \
   power-plug power-unplug battery-low battery-critical battery-full device-connect device-disconnect \
-  dictation-start dictation-stop dictation-done dictation-error; do
+  dictation-start dictation-stop dictation-done dictation-error \
+  mic-mute mic-unmute record-start record-stop timer-done reminder network-down network-up \
+  meet-ready meet-problem; do
   printf 'OggS %s\n' "$name" > "$SOUNDS/$name.ogg"
 done
 mkdir -p "$SOUNDS/levels"
@@ -226,7 +228,7 @@ PY
 # --- System, feedback, power and device sounds -----------------------------
 rm -f "$CONFIG" "$CONFIG.bak"
 nirux sounds status > "$TEST/status"
-for table in system notifications feedback power devices dictation apps; do
+for table in system notifications feedback power devices dictation network apps; do
   [ "$(grep -c "^\[sounds\.$table\]" "$CONFIG")" = 1 ] || fail "new config lacks exactly one [sounds.$table]"
 done
 grep -q '^feedback: on' "$TEST/status" || fail 'status does not show categories'
@@ -238,12 +240,19 @@ grep -q '^  lock: off' "$TEST/status" || fail 'lock is not off by default'
 grep -q '^dictation: on' "$TEST/status" || fail 'status does not show the dictation category'
 grep -q '^  dictation-start: on' "$TEST/status" || fail 'dictation-start is not on by default'
 grep -q '^  dictation-done: off' "$TEST/status" || fail 'dictation-done is not off by default'
+grep -q '^network: on' "$TEST/status" || fail 'status does not show the network category'
+for event in mic-mute mic-unmute record-start record-stop timer-done reminder network-down network-up \
+  meet-ready meet-problem; do
+  grep -q "^  $event: on" "$TEST/status" || fail "$event is not on by default"
+done
 
 nirux sounds list > "$TEST/list"
 for event in startup update shutdown auth-fail lock unlock lock-typing notification volume-up volume-down \
   volume-limit mute unmute brightness-up brightness-down screenshot power-plug power-unplug \
   battery-low battery-critical battery-full device-connect device-disconnect \
-  dictation-start dictation-stop dictation-done dictation-error; do
+  dictation-start dictation-stop dictation-done dictation-error \
+  mic-mute mic-unmute record-start record-stop timer-done reminder network-down network-up \
+  meet-ready meet-problem; do
   grep -q " $event " "$TEST/list" || fail "list lacks $event"
   nirux sounds test "$event" > /dev/null
   expect "test $event" "$SOUNDS/$event.ogg"
@@ -382,12 +391,57 @@ sleep 0.1
 nirux sounds play volume-down; expect 'unset key uses the default' "$SOUNDS/volume-down.ogg"
 nirux sounds play battery-low; expect 'empty power table uses defaults' "$SOUNDS/battery-low.ogg"
 
+# An existing table gains the events added since, once, after its last key;
+# its own keys and a key set in [sounds] are left alone.
+grep -q '^volume-up = false$' "$CONFIG" || fail 'migration changed volume-up = false'
+awk '/^\[sounds\.feedback\]/{f=1;next} /^\[/{f=0} f && /^mic-mute = true$/{n++} END{exit n != 1}' "$CONFIG" ||
+  fail 'migration did not add mic-mute once to [sounds.feedback]'
+cat > "$CONFIG" <<'EOF'
+[sounds]
+enabled = true
+record-stop = false
+
+# Mine.
+[sounds.feedback]
+volume-up = false
+
+# Next table.
+[sounds.system]
+meet-ready = false
+EOF
+cp "$CONFIG" "$TEST/before.toml"
+nirux sounds status > "$TEST/status"
+nirux sounds status > /dev/null
+cmp -s "$CONFIG.bak" "$TEST/before.toml" || fail 'key migration kept no backup'
+awk '/^\[sounds\.feedback\]/{f=1;next} /^\[/{f=0} f && /^(mic-mute|mic-unmute|record-start) = true$/{n++} END{exit n != 3}' "$CONFIG" ||
+  fail 'key migration did not add the feedback events once'
+[ "$(grep -c '^record-stop' "$CONFIG")" = 1 ] || fail 'key migration added a key already set in [sounds]'
+[ "$(grep -c '^meet-ready' "$CONFIG")" = 1 ] || fail 'key migration duplicated meet-ready'
+grep -q '^meet-problem = true$' "$CONFIG" || fail 'key migration did not add meet-problem'
+awk '/^record-start = true$/{getline; if ($0 != "") exit 1; getline; if ($0 != "# Next table.") exit 1; ok=1} END{exit !ok}' "$CONFIG" ||
+  fail 'key migration did not insert after the last key of the table'
+grep -q '^  record-stop: off' "$TEST/status" || fail 'record-stop = false in [sounds] was lost'
+grep -q '^  meet-ready: off' "$TEST/status" || fail 'meet-ready = false was lost'
+nirux sounds play mic-mute; expect 'migrated mic-mute' "$SOUNDS/mic-mute.ogg"
+nirux sounds play record-stop; nothing 'record-stop off in [sounds]'
+nirux sounds play network-up; expect 'network-up' "$SOUNDS/network-up.ogg"
+
+# Do Not Disturb holds back a reminder, not a timer you set.
+FAKE_DND=on nirux sounds play reminder; nothing 'reminder during Do Not Disturb'
+FAKE_DND=on nirux sounds play timer-done; expect 'timer-done during Do Not Disturb' "$SOUNDS/timer-done.ogg"
+nirux sounds play reminder; expect 'reminder' "$SOUNDS/reminder.ogg"
+FAKE_DND=on nirux sounds test reminder > /dev/null; expect 'reminder test during Do Not Disturb' "$SOUNDS/reminder.ogg"
+
 nirux sounds status --json > "$TEST/status.json"
 python3 - "$TEST/status.json" <<'PY' || fail 'status --json categories are wrong'
 import json, sys
 data = json.load(open(sys.argv[1]))
 assert data["schema"] == 1, data
-assert set(data["categories"]) == {"system", "notifications", "feedback", "power", "devices", "dictation"}, data
+assert set(data["categories"]) == {"system", "notifications", "feedback", "power", "devices", "dictation", "network"}, data
+assert data["categories"]["network"]["events"] == ["network-down", "network-up"], data
+assert data["categories"]["notifications"]["events"] == ["notification", "timer-done", "reminder"], data
+assert data["events"]["meet-problem"] is True and data["events"]["record-stop"] is False, data
+assert "mic-mute" in data["categories"]["feedback"]["events"], data
 assert data["categories"]["dictation"]["events"] == ["dictation-start", "dictation-stop", "dictation-done", "dictation-error"], data
 assert data["events"]["dictation-done"] is False and data["events"]["dictation-start"] is True, data
 assert "volume-up" in data["categories"]["feedback"]["events"], data

@@ -291,7 +291,9 @@ nirux login-wallpaper reset          # back to following the theme
 nirux login-wallpaper sync           # copy the theme's picture now
 ```
 
-The picture must be a PNG, and it appears at the next start of the login screen. A picture chosen with `set` is never replaced by a theme change until you `reset`. `nirux login-wallpaper` works with the NIRUX SDDM and LightDM greeters; NIRU Login takes its colours and picture from `/etc/nirulogin/theme.toml`, which NIRUX writes from the active theme during `nirux update`.
+The picture must be a PNG, and it appears at the next start of the login screen. A picture chosen with `set` is never replaced by a theme change until you `reset`. `nirux login-wallpaper` works with the NIRUX SDDM and LightDM greeters; NIRU Login takes its colours and picture from `/etc/nirulogin/theme.toml`.
+
+Since NIRULOGIN 0.3.0 (NIRUX 0.12.302) the login screen has the NIRUX ascii look, like the lock screen and the screensaver: the NIRUX banner is typed above the clock and the form, with a blinking cursor after "A MINIMAL X11 DESKTOP", while you can type at once. `style = "classic"` in `/etc/nirulogin/theme.toml` brings back the previous look (`style = "ascii"` is the default).
 
 ## Troubleshooting
 

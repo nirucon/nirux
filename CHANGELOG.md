@@ -2,6 +2,31 @@
 
 Earlier releases are described in their release notes and commit messages.
 
+## 0.12.302 (2026-11-19)
+
+- **Meeting check: `Super+Alt+M` or `nirux meet-check`.** In about five
+  seconds it checks the camera (one picture, thrown away), the speakers, the
+  microphone level, apps that still run an old version, and how fast Teams
+  answers, and tells you with a notice and a sound whether you are ready.
+- **`nirux stale` and a restart symbol in the bar (NIRUBAR 0.31.0).** After an
+  update, `nirux stale` names programs that still run their old version and
+  what to do; the bar shows `↻` and the name while something waits, and a
+  click restarts what can restart in place (NIRUWM, NIRUBAR) and tells you
+  about the rest. Added to the bar once on existing installations.
+- **`nirux fleet top`:** every NIRUX machine live, with a small load graph,
+  memory, disk, lock state and what waits for a restart. `q` quits.
+- **The login screen has the NIRUX ascii look (NIRULOGIN 0.3.0).** The banner
+  is typed above the clock and the form; `style = "classic"` in
+  `/etc/nirulogin/theme.toml` brings back the previous look.
+- **Ten new event sounds, on by default** and switchable in `nirux sounds`,
+  the launcher and `sounds.toml`: `mic-mute` and `mic-unmute` (NIRUWM
+  0.33.1), `record-start` and `record-stop` (NIRUCLIP 0.8.0), `timer-done`
+  and `reminder` (NIRUBAR 0.31.0), `network-down` and `network-up` (NIRUNOTIFY
+  0.7.0, from the kernel's route changes, no polling), and `meet-ready` and
+  `meet-problem`. An existing `sounds.toml` gets the new keys once.
+  NIRUNOTIFY now honours the standard `suppress-sound` hint, so a timer or a
+  reminder plays its own sound and not two.
+
 ## 0.12.301 (2026-11-19)
 
 - The release of 0.12.300 stopped at a test (its stand-in program did not

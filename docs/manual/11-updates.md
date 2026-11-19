@@ -164,6 +164,26 @@ or `niructl update-shutdown` opens them in a terminal.
 Not included: AUR helpers, Flatpak, Snap, Docker images and firmware. The log is
 `~/.local/state/nirux/update-power.log`.
 
+## Programs that need a restart: nirux stale
+
+An update installs new versions, but a program that already runs keeps the
+version it started with. Usually that is fine; sometimes it is not, as when an
+old Helium could no longer start its camera in Teams. `nirux stale` names what
+still runs an old version:
+
+```sh
+nirux stale            # the list, and what to do for each
+nirux stale --json     # the same for NIRUBAR's restart module
+nirux stale restart    # restart what can restart in place, and say what needs you
+```
+
+NIRUWM and NIRUBAR restart in place (your windows stay). Session helpers such
+as NIRUIDLE need you to log out and in once; apps (Helium, LocalSend,
+OpenCode) need all their windows closed and opened again. The lock screen that
+is up is never counted: the next lock starts the new version. NIRUBAR's
+`restart` module shows `↻` and the name in the bar while something waits;
+click it to run `nirux stale restart`.
+
 ## Undo an update: rollback
 
 ```sh
@@ -358,6 +378,21 @@ exclude = ["proxmox"]             # never listed
 ```
 
 `NIRUX_FLEET_TIMEOUT` sets the SSH connect timeout in seconds (default 5).
+
+### The fleet, live: nirux fleet top
+
+```sh
+nirux fleet top                 # refreshes every 5 seconds; q quits
+nirux fleet top --interval 10
+nirux fleet top --once          # one table, for scripts or a quick look
+```
+
+Every NIRUX machine on one screen: state, version (`behind` when older than
+the latest release), the 1-minute load with a small graph of the last 20 rounds
+(load per core), memory and disk in use, whether the screen is locked, and
+what waits for a restart (`nirux stale` on that machine; NIRUX 0.12.302 and
+later). It uses the same SSH access as the rest of `nirux fleet` and asks
+GitHub for the latest release once, not every round.
 
 ### One setting on every machine
 

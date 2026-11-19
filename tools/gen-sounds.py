@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Generate the short NIRUX system sounds (feedback, power, devices, security,
-dictation).
+dictation, network, timers and meetings).
 
 The sounds are synthesised from scratch, deterministically, with the Python
 standard library only. ffmpeg (with libvorbis) encodes them to Ogg Vorbis.
@@ -357,6 +357,94 @@ def dictation_error():
     return finish(biquad(out, "low", 2200.0), fade=0.010)
 
 
+def mic(muted):
+    """The microphone muted (A5 -> E5, the second note closed off by a low-pass,
+    as if a hand covers the mic) or live again (the muffled E5 opens to A5).
+    Glassy and higher than the output mute (B4 -> G4 marimba), so the two are
+    never confused."""
+    bright = NOTE["A5"]
+    dull = NOTE["E5"]
+    clear = lambda f: bar(f, 0.11, 0.026, attack=0.002, fourth=0.0, glass=0.14)
+    covered = lambda f: biquad(bar(f, 0.11, 0.022, attack=0.003, fourth=0.10, glass=0.06), "low", 900.0)
+    first, second = (clear(bright), covered(dull)) if muted else (covered(dull), clear(bright))
+    out = mix(list(first), second, at=0.060, gain=0.95 if muted else 0.9)
+    return finish(out)
+
+
+def pip(freq, length=0.075, tau=0.018):
+    """A bell pip: the bar with its octave, for the recording sounds."""
+    out = bar(freq, length, tau, attack=0.0015, fourth=0.10, glass=0.05)
+    return mix(out, bar(freq * 2, length, tau * 0.7, attack=0.0015, fourth=0.0), gain=0.30)
+
+
+def record(start):
+    """Recording starts: two equal E5 pips, a camera counting in. Recording
+    stops: one E5 pip falling to a longer B4."""
+    if start:
+        out = pip(NOTE["E5"])
+        mix(out, pip(NOTE["E5"]), at=0.095, gain=0.92)
+    else:
+        out = pip(NOTE["E5"])
+        mix(out, pip(NOTE["B4"], length=0.16, tau=0.040), at=0.085, gain=0.9)
+    return finish(out)
+
+
+def bell(freq, length, tau):
+    """A small soft bell: a slow bar with the glassy partial a little louder."""
+    return bar(freq, length, tau, attack=0.004, fourth=0.08, glass=0.16)
+
+
+def timer_done():
+    """A calm clock chime: G5 and D5, twice, like a quiet kitchen timer that
+    does not insist."""
+    out = []
+    for rep_at in (0.0, 0.62):
+        mix(out, bell(NOTE["G5"], 0.55, 0.16), at=rep_at)
+        mix(out, bell(NOTE["D5"], 0.60, 0.18), at=rep_at + 0.17, gain=0.85)
+    return finish(out, fade=0.020)
+
+
+def reminder():
+    """A calendar reminder: three rising bells D5, G5, B5, the last left to
+    ring a little longer."""
+    out = []
+    for i, (name, length) in enumerate((("D5", 0.40), ("G5", 0.40), ("B5", 0.70))):
+        mix(out, bell(NOTE[name], length, 0.14 if i < 2 else 0.22), at=i * 0.16, gain=0.9 ** i)
+    return finish(out, fade=0.020)
+
+
+def network(up):
+    """The connection is back (A4, D5, A5 opening up) or lost (A5, D5, A4,
+    darker): glassy, no marimba partial, so it does not sound like a battery."""
+    names = ["A4", "D5", "A5"] if up else ["A5", "D5", "A4"]
+    out = []
+    for i, name in enumerate(names):
+        mix(out, bar(NOTE[name], 0.20, 0.050, attack=0.003, fourth=0.0, glass=0.12),
+            at=i * 0.085, gain=0.92 ** i)
+    if not up:
+        out = biquad(out, "low", 2400.0)
+    return finish(out, fade=0.010)
+
+
+def meet_ready():
+    """Ready for a call: a G major chord blooming upwards (G4 + B4, then
+    D5 + G5)."""
+    out = bar(NOTE["G4"], 0.30, 0.080, attack=0.004, fourth=0.14, glass=0.05)
+    mix(out, bar(NOTE["B4"], 0.30, 0.080, attack=0.004, fourth=0.14, glass=0.05), gain=0.7)
+    mix(out, bar(NOTE["D5"], 0.34, 0.090, attack=0.004, fourth=0.14, glass=0.05), at=0.11, gain=0.8)
+    mix(out, bar(NOTE["G5"], 0.34, 0.090, attack=0.004, fourth=0.10, glass=0.05), at=0.11, gain=0.6)
+    return finish(out)
+
+
+def meet_problem():
+    """Something to fix before the call: two muted A4 knocks and a lower E4,
+    soft and short, a question rather than an alarm."""
+    out = []
+    for at, name, gain in ((0.0, "A4", 1.0), (0.12, "A4", 0.9), (0.24, "E4", 0.95)):
+        mix(out, bar(NOTE[name], 0.16, 0.040, attack=0.003, fourth=0.20, glass=0.0), at=at, gain=gain)
+    return finish(biquad(out, "low", 1600.0), fade=0.010)
+
+
 # name -> (builder, target LUFS-M). The reference notification is ~-11.7.
 SOUNDS = {
     "volume-up": (lambda: tock(volume_pitch(40), 1), -25.0),
@@ -381,6 +469,16 @@ SOUNDS = {
     "dictation-stop": (lambda: dictation(False), -23.0),
     "dictation-done": (dictation_done, -26.0),
     "dictation-error": (dictation_error, -21.0),
+    "mic-mute": (lambda: mic(True), -22.0),
+    "mic-unmute": (lambda: mic(False), -22.0),
+    "record-start": (lambda: record(True), -21.0),
+    "record-stop": (lambda: record(False), -21.0),
+    "timer-done": (timer_done, -16.0),
+    "reminder": (reminder, -16.0),
+    "network-down": (lambda: network(False), -21.0),
+    "network-up": (lambda: network(True), -22.0),
+    "meet-ready": (meet_ready, -20.0),
+    "meet-problem": (meet_problem, -19.0),
 }
 
 # The volume tick follows the new level: levels/volume-up-NNN.ogg for every

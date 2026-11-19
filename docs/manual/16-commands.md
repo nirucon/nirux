@@ -42,6 +42,9 @@ normal user, never in a root shell; it asks for sudo itself when it needs it.
 | `nirux fleet update HOST...\|--all\|--behind` | Update other machines over SSH, one at a time |
 | `nirux fleet setup [HOST...]` | Let this machine log in to the others with an SSH key |
 | `nirux fleet set KEY VALUE [HOST...]` | Change one setting on every machine; offline ones get it later |
+| `nirux fleet top [--interval S] [--once]` | Every machine live: load graph, memory, disk, lock, restarts |
+| `nirux stale [--json] \| stale restart` | Programs still running an old version after an update, and restarting them |
+| `nirux meet-check [--notify]` | Ready for a call: camera, microphone, speakers, stale apps, network (`Super+Alt+M`) |
 | `nirux fleet pending [apply\|clear [HOST]]` | Settings waiting for an offline machine |
 | `nirux sync status [HOST...] [--files]` | What differs between this machine and the others |
 | `nirux sync push HOST...\|--all [ITEM...]` | Copy settings from this machine (`--yes`, `--dry-run`) |
@@ -151,7 +154,7 @@ niructl keys --markdown        # the keys in effect, as Markdown
 
 <!-- generated: niructl (tools/manual-gen.sh; do not edit by hand) -->
 
-Every form `niructl` accepts, from its usage text (NIRUWM 0.33.0). Run `niructl`
+Every form `niructl` accepts, from its usage text (NIRUWM 0.33.1). Run `niructl`
 without arguments to print it.
 
 - `niructl status`

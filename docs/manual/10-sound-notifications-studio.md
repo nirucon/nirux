@@ -139,18 +139,43 @@ niruio heal --force   # probe every card again, even when all looks right
 
 What it did is written to `~/.local/state/niruio/heal.log`. `niruio doctor` shows such a card as a warning ("the microphone is missing") with the fix "probe again". On Void, where the session starts PipeWire itself, the session also stops the restarted WirePlumber at logout.
 
+## Ready for a call: meeting check
+
+`Super+Alt+M` (or `nirux meet-check` in a terminal) checks in about five
+seconds what a Teams or Meet call needs, and answers with a notice and a short
+sound (`meet-ready` or `meet-problem`):
+
+| Check | What it does |
+|---|---|
+| camera | finds the camera (not an infrared face-login camera) and reads one picture; a camera that is in use counts as working |
+| speakers | the default output exists, is not muted and not nearly silent |
+| microphone | the default input exists, is not muted, and two seconds of its level are measured; say something to test your level |
+| apps | no app still runs an old version after an update (an old Helium cannot start its camera; see `nirux stale` in chapter 11) |
+| network | how fast `teams.microsoft.com` answers (`NIRUX_MEET_URL` checks another address) |
+
+Nothing is recorded or kept: the picture and the sound are read and thrown
+away. In a terminal every line says `ok`, `note` or `FAIL` and what to do; the
+command exits 1 when something failed. The key is in the NIRUX configuration
+template (`[[keys]]` with `shell nirux meet-check --notify`); change or remove
+it like any other key.
+
 ## Event sounds
 
-NIRUX plays short, soft sounds for the session, notifications, the keys you press, the charger and battery, devices that come and go, and NIRUDICTATE dictation. They are quiet, start at once and never pause, duck or reroute other audio.
+NIRUX plays short, soft sounds for the session, notifications, the keys you press, the microphone, screen recording, timers and reminders, the charger and battery, devices and the network that come and go, a meeting check, and NIRUDICTATE dictation. They are quiet, start at once and never pause, duck or reroute other audio.
 
 | Category | Events | On by default |
 |---|---|---|
-| `system` | `startup`, `update`, `shutdown`, `auth-fail` (wrong password in NIRULOCK), `lock`, `unlock`, `lock-typing` (typewriter keys while you type the password) | all except `lock` and `unlock` |
-| `notifications` | `notification` (or the app's own sound) | yes |
-| `feedback` | `volume-up`, `volume-down`, `volume-limit`, `mute`, `unmute`, `brightness-up`, `brightness-down`, `screenshot` | all except the brightness ticks |
+| `system` | `startup`, `update`, `shutdown`, `auth-fail` (wrong password in NIRULOCK), `lock`, `unlock`, `lock-typing` (typewriter keys while you type the password), `meet-ready`, `meet-problem` (the meeting check) | all except `lock` and `unlock` |
+| `notifications` | `notification` (or the app's own sound), `timer-done` (the bar's timer), `reminder` (a calendar reminder; silent in Do Not Disturb) | yes |
+| `feedback` | `volume-up`, `volume-down`, `volume-limit`, `mute`, `unmute`, `mic-mute`, `mic-unmute` (higher and glassier than the speaker mute), `record-start`, `record-stop` (screen recording; neither ends up in the recording), `brightness-up`, `brightness-down`, `screenshot` | all except the brightness ticks |
 | `power` | `power-plug`, `power-unplug`, `battery-low`, `battery-critical`, `battery-full` | all except `battery-full` |
 | `devices` | `device-connect`, `device-disconnect` (USB, sound cards, monitors, optionally Bluetooth) | yes |
 | `dictation` | `dictation-start`, `dictation-stop`, `dictation-done`, `dictation-error` | all except `dictation-done` |
+| `network` | `network-down` (the connection has been gone for 6 seconds), `network-up` (back again) | yes |
+
+The network sounds never play in the first 30 seconds of a session, right after waking from sleep, or on a machine that started without a connection, and a flapping link gives one pair of sounds. A timer you set still rings in Do Not Disturb.
+
+An existing `~/.config/nirux/sounds.toml` gets the new events' keys (on) at the next update, once; a key you already set is left as it is.
 
 Manage them with `nirux sounds`:
 

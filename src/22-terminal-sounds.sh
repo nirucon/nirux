@@ -68,27 +68,30 @@ EOF
 # category's `enabled` and its own key are all true. The event key is read
 # from the category table first, then from [sounds] (where startup, update,
 # shutdown and notification have always lived), then from the default.
-SOUNDS_CATEGORIES='system notifications feedback power devices dictation'
+SOUNDS_CATEGORIES='system notifications feedback power devices dictation network'
 
 sounds_category_events() {
   case "$1" in
-    system) say 'startup update shutdown auth-fail lock unlock lock-typing' ;;
-    notifications) say 'notification' ;;
-    feedback) say 'volume-up volume-down volume-limit mute unmute brightness-up brightness-down screenshot' ;;
+    system) say 'startup update shutdown auth-fail lock unlock lock-typing meet-ready meet-problem' ;;
+    notifications) say 'notification timer-done reminder' ;;
+    feedback) say 'volume-up volume-down volume-limit mute unmute brightness-up brightness-down screenshot mic-mute mic-unmute record-start record-stop' ;;
     power) say 'power-plug power-unplug battery-low battery-critical battery-full' ;;
     devices) say 'device-connect device-disconnect' ;;
     dictation) say 'dictation-start dictation-stop dictation-done dictation-error' ;;
+    network) say 'network-down network-up' ;;
   esac
 }
 
 sounds_category() {
   case "$1" in
-    startup|update|shutdown|auth-fail|lock|unlock|lock-typing) say system ;;
-    notification) say notifications ;;
+    startup|update|shutdown|auth-fail|lock|unlock|lock-typing|meet-ready|meet-problem) say system ;;
+    notification|timer-done|reminder) say notifications ;;
     volume-up|volume-down|volume-limit|mute|unmute|brightness-up|brightness-down|screenshot) say feedback ;;
+    mic-mute|mic-unmute|record-start|record-stop) say feedback ;;
     power-plug|power-unplug|battery-low|battery-critical|battery-full) say power ;;
     device-connect|device-disconnect) say devices ;;
     dictation-start|dictation-stop|dictation-done|dictation-error) say dictation ;;
+    network-down|network-up) say network ;;
     *) return 1 ;;
   esac
 }
@@ -116,14 +119,20 @@ lock = false
 unlock = false
 # Typewriter keys while you type the password in NIRULOCK.
 lock-typing = true
+# The result of `nirux meet-check`: ready for a call, or something to fix.
+meet-ready = true
+meet-problem = true
 EOF
     ;;
     notifications) cat <<'EOF'
 
 # Notification sounds (the notification key in [sounds] above and the app
-# sounds in [sounds.apps]). Do Not Disturb silences these and nothing else.
+# sounds in [sounds.apps]), the bar timer and calendar reminders. Do Not
+# Disturb silences notifications and reminders; a timer you set still sounds.
 [sounds.notifications]
 enabled = true
+timer-done = true
+reminder = true
 EOF
     ;;
     feedback) cat <<'EOF'
@@ -140,6 +149,12 @@ unmute = true
 brightness-up = false
 brightness-down = false
 screenshot = true
+# The microphone muted and live again (niructl audio mic-mute).
+mic-mute = true
+mic-unmute = true
+# A screen recording (NIRUCLIP) starts and stops.
+record-start = true
+record-stop = true
 rate_limit_ms = 80
 EOF
     ;;
@@ -186,6 +201,16 @@ dictation-done = false
 dictation-error = true
 EOF
     ;;
+    network) cat <<'EOF'
+
+# The connection is lost (no default route for a few seconds) and back.
+# Never at login or right after a resume, and a flapping link is one sound.
+[sounds.network]
+enabled = true
+network-down = true
+network-up = true
+EOF
+    ;;
   esac
 }
 
@@ -218,10 +243,53 @@ sounds_has_table() {
   grep -q "^[[:space:]]*\[$(printf '%s' "$1" | sed 's/\./\\./g')\][[:space:]]*\(#.*\)\{0,1\}$" "$SOUNDS_CONFIG" 2>/dev/null
 }
 
+# Events added to a category table after it was first written. A table that
+# already exists gains these keys once, with their defaults, so they can be
+# seen and switched in the file; a key that is set anywhere stays as it is.
+SOUNDS_ADDED_EVENTS='meet-ready meet-problem timer-done reminder mic-mute mic-unmute record-start record-stop'
+
+# Print the config with each missing added event key inserted after the last
+# key of its existing table. With CHECK=1, print nothing and succeed only when
+# a key is missing.
+sounds_insert_keys() {
+  sounds_ik_spec=
+  for sounds_ik in $SOUNDS_ADDED_EVENTS; do
+    sounds_ik_spec="$sounds_ik_spec sounds.$(sounds_category "$sounds_ik")=$sounds_ik=$(sounds_event_default "$sounds_ik")"
+  done
+  awk -v spec="$sounds_ik_spec" -v check="$1" '
+    function trim(s) { sub(/^[[:space:]]+/, "", s); sub(/[[:space:]]+$/, "", s); return s }
+    function header(line,   s) { s = line; sub(/^[[:space:]]*\[/, "", s); sub(/\][[:space:]]*(#.*)?$/, "", s); return trim(s) }
+    function keyof(line,   k) { k = trim(substr(line, 1, index(line, "=") - 1)); gsub(/^"|"$/, "", k); return tolower(k) }
+    function flush() { if (sec in add) { printf "%s", add[sec]; delete add[sec] } printf "%s", held; held = "" }
+    NR == FNR {
+      if ($0 ~ /^[[:space:]]*\[/) { sec = header($0); tables[sec] = 1; next }
+      if (FNR == 1) sec = "sounds"
+      if (index($0, "=") > 0) have[sec SUBSEP keyof($0)] = 1
+      next
+    }
+    FNR == 1 {
+      n = split(spec, items, " ")
+      for (i = 1; i <= n; i++) {
+        split(items[i], f, "=")
+        if ((f[1] in tables) && !((f[1] SUBSEP f[2]) in have) && !(("sounds" SUBSEP f[2]) in have)) {
+          add[f[1]] = add[f[1]] f[2] " = " f[3] "\n"; missing = 1
+        }
+      }
+      if (check) exit !missing
+      sec = "sounds"; held = ""
+    }
+    /^[[:space:]]*\[/ { flush(); sec = header($0); print; next }
+    /^[[:space:]]*(#.*)?$/ { held = held $0 "\n"; next }
+    { printf "%s", held; held = ""; print }
+    END { if (check) exit !missing; flush() }
+  ' "$SOUNDS_CONFIG" "$SOUNDS_CONFIG" 2>/dev/null
+}
+
 # Older configurations lack [sounds.apps] and the category tables. Each
 # missing table is appended once with its defaults; a table that exists, even
-# an empty one, is the user's choice and is never touched. Keys already in
-# [sounds] keep their meaning, because they are read before the defaults.
+# an empty one, is the user's choice and keeps its keys, gaining only the
+# events added since (SOUNDS_ADDED_EVENTS). Keys already in [sounds] keep their
+# meaning, because they are read before the defaults.
 sounds_migrate() {
   [ -f "$SOUNDS_CONFIG" ] || return 0
   sounds_missing=
@@ -229,10 +297,11 @@ sounds_migrate() {
     sounds_has_table "sounds.$sounds_cat" || sounds_missing="$sounds_missing $sounds_cat"
   done
   sounds_has_table sounds.apps && sounds_need_apps=0 || sounds_need_apps=1
-  [ -n "$sounds_missing" ] || [ "$sounds_need_apps" = 1 ] || return 0
+  sounds_insert_keys 1 && sounds_need_keys=1 || sounds_need_keys=0
+  [ -n "$sounds_missing" ] || [ "$sounds_need_apps" = 1 ] || [ "$sounds_need_keys" = 1 ] || return 0
   sounds_mig=$SOUNDS_CONFIG.tmp.$$
   if {
-    cat "$SOUNDS_CONFIG"
+    sounds_insert_keys 0
     for sounds_cat in $sounds_missing; do sounds_category_block "$sounds_cat"; done
     [ "$sounds_need_apps" = 0 ] || sounds_apps_block
   } > "$sounds_mig" 2>/dev/null; then
@@ -360,7 +429,7 @@ sounds_cooldown() {
         *) sounds_stamp=$SOUNDS_STATE/.notification-stamp-$(printf '%s' "$2" | tr -c 'A-Za-z0-9_-' '_') ;;
       esac
       sounds_stamp_ok "$sounds_stamp" "$sounds_cd" ;;
-    volume-up|volume-down|volume-limit|mute|unmute|brightness-up|brightness-down)
+    volume-up|volume-down|volume-limit|mute|unmute|brightness-up|brightness-down|mic-mute|mic-unmute)
       sounds_cd=$(sounds_table_value sounds.feedback rate_limit_ms)
       case "$sounds_cd" in ''|*[!0-9]*) sounds_cd=80 ;; esac
       sounds_stamp_ok "$SOUNDS_STATE/.feedback-stamp-$1" "$sounds_cd" ;;
@@ -459,6 +528,11 @@ sounds_play() {
     sounds_enabled || return 0
   else
     sounds_event_enabled "$sounds_event" || return 0
+  fi
+  # NIRUNOTIFY decides Do Not Disturb before it asks for a notification sound;
+  # a reminder played here is held back the same way. A timer you set sounds.
+  if [ "$sounds_event" = reminder ] && [ "${SOUNDS_FORCE:-0}" != 1 ] && sounds_dnd_on; then
+    return 0
   fi
   if [ "$sounds_event" = notification ]; then
     sounds_app_excluded "$sounds_app" && return 0

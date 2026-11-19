@@ -361,6 +361,7 @@ upgrade_default_bar_modules() {
   [ -n "$mig_modules" ] || return 0
   mig_add=""
   mig_tail=0
+  mig_restart=
   for mig_module in layout display quicksettings niruxupdate scratchpad dictation; do
     case "$mig_modules" in
       *"\"$mig_module\""*) continue ;;
@@ -373,6 +374,15 @@ upgrade_default_bar_modules() {
      printf '%s' "$mig_modules" | grep -q '"network"'; then
     mig_modules=$(printf '%s' "$mig_modules" | sed 's/"network"/"tailscale", "network"/')
     mig_tail=1
+  fi
+  # The restart module (NIRUBAR 0.31) sits right after niruxupdate. It is
+  # added once: a list it was removed from stays without it.
+  mig_marker=$STATE/bar-module-restart-added
+  if [ ! -e "$mig_marker" ] && ! printf '%s' "$mig_modules" | grep -q '"restart"' &&
+     printf '%s' "$mig_modules" | grep -q '"niruxupdate"'; then
+    mig_modules=$(printf '%s' "$mig_modules" | sed 's/"niruxupdate"/"niruxupdate", "restart"/')
+    mig_tail=1
+    mig_restart=1
   fi
   [ -n "$mig_add" ] || [ "$mig_tail" = 1 ] || return 0
   if [ -n "$mig_add" ]; then
@@ -403,7 +413,8 @@ upgrade_default_bar_modules() {
     { print }
   ' "$mig_file" > "$mig_tmp" || { rm -f "$mig_tmp"; return 0; }
   if chmod "$mig_mode" "$mig_tmp" && mv -f "$mig_tmp" "$mig_file"; then
-    say "Added bar module(s):$mig_add${mig_tail:+ tailscale}"
+    say "Added bar module(s):$mig_add${mig_restart:+ restart}"
+    [ -z "${mig_restart:-}" ] || { mkdir -p "$STATE" && : > "$mig_marker"; } 2>/dev/null || :
   else
     rm -f "$mig_tmp"
   fi

@@ -1647,6 +1647,7 @@ grep -qx 'background = "101010"' "$appearance_test/custom.toml" || fail 'custom 
 )
 
 sh "$SOURCE/tests/app-lifecycle.sh"
+sh "$SOURCE/tests/stale.sh"
 sh "$SOURCE/tests/legacy-session.sh"
 sh "$SOURCE/tests/display-manager.sh"
 sh "$SOURCE/tests/runtime-state.sh"

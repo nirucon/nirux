@@ -13,6 +13,7 @@ fleet_usage() {
   say "       nirux fleet update HOST...|--all|--behind"
   say "       nirux fleet setup [HOST...]"
   say "       nirux fleet set KEY VALUE [HOST...]"
+  say "       nirux fleet top [--interval SECONDS] [--once]"
   say "       nirux fleet pending [apply|clear [HOST]]"
   say "KEY is a NIRUWM key such as idle.screensaver_timeout (niructl config set) or"
   say "screensaver.KEY for ~/.config/niruui/screensaver.toml (niruscreensaver --set),"
@@ -142,6 +143,14 @@ echo "uptime=$(cut -d. -f1 /proc/uptime 2>/dev/null)"
 echo "updated=$(stat -c %Y "$HOME/.local/share/nirux/current" 2>/dev/null)"
 echo "extras=$(grep -c . "$HOME/.local/share/nirux/extras-selected" 2>/dev/null)"
 echo "now=$(date +%s)"
+# For nirux fleet top: load, cores, memory in use and programs on an old
+# version (`nirux stale`, NIRUX 0.12.302 and later).
+echo "load=$(cut -d ' ' -f 1 /proc/loadavg 2>/dev/null)"
+echo "cores=$(nproc 2>/dev/null || getconf _NPROCESSORS_ONLN 2>/dev/null)"
+awk '/^MemTotal:/ { t = $2 } /^MemAvailable:/ { a = $2 } END { if (t) printf "mem=%d\n", (t - a) * 100 / t }' /proc/meminfo 2>/dev/null
+if grep -q '^stale_command()' "$n" 2>/dev/null; then
+  echo "stale=$("$n" stale --json 2>/dev/null | grep -o '"name":"[^"]*"' | sed 's/"name":"//; s/"$//' | paste -sd, -)"
+fi
 PROBE
 }
 # Probe one host into $FLEET_WORK/probe.NAME; LOCAL=1 runs it here.
@@ -232,8 +241,11 @@ fleet_num() { case "$1" in ''|*[!0-9]*) ;; *) say "$1" ;; esac; }
 # name|local|state|version|latest|behind|relogin|session|locked|distro|uptime|updated|extras|last_version|last_seen|disk|disk_free_kib|failed|stale_sessions|lock
 fleet_collect() {
   fleet_hosts
-  (NIRUX_FETCH_ATTEMPTS=${NIRUX_FETCH_ATTEMPTS:-2}
-   fetch https://api.github.com/repos/nirucon/nirux/releases/latest "$FLEET_WORK/latest.json") >/dev/null 2>&1 &
+  # nirux fleet top asks GitHub once, not every round.
+  if [ -z "${FLEET_KEEP_LATEST:-}" ] || [ ! -s "$FLEET_WORK/latest.json" ]; then
+    (NIRUX_FETCH_ATTEMPTS=${NIRUX_FETCH_ATTEMPTS:-2}
+     fetch https://api.github.com/repos/nirucon/nirux/releases/latest "$FLEET_WORK/latest.json") >/dev/null 2>&1 &
+  fi
   while read -r fleet_h fleet_on fleet_local; do
     [ "$fleet_on" = 0 ] || fleet_probe "$fleet_h" "$fleet_local" &
   done < "$FLEET_WORK/hosts"
@@ -758,6 +770,79 @@ fleet_pending() {
     *) die "unknown fleet pending command: $1 (apply or clear)" ;;
   esac
 }
+# ── nirux fleet top: the fleet, live ────────────────────────────────────────
+# A sparkline of the last values (0 to 100) in $1, one block per value.
+fleet_spark() {
+  printf '%s\n' "$1" | awk '{ split("▁ ▂ ▃ ▄ ▅ ▆ ▇ █", b, " "); s = ""
+    for (i = 1; i <= NF; i++) { v = $i + 0; if (v < 0) v = 0; if (v > 100) v = 100; s = s b[int(v * 7 / 100) + 1] }
+    print s }'
+}
+# One screen of nirux fleet top from the current probes.
+fleet_top_render() {
+  ft_now=$(date '+%H:%M:%S')
+  if [ -t 1 ]; then printf '\033[H\033[2J'; fi
+  printf 'NIRUX fleet  %s   latest %s   every %ss, q quits\n\n' "$ft_now" "${FLEET_LATEST:-?}" "$ft_every"
+  {
+    printf 'HOST\tSTATE\tNIRUX\tLOAD\tLAST %s\tMEM\tDISK\tLOCKED\tRESTART\n' "$ft_samples"
+    while IFS='|' read -r h loc st ver lat beh rel ses lck dis up upd ext lastv seen dsk dfr fai stl lok; do
+      [ "$loc" = 1 ] && h="$h*"
+      case "$st" in
+        online)
+          ft_cores=$(fleet_field "${h%\*}" cores)
+          ft_load=$(fleet_field "${h%\*}" load)
+          ft_pct=$(awk -v l="${ft_load:-0}" -v c="${ft_cores:-1}" 'BEGIN { if (c < 1) c = 1; printf "%d", l * 100 / c }')
+          ft_hist=$FLEET_WORK/top.${h%\*}
+          { cat "$ft_hist" 2>/dev/null; say "$ft_pct"; } | tail -n "$ft_samples" > "$ft_hist.new" && mv -f "$ft_hist.new" "$ft_hist"
+          ft_mem=$(fleet_field "${h%\*}" mem)
+          ft_stale=$(fleet_field "${h%\*}" stale)
+          [ -n "$rel" ] && ft_stale=${ft_stale:-$rel}
+          case "$beh" in 1) ver="$ver (behind)" ;; esac
+          [ "$lck" = 1 ] && lck=yes || lck=no
+          printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' "$h" online "${ver:-?}" "${ft_load:-?}" \
+            "$(fleet_spark "$(tr '\n' ' ' < "$ft_hist")")" "${ft_mem:-?}%" "${dsk:-?}%" "$lck" "${ft_stale:--}" ;;
+        offline) printf '%s\toffline\t%s\t-\t\t-\t-\t-\t-\n' "$h" "${lastv:+($lastv)}" ;;
+        noaccess) printf '%s\tno access\t-\t-\t\t-\t-\t-\t-\n' "$h" ;;
+        nonirux) printf '%s\tno NIRUX\t-\t-\t\t-\t-\t-\t-\n' "$h" ;;
+      esac
+    done < "$FLEET_WORK/rows"
+  } | awk -F '\t' '
+    { for (i = 1; i <= NF; i++) { c[NR, i] = $i; l = length($i); if (l > w[i]) w[i] = l } n = NR; if (NF > m) m = NF }
+    END { for (r = 1; r <= n; r++) { line = ""
+      for (i = 1; i <= m; i++) { v = c[r, i]; pad = w[i] + 2 - length(v); if (i == m) pad = 0
+        line = line v; for (k = 0; k < pad; k++) line = line " " }
+      print line } }'
+  printf '\n* this machine. LOAD is the 1-minute load; the graph is load per core.\n'
+}
+fleet_top() {
+  ft_every=5 ft_once=0 ft_samples=20
+  while [ "$#" -gt 0 ]; do
+    case "$1" in
+      --once) ft_once=1 ;;
+      --interval) shift; ft_every=${1:-5} ;;
+      --help|-h) say 'usage: nirux fleet top [--interval SECONDS] [--once]'; return 0 ;;
+      *) die "unknown option for fleet top: $1" ;;
+    esac
+    shift
+  done
+  case "$ft_every" in ''|*[!0-9]*|0) die 'the interval is whole seconds, at least 1' ;; esac
+  [ -t 0 ] && [ -t 1 ] || ft_once=1
+  fleet_work
+  fleet_collect
+  if [ "$ft_once" = 1 ]; then fleet_top_render; return 0; fi
+  ft_stty=$(stty -g)
+  trap 'stty "$ft_stty" 2>/dev/null; printf "\033[?25h"; fleet_cleanup' EXIT
+  trap 'exit 130' INT TERM HUP
+  printf '\033[?25l'
+  stty -icanon -echo min 0 time "$((ft_every * 10 > 255 ? 255 : ft_every * 10))"
+  FLEET_KEEP_LATEST=1
+  while :; do
+    fleet_top_render
+    ft_key=$(dd bs=1 count=1 2>/dev/null) || ft_key=
+    case "$ft_key" in q|Q) break ;; esac
+    fleet_collect
+  done
+  printf '\n'
+}
 fleet_command() {
   fleet_action=${1:-status}
   [ "$#" = 0 ] || shift
@@ -767,6 +852,7 @@ fleet_command() {
     update) fleet_update "$@" ;;
     setup) fleet_setup "$@" ;;
     set) fleet_set "$@" ;;
+    top) fleet_top "$@" ;;
     pending) fleet_pending "$@" ;;
     --help|-h|help) fleet_usage ;;
     *) die "unknown fleet command: $fleet_action (status, update, setup, set or pending)" ;;

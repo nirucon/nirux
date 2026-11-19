@@ -2,7 +2,7 @@
 # NIRUX: install a complete X11 desktop, or maintain an existing installation.
 set -eu
 
-VERSION=0.12.301
+VERSION=0.12.302
 PREFIX=${NIRUX_PREFIX:-$HOME/.local}
 BIN=$PREFIX/bin
 STATE=$PREFIX/share/nirux
@@ -117,7 +117,7 @@ usage() {
   say "       nirux browser-addon bonjourr|none|status"
   say "       nirux extras [list|status|select NAME|unselect NAME|install [NAME...]|uninstall NAME... [--purge]|update]"
   say "       nirux sounds [status|list|on|off|toggle|test|app ...] (see docs/SOUNDS.md)"
-  say "       nirux fleet [status [--json]|update HOST...|--all|--behind|setup [HOST...]|set KEY VALUE [HOST...]|pending [apply|clear]]"
+  say "       nirux fleet [status [--json]|update HOST...|--all|--behind|setup [HOST...]|set KEY VALUE [HOST...]|pending [apply|clear]|top]"
   say "       nirux sync status [HOST...] | push HOST...|--all [ITEM...] | pull HOST [ITEM...] | items"
   say "       nirux snapshot [--note TEXT] | snapshot list | restore [ID|latest] [--dry-run]"
   say "       nirux backup [status|setup|now|list [HOST]|restore [HOST|FILE] [--to DIR]|off]"
@@ -126,6 +126,7 @@ usage() {
   say "       nirux checkup [--dry-run] | last | status | enable | disable | discord set|test"
   say "       nirux autoupdate [status|last|enable|disable|run-now]"
   say "       nirux whats-new [--notify] | resume-check [--notify] | clean [--yes] [--dry-run]"
+  say "       nirux meet-check [--notify] | stale [--json] | stale restart"
   say "       nirux update-shutdown [--yes] [--dry-run] [--no-power]"
   say "       nirux update-reboot [--yes] [--dry-run] [--no-power]"
   say "       nirux rollback | gc [--keep N] [--dry-run] | status | doctor [--fix [--yes]] | uninstall [--purge] | --version | --help"
@@ -1130,6 +1131,7 @@ upgrade_default_bar_modules() {
   [ -n "$mig_modules" ] || return 0
   mig_add=""
   mig_tail=0
+  mig_restart=
   for mig_module in layout display quicksettings niruxupdate scratchpad dictation; do
     case "$mig_modules" in
       *"\"$mig_module\""*) continue ;;
@@ -1142,6 +1144,15 @@ upgrade_default_bar_modules() {
      printf '%s' "$mig_modules" | grep -q '"network"'; then
     mig_modules=$(printf '%s' "$mig_modules" | sed 's/"network"/"tailscale", "network"/')
     mig_tail=1
+  fi
+  # The restart module (NIRUBAR 0.31) sits right after niruxupdate. It is
+  # added once: a list it was removed from stays without it.
+  mig_marker=$STATE/bar-module-restart-added
+  if [ ! -e "$mig_marker" ] && ! printf '%s' "$mig_modules" | grep -q '"restart"' &&
+     printf '%s' "$mig_modules" | grep -q '"niruxupdate"'; then
+    mig_modules=$(printf '%s' "$mig_modules" | sed 's/"niruxupdate"/"niruxupdate", "restart"/')
+    mig_tail=1
+    mig_restart=1
   fi
   [ -n "$mig_add" ] || [ "$mig_tail" = 1 ] || return 0
   if [ -n "$mig_add" ]; then
@@ -1172,7 +1183,8 @@ upgrade_default_bar_modules() {
     { print }
   ' "$mig_file" > "$mig_tmp" || { rm -f "$mig_tmp"; return 0; }
   if chmod "$mig_mode" "$mig_tmp" && mv -f "$mig_tmp" "$mig_file"; then
-    say "Added bar module(s):$mig_add${mig_tail:+ tailscale}"
+    say "Added bar module(s):$mig_add${mig_restart:+ restart}"
+    [ -z "${mig_restart:-}" ] || { mkdir -p "$STATE" && : > "$mig_marker"; } 2>/dev/null || :
   else
     rm -f "$mig_tmp"
   fi
@@ -1521,27 +1533,30 @@ EOF
 # category's `enabled` and its own key are all true. The event key is read
 # from the category table first, then from [sounds] (where startup, update,
 # shutdown and notification have always lived), then from the default.
-SOUNDS_CATEGORIES='system notifications feedback power devices dictation'
+SOUNDS_CATEGORIES='system notifications feedback power devices dictation network'
 
 sounds_category_events() {
   case "$1" in
-    system) say 'startup update shutdown auth-fail lock unlock lock-typing' ;;
-    notifications) say 'notification' ;;
-    feedback) say 'volume-up volume-down volume-limit mute unmute brightness-up brightness-down screenshot' ;;
+    system) say 'startup update shutdown auth-fail lock unlock lock-typing meet-ready meet-problem' ;;
+    notifications) say 'notification timer-done reminder' ;;
+    feedback) say 'volume-up volume-down volume-limit mute unmute brightness-up brightness-down screenshot mic-mute mic-unmute record-start record-stop' ;;
     power) say 'power-plug power-unplug battery-low battery-critical battery-full' ;;
     devices) say 'device-connect device-disconnect' ;;
     dictation) say 'dictation-start dictation-stop dictation-done dictation-error' ;;
+    network) say 'network-down network-up' ;;
   esac
 }
 
 sounds_category() {
   case "$1" in
-    startup|update|shutdown|auth-fail|lock|unlock|lock-typing) say system ;;
-    notification) say notifications ;;
+    startup|update|shutdown|auth-fail|lock|unlock|lock-typing|meet-ready|meet-problem) say system ;;
+    notification|timer-done|reminder) say notifications ;;
     volume-up|volume-down|volume-limit|mute|unmute|brightness-up|brightness-down|screenshot) say feedback ;;
+    mic-mute|mic-unmute|record-start|record-stop) say feedback ;;
     power-plug|power-unplug|battery-low|battery-critical|battery-full) say power ;;
     device-connect|device-disconnect) say devices ;;
     dictation-start|dictation-stop|dictation-done|dictation-error) say dictation ;;
+    network-down|network-up) say network ;;
     *) return 1 ;;
   esac
 }
@@ -1569,14 +1584,20 @@ lock = false
 unlock = false
 # Typewriter keys while you type the password in NIRULOCK.
 lock-typing = true
+# The result of `nirux meet-check`: ready for a call, or something to fix.
+meet-ready = true
+meet-problem = true
 EOF
     ;;
     notifications) cat <<'EOF'
 
 # Notification sounds (the notification key in [sounds] above and the app
-# sounds in [sounds.apps]). Do Not Disturb silences these and nothing else.
+# sounds in [sounds.apps]), the bar timer and calendar reminders. Do Not
+# Disturb silences notifications and reminders; a timer you set still sounds.
 [sounds.notifications]
 enabled = true
+timer-done = true
+reminder = true
 EOF
     ;;
     feedback) cat <<'EOF'
@@ -1593,6 +1614,12 @@ unmute = true
 brightness-up = false
 brightness-down = false
 screenshot = true
+# The microphone muted and live again (niructl audio mic-mute).
+mic-mute = true
+mic-unmute = true
+# A screen recording (NIRUCLIP) starts and stops.
+record-start = true
+record-stop = true
 rate_limit_ms = 80
 EOF
     ;;
@@ -1639,6 +1666,16 @@ dictation-done = false
 dictation-error = true
 EOF
     ;;
+    network) cat <<'EOF'
+
+# The connection is lost (no default route for a few seconds) and back.
+# Never at login or right after a resume, and a flapping link is one sound.
+[sounds.network]
+enabled = true
+network-down = true
+network-up = true
+EOF
+    ;;
   esac
 }
 
@@ -1671,10 +1708,53 @@ sounds_has_table() {
   grep -q "^[[:space:]]*\[$(printf '%s' "$1" | sed 's/\./\\./g')\][[:space:]]*\(#.*\)\{0,1\}$" "$SOUNDS_CONFIG" 2>/dev/null
 }
 
+# Events added to a category table after it was first written. A table that
+# already exists gains these keys once, with their defaults, so they can be
+# seen and switched in the file; a key that is set anywhere stays as it is.
+SOUNDS_ADDED_EVENTS='meet-ready meet-problem timer-done reminder mic-mute mic-unmute record-start record-stop'
+
+# Print the config with each missing added event key inserted after the last
+# key of its existing table. With CHECK=1, print nothing and succeed only when
+# a key is missing.
+sounds_insert_keys() {
+  sounds_ik_spec=
+  for sounds_ik in $SOUNDS_ADDED_EVENTS; do
+    sounds_ik_spec="$sounds_ik_spec sounds.$(sounds_category "$sounds_ik")=$sounds_ik=$(sounds_event_default "$sounds_ik")"
+  done
+  awk -v spec="$sounds_ik_spec" -v check="$1" '
+    function trim(s) { sub(/^[[:space:]]+/, "", s); sub(/[[:space:]]+$/, "", s); return s }
+    function header(line,   s) { s = line; sub(/^[[:space:]]*\[/, "", s); sub(/\][[:space:]]*(#.*)?$/, "", s); return trim(s) }
+    function keyof(line,   k) { k = trim(substr(line, 1, index(line, "=") - 1)); gsub(/^"|"$/, "", k); return tolower(k) }
+    function flush() { if (sec in add) { printf "%s", add[sec]; delete add[sec] } printf "%s", held; held = "" }
+    NR == FNR {
+      if ($0 ~ /^[[:space:]]*\[/) { sec = header($0); tables[sec] = 1; next }
+      if (FNR == 1) sec = "sounds"
+      if (index($0, "=") > 0) have[sec SUBSEP keyof($0)] = 1
+      next
+    }
+    FNR == 1 {
+      n = split(spec, items, " ")
+      for (i = 1; i <= n; i++) {
+        split(items[i], f, "=")
+        if ((f[1] in tables) && !((f[1] SUBSEP f[2]) in have) && !(("sounds" SUBSEP f[2]) in have)) {
+          add[f[1]] = add[f[1]] f[2] " = " f[3] "\n"; missing = 1
+        }
+      }
+      if (check) exit !missing
+      sec = "sounds"; held = ""
+    }
+    /^[[:space:]]*\[/ { flush(); sec = header($0); print; next }
+    /^[[:space:]]*(#.*)?$/ { held = held $0 "\n"; next }
+    { printf "%s", held; held = ""; print }
+    END { if (check) exit !missing; flush() }
+  ' "$SOUNDS_CONFIG" "$SOUNDS_CONFIG" 2>/dev/null
+}
+
 # Older configurations lack [sounds.apps] and the category tables. Each
 # missing table is appended once with its defaults; a table that exists, even
-# an empty one, is the user's choice and is never touched. Keys already in
-# [sounds] keep their meaning, because they are read before the defaults.
+# an empty one, is the user's choice and keeps its keys, gaining only the
+# events added since (SOUNDS_ADDED_EVENTS). Keys already in [sounds] keep their
+# meaning, because they are read before the defaults.
 sounds_migrate() {
   [ -f "$SOUNDS_CONFIG" ] || return 0
   sounds_missing=
@@ -1682,10 +1762,11 @@ sounds_migrate() {
     sounds_has_table "sounds.$sounds_cat" || sounds_missing="$sounds_missing $sounds_cat"
   done
   sounds_has_table sounds.apps && sounds_need_apps=0 || sounds_need_apps=1
-  [ -n "$sounds_missing" ] || [ "$sounds_need_apps" = 1 ] || return 0
+  sounds_insert_keys 1 && sounds_need_keys=1 || sounds_need_keys=0
+  [ -n "$sounds_missing" ] || [ "$sounds_need_apps" = 1 ] || [ "$sounds_need_keys" = 1 ] || return 0
   sounds_mig=$SOUNDS_CONFIG.tmp.$$
   if {
-    cat "$SOUNDS_CONFIG"
+    sounds_insert_keys 0
     for sounds_cat in $sounds_missing; do sounds_category_block "$sounds_cat"; done
     [ "$sounds_need_apps" = 0 ] || sounds_apps_block
   } > "$sounds_mig" 2>/dev/null; then
@@ -1813,7 +1894,7 @@ sounds_cooldown() {
         *) sounds_stamp=$SOUNDS_STATE/.notification-stamp-$(printf '%s' "$2" | tr -c 'A-Za-z0-9_-' '_') ;;
       esac
       sounds_stamp_ok "$sounds_stamp" "$sounds_cd" ;;
-    volume-up|volume-down|volume-limit|mute|unmute|brightness-up|brightness-down)
+    volume-up|volume-down|volume-limit|mute|unmute|brightness-up|brightness-down|mic-mute|mic-unmute)
       sounds_cd=$(sounds_table_value sounds.feedback rate_limit_ms)
       case "$sounds_cd" in ''|*[!0-9]*) sounds_cd=80 ;; esac
       sounds_stamp_ok "$SOUNDS_STATE/.feedback-stamp-$1" "$sounds_cd" ;;
@@ -1912,6 +1993,11 @@ sounds_play() {
     sounds_enabled || return 0
   else
     sounds_event_enabled "$sounds_event" || return 0
+  fi
+  # NIRUNOTIFY decides Do Not Disturb before it asks for a notification sound;
+  # a reminder played here is held back the same way. A timer you set sounds.
+  if [ "$sounds_event" = reminder ] && [ "${SOUNDS_FORCE:-0}" != 1 ] && sounds_dnd_on; then
+    return 0
   fi
   if [ "$sounds_event" = notification ]; then
     sounds_app_excluded "$sounds_app" && return 0
@@ -7616,6 +7702,7 @@ fleet_usage() {
   say "       nirux fleet update HOST...|--all|--behind"
   say "       nirux fleet setup [HOST...]"
   say "       nirux fleet set KEY VALUE [HOST...]"
+  say "       nirux fleet top [--interval SECONDS] [--once]"
   say "       nirux fleet pending [apply|clear [HOST]]"
   say "KEY is a NIRUWM key such as idle.screensaver_timeout (niructl config set) or"
   say "screensaver.KEY for ~/.config/niruui/screensaver.toml (niruscreensaver --set),"
@@ -7745,6 +7832,14 @@ echo "uptime=$(cut -d. -f1 /proc/uptime 2>/dev/null)"
 echo "updated=$(stat -c %Y "$HOME/.local/share/nirux/current" 2>/dev/null)"
 echo "extras=$(grep -c . "$HOME/.local/share/nirux/extras-selected" 2>/dev/null)"
 echo "now=$(date +%s)"
+# For nirux fleet top: load, cores, memory in use and programs on an old
+# version (`nirux stale`, NIRUX 0.12.302 and later).
+echo "load=$(cut -d ' ' -f 1 /proc/loadavg 2>/dev/null)"
+echo "cores=$(nproc 2>/dev/null || getconf _NPROCESSORS_ONLN 2>/dev/null)"
+awk '/^MemTotal:/ { t = $2 } /^MemAvailable:/ { a = $2 } END { if (t) printf "mem=%d\n", (t - a) * 100 / t }' /proc/meminfo 2>/dev/null
+if grep -q '^stale_command()' "$n" 2>/dev/null; then
+  echo "stale=$("$n" stale --json 2>/dev/null | grep -o '"name":"[^"]*"' | sed 's/"name":"//; s/"$//' | paste -sd, -)"
+fi
 PROBE
 }
 # Probe one host into $FLEET_WORK/probe.NAME; LOCAL=1 runs it here.
@@ -7835,8 +7930,11 @@ fleet_num() { case "$1" in ''|*[!0-9]*) ;; *) say "$1" ;; esac; }
 # name|local|state|version|latest|behind|relogin|session|locked|distro|uptime|updated|extras|last_version|last_seen|disk|disk_free_kib|failed|stale_sessions|lock
 fleet_collect() {
   fleet_hosts
-  (NIRUX_FETCH_ATTEMPTS=${NIRUX_FETCH_ATTEMPTS:-2}
-   fetch https://api.github.com/repos/nirucon/nirux/releases/latest "$FLEET_WORK/latest.json") >/dev/null 2>&1 &
+  # nirux fleet top asks GitHub once, not every round.
+  if [ -z "${FLEET_KEEP_LATEST:-}" ] || [ ! -s "$FLEET_WORK/latest.json" ]; then
+    (NIRUX_FETCH_ATTEMPTS=${NIRUX_FETCH_ATTEMPTS:-2}
+     fetch https://api.github.com/repos/nirucon/nirux/releases/latest "$FLEET_WORK/latest.json") >/dev/null 2>&1 &
+  fi
   while read -r fleet_h fleet_on fleet_local; do
     [ "$fleet_on" = 0 ] || fleet_probe "$fleet_h" "$fleet_local" &
   done < "$FLEET_WORK/hosts"
@@ -8361,6 +8459,79 @@ fleet_pending() {
     *) die "unknown fleet pending command: $1 (apply or clear)" ;;
   esac
 }
+# ── nirux fleet top: the fleet, live ────────────────────────────────────────
+# A sparkline of the last values (0 to 100) in $1, one block per value.
+fleet_spark() {
+  printf '%s\n' "$1" | awk '{ split("▁ ▂ ▃ ▄ ▅ ▆ ▇ █", b, " "); s = ""
+    for (i = 1; i <= NF; i++) { v = $i + 0; if (v < 0) v = 0; if (v > 100) v = 100; s = s b[int(v * 7 / 100) + 1] }
+    print s }'
+}
+# One screen of nirux fleet top from the current probes.
+fleet_top_render() {
+  ft_now=$(date '+%H:%M:%S')
+  if [ -t 1 ]; then printf '\033[H\033[2J'; fi
+  printf 'NIRUX fleet  %s   latest %s   every %ss, q quits\n\n' "$ft_now" "${FLEET_LATEST:-?}" "$ft_every"
+  {
+    printf 'HOST\tSTATE\tNIRUX\tLOAD\tLAST %s\tMEM\tDISK\tLOCKED\tRESTART\n' "$ft_samples"
+    while IFS='|' read -r h loc st ver lat beh rel ses lck dis up upd ext lastv seen dsk dfr fai stl lok; do
+      [ "$loc" = 1 ] && h="$h*"
+      case "$st" in
+        online)
+          ft_cores=$(fleet_field "${h%\*}" cores)
+          ft_load=$(fleet_field "${h%\*}" load)
+          ft_pct=$(awk -v l="${ft_load:-0}" -v c="${ft_cores:-1}" 'BEGIN { if (c < 1) c = 1; printf "%d", l * 100 / c }')
+          ft_hist=$FLEET_WORK/top.${h%\*}
+          { cat "$ft_hist" 2>/dev/null; say "$ft_pct"; } | tail -n "$ft_samples" > "$ft_hist.new" && mv -f "$ft_hist.new" "$ft_hist"
+          ft_mem=$(fleet_field "${h%\*}" mem)
+          ft_stale=$(fleet_field "${h%\*}" stale)
+          [ -n "$rel" ] && ft_stale=${ft_stale:-$rel}
+          case "$beh" in 1) ver="$ver (behind)" ;; esac
+          [ "$lck" = 1 ] && lck=yes || lck=no
+          printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' "$h" online "${ver:-?}" "${ft_load:-?}" \
+            "$(fleet_spark "$(tr '\n' ' ' < "$ft_hist")")" "${ft_mem:-?}%" "${dsk:-?}%" "$lck" "${ft_stale:--}" ;;
+        offline) printf '%s\toffline\t%s\t-\t\t-\t-\t-\t-\n' "$h" "${lastv:+($lastv)}" ;;
+        noaccess) printf '%s\tno access\t-\t-\t\t-\t-\t-\t-\n' "$h" ;;
+        nonirux) printf '%s\tno NIRUX\t-\t-\t\t-\t-\t-\t-\n' "$h" ;;
+      esac
+    done < "$FLEET_WORK/rows"
+  } | awk -F '\t' '
+    { for (i = 1; i <= NF; i++) { c[NR, i] = $i; l = length($i); if (l > w[i]) w[i] = l } n = NR; if (NF > m) m = NF }
+    END { for (r = 1; r <= n; r++) { line = ""
+      for (i = 1; i <= m; i++) { v = c[r, i]; pad = w[i] + 2 - length(v); if (i == m) pad = 0
+        line = line v; for (k = 0; k < pad; k++) line = line " " }
+      print line } }'
+  printf '\n* this machine. LOAD is the 1-minute load; the graph is load per core.\n'
+}
+fleet_top() {
+  ft_every=5 ft_once=0 ft_samples=20
+  while [ "$#" -gt 0 ]; do
+    case "$1" in
+      --once) ft_once=1 ;;
+      --interval) shift; ft_every=${1:-5} ;;
+      --help|-h) say 'usage: nirux fleet top [--interval SECONDS] [--once]'; return 0 ;;
+      *) die "unknown option for fleet top: $1" ;;
+    esac
+    shift
+  done
+  case "$ft_every" in ''|*[!0-9]*|0) die 'the interval is whole seconds, at least 1' ;; esac
+  [ -t 0 ] && [ -t 1 ] || ft_once=1
+  fleet_work
+  fleet_collect
+  if [ "$ft_once" = 1 ]; then fleet_top_render; return 0; fi
+  ft_stty=$(stty -g)
+  trap 'stty "$ft_stty" 2>/dev/null; printf "\033[?25h"; fleet_cleanup' EXIT
+  trap 'exit 130' INT TERM HUP
+  printf '\033[?25l'
+  stty -icanon -echo min 0 time "$((ft_every * 10 > 255 ? 255 : ft_every * 10))"
+  FLEET_KEEP_LATEST=1
+  while :; do
+    fleet_top_render
+    ft_key=$(dd bs=1 count=1 2>/dev/null) || ft_key=
+    case "$ft_key" in q|Q) break ;; esac
+    fleet_collect
+  done
+  printf '\n'
+}
 fleet_command() {
   fleet_action=${1:-status}
   [ "$#" = 0 ] || shift
@@ -8370,6 +8541,7 @@ fleet_command() {
     update) fleet_update "$@" ;;
     setup) fleet_setup "$@" ;;
     set) fleet_set "$@" ;;
+    top) fleet_top "$@" ;;
     pending) fleet_pending "$@" ;;
     --help|-h|help) fleet_usage ;;
     *) die "unknown fleet command: $fleet_action (status, update, setup, set or pending)" ;;
@@ -10799,6 +10971,248 @@ migrate_command() {
   say '  - sign in to Nextcloud, and link Signal from your phone; Teams and the browser need a new login;'
   say '  - nirux backup setup, if this computer should take part in the backup.'
 }
+# ── nirux stale: programs that still run an old version (docs: chapter 11) ──
+# After an update, a program keeps running the version it started from. That
+# is fine until it starts a helper from files that are gone (Helium's camera
+# in Teams). `nirux stale` names them; NIRUBAR's restart module shows them.
+#
+# One line per stale program: "NAME<TAB>PROGRAM<TAB>RESTART" where RESTART is
+# auto (NIRUX restarts it in place), relogin (a session helper: log out and in)
+# or manual (an app: close all its windows and open it again).
+stale_name() {
+  case "$1" in
+    niruwm) say NIRUWM ;; nirubar) say NIRUBAR ;; helium|helium_*) say Helium ;;
+    niructl) say 'NIRUCTL helpers' ;;
+    localsend_app|localsend) say LocalSend ;; opencode) say OpenCode ;;
+    *) say "$1" | tr '[:lower:]' '[:upper:]' ;;
+  esac
+}
+stale_scan() {
+  ss_proc=${NIRUX_PROC:-/proc}
+  ss_gen=$(readlink -f "$STATE/current" 2>/dev/null || :)
+  ss_gens=$(cd "$STATE/generations" 2>/dev/null && pwd -P || :)
+  ss_browser=$(readlink -f "$STATE/browser-current" 2>/dev/null || :)
+  ss_localsend=$(readlink -f "$STATE/localsend/current" 2>/dev/null || :)
+  ss_opencode=$(readlink -f "$STATE/opencode/current" 2>/dev/null || :)
+  ss_state=$(cd "$STATE" 2>/dev/null && pwd -P || say "$STATE")
+  for ss_exe in "$ss_proc"/[0-9]*/exe; do
+    ss_target=$(readlink "$ss_exe" 2>/dev/null) || continue
+    ss_deleted=0
+    case "$ss_target" in *" (deleted)") ss_deleted=1; ss_target=${ss_target% (deleted)} ;; esac
+    ss_prog=${ss_target##*/}
+    # The lock screen that is up now is the one running process of NIRULOCK;
+    # the next lock starts the new version by itself.
+    [ "$ss_prog" != nirulock ] || continue
+    # Helium's crash reporter is part of Helium.
+    case "$ss_prog" in helium_*) ss_prog=helium ;; esac
+    case "$ss_target" in
+      "$ss_gens"/*|"$ss_state"/generations/*)
+        ss_dir=${ss_target%/bin/*}
+        [ "$ss_dir" != "$ss_target" ] || continue
+        if [ "$ss_deleted" = 0 ] && [ "$ss_dir" = "$ss_gen" ]; then continue; fi
+        # A program the update did not change is the same file in the new
+        # generation: it needs no restart.
+        if [ "$ss_deleted" = 0 ] && [ -f "$ss_gen/bin/$ss_prog" ] &&
+           [ "$(sha256sum < "$ss_target" 2>/dev/null)" = "$(sha256sum < "$ss_gen/bin/$ss_prog" 2>/dev/null)" ]; then
+          continue
+        fi
+        case "$ss_prog" in niruwm|nirubar) ss_how=auto ;; *) ss_how=relogin ;; esac ;;
+      "$ss_state"/browsers/*)
+        case "$ss_target" in "$ss_browser"/*) [ "$ss_deleted" = 1 ] || continue ;; esac
+        ss_how=manual ;;
+      "$ss_state"/localsend/*)
+        case "$ss_target" in "$ss_localsend"/*) [ "$ss_deleted" = 1 ] || continue ;; esac
+        ss_how=manual ;;
+      "$ss_state"/opencode/*)
+        case "$ss_target" in "$ss_opencode"/*) [ "$ss_deleted" = 1 ] || continue ;; esac
+        ss_how=manual ;;
+      *) continue ;;
+    esac
+    printf '%s\t%s\t%s\n' "$(stale_name "$ss_prog")" "$ss_prog" "$ss_how"
+  done | sort -u
+}
+stale_json() {
+  printf '{"stale":['
+  stale_scan | awk -F '\t' 'BEGIN { sep = "" } { gsub(/["\\]/, "", $0); printf "%s{\"name\":\"%s\",\"program\":\"%s\",\"restart\":\"%s\"}", sep, $1, $2, $3; sep = "," }'
+  printf ']}\n'
+}
+stale_restart() {
+  sr_list=$(stale_scan)
+  [ -n "$sr_list" ] || { say 'Nothing runs an old version.'; return 0; }
+  sr_manual='' sr_relogin=''
+  sr_tab=$(printf '\t')
+  while IFS="$sr_tab" read -r sr_name sr_prog sr_how; do
+    case "$sr_how" in
+      auto)
+        case "$sr_prog" in
+          nirubar) say "Restarting $sr_name"; niructl restart-bar >/dev/null 2>&1 || say "  could not restart $sr_name" ;;
+          niruwm) say "Restarting $sr_name in place (windows stay)"; niructl restart-wm >/dev/null 2>&1 || say "  could not restart $sr_name" ;;
+        esac ;;
+      relogin) sr_relogin="$sr_relogin $sr_name" ;;
+      manual) sr_manual="$sr_manual $sr_name" ;;
+    esac
+  done <<EOF
+$sr_list
+EOF
+  sr_text=
+  [ -z "$sr_manual" ] || sr_text="Close all windows of${sr_manual} and open again to finish the update."
+  [ -z "$sr_relogin" ] || sr_text="${sr_text:+$sr_text }Log out and in once for${sr_relogin}."
+  [ -n "$sr_text" ] || return 0
+  say "$sr_text"
+  if command -v notify-send >/dev/null 2>&1; then
+    timeout 5 notify-send -a NIRUX "Restart to finish the update" "$sr_text" >/dev/null 2>&1 || :
+  fi
+}
+stale_command() {
+  case "${1:-}" in
+    '') sc_list=$(stale_scan)
+        if [ -z "$sc_list" ]; then say 'Nothing runs an old version.'; return 0; fi
+        say 'Running an old version:'
+        printf '%s\n' "$sc_list" | awk -F '\t' '{
+          how = ($3 == "auto") ? "nirux stale restart restarts it" : ($3 == "relogin") ? "log out and in" : "close all its windows and open it again"
+          printf "  %-16s %s\n", $1, how }' ;;
+    --json) stale_json ;;
+    restart) stale_restart ;;
+    -h|--help) say 'usage: nirux stale [--json] | stale restart' ;;
+    *) die "unknown stale option: $1 (nirux stale --help)" ;;
+  esac
+}
+
+# ── nirux meet-check: ready for a call? (docs: chapter 10) ──────────────────
+# Camera, microphone, speakers, stale apps and the way to Teams, in a few
+# seconds. Nothing is recorded or kept: one camera frame and two seconds of
+# microphone level are read and thrown away.
+MC_PROBLEMS=0
+mc_line() { # STATUS TEXT: ok, warn or fail
+  case "$1" in
+    ok) say "  ok    $2" ;;
+    warn) say "  note  $2" ;;
+    *) say "  FAIL  $2"; MC_PROBLEMS=$((MC_PROBLEMS + 1)) ;;
+  esac
+  MC_SUMMARY="${MC_SUMMARY}$1|$2
+"
+}
+mc_json_field() { # JSON FILE, python expression on d
+  python3 -I -c 'import json, sys
+try:
+    d = json.load(open(sys.argv[1]))
+    v = eval(sys.argv[2], {"d": d})
+    print("" if v is None else v)
+except Exception:
+    pass' "$1" "$2" 2>/dev/null
+}
+mc_camera() {
+  mc_dev=
+  for mc_v in /sys/class/video4linux/video*; do
+    [ -e "$mc_v" ] || continue
+    mc_node=/dev/${mc_v##*/}
+    if command -v v4l2-ctl >/dev/null 2>&1; then
+      v4l2-ctl -d "$mc_node" --info 2>/dev/null | grep -A1 'Device Caps' | grep -q 'Video Capture' || continue
+      # An infrared face-login camera gives grey frames only: not for calls.
+      v4l2-ctl -d "$mc_node" --list-formats 2>/dev/null | grep -qE "'(YUYV|MJPG|NV12|H264)'" || continue
+    fi
+    mc_dev=$mc_node
+    mc_name=$(cat "$mc_v/name" 2>/dev/null); mc_name=${mc_name%%:*}
+    break
+  done
+  if [ -z "$mc_dev" ]; then mc_line fail 'camera: none found (is it switched off with a key or a shutter?)'; return; fi
+  mc_users=$(fuser "$mc_dev" 2>/dev/null | tr -s ' ')
+  if [ -n "$mc_users" ]; then
+    mc_line ok "camera: $mc_name, in use now (by $(ps -o comm= -p ${mc_users# } 2>/dev/null | head -n 1))"
+    return
+  fi
+  if ! command -v ffmpeg >/dev/null 2>&1; then mc_line warn "camera: $mc_name found (ffmpeg missing, no test picture)"; return; fi
+  if timeout 8 ffmpeg -hide_banner -loglevel error -f v4l2 -i "$mc_dev" -frames:v 1 -f null - >/dev/null 2>&1; then
+    mc_line ok "camera: $mc_name gives a picture"
+  else
+    mc_line fail "camera: $mc_name gives no picture (busy, blocked or switched off)"
+  fi
+}
+mc_audio() {
+  if ! command -v niructl >/dev/null 2>&1; then mc_line warn 'sound: niructl missing, not checked'; return; fi
+  mc_status=$WORK/meet-audio.json
+  if ! niructl audio status --json > "$mc_status" 2>/dev/null; then mc_line fail 'sound: the sound server does not answer'; return; fi
+  mc_in=$(mc_json_field "$mc_status" 'd["input"]["name"]')
+  mc_in_muted=$(mc_json_field "$mc_status" 'd["input"]["muted"]')
+  mc_in_pct=$(mc_json_field "$mc_status" 'd["input"]["percent"]')
+  mc_out=$(mc_json_field "$mc_status" 'd["output"]["name"]')
+  mc_out_muted=$(mc_json_field "$mc_status" 'd["output"]["muted"]')
+  mc_out_pct=$(mc_json_field "$mc_status" 'd["output"]["percent"]')
+  if [ -z "$mc_out" ]; then mc_line fail 'speakers: no output device'
+  elif [ "$mc_out_muted" = True ]; then mc_line fail "speakers: $mc_out is muted"
+  elif [ "${mc_out_pct:-0}" -lt 10 ] 2>/dev/null; then mc_line warn "speakers: $mc_out at ${mc_out_pct} %, very low"
+  else mc_line ok "speakers: $mc_out at ${mc_out_pct} %"
+  fi
+  if [ -z "$mc_in" ]; then mc_line fail 'microphone: none found'; return; fi
+  if [ "$mc_in_muted" = True ]; then mc_line fail "microphone: $mc_in is muted"; return; fi
+  mc_test=$WORK/meet-mic.json
+  if timeout 8 niructl audio mic-test 2 --json > "$mc_test" 2>/dev/null; then
+    mc_verdict=$(mc_json_field "$mc_test" 'd["verdict"]')
+    mc_peak=$(mc_json_field "$mc_test" 'd["peak_dbfs"]')
+    mc_dead=$(awk -v p="${mc_peak:--120}" 'BEGIN { print (p <= -90) ? 1 : 0 }')
+    case "$mc_verdict" in
+      "too quiet") if [ "$mc_dead" = 1 ]; then
+          mc_line fail "microphone: $mc_in at ${mc_in_pct} % gives digital silence (peak ${mc_peak} dBFS): wrong input, or switched off"
+        else
+          mc_line warn "microphone: $mc_in at ${mc_in_pct} % works but heard little (peak ${mc_peak} dBFS); say something during the check to test your level"
+        fi ;;
+      "too hot") mc_line warn "microphone: $mc_in at ${mc_in_pct} % is very loud (peak ${mc_peak} dBFS); lower it if others hear distortion" ;;
+      '') mc_line ok "microphone: $mc_in at ${mc_in_pct} %" ;;
+      *) mc_line ok "microphone: $mc_in at ${mc_in_pct} % ($mc_verdict)" ;;
+    esac
+  else
+    mc_line warn "microphone: $mc_in at ${mc_in_pct} % (level test failed)"
+  fi
+}
+mc_stale() {
+  mc_apps=$(stale_scan | awk -F '\t' '$3 == "manual" { printf "%s%s", sep, $1; sep = ", " }')
+  if [ -n "$mc_apps" ]; then
+    mc_line fail "apps: $mc_apps still run(s) an old version; close all its windows and open it again (the camera may not start)"
+  else
+    mc_line ok 'apps: nothing runs an old version'
+  fi
+}
+mc_network() {
+  if ! command -v curl >/dev/null 2>&1; then mc_line warn 'network: curl missing, not checked'; return; fi
+  mc_host=${NIRUX_MEET_URL:-https://teams.microsoft.com}
+  mc_time=$(curl -sS -o /dev/null --connect-timeout 5 --max-time 8 -w '%{time_connect}' "$mc_host" 2>/dev/null) || mc_time=
+  if [ -z "$mc_time" ]; then mc_line fail "network: ${mc_host#https://} cannot be reached"; return; fi
+  mc_ms=$(awk -v t="$mc_time" 'BEGIN { printf "%d", t * 1000 }')
+  if [ "$mc_ms" -gt 250 ]; then mc_line warn "network: ${mc_host#https://} answers slowly (${mc_ms} ms)"
+  else mc_line ok "network: ${mc_host#https://} in ${mc_ms} ms"
+  fi
+}
+meet_check_command() {
+  mc_notify=0
+  for mc_arg in "$@"; do
+    case "$mc_arg" in
+      --notify) mc_notify=1 ;;
+      -h|--help) say 'usage: nirux meet-check [--notify]'; return 0 ;;
+      *) die "unknown meet-check option: $mc_arg" ;;
+    esac
+  done
+  WORK=$(mktemp -d "${TMPDIR:-/tmp}/nirux-meet.XXXXXX") || die 'could not create a temporary directory'
+  trap 'rm -rf "$WORK"' EXIT
+  MC_SUMMARY=
+  say 'Ready for a call?'
+  mc_camera
+  mc_audio
+  mc_stale
+  mc_network
+  if [ "$MC_PROBLEMS" = 0 ]; then
+    say 'Ready for the meeting.'
+    mc_sound=meet-ready mc_title='Ready for the meeting'
+  else
+    say "$MC_PROBLEMS problem(s) found."
+    mc_sound=meet-problem mc_title="$MC_PROBLEMS problem(s) before the meeting"
+  fi
+  "$0" sounds play "$mc_sound" >/dev/null 2>&1 || :
+  if [ "$mc_notify" = 1 ] && command -v notify-send >/dev/null 2>&1; then
+    mc_body=$(printf '%s' "$MC_SUMMARY" | awk -F '|' '$1 != "ok" { print ($1 == "fail" ? "✗ " : "• ") $2 } $1 == "ok" { ok++ } END { if (ok) print "✓ " ok " checks ok" }')
+    timeout 5 notify-send -a NIRUX "$mc_title" "$mc_body" >/dev/null 2>&1 || :
+  fi
+  [ "$MC_PROBLEMS" = 0 ]
+}
 main() {
   # The bootstrap keeps the one sudo password in a private file, never in the
   # environment: a program NIRUX starts can read its own environment, and a
@@ -10856,6 +11270,8 @@ main() {
     checkup) shift; checkup_command "$@" ;;
     autoupdate) shift; autoupdate_command "$@" ;;
     whats-new) shift; whats_new_command "$@" ;;
+    stale) shift; stale_command "$@" ;;
+    meet-check) shift; meet_check_command "$@" ;;
     resume-check) shift; resume_check_command "$@" ;;
     clean) shift; clean_command "$@" ;;
     restore) shift; restore_command "$@" ;;

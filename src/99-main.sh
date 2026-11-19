@@ -55,6 +55,8 @@ main() {
     checkup) shift; checkup_command "$@" ;;
     autoupdate) shift; autoupdate_command "$@" ;;
     whats-new) shift; whats_new_command "$@" ;;
+    stale) shift; stale_command "$@" ;;
+    meet-check) shift; meet_check_command "$@" ;;
     resume-check) shift; resume_check_command "$@" ;;
     clean) shift; clean_command "$@" ;;
     restore) shift; restore_command "$@" ;;

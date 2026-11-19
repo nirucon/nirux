@@ -28,7 +28,7 @@ entries in `config.example.toml`; see
 
 <!-- generated: keys (tools/manual-gen.sh; do not edit by hand) -->
 
-The key bindings of a fresh NIRUX installation: NIRUWM 0.33.0 defaults with
+The key bindings of a fresh NIRUX installation: NIRUWM 0.33.1 defaults with
 the `[[keys]]` of the NIRUX `config.example.toml`. Your own `[[keys]]` and the keys
 that extras register are added on top; `Super+F1` shows the keys in effect.
 
@@ -52,6 +52,7 @@ that extras register are added on top; `Super+F1` shows the keys in effect.
 | `Super+P` | Application launcher |
 | `Super+/` / `Super+F1` | Keybinding cheat sheet (this list) |
 | `Super+.` | Emoji and symbol picker |
+| `Super+Alt+M` | Meeting check: camera, microphone, speakers, network |
 | `Super+Shift+F` | Open the file manager (pcmanfm) |
 
 ### Session

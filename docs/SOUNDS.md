@@ -1,7 +1,8 @@
 # Sounds
 
-NIRUX plays short, soft sounds for the session, notifications, the keys you
-press, the charger and battery, and devices that come and go, and NIRUDICTATE dictation. They are one
+NIRUX plays short, soft sounds for the session, notifications, timers and
+reminders, the keys you press, the microphone, screen recording, the charger
+and battery, devices that come and go, the network, and NIRUDICTATE dictation. They are one
 family: the same voice (a soft attack, a near-sine bar with a quieter fourth
 partial that dies away quickly) and the same key as the startup and
 notification sounds (G major: the notification is a G4 + D5 fifth).
@@ -13,12 +14,18 @@ notification sounds (G major: the notification is a G4 + D5 fifth).
 | system | `startup`, `update`, `shutdown` | on | the session sounds |
 | system | `auth-fail` | on | low soft thud (G3, 150 ms), wrong password in NIRULOCK |
 | system | `lock`, `unlock` | off | near-silent chime (D6 + G6 / G5 → D6) |
+| system | `meet-ready` | on | G major chord blooming up (G4 + B4, then D5 + G5), `nirux meet-check` found nothing to fix |
+| system | `meet-problem` | on | two muted A4 knocks and a lower E4, `nirux meet-check` found something to fix |
 | notifications | `notification` | on | G4 + D5, or the app's sound from `[sounds.apps]` |
+| notifications | `timer-done` | on | calm clock chime, G5 and D5 bells twice (1.4 s), the bar timer ended |
+| notifications | `reminder` | on | three rising bells D5, G5, B5 (1 s), a calendar reminder |
 | feedback | `volume-up`, `volume-down` | on | 40 ms tock; its pitch follows the new level (D5 at 0 %, G5 at 100 %) |
 | feedback | `volume-limit` | on | duller 60 ms bump when the key cannot go further (0 % or 100 %) |
 | feedback | `mute`, `unmute` | on | two notes, B4 → G4 / G4 → B4, 150 ms |
 | feedback | `brightness-up`, `brightness-down` | off | quiet airy 30 ms tick |
 | feedback | `screenshot` | on | soft, muted 110 ms shutter |
+| feedback | `mic-mute`, `mic-unmute` | on | glassy A5 → muffled E5 (a hand over the mic) / muffled E5 → A5, 170 ms; higher and glassier than `mute` |
+| feedback | `record-start`, `record-stop` | on | bell pips with their octave: E5 twice / E5 → B4 ([NIRUCLIP](https://github.com/nirucon/niruclip)) |
 | power | `power-plug`, `power-unplug` | on | two notes, G4 → D5 / D5 → G4 |
 | power | `battery-low` | on | D5 → B4 → G4, once per discharge at `battery_low_percent` |
 | power | `battery-critical` | on | B4 → E4 twice, once per discharge at `battery_critical_percent` |
@@ -27,6 +34,8 @@ notification sounds (G major: the notification is a G4 + D5 fifth).
 | dictation | `dictation-start`, `dictation-stop` | on | two quick glassy notes, D5 → G5 / G5 → D5 ([NIRUDICTATE](https://github.com/nirucon/nirudictate)) |
 | dictation | `dictation-done` | off | one soft high bar (B5 with E6) when the text is in place |
 | dictation | `dictation-error` | on | falling B4 → E4, a dictation that could not be written |
+| network | `network-down` | on | glassy A5 → D5 → A4, darker, when the connection is really gone |
+| network | `network-up` | on | glassy A4 → D5 → A5 when it is back |
 
 Every sound starts at once (no leading silence) and is quieter than a
 notification; the feedback ticks are the quietest.
@@ -83,8 +92,8 @@ debounce_ms = 1500   # a dock is one sound
 ```
 
 **Do Not Disturb** (`nirunotify --dnd on`) silences notification sounds and
-nothing else: the keys, the charger, the battery, devices and the lock screen
-still sound.
+`reminder`, nothing else: a `timer-done` you set, the keys, the charger, the
+battery, devices, the network and the lock screen still sound.
 
 **Mute**: with `respect_mute = true` nothing plays while the default sink is
 muted. The mute sound plays just before the sink is muted and the unmute sound
@@ -95,9 +104,12 @@ sound for EVENT, for every event including `startup` and `notification`. A
 replaced `volume-up`/`volume-down` plays the same file at every level.
 
 **Upgrades**: a `sounds.toml` from an older NIRUX gains each missing category
-table once, with the defaults. Existing keys and tables are never changed,
-including a table you emptied on purpose, and the previous file is kept as
-`sounds.toml.bak`.
+table once, with the defaults. A category table you already have gains only
+the events added since it was written (`mic-mute`, `mic-unmute`,
+`record-start`, `record-stop`, `timer-done`, `reminder`, `meet-ready`,
+`meet-problem`), once, after its last key and with their defaults. A key you
+set anywhere, in the table or in `[sounds]`, is never changed or added
+twice, and the previous file is kept as `sounds.toml.bak`.
 
 ## Per-app notification sounds
 
@@ -144,8 +156,27 @@ session and need a new login after an update.
   start; a volume key is decided in under a millisecond.
 - **Volume and brightness keys** (NIRUWM, `niructl brightness`) already call
   `nirunotify --osd`; the same call carries the sound and the new level.
-- **NIRUSHOT** and **NIRULOCK** send one line on NIRUNOTIFY's control socket
-  (`sound screenshot`, `sound auth-fail`); nothing is started.
+- **NIRUSHOT**, **NIRULOCK** and **NIRUCLIP** send one line on NIRUNOTIFY's
+  control socket (`sound screenshot`, `sound auth-fail`, `sound record-start`);
+  nothing is started. NIRUCLIP plays `record-start` just before capture
+  begins and `record-stop` once it has stopped, so neither is recorded.
+- **The microphone** (`niructl audio mic-mute`, the mic-mute key, the bar and
+  the launcher) plays `mic-mute` or `mic-unmute` when the state really
+  changed, through `nirunotify --sound` or else `nirux sounds play`.
+- **Network**: NIRUNOTIFY sleeps on a `NETLINK_ROUTE` socket (link and
+  IPv4/IPv6 route changes) and reads the route tables only when the kernel
+  reports a change; there is no polling. Online means a default route through
+  an interface that is up. `network-down` needs the connection to stay gone
+  for 6 seconds, never plays in the first 30 seconds of a session, within 20
+  seconds of a resume, or on a machine that started offline. `network-up`
+  follows only a `network-down`, once the connection has been back for 3
+  seconds, and the next `network-down` waits at least 30 seconds after it, so
+  a flapping link is one pair of sounds.
+- **Timer, reminders and meet-check** play through `nirux sounds play
+  timer-done`, `reminder`, `meet-ready` or `meet-problem` (or one line on
+  NIRUNOTIFY's socket). A notification sent with the standard
+  `suppress-sound` hint plays no notification sound, so a timer or reminder
+  that shows a notification and plays its own sound is heard once.
 - **Charger, battery and devices** come from kernel uevents
   (`NETLINK_KOBJECT_UEVENT`). The watcher sleeps until the kernel reports
   something; there is no timer and no polling. A burst (a dock: hub, devices,

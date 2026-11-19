@@ -2,7 +2,7 @@
 # NIRUX: install a complete X11 desktop, or maintain an existing installation.
 set -eu
 
-VERSION=0.12.301
+VERSION=0.12.302
 PREFIX=${NIRUX_PREFIX:-$HOME/.local}
 BIN=$PREFIX/bin
 STATE=$PREFIX/share/nirux
@@ -117,7 +117,7 @@ usage() {
   say "       nirux browser-addon bonjourr|none|status"
   say "       nirux extras [list|status|select NAME|unselect NAME|install [NAME...]|uninstall NAME... [--purge]|update]"
   say "       nirux sounds [status|list|on|off|toggle|test|app ...] (see docs/SOUNDS.md)"
-  say "       nirux fleet [status [--json]|update HOST...|--all|--behind|setup [HOST...]|set KEY VALUE [HOST...]|pending [apply|clear]]"
+  say "       nirux fleet [status [--json]|update HOST...|--all|--behind|setup [HOST...]|set KEY VALUE [HOST...]|pending [apply|clear]|top]"
   say "       nirux sync status [HOST...] | push HOST...|--all [ITEM...] | pull HOST [ITEM...] | items"
   say "       nirux snapshot [--note TEXT] | snapshot list | restore [ID|latest] [--dry-run]"
   say "       nirux backup [status|setup|now|list [HOST]|restore [HOST|FILE] [--to DIR]|off]"
@@ -126,6 +126,7 @@ usage() {
   say "       nirux checkup [--dry-run] | last | status | enable | disable | discord set|test"
   say "       nirux autoupdate [status|last|enable|disable|run-now]"
   say "       nirux whats-new [--notify] | resume-check [--notify] | clean [--yes] [--dry-run]"
+  say "       nirux meet-check [--notify] | stale [--json] | stale restart"
   say "       nirux update-shutdown [--yes] [--dry-run] [--no-power]"
   say "       nirux update-reboot [--yes] [--dry-run] [--no-power]"
   say "       nirux rollback | gc [--keep N] [--dry-run] | status | doctor [--fix [--yes]] | uninstall [--purge] | --version | --help"
