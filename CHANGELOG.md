@@ -2,6 +2,14 @@
 
 Earlier releases are described in their release notes and commit messages.
 
+## 0.12.298 (2026-11-19)
+
+- **NIRUX ascii on the lock screen (NIRULOCK 0.27.0).** `layout = "ascii"`
+  in `~/.config/niruui/lock.toml` types the NIRUX banner on every monitor
+  when the screen locks, in the theme's accent colour, with the password
+  prompt under it. `layout = "cava"` goes back to the spectrum. Manual,
+  chapter 6.
+
 ## 0.12.297 (2026-11-19)
 
 - The release of 0.12.296 stopped at a script check; 0.12.297 is the same

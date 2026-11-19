@@ -331,7 +331,7 @@ If it does not start, `~/.local/state/nirulock/trace.log` says why (for example 
 
 | Key | Default | Meaning |
 |---|---|---|
-| `layout` | `"cava"` | `cava`, `minimal`, `terminal`, `runic`, `corner` |
+| `layout` | `"cava"` | `cava`, `ascii`, `minimal`, `terminal`, `runic`, `corner` |
 | `visualizer` | `true` | `false` keeps the layout without the spectrum |
 | `visual` | `"auto"` | `auto`, `cava`, `quotes`, `none` |
 | `quotes` | `["*"]` | Collections by name or pattern |
@@ -346,6 +346,23 @@ If it does not start, `~/.local/state/nirulock/trace.log` says why (for example 
 nirulock --config     # print the effective settings
 nirulock --version
 ```
+
+### NIRUX ascii on the lock screen
+
+`layout = "ascii"` (NIRULOCK 0.27.0 and later) is the lock screen's twin of
+the `ascii` screensaver scene. When the screen locks, the NIRUX banner is typed
+out on every monitor, centred and sized for each, with "A MINIMAL X11 DESKTOP"
+under it, in the theme's accent colour (the text colour when the accent is too
+dim on black). The monitor with the prompt has the clock, the password entry
+and the away time below. The typing takes about two seconds; you can type your
+password at once. Switch between the two in `~/.config/niruui/lock.toml`:
+
+```toml
+layout = "ascii"   # NIRUX ascii
+layout = "cava"    # the spectrum or a quote (the default)
+```
+
+The next lock uses the new layout; nothing needs a restart.
 
 ## Screensaver settings
 
