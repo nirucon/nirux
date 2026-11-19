@@ -44,9 +44,14 @@ printf '#!/bin/sh\nprintf "%%s\\n" "$*" >> "%s/notices"\n' "$T" > "$T/fakebin/no
 chmod +x "$T/fakebin/notify-send"
 B=$STATE/browsers
 mkdir -p "$B/helium-1.0" "$B/helium-2.0" "$B/helium-3.0"
-cp "$(command -v sleep)" "$B/helium-1.0/helium"
-"$B/helium-1.0/helium" 30 & RUNNING=$!
+# A copy of sh stands in for Helium (sleep may be a multi-call binary that
+# will not run under another name); the trailing ':' keeps sh from exec'ing
+# sleep, so the copy itself stays the running program.
+cp "$(command -v sh)" "$B/helium-1.0/helium"
+"$B/helium-1.0/helium" -c 'sleep 30; :' & RUNNING=$!
 sleep 0.3
+[ -n "$(app_dir_running "$B/helium-1.0")" ] || fail 'the stand-in Helium is not seen running'
+
 OLD_PATH=$PATH
 export PATH="$T/fakebin:$PATH" DBUS_SESSION_BUS_ADDRESS=unix:path=$T/bus
 app_prune_versions "$B" "$B/helium-3.0" Helium 3.0 > "$T/prune.out" || fail 'prune failed'

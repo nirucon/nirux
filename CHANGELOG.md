@@ -2,7 +2,12 @@
 
 Earlier releases are described in their release notes and commit messages.
 
-## 0.12.300 (2026-11-19)
+## 0.12.301 (2026-11-19)
+
+- The release of 0.12.300 stopped at a test (its stand-in program did not
+  run on the build machine); 0.12.301 is the same release with that fixed.
+
+## 0.12.300 (2026-11-19, not published)
 
 - **An update never removes an app version that is running.** Updating
   Helium removed the directory of the version that was still open. Helium
