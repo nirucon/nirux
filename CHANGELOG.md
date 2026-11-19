@@ -2,6 +2,20 @@
 
 Earlier releases are described in their release notes and commit messages.
 
+## 0.12.304 (2026-11-19)
+
+- **The NIRUX boot look (NIRUSPLASH 0.1.0, new).** The computer now starts
+  in the same style as the lock and login screens. The GRUB menu shows the
+  NIRUX banner and every installed kernel straight in the menu, so another
+  kernel is one arrow key away. The boot splash types the banner in, and an
+  encrypted disk asks for its password at `$ unlock disk` in the same look,
+  with `[ .. ] unlocking` and `[ fail ] wrong password, try again`. Every
+  update makes it in the colours of the active theme. `nirux boot` shows it,
+  `nirux boot off` puts the plain boot back and `nirux boot apply` makes it
+  again after a theme or monitor change. It never touches the boot loader
+  binary, the disk encryption or the kernel; older kernels keep their
+  previous initramfs as a fallback. NIRUBOOT installs it on new computers.
+
 ## 0.12.303 (2026-11-19)
 
 - NIRULOGIN 0.3.1: the 0.3.0 login screen was built against a newer C

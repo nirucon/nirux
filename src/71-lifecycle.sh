@@ -73,6 +73,7 @@ uninstall() {
   remove_system "$ROOT/etc/pam.d/nirulock"
   remove_system "$ROOT/etc/udev/rules.d/70-nirux-backlight.rules"
   remove_greeters
+  boot_look_remove
   for program in $PROGRAMS; do
     if [ -L "$BIN/$program" ] && [ "$(readlink "$BIN/$program")" = "$STATE/current/bin/$program" ]; then rm -f "$BIN/$program"; fi
   done

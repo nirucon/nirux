@@ -2,7 +2,7 @@
 # NIRUX: install a complete X11 desktop, or maintain an existing installation.
 set -eu
 
-VERSION=0.12.303
+VERSION=0.12.304
 PREFIX=${NIRUX_PREFIX:-$HOME/.local}
 BIN=$PREFIX/bin
 STATE=$PREFIX/share/nirux
@@ -11,7 +11,7 @@ NIRUX_CONFIG=${XDG_CONFIG_HOME:-$HOME/.config}/nirux
 SOUNDS_STATE=$STATE/sounds
 SOUNDS_CONFIG=$NIRUX_CONFIG/sounds.toml
 ROOT=${NIRUX_SYSTEM_ROOT:-}
-PROGRAMS="niruwm niructl niruidle nirubar niruscreensaver nirulock nirulauncher nirunotify nirushot niruclip nirufetch niruwebapp niruwallpaper nirudisplay niruthemeselector niruwm-session niruclipboard nirugestured nirulogin nirushare niruio nirux"
+PROGRAMS="niruwm niructl niruidle nirubar niruscreensaver nirulock nirulauncher nirunotify nirushot niruclip nirufetch niruwebapp niruwallpaper nirudisplay niruthemeselector niruwm-session niruclipboard nirugestured nirulogin nirushare niruio nirusplash nirux"
 WORK=
 POLICY_TARGET=
 POLICY_BACKUP=
@@ -127,6 +127,7 @@ usage() {
   say "       nirux autoupdate [status|last|enable|disable|run-now]"
   say "       nirux whats-new [--notify] | resume-check [--notify] | clean [--yes] [--dry-run]"
   say "       nirux meet-check [--notify] | stale [--json] | stale restart"
+  say "       nirux boot [status|on|off|apply|doctor]"
   say "       nirux update-shutdown [--yes] [--dry-run] [--no-power]"
   say "       nirux update-reboot [--yes] [--dry-run] [--no-power]"
   say "       nirux rollback | gc [--keep N] [--dry-run] | status | doctor [--fix [--yes]] | uninstall [--purge] | --version | --help"

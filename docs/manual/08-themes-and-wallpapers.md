@@ -295,12 +295,37 @@ The picture must be a PNG, and it appears at the next start of the login screen.
 
 Since NIRULOGIN 0.3.1 (NIRUX 0.12.303) the login screen has the NIRUX ascii look, like the lock screen and the screensaver: the NIRUX banner is typed above the clock and the form, with a blinking cursor after "A MINIMAL X11 DESKTOP", while you can type at once. `style = "classic"` in `/etc/nirulogin/theme.toml` brings back the previous look (`style = "ascii"` is the default).
 
+## The boot look: GRUB and the boot splash
+
+Since NIRUX 0.12.304 the computer starts in the same style as the lock and login screens. NIRUSPLASH makes both parts for your screen and your theme's colours:
+
+- **The GRUB menu.** The NIRUX banner and "A MINIMAL X11 DESKTOP" with the cursor, and under them every installed kernel straight in the menu (newest first, each with its recovery entry), then the firmware settings. The arrow keys stop the three-second countdown, Enter starts the chosen entry, `e` edits it and `c` opens GRUB's console, as always.
+- **The boot splash** (Plymouth). The banner is typed in, the cursor blinks, and a computer with an encrypted disk asks for the password at a prompt in the same style: `$ unlock disk` followed by a dot for each character, `[ .. ] unlocking` once you press Enter, and `[ fail ] wrong password, try again` when it was wrong. Esc shows the start-up messages instead.
+
+Every install and update refreshes the boot look in the colours of the active theme (after a theme change, run `nirux boot apply` to have it at once). Computers installed with NIRUBOOT have it from the first start.
+
+```sh
+nirux boot              # on or off, the screen size, the kernel with the splash
+nirux boot apply        # make it again now (new theme, new monitor)
+nirux boot off          # the plain GRUB menu and text boot; updates leave it off
+nirux boot on           # back on
+nirux boot doctor       # check every part
+```
+
+What it changes, and what it never touches:
+
+- It changes GRUB's theme (`/boot/grub/themes/nirux`), a marked block at the end of `/etc/default/grub` (theme, screen size, a three-second menu, `quiet splash`), Plymouth's theme and `/etc/plymouth/plymouthd.conf`, and the initramfs of the newest kernel. On Void it also stops the splash before the login screen (`/etc/runit/core-services/99-nirusplash.sh`) and asks dracut for the Plymouth module.
+- It never touches the EFI partition, the boot loader itself, the disk encryption, `/etc/crypttab` or the kernel. Every file is made beside the old one and checked (`grub.cfg` with `grub-script-check`) before it replaces it; any error puts everything back. Originals are kept in `/var/lib/nirusplash/backup`, and the log is `/var/log/nirusplash.log`.
+- **Older kernels keep the initramfs they had**, so the menu always has an entry made without the splash. If the splash ever fails, choose an older kernel or a recovery entry in the GRUB menu, or press Esc during the start to see the plain text prompt; the password is the same.
+- The keyboard at the password prompt is the one the initramfs loads (Swedish on computers made by NIRUBOOT); the splash does not change it.
+
 ## Troubleshooting
 
 - **The wallpaper no longer follows the theme.** Run `niructl wallpaper status`, which says why, then `niructl wallpaper follow-theme on`.
 - **A theme shows only a colour.** Its picture is not installed: `nirux wallpapers download theme NAME`.
 - **NIRU Wallpaper says NIRUWM does not own the wallpaper.** `[wallpaper] enabled = false` in `config.toml`; set it to `true` and press `Super+R`.
 - **The wallpaper folders are wrong** (for example after renaming your Pictures folder): `nirux repair-wallpaper` rewrites `dir` and `theme_dir` and keeps a backup of `config.toml`.
+- **The GRUB menu or the splash looks wrong after a new monitor or theme.** `nirux boot apply`. `nirux boot doctor` names any missing part.
 - **Rotation does nothing.** A `single` picture keeps one image, and a screen that follows the theme shows the theme's picture.
 
 ## See also
