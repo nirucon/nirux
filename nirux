@@ -2,7 +2,7 @@
 # NIRUX: install a complete X11 desktop, or maintain an existing installation.
 set -eu
 
-VERSION=0.12.298
+VERSION=0.12.299
 PREFIX=${NIRUX_PREFIX:-$HOME/.local}
 BIN=$PREFIX/bin
 STATE=$PREFIX/share/nirux
@@ -7579,7 +7579,8 @@ fleet_usage() {
   say "       nirux fleet set KEY VALUE [HOST...]"
   say "       nirux fleet pending [apply|clear [HOST]]"
   say "KEY is a NIRUWM key such as idle.screensaver_timeout (niructl config set) or"
-  say "screensaver.KEY for ~/.config/niruui/screensaver.toml (niruscreensaver --set)."
+  say "screensaver.KEY for ~/.config/niruui/screensaver.toml (niruscreensaver --set),"
+  say "or lock.KEY for a top-level key of ~/.config/niruui/lock.toml (checked by nirulock)."
   say "A host that is offline gets the setting later: at the next nirux fleet command,"
   say "login or wake-up on this machine while it is online (nirux fleet pending)."
   say "Hosts: Linux peers from Tailscale that have NIRUX, or [fleet] hosts/exclude in $FLEET_CONFIG."
@@ -8135,8 +8136,10 @@ fleet_quote() { printf "'%s'" "$(printf '%s' "$1" | sed "s/'/'\\\\''/g")"; }
 fleet_set_script() {
   case "$1" in
     screensaver.*) fs_cmd="\"\$HOME/.local/bin/niruscreensaver\" --set $(fleet_quote "${1#screensaver.}") $(fleet_quote "$2")" ;;
+    lock.*) fs_cmd="fleet_lock_set $(fleet_quote "${1#lock.}") $(fleet_quote "$(fleet_toml_value "$2")")" ;;
     *) fs_cmd="\"\$HOME/.local/bin/niructl\" config set $(fleet_quote "$1") $(fleet_quote "$2") --yes" ;;
   esac
+  case "$1" in lock.*) fleet_lock_script ;; esac
   cat <<SCRIPT
 if [ -z "\${DISPLAY:-}" ]; then
   wm=\$(pgrep -o -u "\$(id -u)" -x niruwm 2>/dev/null)
@@ -8149,6 +8152,39 @@ if [ -z "\${DISPLAY:-}" ]; then
 fi
 $fs_cmd < /dev/null
 SCRIPT
+}
+# VALUE as TOML: true, false and numbers as they are, anything else a string.
+fleet_toml_value() {
+  if printf '%s' "$1" | grep -Eq '^(true|false|-?[0-9]+(\.[0-9]+)?)$'; then printf '%s' "$1"
+  else printf '"%s"' "$(printf '%s' "$1" | sed 's/\\/\\\\/g; s/"/\\"/g')"
+  fi
+}
+# The remote helper for lock.KEY: NIRULOCK has no writer of its own, so the
+# key is replaced (or added above the first [table]) in lock.toml, and
+# `nirulock --config` must then read the file without a complaint, or the
+# old file comes back.
+fleet_lock_script() {
+  cat <<'LOCK'
+fleet_lock_set() {
+  f=${XDG_CONFIG_HOME:-$HOME/.config}/niruui/lock.toml
+  mkdir -p "${f%/*}" || return 1
+  [ -f "$f" ] || : > "$f"
+  cp -p "$f" "$f.fleet-old" || return 1
+  NX_KEY=$1 NX_LINE="$1 = $2" awk '
+    BEGIN { k = ENVIRON["NX_KEY"]; line = ENVIRON["NX_LINE"] }
+    /^[[:space:]]*\[/ { if (!done) { print line; done = 1 } table = 1; print; next }
+    !table && $0 ~ "^[[:space:]]*" k "[[:space:]]*=" { if (!done) { print line; done = 1 } next }
+    { print }
+    END { if (!done) print line }' "$f.fleet-old" > "$f.fleet-new" && mv -f "$f.fleet-new" "$f" || { mv -f "$f.fleet-old" "$f"; return 1; }
+  err=$("$HOME/.local/bin/nirulock" --config 2>&1 >/dev/null)
+  if [ -n "$err" ]; then
+    mv -f "$f.fleet-old" "$f"
+    printf '%s\n' "$err" >&2
+    return 1
+  fi
+  rm -f "$f.fleet-old"
+}
+LOCK
 }
 # A KEY is section.key (or a top-level key) in bare TOML names.
 fleet_valid_key() {
@@ -8218,6 +8254,7 @@ fleet_set() {
   [ "$#" -ge 2 ] || die 'usage: nirux fleet set KEY VALUE [HOST...]'
   fs_key=$1 fs_value=$2; shift 2
   fleet_valid_key "$fs_key" || die "not a key: $fs_key (write section.key, for example idle.screensaver_timeout)"
+  case "$fs_key" in lock.*.*) die "lock.KEY sets a top-level key of lock.toml, such as lock.layout" ;; esac
   case "$fs_value" in *"$(printf '\t')"*|*"
 "*) die 'a value cannot contain tabs or line breaks' ;; esac
   for fs_h in "$@"; do fleet_valid_host "$fs_h" || die "invalid host name: $fs_h"; fs_hosts="$fs_hosts $fs_h"; done

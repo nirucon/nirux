@@ -359,6 +359,7 @@ exclude = ["proxmox"]             # never listed
 nirux fleet set idle.screensaver_timeout 5          # every NIRUX machine
 nirux fleet set idle.lock_after_screensaver 5 othala void
 nirux fleet set screensaver.scene ascii              # the screensaver's own file
+nirux fleet set lock.layout ascii-cava               # the lock screen (lock.toml)
 nirux fleet pending                                  # what waits for an offline machine
 nirux fleet pending clear [HOST]
 ```
@@ -369,7 +370,10 @@ goes to `~/.config/niruwm/config.toml` through `niructl config set` on each host
 comments are kept, the file must still load, and a key NIRUWM does not know is
 refused there with the reason. The running session reloads at once, also over SSH.
 A key that starts with `screensaver.` goes to `~/.config/niruui/screensaver.toml`
-through `niruscreensaver --set`.
+through `niruscreensaver --set`. A key that starts with `lock.` is a top-level key
+of `~/.config/niruui/lock.toml` (`lock.layout`, `lock.visual`, `lock.show_hostname`):
+it is replaced or added above the first `[table]`, and when NIRULOCK then complains
+about the file, the old file comes back and the host reports the reason.
 
 A machine that is offline gets the setting later. It is kept in
 `~/.local/share/nirux/fleet-pending` on this machine and sent when this machine

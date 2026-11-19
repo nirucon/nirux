@@ -339,6 +339,31 @@ touch "$FAKE/hosts/carol/setfail"
 nirux fleet set idle.x 5 carol > "$TEST/out" 2>&1 < /dev/null && fail "a failed set must fail the command"
 grep -q '== carol: FAILED: niructl: idle.x = 5 would not load' "$TEST/out" || { cat "$TEST/out"; fail "set failure report"; }
 rm -f "$FAKE/hosts/carol/setfail"
+# lock.KEY: the key is replaced in lock.toml (or added above the first
+# table), and a value nirulock complains about is rolled back.
+cat > "$FAKE/hosts/alpha/home/.local/bin/nirulock" <<'LOCKBIN'
+#!/bin/sh
+f=$HOME/.config/niruui/lock.toml
+grep -q '^layout = "bogus"' "$f" && { echo "nirulock: $f: layout must be ascii-cava, ascii or cava; using defaults" >&2; }
+exit 0
+LOCKBIN
+chmod +x "$FAKE/hosts/alpha/home/.local/bin/nirulock"
+L=$FAKE/hosts/alpha/home/.config/niruui/lock.toml
+mkdir -p "${L%/*}"
+printf '# mine\nlayout = "cava"   # old\n\n[pause_music]\nlayout = "keep"\n' > "$L"
+nirux fleet set lock.layout ascii-cava alpha > "$TEST/out" 2>&1 < /dev/null || { cat "$TEST/out"; fail "lock.layout"; }
+[ "$(cat "$L")" = '# mine
+layout = "ascii-cava"
+
+[pause_music]
+layout = "keep"' ] || fail "lock.toml after set: $(cat "$L")"
+nirux fleet set lock.layout bogus alpha > "$TEST/out" 2>&1 < /dev/null && fail "a bad lock value must fail"
+grep -q 'alpha: FAILED: nirulock: .*layout must be' "$TEST/out" || { cat "$TEST/out"; fail "lock failure report"; }
+grep -q '^layout = "ascii-cava"' "$L" && [ ! -f "$L.fleet-old" ] || fail "a bad lock value was not rolled back"
+printf '[pause_music]\nenabled = false\n' > "$L"
+nirux fleet set lock.show_hostname true alpha > /dev/null 2>&1 < /dev/null || fail "lock key added"
+[ "$(head -n 1 "$L")" = 'show_hostname = true' ] || fail "new key not above the table: $(cat "$L")"
+nirux fleet set lock.pause_music.enabled true alpha > /dev/null 2>&1 && fail "nested lock key accepted"
 # delta comes online: the next fleet command delivers what waited.
 make_host delta 0.12.243; fake_tools delta
 sed 's/"delta.tail0.ts.net.", "OS": "linux", "Online": false/"delta.tail0.ts.net.", "OS": "linux", "Online": true/' "$FAKE/tailscale.json" > "$FAKE/ts.new" && mv "$FAKE/ts.new" "$FAKE/tailscale.json"

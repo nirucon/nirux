@@ -331,9 +331,9 @@ If it does not start, `~/.local/state/nirulock/trace.log` says why (for example 
 
 | Key | Default | Meaning |
 |---|---|---|
-| `layout` | `"cava"` | `cava`, `ascii`, `minimal`, `terminal`, `runic`, `corner` |
+| `layout` | `"ascii-cava"` | `ascii-cava`, `ascii`, `cava`, `minimal`, `terminal`, `runic`, `corner` |
 | `visualizer` | `true` | `false` keeps the layout without the spectrum |
-| `visual` | `"auto"` | `auto`, `cava`, `quotes`, `none` |
+| `visual` | `"auto"` | `auto`, `music`, `cava`, `quotes`, `none` (`auto` in `ascii-cava`: the spectrum while music plays, otherwise nothing) |
 | `quotes` | `["*"]` | Collections by name or pattern |
 | `prompt_echo` | `"count"` | `count` or `pulse` |
 | `show_hostname` | `false` | Machine name under the clock |
@@ -349,17 +349,32 @@ nirulock --version
 
 ### NIRUX ascii on the lock screen
 
-`layout = "ascii"` (NIRULOCK 0.27.0 and later) is the lock screen's twin of
-the `ascii` screensaver scene. When the screen locks, the NIRUX banner is typed
-out on every monitor, centred and sized for each, with "A MINIMAL X11 DESKTOP"
-under it, in the theme's accent colour (the text colour when the accent is too
-dim on black). The monitor with the prompt has the clock, the password entry
-and the away time below. The typing takes about two seconds; you can type your
-password at once. Switch between the two in `~/.config/niruui/lock.toml`:
+The lock screen looks like an old terminal by default (`ascii-cava`,
+NIRULOCK 0.28.0 and later). When the screen locks, the NIRUX banner is typed
+out slowly on every monitor, one `#` at a time, with "A MINIMAL X11 DESKTOP"
+under it and a block cursor that blinks after the line when the text is done.
+The character just typed glows white and settles into the theme's accent
+colour (the text colour when the accent is too dim on black); a large banner
+has a dark scanline through every third pixel row. On the monitor with the
+prompt, the CAVA spectrum, as wide as the banner, shows under the text while
+music plays; then the clock, the password entry and the away time. You can
+type your password at once: the typing never holds the prompt up.
+
+| `layout` | Looks like |
+|---|---|
+| `ascii-cava` | The banner, the spectrum while music plays, the prompt (default) |
+| `ascii` | The banner and the prompt, no spectrum |
+| `cava` | The large clock above the spectrum or a quote (the default before 0.12.299) |
+
+Switch in `~/.config/niruui/lock.toml`, or on every machine at once:
+
+```sh
+nirux fleet set lock.layout cava         # back to the spectrum and quotes
+nirux fleet set lock.layout ascii-cava   # NIRUX ascii again
+```
 
 ```toml
-layout = "ascii"   # NIRUX ascii
-layout = "cava"    # the spectrum or a quote (the default)
+layout = "cava"
 ```
 
 The next lock uses the new layout; nothing needs a restart.

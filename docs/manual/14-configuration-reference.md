@@ -75,21 +75,21 @@ These are not generated from an example file. The chapters describe them.
 
 <!-- generated: config (tools/manual-gen.sh; do not edit by hand) -->
 
-The example configuration files of NIRUX 0.12.298 and its components, with every
+The example configuration files of NIRUX 0.12.299 and its components, with every
 key they set or show. A value marked *commented example* is off by default:
 remove the `#` to use it. The full annotated file follows each table.
 
 | File | Read by | Example from |
 |---|---|---|
-| [`~/.config/niruwm/config.toml`](#configniruwmconfigtoml) | niruwm, nirubar, niruidle, niructl | nirux 0.12.298 `config.example.toml` |
-| [`~/.config/niruwm/appearance.toml`](#configniruwmappearancetoml) | the whole suite | nirux 0.12.298 `appearance.example.toml` |
-| [`~/.config/nirux/sounds.toml`](#configniruxsoundstoml) | nirux, nirunotify | nirux 0.12.298 `sounds.example.toml` |
-| [`~/.config/niruwm/displays.toml`](#configniruwmdisplaystoml) | niruwm, niructl, nirudisplay | nirux 0.12.298 `displays.example.toml` |
+| [`~/.config/niruwm/config.toml`](#configniruwmconfigtoml) | niruwm, nirubar, niruidle, niructl | nirux 0.12.299 `config.example.toml` |
+| [`~/.config/niruwm/appearance.toml`](#configniruwmappearancetoml) | the whole suite | nirux 0.12.299 `appearance.example.toml` |
+| [`~/.config/nirux/sounds.toml`](#configniruxsoundstoml) | nirux, nirunotify | nirux 0.12.299 `sounds.example.toml` |
+| [`~/.config/niruwm/displays.toml`](#configniruwmdisplaystoml) | niruwm, niructl, nirudisplay | nirux 0.12.299 `displays.example.toml` |
 | [`~/.config/nirubar/config.toml`](#confignirubarconfigtoml) | nirubar | nirubar 0.30.0 `weather.example.toml` |
 | [`~/.config/nirulauncher/config.toml`](#confignirulauncherconfigtoml) | nirulauncher | nirulauncher 0.17.0 `config.example.toml` |
 | [`~/.config/nirunotify/config.toml`](#confignirunotifyconfigtoml) | nirunotify | nirunotify 0.6.0 `config.example.toml` |
 | [`~/.config/nirufetch/config.toml`](#confignirufetchconfigtoml) | nirufetch | nirufetch 0.3.0 `config.example.toml` |
-| [`~/.config/niruui/lock.toml`](#configniruuilocktoml) | nirulock | nirulock 0.27.0 `config.example.toml` |
+| [`~/.config/niruui/lock.toml`](#configniruuilocktoml) | nirulock | nirulock 0.28.0 `config.example.toml` |
 | [`~/.config/niruui/screensaver.toml`](#configniruuiscreensavertoml) | niruscreensaver | niruscreensaver 0.17.1 `config.example.toml` |
 | [`~/.config/nirushare/webhooks.toml`](#confignirusharewebhookstoml) | nirushare | nirushare 0.4.0 `webhooks.example.toml` |
 
@@ -1747,9 +1747,10 @@ palette = true
 |---|---|---|---|
 | `(top level)` | `font_path` | `"/usr/share/fonts/truetype/dejavu/DejaVuSansMono.ttf"` (commented example) | ~/.config/niruui/lock.toml; every setting is optional. |
 | `(top level)` | `font_size` | `22.0` |  |
-| `(top level)` | `layout` | `"cava"` | minimal \| terminal \| runic \| corner \| cava \| ascii cava uses the active NIRUX theme and visualises system audio through CAVA. |
+| `(top level)` | `layout` | `"cava".` | ascii-cava \| ascii \| cava \| minimal \| terminal \| runic \| corner ascii-cava (the default, "NIRUX ascii"): the NIRUX banner typed out slowl... |
+| `(top level)` | `layout` | `"ascii-cava"` |  |
 | `(top level)` | `visualizer` | `true` |  |
-| `(top level)` | `visual` | `"auto"` | What the cava layout shows where the spectrum is drawn: "auto"   the CAVA spectrum only while music or radio plays, otherwise a quote fro... |
+| `(top level)` | `visual` | `"auto"` | What the cava and ascii-cava layouts show where the spectrum is drawn: "auto"   the CAVA spectrum only while music or radio plays, otherw... |
 | `(top level)` | `quotes` | `["*"]` | Built-in: havamal-en, havamal-sv, stoic-en, stoic-sv. |
 | `(top level)` | `prompt_echo` | `"count"` | How the prompt echoes the password: "count" shows one * per character (the default); "pulse" shows a fixed row of eight cells with one li... |
 | `(top level)` | `show_hostname` | `false` | Show the machine's hostname under the clock. |
@@ -1773,16 +1774,21 @@ palette = true
 # font_path = "/usr/share/fonts/truetype/dejavu/DejaVuSansMono.ttf"
 font_size = 22.0
 
-# minimal | terminal | runic | corner | cava | ascii
-# cava uses the active NIRUX theme and visualises system audio through CAVA.
-# ascii ("NIRUX ascii") types the NIRUX banner and "A MINIMAL X11 DESKTOP"
-# on every screen when it locks, in the theme's accent colour, with the
-# password prompt under it. Back to the spectrum: layout = "cava".
-layout = "cava"
+# ascii-cava | ascii | cava | minimal | terminal | runic | corner
+# ascii-cava (the default, "NIRUX ascii"): the NIRUX banner typed out slowly
+# on every screen like an old terminal, "A MINIMAL X11 DESKTOP" and a blinking
+# cursor under it, in the theme's accent colour; the CAVA spectrum, as wide as
+# the banner, while music plays; then the clock and the password prompt.
+# ascii: the same without the spectrum.
+# cava: a large clock above the spectrum or a quote.
+layout = "cava".
+layout = "ascii-cava"
 visualizer = true
-# What the cava layout shows where the spectrum is drawn:
+# What the cava and ascii-cava layouts show where the spectrum is drawn:
 #   "auto"   the CAVA spectrum only while music or radio plays, otherwise a
-#            quote from ~/.config/niru/quotes/ (the default)
+#            quote from ~/.config/niru/quotes/ in cava, nothing in ascii-cava
+#            (the default)
+#   "music"  the spectrum while music plays, otherwise nothing
 #   "cava"   the spectrum alone, as before 0.19 (CAVA runs whenever the display is on)
 #   "quotes" quotes alone; CAVA never starts
 #   "none"   neither (visualizer = false also means this)

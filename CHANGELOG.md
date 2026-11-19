@@ -2,6 +2,20 @@
 
 Earlier releases are described in their release notes and commit messages.
 
+## 0.12.299 (2026-11-19)
+
+- **A retro NIRUX lock screen by default (NIRULOCK 0.28.0).** The new
+  default layout `ascii-cava` types the NIRUX banner slowly on every
+  monitor like an old terminal, with "A MINIMAL X11 DESKTOP" and a blinking
+  block cursor under it, the newest character glowing white and scanlines
+  through a large banner. Under it, the CAVA spectrum as wide as the banner
+  while music plays, then the password prompt, which works from the first
+  moment. `ascii` is the same without the spectrum and now types at the
+  same calm pace. `layout = "cava"` brings back the previous lock screen.
+- **`nirux fleet set lock.KEY VALUE`** changes a lock screen setting on every
+  machine, for example `nirux fleet set lock.layout cava`. A value NIRULOCK
+  does not accept is rolled back on that host and reported.
+
 ## 0.12.298 (2026-11-19)
 
 - **NIRUX ascii on the lock screen (NIRULOCK 0.27.0).** `layout = "ascii"`
