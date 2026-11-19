@@ -2,6 +2,15 @@
 
 Earlier releases are described in their release notes and commit messages.
 
+## 0.12.305 (2026-11-19)
+
+- NIRUSPLASH 0.1.2: the NIRUX boot look also on Arch installations that
+  start a Unified Kernel Image from GRUB (GRUB 2.14 and later). There
+  0.1.1 found no kernel line in the boot menu and safely kept the plain
+  boot; now the image itself gets the splash, it is backed up and put back
+  on any error, and `quiet splash` go into `/etc/kernel/cmdline` when they
+  are missing.
+
 ## 0.12.304 (2026-11-19)
 
 - **The NIRUX boot look (NIRUSPLASH 0.1.1, new).** The computer now starts
