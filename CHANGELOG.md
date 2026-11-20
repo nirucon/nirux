@@ -2,6 +2,26 @@
 
 Earlier releases are described in their release notes and commit messages.
 
+## 0.12.307 (2026-11-20)
+
+- **Shutting down in the NIRUX look (NIRUSPLASH 0.2.0).** Powering off and
+  restarting show the banner, `[ ok ] session closed` and `[ .. ] powering
+  off` (or `restarting`) with the blinking cursor, in the theme's colours.
+  Debian and Arch use Plymouth's own shutdown units; Void gets a file in
+  `/etc/runit/shutdown.d`. Tested on encrypted Debian, Arch and Void VMs.
+- **While you were away (NIRUNOTIFY 0.8.0).** After a lock of 10 minutes or
+  more, what came meanwhile is one card: how many per app with the newest
+  line, and new files in Downloads, instead of a pile of popups. Urgent
+  notifications still show on their own. `away_summary` and
+  `away_after_minutes` in `~/.config/nirunotify/config.toml`.
+- **Places: settings that follow the network (NIRUWM 0.34.0).**
+  `niructl place save NAME` remembers the network you are on (the router's
+  address and hardware address, cable or wifi); `niructl place set` chooses
+  Do Not Disturb, a display profile and a sound output for it, and
+  `places.toml` takes commands for arrival and leaving. The session's watcher
+  follows route changes from the kernel, without NetworkManager too, and
+  leaves a place only after 20 seconds without it. Manual chapter 10.
+
 ## 0.12.306 (2026-11-20)
 
 - NIRUWM 0.33.3: the screens keep their layout through a suspend. Some

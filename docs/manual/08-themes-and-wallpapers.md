@@ -301,6 +301,7 @@ Since NIRUX 0.12.304 the computer starts in the same style as the lock and login
 
 - **The GRUB menu.** The NIRUX banner and "A MINIMAL X11 DESKTOP" with the cursor, and under them every installed kernel straight in the menu (newest first, each with its recovery entry), then the firmware settings. The arrow keys stop the three-second countdown, Enter starts the chosen entry, `e` edits it and `c` opens GRUB's console, as always.
 - **The boot splash** (Plymouth). The banner is typed in, the cursor blinks, and a computer with an encrypted disk asks for the password at a prompt in the same style: `$ unlock disk` followed by a dot for each character, `[ .. ] unlocking` once you press Enter, and `[ fail ] wrong password, try again` when it was wrong. Esc shows the start-up messages instead.
+- **Shutting down and restarting** (since NIRUX 0.12.307). The banner and the line appear at once, then `[ ok ] session closed` and `[ .. ] powering off` (or `[ .. ] restarting`) with the blinking cursor, until the screen goes dark.
 
 Every install and update refreshes the boot look in the colours of the active theme (after a theme change, run `nirux boot apply` to have it at once). Computers installed with NIRUBOOT have it from the first start.
 

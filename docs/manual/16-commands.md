@@ -155,7 +155,7 @@ niructl keys --markdown        # the keys in effect, as Markdown
 
 <!-- generated: niructl (tools/manual-gen.sh; do not edit by hand) -->
 
-Every form `niructl` accepts, from its usage text (NIRUWM 0.33.3). Run `niructl`
+Every form `niructl` accepts, from its usage text (NIRUWM 0.34.0). Run `niructl`
 without arguments to print it.
 
 - `niructl status`
@@ -212,6 +212,7 @@ without arguments to print it.
 - `niructl audio status [--json]|outputs|sources [--json]|output ID|next|source ID|next|input ID|next|mute|mic-status [--json]|mic-mute [on|off|toggle]|mic-level up|down|set N|mic-test [SECONDS] [--json] [--keep]|volume up|down`
 - `niructl bluetooth status|list|power on|off|toggle|connect MAC|disconnect MAC`
 - `niructl proximity status|devices|set MAC|off|test [MAC]`
+- `niructl place status [--json]|list|save NAME|set NAME KEY VALUE|delete NAME|rename OLD NEW|apply|watch [--quiet]`
 - `niructl explain [--launcher]`
 - `niructl idle on|off|toggle|status [MINUTES]`
 - `niructl storage review [--json]|clean cache --yes`

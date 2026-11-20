@@ -265,6 +265,12 @@ nirunotify --clear            # clear the history
 nirunotify --check-config
 ```
 
+### While you were away
+
+Popups wait while the screen is locked. After a lock of 10 minutes or more they come as one card instead of a pile: "While you were away · 1 h 12 min", then a line per app with how many came and the newest one (for example `Discord  4 · Anna: hej`), and how many files landed in Downloads. Urgent notifications (a low battery, for one) still show on their own, and every notification is in the history (`nirunotify --history`). After a shorter lock they show one by one as before.
+
+`away_summary = false` in `~/.config/nirunotify/config.toml` turns the card off; `away_after_minutes` (1 to 240) sets how long the lock must last.
+
 ### Do Not Disturb
 
 | Keys | Action |
@@ -293,6 +299,8 @@ niructl dnd status
 | `max_timeout_ms` | `60000` | Upper bound for any timeout, including "never expire" |
 | `critical_timeout_ms` | `30000` | Timeout for critical notifications |
 | `critical_ignore_dnd` | `false` | Let critical notifications through Do Not Disturb |
+| `away_summary` | `true` | After a long lock, one "While you were away" card |
+| `away_after_minutes` | `10` | How long the lock must last for the card |
 | `monitor` | `""` | Empty: the screen under the pointer; `"primary"`; or an output name |
 | `font_path` | unset | A font file, for example DejaVu Sans Mono |
 | `font_size` | `14.0` | Text size |
@@ -328,6 +336,47 @@ niructl mode stop
 ```
 
 The two modes do the same thing and differ only in their default length. When the time is up you get a notification. Only what the mode itself changed is undone: if DND or keep-awake was already on, it stays on. The bar's `mode` module shows the active mode and the minutes left. In the launcher, type `focus mode`, `presentation mode` or `stop context`.
+
+## Places: settings that follow the network
+
+A place is a network you come back to: home, the office, the desk with the dock. NIRUX tells them apart by the router (its address and its hardware address, so two homes that both use 192.168.1.1 stay two places), and optionally by cable or wifi and the wifi name. When you arrive, the place's settings apply; when you leave, they go.
+
+Stand on the network and save it, then say what happens there:
+
+```sh
+niructl place save Office              # the network you are on now
+niructl place set Office dnd on        # Do Not Disturb on there (on, off or unset)
+niructl place set Office display Desk  # a NIRU Display profile (chapter 9)
+niructl place set Office audio ID      # a sound output from niructl audio outputs
+niructl place set Office link ethernet # only on the cable (wifi, ethernet or any)
+niructl place list
+niructl place status                   # the networks now, and which place this is
+niructl place apply                    # apply the place's settings again now
+niructl place rename Office Work
+niructl place delete Work
+```
+
+Commands to run on arrival and on leaving go in `~/.config/niruwm/places.toml`; they get the place's name in `NIRUX_PLACE`:
+
+```toml
+[[place]]
+name = "Office"
+gateway = "10.0.0.1"
+gateway_mac = "aa:bb:cc:dd:ee:ff"
+link = "ethernet"
+dnd = true
+display_profile = "Desk"
+on_enter = ["nirureminder --watch"]
+on_leave = ["pkill -f teams"]
+```
+
+How it behaves:
+
+- On arrival: Do Not Disturb on or off, the display profile, the sound output, then `on_enter`. A short notification says "Place: Office" and what changed. Logging in counts as arriving.
+- On leaving: `on_leave` runs and Do Not Disturb goes back to what it was before the place changed it.
+- When two networks are up (cable and wifi), the one the computer uses (the best route) decides.
+- A wifi that drops for a moment changes nothing: a place is left only after 20 seconds without a match.
+- The session's watcher waits for network changes from the kernel; nothing is polled. It works with and without NetworkManager.
 
 ## Studio mode
 
