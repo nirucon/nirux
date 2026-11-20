@@ -75,19 +75,19 @@ These are not generated from an example file. The chapters describe them.
 
 <!-- generated: config (tools/manual-gen.sh; do not edit by hand) -->
 
-The example configuration files of NIRUX 0.12.310 and its components, with every
+The example configuration files of NIRUX 0.12.311 and its components, with every
 key they set or show. A value marked *commented example* is off by default:
 remove the `#` to use it. The full annotated file follows each table.
 
 | File | Read by | Example from |
 |---|---|---|
-| [`~/.config/niruwm/config.toml`](#configniruwmconfigtoml) | niruwm, nirubar, niruidle, niructl | nirux 0.12.310 `config.example.toml` |
-| [`~/.config/niruwm/appearance.toml`](#configniruwmappearancetoml) | the whole suite | nirux 0.12.310 `appearance.example.toml` |
-| [`~/.config/nirux/sounds.toml`](#configniruxsoundstoml) | nirux, nirunotify | nirux 0.12.310 `sounds.example.toml` |
-| [`~/.config/niruwm/displays.toml`](#configniruwmdisplaystoml) | niruwm, niructl, nirudisplay | nirux 0.12.310 `displays.example.toml` |
+| [`~/.config/niruwm/config.toml`](#configniruwmconfigtoml) | niruwm, nirubar, niruidle, niructl | nirux 0.12.311 `config.example.toml` |
+| [`~/.config/niruwm/appearance.toml`](#configniruwmappearancetoml) | the whole suite | nirux 0.12.311 `appearance.example.toml` |
+| [`~/.config/nirux/sounds.toml`](#configniruxsoundstoml) | nirux, nirunotify | nirux 0.12.311 `sounds.example.toml` |
+| [`~/.config/niruwm/displays.toml`](#configniruwmdisplaystoml) | niruwm, niructl, nirudisplay | nirux 0.12.311 `displays.example.toml` |
 | [`~/.config/nirubar/config.toml`](#confignirubarconfigtoml) | nirubar | nirubar 0.31.0 `weather.example.toml` |
 | [`~/.config/nirulauncher/config.toml`](#confignirulauncherconfigtoml) | nirulauncher | nirulauncher 0.17.0 `config.example.toml` |
-| [`~/.config/nirunotify/config.toml`](#confignirunotifyconfigtoml) | nirunotify | nirunotify 0.8.1 `config.example.toml` |
+| [`~/.config/nirunotify/config.toml`](#confignirunotifyconfigtoml) | nirunotify | nirunotify 0.9.0 `config.example.toml` |
 | [`~/.config/nirufetch/config.toml`](#confignirufetchconfigtoml) | nirufetch | nirufetch 0.3.0 `config.example.toml` |
 | [`~/.config/niruui/lock.toml`](#configniruuilocktoml) | nirulock | nirulock 0.28.0 `config.example.toml` |
 | [`~/.config/niruui/screensaver.toml`](#configniruuiscreensavertoml) | niruscreensaver | niruscreensaver 0.17.1 `config.example.toml` |
@@ -1195,6 +1195,7 @@ reduced = false
 | `[sounds]` | `notification_cooldown_ms` | `2500` |  |
 | `[sounds]` | `notification_exclude_apps` | `["nplay", "spotify"]` |  |
 | `[sounds]` | `respect_mute` | `true` |  |
+| `[sounds]` | `voice` | `true` | All other sounds stay tones. |
 | `[sounds.system]` | `enabled` | `true` |  |
 | `[sounds.system]` | `auth-fail` | `true` |  |
 | `[sounds.system]` | `lock` | `false` |  |
@@ -1260,6 +1261,10 @@ shutdown = true
 notification_cooldown_ms = 2500
 notification_exclude_apps = ["nplay", "spotify"]
 respect_mute = true
+# A retro robot voice for rare, important events (battery, network, reminders,
+# meetings, updates, startup and shutdown, a wrong password, Teams messages).
+# All other sounds stay tones. Switch with: nirux sounds voice on|off
+voice = true
 
 # System sounds. startup, update and shutdown are switched in [sounds] above.
 [sounds.system]

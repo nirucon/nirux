@@ -449,4 +449,55 @@ assert data["events"]["volume-up"] is False and data["events"]["volume-down"] is
 assert data["events"]["brightness-up"] is False and data["events"]["startup"] is True, data
 PY
 
-printf 'PASS: event, feedback, power, device, dictation and per-app sounds\n'
+# The voice sounds: `nirux sounds voice on|off` puts the voice or the tone in
+# place as EVENT.ogg (the file every player reads); a tone's variants step
+# aside while the voice speaks, and teams.ogg exists only with the voice on.
+mkdir -p "$SOUNDS/voice" "$SOUNDS/tones"
+printf 'OggS voice battery-low\n' > "$SOUNDS/voice/battery-low.ogg"
+printf 'OggS voice teams\n' > "$SOUNDS/voice/teams.ogg"
+cp "$SOUNDS/battery-low.ogg" "$SOUNDS/tones/battery-low.ogg"
+printf 'OggS battery-low 2\n' > "$SOUNDS/battery-low-2.ogg"
+cp "$SOUNDS/battery-low-2.ogg" "$SOUNDS/tones/battery-low-2.ogg"
+nirux sounds voice on > /dev/null
+grep -q '^voice = true' "$CONFIG" || fail 'voice on did not set voice = true'
+grep -q 'voice battery-low' "$SOUNDS/battery-low.ogg" || fail 'voice on left the tone in place'
+[ ! -e "$SOUNDS/battery-low-2.ogg" ] || fail 'a tone variant stayed beside the voice'
+grep -q 'OggS volume-up' "$SOUNDS/volume-up.ogg" || fail 'voice on touched a sound without a voice'
+nirux sounds voice status | grep -q '^voice: on' || fail 'voice status'
+nirux sounds status | grep -q '^voice: on (2 events speak' || fail "status voice line: $(nirux sounds status | grep '^voice')"
+# A web notification from Teams (APP@SITE from NIRUNOTIFY) speaks; another
+# site and an older APP-only name keep the notification sound.
+nirux sounds play notification --app 'Helium@teams.cloud.microsoft'; expect 'teams site' "$SOUNDS/teams.ogg"
+reset_cooldowns
+nirux sounds play notification --app 'Helium@mail.google.com'; expect 'other site' "$SOUNDS/notification.ogg"
+reset_cooldowns
+# The app part still decides exclusions and the app's own entry.
+nirux sounds play notification --app 'Thunderbird@example.org'; expect 'app entry behind a site' "$SOUNDS/mail.ogg"
+reset_cooldowns
+nirux sounds play notification --app 'spotify@open.spotify.com'; nothing 'excluded app behind a site'
+# A site entry in [sounds.apps] wins over the built-in Teams sound.
+nirux sounds app teams.cloud.microsoft off > /dev/null
+grep -q '^"teams.cloud.microsoft" = "off"$' "$CONFIG" || fail 'a site entry is not a quoted key'
+nirux sounds status | grep -q '^  teams.cloud.microsoft = off' || fail 'status does not list the site entry'
+
+nirux sounds play notification --app 'Helium@teams.cloud.microsoft'; nothing 'site entry off'
+nirux sounds app teams.cloud.microsoft remove > /dev/null
+! grep -q 'teams.cloud.microsoft' "$CONFIG" || fail 'remove left the site entry'
+
+reset_cooldowns
+nirux sounds voice off > /dev/null
+grep -q '^voice = false' "$CONFIG" || fail 'voice off did not set voice = false'
+grep -q 'OggS battery-low$' "$SOUNDS/battery-low.ogg" || fail 'voice off did not bring the tone back'
+[ -e "$SOUNDS/battery-low-2.ogg" ] || fail 'voice off did not bring the tone variant back'
+[ ! -e "$SOUNDS/teams.ogg" ] || fail 'teams.ogg stayed with the voice off'
+nirux sounds play notification --app 'Helium@teams.cloud.microsoft'; expect 'teams without voice' "$SOUNDS/notification.ogg"
+reset_cooldowns
+# The user's own file wins with the voice on.
+nirux sounds voice on > /dev/null
+mkdir -p "$XDG_CONFIG_HOME/nirux/sounds"
+printf 'OggS mine teams\n' > "$XDG_CONFIG_HOME/nirux/sounds/teams.ogg"
+nirux sounds play notification --app 'Helium@teams.cloud.microsoft'; expect 'own teams.ogg' "$XDG_CONFIG_HOME/nirux/sounds/teams.ogg"
+rm -f "$XDG_CONFIG_HOME/nirux/sounds/teams.ogg"
+reset_cooldowns
+
+printf 'PASS: event, feedback, power, device, dictation, voice and per-app sounds\n'

@@ -46,6 +46,7 @@ notification; the feedback ticks are the quietest.
 nirux sounds status              # categories, events and app sounds
 nirux sounds list                # every event, whether it plays, and its file
 nirux sounds on | off            # everything
+nirux sounds voice on | off      # the robot voice for rare events (see Voice)
 nirux sounds toggle power        # a category
 nirux sounds toggle battery-full # one event
 nirux sounds test device-connect # play one now, even if it is off
@@ -126,7 +127,13 @@ teams = "off"                 # notification shown, no sound
 ```
 
 The key is the app name the notification is sent with, as listed by
-`nirunotify --history`; case does not matter. A name plays `NAME.ogg` from
+`nirunotify --history`; case does not matter. A web page's notification (a
+browser or a NIRUWEBAPP window) is sent with the browser's name, so the site
+can have its own entry: NIRUNOTIFY passes the site from the first line of the
+notification, and a quoted site key wins over the app, for example
+`"teams.cloud.microsoft" = "off"` (`nirux sounds app teams.cloud.microsoft off`).
+Teams plays `teams` ("Teams message") while the voice is on, and the normal
+notification sound otherwise. A name plays `NAME.ogg` from
 `~/.config/nirux/sounds/` first and then from the NIRUX sounds, so a file there
 replaces a bundled sound. A missing file falls back to the notification sound.
 Manage entries without editing the file:
@@ -146,6 +153,39 @@ sounds and nothing else. Thunderbird can play its own new-mail sound as well;
 turn that off in Thunderbird (Settings → General → Incoming Mails → Play a
 sound) to hear only the NIRUX one. Startup and shutdown sounds are part of the
 session and need a new login after an update.
+
+## Voice
+
+A retro robot voice speaks for a few rare, important events. Every other
+sound stays a tone, so volume, brightness, screenshots, typing, dictation and
+devices sound as before:
+
+| Event | The voice says |
+|---|---|
+| `battery-low`, `battery-critical` | "Battery low", "Power critical" |
+| `network-down`, `network-up` | "Connection lost", "Back online" |
+| `reminder`, `timer-done` | "Reminder", "Time is up" |
+| `meet-ready`, `meet-problem` | "All systems ready", "Check your devices" |
+| `auth-fail` | "Access denied" |
+| `update` | "System updated" |
+| `startup`, `shutdown` | "System online", "Goodbye" |
+| Teams notifications (the `teams` app sound) | "Teams message" |
+
+`mail` ("You got mail") and `chat` ("You got chat message") were voices from
+the start and stay as they are.
+
+```sh
+nirux sounds voice          # on or off, and the events that speak
+nirux sounds voice off      # the tones for every event
+nirux sounds voice on
+```
+
+The switch is `voice` in `[sounds]` (on by default). The voice files and a
+copy of the tones they stand in for live in `~/.local/share/nirux/sounds/voice`
+and `tones`; switching puts one or the other in place as `EVENT.ogg`, which is
+the file every NIRUX program plays, so no program needs a restart. Your own
+`~/.config/nirux/sounds/EVENT.ogg` wins either way. A hand edit of `voice`
+takes effect at the next `nirux update` or `nirux sounds voice on|off`.
 
 ## How it plays
 
@@ -221,3 +261,6 @@ and `sounds/levels/` (the volume tick for each 10 % step). The output is
 deterministic, and loudness is normalised to a per-sound target (maximum
 momentary loudness, EBU R128). The sounds are original work under this
 repository's MIT license.
+
+The voice sounds in `sounds/voice/` are spoken by espeak-ng and encoded by
+ffmpeg with `sh tools/gen-voice.sh`, which holds the text of each one.

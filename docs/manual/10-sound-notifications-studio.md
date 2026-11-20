@@ -213,6 +213,32 @@ nirux sounds test notification --app Signal
 
 The app name is the one the notification is sent with, as listed by `nirunotify --history`; case does not matter. A sound name plays `NAME.ogg` from `~/.config/nirux/sounds/` first, then from the NIRUX sounds. A missing file falls back to the notification sound.
 
+A web page's notification, for example Teams in NIRUWEBAPP, is sent with the browser's name. The site gets its own entry with its name: `nirux sounds app teams.cloud.microsoft off`.
+
+### Voice sounds
+
+A retro robot voice speaks for a few rare, important events. Every other sound stays a tone.
+
+| Event | The voice says |
+|---|---|
+| Battery low or critical | "Battery low", "Power critical" |
+| Network lost or back | "Connection lost", "Back online" |
+| Reminder, timer | "Reminder", "Time is up" |
+| Meeting check | "All systems ready", "Check your devices" |
+| Wrong password | "Access denied" |
+| Update, startup, shutdown | "System updated", "System online", "Goodbye" |
+| A Teams notification | "Teams message" |
+
+Mail ("You got mail") and Signal ("You got chat message") speak as before.
+
+```sh
+nirux sounds voice          # on or off, and the events that speak
+nirux sounds voice off      # tones for every event
+nirux sounds voice on
+```
+
+The voice is on by default (`voice` in `[sounds]`). Switching takes effect at once. Your own `~/.config/nirux/sounds/EVENT.ogg` wins either way.
+
 ### sounds.toml
 
 The settings live in `~/.config/nirux/sounds.toml` (a new file looks like `sounds.example.toml` in the NIRUX repository). An event plays only when `[sounds] enabled`, its category's `enabled` and its own key are all `true`. NIRUNOTIFY rereads the file when it changes.

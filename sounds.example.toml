@@ -8,6 +8,10 @@ shutdown = true
 notification_cooldown_ms = 2500
 notification_exclude_apps = ["nplay", "spotify"]
 respect_mute = true
+# A retro robot voice for rare, important events (battery, network, reminders,
+# meetings, updates, startup and shutdown, a wrong password, Teams messages).
+# All other sounds stay tones. Switch with: nirux sounds voice on|off
+voice = true
 
 # System sounds. startup, update and shutdown are switched in [sounds] above.
 [sounds.system]

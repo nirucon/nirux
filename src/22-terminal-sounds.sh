@@ -232,6 +232,10 @@ shutdown = true
 notification_cooldown_ms = 2500
 notification_exclude_apps = ["nplay", "spotify"]
 respect_mute = true
+# A retro robot voice for rare, important events (battery, network, reminders,
+# meetings, updates, startup and shutdown, a wrong password, Teams messages).
+# All other sounds stay tones. Switch with: nirux sounds voice on|off
+voice = true
 EOF
     for sounds_cat in $SOUNDS_CATEGORIES; do sounds_category_block "$sounds_cat"; done
     sounds_apps_block
@@ -442,23 +446,46 @@ sounds_app_key() {
 }
 
 sounds_app_excluded() {
-  sounds_app=$1
-  [ -n "$sounds_app" ] || return 1
-  sounds_app=$(sounds_app_key "$sounds_app")
+  sounds_ex_app=$(sounds_app_name "$1")
+  [ -n "$sounds_ex_app" ] || return 1
+  sounds_ex_app=$(sounds_app_key "$sounds_ex_app")
   sounds_excluded=$(sounds_value notification_exclude_apps '["nplay", "spotify"]')
   [ "$sounds_excluded" = "[]" ] && return 1
   for sounds_item in $(printf '%s' "$sounds_excluded" | tr -d '[]"' | tr ',' ' '); do
     sounds_item=$(printf '%s' "$sounds_item" | tr '[:upper:]' '[:lower:]' | sed 's/^[[:space:]]*//; s/[[:space:]]*$//')
     [ -n "$sounds_item" ] || continue
-    [ "$sounds_app" = "$sounds_item" ] && return 0
+    [ "$sounds_ex_app" = "$sounds_item" ] && return 0
   done
   return 1
 }
 
-# The configured choice for an app: empty when the app has no entry.
+# NIRUNOTIFY sends APP@SITE for a notification from a web page (a browser
+# puts the site on the first line of the body), so a site can have its own
+# sound: "teams.cloud.microsoft" = "teams" in [sounds.apps].
+sounds_app_name() { say "${1%%@*}"; }
+sounds_app_site() { case "$1" in *@*) say "${1#*@}" ;; esac; }
+
+# Sites with a NIRUX sound of their own when [sounds.apps] does not say.
+sounds_site_default() {
+  case "$1" in
+    teams.cloud.microsoft|teams.microsoft.com|teams.live.com) say teams ;;
+  esac
+}
+
+# The configured choice for an app: empty when the app has no entry. A site
+# entry wins over the app's, then the built-in site sound; a site sound whose
+# file is missing (teams.ogg exists only while the voice sounds are on) falls
+# back to the app's entry.
 sounds_app_choice() {
   [ -n "$1" ] || return 0
-  sounds_table_value sounds.apps "$(sounds_app_key "$1")"
+  sounds_ac_site=$(sounds_app_site "$1" | sed 's/^www\.//')
+  if [ -n "$sounds_ac_site" ]; then
+    sounds_ac=$(sounds_table_value sounds.apps "$(sounds_app_key "$sounds_ac_site")")
+    if [ -n "$sounds_ac" ]; then say "$sounds_ac"; return 0; fi
+    sounds_ac=$(sounds_site_default "$sounds_ac_site")
+    if [ -n "$sounds_ac" ] && [ -n "$(sounds_file_for "$sounds_ac")" ]; then say "$sounds_ac"; return 0; fi
+  fi
+  sounds_table_value sounds.apps "$(sounds_app_key "$(sounds_app_name "$1")")"
 }
 
 # Resolve a sound name or path to a readable file. A name is looked up in the
@@ -508,7 +535,7 @@ sounds_notification_target() {
   sounds_target=$(sounds_file_for "$sounds_choice")
   if [ -n "$sounds_target" ]; then
     case "$sounds_choice" in
-      */*) say "$(sounds_app_key "$1") $sounds_target" ;;
+      */*) say "$(sounds_app_key "$(sounds_app_name "$1")") $sounds_target" ;;
       *) say "$sounds_choice $sounds_target" ;;
     esac
   else
@@ -645,6 +672,8 @@ sounds_status() {
       say "  $sounds_event: $(sounds_onoff "$(sounds_event_setting "$sounds_event")")"
     done
   done
+  sounds_voice_on && sounds_v=on || sounds_v=off
+  say "voice: $sounds_v ($(sounds_voice_events | wc -w | tr -d ' ') events speak; nirux sounds voice on|off)"
   say "notification sound excluded for: $(sounds_value notification_exclude_apps '["nplay", "spotify"]')"
   sounds_apps=$(sounds_app_list)
   [ -n "$sounds_apps" ] || return 0
@@ -691,8 +720,9 @@ sounds_status_json() {
   sounds_enabled && sounds_global=true || sounds_global=false
   sounds_vol=$(sounds_value volume 35)
   case "$sounds_vol" in ''|*[!0-9]*) sounds_vol=35 ;; esac
-  printf '{"schema":1,"enabled":%s,"volume":%s,"config":%s,"events":{' \
-    "$sounds_global" "$sounds_vol" "$(sounds_json_string "$SOUNDS_CONFIG")"
+  sounds_voice_on && sounds_vj=true || sounds_vj=false
+  printf '{"schema":1,"enabled":%s,"volume":%s,"voice":%s,"config":%s,"events":{' \
+    "$sounds_global" "$sounds_vol" "$sounds_vj" "$(sounds_json_string "$SOUNDS_CONFIG")"
   sounds_sep=
   for sounds_event in $(sounds_all_events); do
     [ "$(sounds_event_setting "$sounds_event")" = true ] && sounds_on=true || sounds_on=false
@@ -752,7 +782,9 @@ sounds_app_command() {
     *[!A-Za-z0-9_-]*|'') die 'sound must be a name (letters, digits, "_", "-"), a path, default, off or remove' ;;
     *) sounds_value_new=$2 ;;
   esac
-  sounds_table_set sounds.apps "$sounds_entry" "$sounds_entry = \"$sounds_value_new\""
+  # A site name has dots, which TOML only allows in a quoted key.
+  case "$sounds_entry" in *.*) sounds_key="\"$sounds_entry\"" ;; *) sounds_key=$sounds_entry ;; esac
+  sounds_table_set sounds.apps "$sounds_entry" "$sounds_key = \"$sounds_value_new\""
   say "$sounds_entry = $sounds_value_new"
   case "$sounds_value_new" in
     off|none|silent|default|notification) : ;;
@@ -765,7 +797,7 @@ sounds_is_category() {
   return 1
 }
 
-SOUNDS_USAGE='usage: nirux sounds [status [--json]|list|on|off|toggle EVENT|CATEGORY|app APP [SOUND]|test EVENT [--app NAME] [--level N]|play EVENT [--app NAME] [--level N]]'
+SOUNDS_USAGE='usage: nirux sounds [status [--json]|list|on|off|voice [on|off|status]|toggle EVENT|CATEGORY|app APP [SOUND]|test EVENT [--app NAME] [--level N]|play EVENT [--app NAME] [--level N]]'
 
 sounds_command() {
   sounds_action=${1:-status}
@@ -778,6 +810,22 @@ sounds_command() {
       esac ;;
     list) [ "$#" = 1 ] || die 'usage: nirux sounds list'; sounds_list ;;
     on) sounds_set enabled true; say 'Sounds enabled' ;;
+    voice)
+      case "${2:-status}" in
+        on|off)
+          [ "$2" = on ] && sounds_next=true || sounds_next=false
+          sounds_set voice "$sounds_next"
+          sounds_voice_apply
+          if [ "$2" = on ]; then say "Voice on: $(sounds_voice_events)speak; every other sound stays a tone"
+          else say 'Voice off: every event plays its tone'; fi ;;
+        status)
+          sounds_voice_on && say 'voice: on' || say 'voice: off'
+          for sounds_ve in $(sounds_voice_events); do
+            if [ -r "$NIRUX_CONFIG/sounds/$sounds_ve.ogg" ]; then say "  $sounds_ve: your own sound"
+            else say "  $sounds_ve"; fi
+          done ;;
+        *) die 'usage: nirux sounds voice [on|off|status]' ;;
+      esac ;;
     off) sounds_set enabled false; say 'Sounds disabled' ;;
     toggle)
       [ "$#" = 2 ] || die "usage: nirux sounds toggle EVENT|CATEGORY (events: $(sounds_all_events)categories: $SOUNDS_CATEGORIES)"
@@ -822,6 +870,33 @@ sounds_command() {
   esac
 }
 
+sounds_voice_on() { [ "$(sounds_value voice true)" = true ]; }
+
+# The events (and app sounds) that have a voice.
+sounds_voice_events() {
+  for sounds_vf in "$SOUNDS_STATE"/voice/*.ogg; do
+    [ -f "$sounds_vf" ] && printf '%s ' "$(basename "$sounds_vf" .ogg)"
+  done
+}
+
+# Put the voice or the tone in place for every event with a voice. Players
+# read $SOUNDS_STATE/EVENT.ogg, so this is the only switch they need; a
+# tone's variants (EVENT-2.ogg ...) step aside while the voice speaks. The
+# user's own ~/.config/nirux/sounds files win either way.
+sounds_voice_apply() {
+  [ -d "$SOUNDS_STATE/voice" ] || return 0
+  sounds_voice_on && sounds_va=voice || sounds_va=tones
+  for sounds_vf in "$SOUNDS_STATE"/voice/*.ogg; do
+    [ -f "$sounds_vf" ] || continue
+    sounds_vn=$(basename "$sounds_vf" .ogg)
+    rm -f "$SOUNDS_STATE/$sounds_vn.ogg" "$SOUNDS_STATE/$sounds_vn"-[0-9]*.ogg
+    for sounds_tf in "$SOUNDS_STATE/$sounds_va/$sounds_vn.ogg" "$SOUNDS_STATE/$sounds_va/$sounds_vn"-[0-9]*.ogg; do
+      [ -f "$sounds_tf" ] && cp -f "$sounds_tf" "$SOUNDS_STATE"/
+    done
+  done
+  return 0
+}
+
 install_sounds() {
   sounds_archive=$WORK/download/nirux/nirux-sounds.tar.xz
   [ -f "$sounds_archive" ] || return 0
@@ -839,7 +914,22 @@ install_sounds() {
     cp -f "$sounds_unpack"/sounds/levels/*.ogg "$SOUNDS_STATE/levels"/ || die 'could not install sounds'
     chmod 644 "$SOUNDS_STATE"/levels/*.ogg
   fi
+  # The voice sounds, and a copy of the tones they stand in for, so the voice
+  # can be switched off and on without a new download.
+  rm -rf "$SOUNDS_STATE/voice" "$SOUNDS_STATE/tones"
+  if [ -d "$sounds_unpack/sounds/voice" ]; then
+    mkdir -p "$SOUNDS_STATE/voice" "$SOUNDS_STATE/tones"
+    cp -f "$sounds_unpack"/sounds/voice/*.ogg "$SOUNDS_STATE/voice"/ || die 'could not install sounds'
+    for sounds_vf in "$SOUNDS_STATE"/voice/*.ogg; do
+      sounds_vn=$(basename "$sounds_vf" .ogg)
+      for sounds_tf in "$SOUNDS_STATE/$sounds_vn.ogg" "$SOUNDS_STATE/$sounds_vn"-[0-9]*.ogg; do
+        [ -f "$sounds_tf" ] && cp -f "$sounds_tf" "$SOUNDS_STATE/tones"/
+      done
+    done
+    chmod 644 "$SOUNDS_STATE"/voice/*.ogg "$SOUNDS_STATE"/tones/*.ogg 2>/dev/null || :
+  fi
   sounds_ensure_config
+  sounds_voice_apply
   rm -rf "$sounds_unpack"
 }
 

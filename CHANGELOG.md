@@ -2,6 +2,17 @@
 
 Earlier releases are described in their release notes and commit messages.
 
+## 0.12.311 (2026-11-20)
+
+- **A retro robot voice for rare events.** Battery low and critical, network
+  lost and back, reminders, the timer, the meeting check, a wrong password,
+  updates, startup and shutdown now speak in the espeak-ng voice of "You got
+  mail". Every other sound stays a tone. `nirux sounds voice on|off` switches
+  at once; your own sound files still win.
+- **Teams notifications speak "Teams message" (NIRUNOTIFY 0.9.0).** A web
+  page's notification names its site, so `[sounds.apps]` can give a site its
+  own sound, for example `nirux sounds app teams.cloud.microsoft off`.
+
 ## 0.12.310 (2026-11-20)
 
 - **No more device sounds from built-in hardware (NIRUNOTIFY 0.8.1).** A
