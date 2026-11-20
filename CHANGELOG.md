@@ -2,6 +2,25 @@
 
 Earlier releases are described in their release notes and commit messages.
 
+## 0.12.309 (2026-11-20)
+
+- **Web apps from a catalogue (NIRUWEBAPP 0.3.0).** `nirux install` now
+  offers sets of web apps: `work` (Teams, Outlook, Outlook Calendar,
+  Copilot, Loop, Planner, OneDrive), `ai` (Claude, ChatGPT, Gemini, Grok,
+  Gemini Notebook), `google`, `proton`, `media` (YouTube, YouTube Music,
+  SVT Play) and `other`, plus your own Nextcloud. `--webapps SET,...` and
+  `--nextcloud ADDRESS` answer without asking, also on `nirux update`;
+  `nirux webapps [add|check]` later. Addresses checked 2026-11-20; a
+  service you already have is not added twice.
+- **Profile groups.** The Google apps share one sign-in, the Proton apps
+  another, apart from normal browsing; Microsoft 365 keeps the browser's
+  own profile. `--profile-group NAME` for your own groups.
+- **Addresses that move.** Every update moves a web app from a service's
+  former address to its current one (`notebooklm.google.com` to
+  `notebook.google.com`, `outlook.office.com` to `outlook.cloud.microsoft`).
+  The weekly checkup warns about a web app whose address no longer answers
+  or now leads elsewhere; `nirux webapps check` shows it at once.
+
 ## 0.12.308 (2026-11-20)
 
 - **Sleep that saves to disk (NIRUSLEEP 0.1.0, new; NIRUWM 0.35.0).**

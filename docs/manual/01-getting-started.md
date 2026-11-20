@@ -45,6 +45,24 @@ installer installs and starts it and shows a link: open it on any device to add
 the computer. `Ctrl+C` skips the link; run `sudo tailscale up` later.
 `--tailscale no` leaves it out, and an existing Tailscale is never removed.
 
+**Web apps** open sites such as Teams, Gmail or Claude in their own windows,
+with their own icons in the launcher (NIRUWEBAPP, chapter 12). The installer
+lists the sets and asks which ones you want (default `ai media`), then asks
+for your Nextcloud address (empty skips it):
+
+| Set | Web apps |
+|---|---|
+| `work` | Microsoft 365: Teams, Outlook, Outlook Calendar, Copilot, Loop, Planner, OneDrive |
+| `ai` | Claude, ChatGPT, Gemini, Grok, Gemini Notebook |
+| `google` | Gmail, Google Calendar, Google Drive |
+| `proton` | Proton Mail, Calendar, Drive and Pass |
+| `media` | YouTube, YouTube Music, SVT Play |
+| `other` | Spotify, Discord, GitHub, Excalidraw |
+
+`--webapps work,ai` (or `all`, or `none`) and `--nextcloud ADDRESS` answer
+without asking; a noninteractive install adds none. Both also work with
+`nirux update`, and `nirux webapps add` adds more later.
+
 On a laptop with a touchpad, tapping works from the start, also on the login
 screen: one finger clicks, two fingers right-click, three fingers middle-click,
 tap and drag moves things, and two fingers scroll. Turn tapping off with

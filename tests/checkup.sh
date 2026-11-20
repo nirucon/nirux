@@ -105,4 +105,33 @@ sed -i 's/^discord=always/discord=off/' "$R/etc/nirux/checkup.conf"
 rm -f "$T/curl-config"
 sh "$HELPER" run >/dev/null
 [ ! -e "$T/curl-config" ] || fail 'discord=off still posted'
+# Web app addresses: read from the user's niruwebapp list. A site that turns
+# scripts away still counts; a move to another host, 404 and no answer are
+# warnings; a sign-in page is not a move.
+mkdir -p "$R/home/$(id -un)/.local/share/niruwebapp"
+printf 'teams\tTeams\thttps://teams.cloud.microsoft/\tb\tshared\nnb\tNotebook\thttps://notebooklm.google.com/\tb\tprofile\ngm\tGmail\thttps://mail.google.com/\tb\tgroup:google\ncl\tClaude\thttps://claude.ai/\tb\tprofile\nold\tOld\thttps://gone.example/\tb\tprofile\nnf\tLost\thttps://example.org/x\tb\tprofile\n' \
+  > "$R/home/$(id -un)/.local/share/niruwebapp/apps.tsv"
+cp "$T/bin/curl" "$T/curl.base"
+cat > "$T/bin/curl" <<CURL
+#!/bin/sh
+[ "\$1" = -sS ] || exec sh "$T/curl.base" "\$@"
+for a; do u=\$a; done
+case "\$u" in
+  https://teams.cloud.microsoft/) echo '200 https://teams.cloud.microsoft/' ;;
+  https://notebooklm.google.com/) echo '200 https://notebook.google.com/' ;;
+  https://mail.google.com/) echo '200 https://accounts.google.com/v3/signin/identifier?continue=x' ;;
+  https://claude.ai/) echo '403 https://claude.ai/' ;;
+  https://example.org/x) echo '404 https://example.org/x' ;;
+  *) echo '000 '; exit 6 ;;
+esac
+CURL
+chmod +x "$T/bin/curl"
+out=$(sh "$HELPER" run --dry-run)
+line=$(printf '%s\n' "$out" | grep 'Web apps') || fail "no web apps line: $out"
+case "$line" in *'Notebook: now leads to notebook.google.com; Old: no answer; Lost: HTTP 404'*) ;; *) fail "web apps line: $line" ;; esac
+if printf '%s\n' "$line" | grep -q 'Teams\|Gmail\|Claude'; then fail "a working address was reported: $line"; fi
+if check=$(sh "$HELPER" webapps-check "$R/home/$(id -un)/.local/share/niruwebapp/apps.tsv"); then fail 'webapps-check passed with broken addresses'; fi
+printf '%s\n' "$check" | grep -q '^  ok     Gmail' || fail "webapps-check: $check"
+printf '%s\n' "$check" | grep -q '^  MOVED  Notebook .* now leads to notebook.google.com$' || fail "webapps-check: $check"
+cp "$T/curl.base" "$T/bin/curl"
 echo 'PASS checkup'

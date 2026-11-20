@@ -427,9 +427,38 @@ These are core components, installed and updated by `nirux install` and `nirux u
 
 Runs a website as an app in its own window, using your installed Helium, Chromium, Chrome or Brave in app mode. Each web app gets a desktop entry (so it shows up in the launcher) and, by default, its own isolated browser profile. Status: alpha.
 
+The quickest start is the built-in catalogue: well-known web apps in sets, with checked addresses and the profile that signs in best. `nirux install` offers it (chapter 1), and you can add more at any time:
+
+```sh
+nirux webapps                       # the catalogue; * marks what you have
+nirux webapps add work ai           # sets and single apps in any mix
+nirux webapps add svt-play gmail
+nirux webapps add nextcloud --url cloud.example.com
+nirux webapps check                 # do the addresses of your web apps still work?
+```
+
+`nirux webapps` runs `niruwebapp catalog` and `niruwebapp add`, which you can also use directly. A service you already have (a Gemini you made yourself, say) is recognised and not added twice, and existing web apps are never changed.
+
+| Set | Web apps | Signs in with |
+|---|---|---|
+| `work` | Teams, Outlook, Outlook Calendar, Copilot (Microsoft 365), Loop, Planner, OneDrive | your normal browser profile (Microsoft 365 sign-in) |
+| `ai` | Claude, ChatGPT, Grok; Gemini, Gemini Notebook | their own profiles; the Google group |
+| `google` | Gmail, Google Calendar, Google Drive | the Google group |
+| `proton` | Proton Mail, Calendar, Drive and Pass | the Proton group |
+| `media` | YouTube, YouTube Music; SVT Play | the Google group; its own |
+| `other` | Spotify, Discord, GitHub, Excalidraw | their own profiles |
+| `nextcloud` | Your own Nextcloud (asks for the address) | its own profile |
+
+**Profile groups.** The apps of a group share one browser profile of their own: sign in to Google once and Gmail, Calendar, Drive, Gemini and YouTube all know you, while your normal browsing stays apart. Make your own group with `--profile-group NAME` on `create` or `edit`. Removing a web app keeps the group profile while other web apps use it.
+
+**Addresses that move.** Services change addresses (NotebookLM became Gemini Notebook at `notebook.google.com`, Outlook moved to `outlook.cloud.microsoft`). Every `nirux update` runs `niruwebapp refresh`, which moves a web app still on a known former address to the current one. The weekly checkup (chapter 11) also tries each of your web apps and warns about one that no longer answers or now leads elsewhere; `nirux webapps check` does the same at once.
+
+Your own web apps:
+
 ```sh
 niruwebapp create "YouTube Music" https://music.youtube.com
 niruwebapp create https://teams.cloud.microsoft/ --shared-profile   # named Teams
+niruwebapp create "Google Keep" https://keep.google.com --profile-group google
 niruwebapp list
 niruwebapp launch "YouTube Music"
 niruwebapp edit youtube-music --fetch-icon

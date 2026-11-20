@@ -46,6 +46,9 @@ normal user, never in a root shell; it asks for sudo itself when it needs it.
 | `nirux stale [--json] \| stale restart` | Programs still running an old version after an update, and restarting them |
 | `nirux meet-check [--notify]` | Ready for a call: camera, microphone, speakers, stale apps, network (`Super+Alt+M`) |
 | `nirux boot [status\|on\|off\|apply\|doctor]` | The NIRUX boot look: the GRUB menu and the boot splash with the disk password (chapter 8) |
+| `nirux webapps [list [SET...]]` | The web app catalogue by set; `*` marks the ones you have (chapter 12) |
+| `nirux webapps add SET\|KEY... [--url URL] [--dry-run]` | Add catalogue web apps (`work`, `ai`, `google`, `proton`, `media`, `other`, `nextcloud`, or single apps) |
+| `nirux webapps check` | Whether the address of each of your web apps still works |
 | `nirux hibernate [status\|on\|off\|apply\|delay MINUTES\|doctor]` | Sleep that saves to disk: suspend, then hibernate to an encrypted swap file after `[battery] hibernate_after_minutes` (chapter 10) |
 | `nirux fleet pending [apply\|clear [HOST]]` | Settings waiting for an offline machine |
 | `nirux sync status [HOST...] [--files]` | What differs between this machine and the others |

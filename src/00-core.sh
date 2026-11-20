@@ -2,7 +2,7 @@
 # NIRUX: install a complete X11 desktop, or maintain an existing installation.
 set -eu
 
-VERSION=0.12.308
+VERSION=0.12.309
 PREFIX=${NIRUX_PREFIX:-$HOME/.local}
 BIN=$PREFIX/bin
 STATE=$PREFIX/share/nirux
@@ -105,9 +105,10 @@ usage() {
   say "Usage: nirux install [--minimal|--no-packages] [--display-manager auto|startx|nirulogin|sddm|lightdm]"
   say "                    [--browser helium|none|keep] [--wallpapers all|default]"
   say "                    [--localsend yes|no] [--opencode yes|no] [--tailscale yes|no] [--icons none|papirus]"
+  say "                    [--webapps none|all|SET,...] [--nextcloud ADDRESS]"
   say "       nirux update [--no-packages] [--release VERSION] [--browser helium|none|keep] [--browser-addon bonjourr|none|keep]"
   say "                    [--wallpapers all|default] [--localsend yes|no] [--opencode yes|no] [--icons keep|none|papirus]"
-  say "                    [--apps latest|pinned] [--auto]"
+  say "                    [--apps latest|pinned] [--auto] [--webapps SET,...] [--nextcloud ADDRESS]"
   say "       nirux login-wallpaper [list|set FILE|reset|sync]"
   say "       nirux wallpapers [status|download [themes|signature|extras|all|theme NAME]|style art|signature|toggle|remove]"
   say "       nirux layout list|save NAME|apply NAME|rotate OUTPUT normal|left|right|inverted|auto"
@@ -129,6 +130,7 @@ usage() {
   say "       nirux meet-check [--notify] | stale [--json] | stale restart"
   say "       nirux boot [status|on|off|apply|doctor]"
   say "       nirux hibernate [status|on|off|apply|delay MINUTES|doctor]"
+  say "       nirux webapps [list [SET...]|add SET|KEY... [--url URL] [--dry-run]|check]"
   say "       nirux update-shutdown [--yes] [--dry-run] [--no-power]"
   say "       nirux update-reboot [--yes] [--dry-run] [--no-power]"
   say "       nirux rollback | gc [--keep N] [--dry-run] | status | doctor [--fix [--yes]] | uninstall [--purge] | --version | --help"
@@ -137,6 +139,7 @@ usage() {
   say "         --browser none is a persistent opt-out; --browser keep preserves the current policy."
   say "         --localsend/--opencode choose optional apps; without a flag an install prompts and an update preserves the current choice."
   say "Tailscale: a fresh install offers it (default yes), starts it and shows the link that adds the computer; --tailscale no skips it."
+  say "Web apps: a fresh install offers NIRUWEBAPP sets (work, ai, google, proton, media, other; default ai media) and a Nextcloud address."
   say "Papirus: --icons papirus installs Papirus-Dark with grey folders per user (~112-190 MB); none opts out."
   say "--minimal/--no-packages: binaries and integration only; required OS packages must already exist."
   say "Updates check and install missing runtime packages from the downloaded release unless --no-packages is given."

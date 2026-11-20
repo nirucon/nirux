@@ -13,6 +13,8 @@
 #   nirux-checkup last              print the latest report
 #   nirux-checkup webhook-set       read a Discord webhook URL on stdin (root)
 #   nirux-checkup discord-test      post a short test message (root)
+#   nirux-checkup webapps-check FILE  check the addresses in a niruwebapp
+#                                   apps.tsv (any user; nirux webapps check)
 #
 # Settings: /etc/nirux/checkup.conf (key=value, never sourced):
 #   enabled=yes|no  discord=always|warnings|off  clean=full|safe|off
@@ -237,6 +239,61 @@ check_nirux() {
   fi
 }
 
+# ---- web app addresses -------------------------------------------------------
+# One browser-like request to each installed web app's address (its file is
+# only read). A site that turns scripts away (400, 403, 417, 429...) still
+# counts as reachable. Reported are an address that does not answer, answers
+# 404, 410 or 5xx, or now leads to another host: a renamed service, as when
+# NotebookLM became Gemini Notebook. Sign-in and consent pages do not count
+# as a move.
+WEBAPP_UA='Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0 Safari/537.36'
+url_host() {
+  printf '%s\n' "$1" | sed -n 's#^[A-Za-z][A-Za-z0-9+.-]*://\([^/?#]*\).*#\1#p' |
+    sed 's/.*@//; s/:[0-9]*$//; s/^www\.//' | tr '[:upper:]' '[:lower:]'
+}
+signin_host() {
+  case "$1" in
+    login.*|logon.*|signin.*|accounts.*|account.*|auth.*|sso.*|consent.*|id.*) return 0 ;;
+  esac
+  return 1
+}
+# URL -> "ok", "moved HOST" or "down REASON"
+webapp_probe() {
+  wp_out=$(bounded 25 curl -sS -o /dev/null -L --max-redirs 10 --max-time 20 \
+    --proto '=http,https' --proto-redir '=http,https' -A "$WEBAPP_UA" \
+    -w '%{http_code} %{url_effective}' "$1" 2>/dev/null) || { say 'down no answer'; return; }
+  wp_code=${wp_out%% *}; wp_final=${wp_out#* }
+  case "$wp_code" in
+    000|'') say 'down no answer'; return ;;
+    404|410|5??) say "down HTTP $wp_code"; return ;;
+  esac
+  wp_from=$(url_host "$1"); wp_to=$(url_host "$wp_final")
+  if [ -z "$wp_to" ] || [ "$wp_from" = "$wp_to" ] || signin_host "$wp_to"; then say ok
+  else say "moved $wp_to"; fi
+}
+# FILE -> sets WA_OK, WA_BAD (count) and WA_TEXT ("Name: problem; ...")
+webapps_scan() {
+  WA_OK=0; WA_BAD=0; WA_TEXT=
+  [ -r "$1" ] || return 0
+  while IFS="$TAB" read -r _wa_id wa_name wa_url _rest; do
+    case "$wa_url" in http://*|https://*) ;; *) continue ;; esac
+    wa_res=$(webapp_probe "$wa_url")
+    case "$wa_res" in
+      ok) WA_OK=$((WA_OK + 1)) ;;
+      moved\ *) WA_BAD=$((WA_BAD + 1)); WA_TEXT="${WA_TEXT:+$WA_TEXT; }$wa_name: now leads to ${wa_res#moved }" ;;
+      *) WA_BAD=$((WA_BAD + 1)); WA_TEXT="${WA_TEXT:+$WA_TEXT; }$wa_name: ${wa_res#down }" ;;
+    esac
+  done < "$1"
+}
+check_webapps() {
+  have curl || return 0
+  home=$(owner_home) || return 0
+  webapps_scan "$home/.local/share/niruwebapp/apps.tsv"
+  [ $((WA_OK + WA_BAD)) -gt 0 ] || return 0
+  if [ "$WA_BAD" = 0 ]; then add 'Web apps' "$WA_OK addresses answer"
+  else warn 'Web apps' "$WA_TEXT (nirux webapps check)"; fi
+}
+
 check_system() {
   if have journalctl; then
     oom=$(journalctl -k --since -7d -q 2>/dev/null | grep -c 'Out of memory' || :)
@@ -384,6 +441,7 @@ run() {
   check_reboot
   check_updates
   check_nirux
+  check_webapps
   check_system
   clean
   if [ "$DRY" = 1 ]; then
@@ -415,7 +473,22 @@ case "${1:-}" in
     mkdir -p "${HOOK%/*}"
     (umask 077; printf '%s\n' "$url" > "$HOOK.new") && mv -f "$HOOK.new" "$HOOK" && chmod 600 "$HOOK"
     say 'Discord webhook saved' ;;
+  webapps-check)
+    [ "$#" = 2 ] || { say 'usage: nirux-checkup webapps-check FILE' >&2; exit 2; }
+    have curl || { say 'webapps-check needs curl' >&2; exit 1; }
+    [ -r "$2" ] || { say 'No web apps yet (niruwebapp add, or nirux webapps add).'; exit 0; }
+    status=0
+    while IFS="$TAB" read -r _wa_id wa_name wa_url _rest; do
+      case "$wa_url" in http://*|https://*) ;; *) continue ;; esac
+      wa_res=$(webapp_probe "$wa_url")
+      case "$wa_res" in
+        ok) printf '  ok     %-18s %s\n' "$wa_name" "$wa_url" ;;
+        moved\ *) status=1; printf '  MOVED  %-18s %s now leads to %s\n' "$wa_name" "$wa_url" "${wa_res#moved }" ;;
+        *) status=1; printf '  DOWN   %-18s %s (%s)\n' "$wa_name" "$wa_url" "${wa_res#down }" ;;
+      esac
+    done < "$2"
+    exit "$status" ;;
   discord-test)
     post_discord "🔧 **$(host)** · NIRUX checkup can reach Discord" && say 'posted' || { say 'post failed' >&2; exit 1; } ;;
-  *) say 'usage: nirux-checkup run [--dry-run] | loop | due | last | webhook-set | discord-test' >&2; exit 2 ;;
+  *) say 'usage: nirux-checkup run [--dry-run] | loop | due | last | webhook-set | discord-test | webapps-check FILE' >&2; exit 2 ;;
 esac

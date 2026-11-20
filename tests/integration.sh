@@ -147,6 +147,8 @@ fixture niruio "$io_version" niruio
 fixture nirusplash "$splash_version" nirusplash
 fixture nirusleep "$sleep_version" nirusleep
 fixture niruwebapp "$webapp_version" niruwebapp
+# Record what the installer asks of niruwebapp.
+say 'printf "%s\n" "$*" >> "$HOME/niruwebapp-calls"' >> "$FIXTURE/niruwebapp/$webapp_version/niruwebapp"
 fixture niruwallpaper "$wallpaper_app_version" niruwallpaper niruwallpaper.desktop
 # The icon is not a program, so it is not part of the fixture binary. It
 # starts with the PNG signature, which an owner comment would break.
@@ -790,6 +792,34 @@ grep -q 'Staged components. Validating generation' "$TEST/newcomponent.log" || f
 grep -q 'nirufoo' "$STATE/current/bin/nirux" || fail 'installed installer does not know the new component'
 operation rollback >/dev/null 2>&1 || fail 'rollback after a new component failed'
 [ ! -e "$BIN/nirufoo" ] && [ ! -L "$BIN/nirufoo" ] || fail 'rollback left a front link for a component absent from the restored generation'
+operation uninstall --purge >/dev/null 2>&1 || :
+rm -rf "$PREFIX"
+
+# W01: web apps. A noninteractive install adds none; --webapps and
+# --nextcloud add the chosen sets; every update refreshes existing web apps;
+# an unknown set stops before anything changes.
+TEST_OS=arch; PREFIX=$TEST/webapps; BIN=$PREFIX/bin; STATE=$PREFIX/share/nirux
+rm -f "$HOME/niruwebapp-calls"
+operation install_or_update install --no-packages --browser none --display-manager startx --release "$VERSION" >/dev/null
+if grep -q '^add' "$HOME/niruwebapp-calls" 2>/dev/null; then fail 'a noninteractive install added web apps'; fi
+if operation install_or_update update --no-packages --webapps work,nosuch --release "$VERSION" >/dev/null 2>&1; then
+  fail 'an unknown web app set was accepted'
+fi
+operation install_or_update update --no-packages --webapps 'work,AI' --nextcloud cloud.example.org --release "$VERSION" > "$TEST/webapps.log" 2>&1 ||
+  { cat "$TEST/webapps.log"; fail 'update with --webapps failed'; }
+grep -qx 'add work ai' "$HOME/niruwebapp-calls" || fail "web app sets not added: $(cat "$HOME/niruwebapp-calls")"
+grep -qx 'add nextcloud --url cloud.example.org' "$HOME/niruwebapp-calls" || fail 'Nextcloud was not added'
+webapps_list=${XDG_DATA_HOME:-$HOME/.local/share}/niruwebapp/apps.tsv
+webapps_had_list=0; [ ! -f "$webapps_list" ] || webapps_had_list=1
+mkdir -p "${webapps_list%/*}"; [ -f "$webapps_list" ] || : > "$webapps_list"
+: > "$HOME/niruwebapp-calls"
+operation install_or_update update --no-packages --release "$VERSION" >/dev/null 2>&1 || fail 'plain update failed'
+[ "$(grep -vx -- --version "$HOME/niruwebapp-calls")" = refresh ] || fail "a plain update should only refresh web apps: $(cat "$HOME/niruwebapp-calls")"
+if operation install_or_update update --no-packages --nextcloud 'cloud.example.org;x' --release "$VERSION" >/dev/null 2>&1; then
+  fail 'a Nextcloud address with a ; was accepted'
+fi
+[ "$webapps_had_list" = 1 ] || rm -f "$webapps_list"
+rm -f "$HOME/niruwebapp-calls"
 operation uninstall --purge >/dev/null 2>&1 || :
 rm -rf "$PREFIX"
 

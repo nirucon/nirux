@@ -237,6 +237,7 @@ apply_target_release() {
     install -m 444 "$WORK/download/nirux/CHANGELOG.md" "$WORK/generation/CHANGELOG.md" || :
   activate
   [ "$operation" != update ] || whats_new_record "$wn_previous" "$VERSION"
+  webapps_apply "${NIRUX_APPLY_WEBAPPS:-}" "${NIRUX_APPLY_NEXTCLOUD:-}"
   start_selected_dm
   APPLY_OK=1
   trap - EXIT INT TERM HUP

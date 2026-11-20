@@ -231,6 +231,8 @@ install_or_update() {
       --localsend) shift; [ "$#" -gt 0 ] || die 'missing localsend value'; LOCALSEND_CHOICE=$1; LOCALSEND_EXPLICIT=1 ;;
       --opencode) shift; [ "$#" -gt 0 ] || die 'missing opencode value'; OPENCODE_CHOICE=$1; OPENCODE_EXPLICIT=1 ;;
       --tailscale) shift; [ "$#" -gt 0 ] || die 'missing tailscale value'; TAILSCALE_CHOICE=$1; TAILSCALE_EXPLICIT=1 ;;
+      --webapps) shift; [ "$#" -gt 0 ] || die 'missing webapps value'; WEBAPPS_CHOICE=$1; WEBAPPS_EXPLICIT=1 ;;
+      --nextcloud) shift; [ "$#" -gt 0 ] || die 'missing Nextcloud address'; WEBAPPS_NEXTCLOUD=$1 ;;
       --icons) shift; [ "$#" -gt 0 ] || die 'missing icons value'; ICONS_CHOICE=$1; ICONS_EXPLICIT=1 ;;
       --release) shift; [ "$#" -gt 0 ] || die 'missing release version'; RELEASE=${1#v} ;;
       --apps) shift; [ "$#" -gt 0 ] || die 'missing apps value'
@@ -257,6 +259,7 @@ install_or_update() {
   choose_browser "$operation"
   browser_addon_choose
   choose_optional_apps "$operation"
+  webapps_choose "$operation"
   icons_choose "$operation"
   lock
   case "$BROWSER_EFFECTIVE" in
@@ -300,6 +303,7 @@ install_or_update() {
       NIRUX_APPLY_DM=$DM NIRUX_APPLY_BROWSER=$BROWSER_EFFECTIVE \
       NIRUX_APPLY_LOCALSEND=$LOCALSEND_EFFECTIVE NIRUX_APPLY_OPENCODE=$OPENCODE_EFFECTIVE \
       NIRUX_APPLY_TAILSCALE=$TAILSCALE_EFFECTIVE \
+      NIRUX_APPLY_WEBAPPS="$WEBAPPS_EFFECTIVE" NIRUX_APPLY_NEXTCLOUD="$WEBAPPS_NEXTCLOUD" \
       NIRUX_APPLY_OPERATION=$operation NIRUX_APPLY_WALLPAPERS="${wallpaper_decision:-}" \
       NIRUX_APPLY_ICONS="${ICONS_EFFECTIVE:-none}" \
       NIRUX_APPLY_BROWSER_ADDON="${BROWSER_ADDON_EFFECTIVE:-none}" \
@@ -347,6 +351,7 @@ install_or_update() {
   install_battery_rule
   install_void_udev_replay
   activate
+  webapps_apply "$WEBAPPS_EFFECTIVE" "$WEBAPPS_NEXTCLOUD"
   start_selected_dm
   auto_finished
   apply_to_running_session 'Updated.'

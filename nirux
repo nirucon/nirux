@@ -2,7 +2,7 @@
 # NIRUX: install a complete X11 desktop, or maintain an existing installation.
 set -eu
 
-VERSION=0.12.308
+VERSION=0.12.309
 PREFIX=${NIRUX_PREFIX:-$HOME/.local}
 BIN=$PREFIX/bin
 STATE=$PREFIX/share/nirux
@@ -105,9 +105,10 @@ usage() {
   say "Usage: nirux install [--minimal|--no-packages] [--display-manager auto|startx|nirulogin|sddm|lightdm]"
   say "                    [--browser helium|none|keep] [--wallpapers all|default]"
   say "                    [--localsend yes|no] [--opencode yes|no] [--tailscale yes|no] [--icons none|papirus]"
+  say "                    [--webapps none|all|SET,...] [--nextcloud ADDRESS]"
   say "       nirux update [--no-packages] [--release VERSION] [--browser helium|none|keep] [--browser-addon bonjourr|none|keep]"
   say "                    [--wallpapers all|default] [--localsend yes|no] [--opencode yes|no] [--icons keep|none|papirus]"
-  say "                    [--apps latest|pinned] [--auto]"
+  say "                    [--apps latest|pinned] [--auto] [--webapps SET,...] [--nextcloud ADDRESS]"
   say "       nirux login-wallpaper [list|set FILE|reset|sync]"
   say "       nirux wallpapers [status|download [themes|signature|extras|all|theme NAME]|style art|signature|toggle|remove]"
   say "       nirux layout list|save NAME|apply NAME|rotate OUTPUT normal|left|right|inverted|auto"
@@ -129,6 +130,7 @@ usage() {
   say "       nirux meet-check [--notify] | stale [--json] | stale restart"
   say "       nirux boot [status|on|off|apply|doctor]"
   say "       nirux hibernate [status|on|off|apply|delay MINUTES|doctor]"
+  say "       nirux webapps [list [SET...]|add SET|KEY... [--url URL] [--dry-run]|check]"
   say "       nirux update-shutdown [--yes] [--dry-run] [--no-power]"
   say "       nirux update-reboot [--yes] [--dry-run] [--no-power]"
   say "       nirux rollback | gc [--keep N] [--dry-run] | status | doctor [--fix [--yes]] | uninstall [--purge] | --version | --help"
@@ -137,6 +139,7 @@ usage() {
   say "         --browser none is a persistent opt-out; --browser keep preserves the current policy."
   say "         --localsend/--opencode choose optional apps; without a flag an install prompts and an update preserves the current choice."
   say "Tailscale: a fresh install offers it (default yes), starts it and shows the link that adds the computer; --tailscale no skips it."
+  say "Web apps: a fresh install offers NIRUWEBAPP sets (work, ai, google, proton, media, other; default ai media) and a Nextcloud address."
   say "Papirus: --icons papirus installs Papirus-Dark with grey folders per user (~112-190 MB); none opts out."
   say "--minimal/--no-packages: binaries and integration only; required OS packages must already exist."
   say "Updates check and install missing runtime packages from the downloaded release unless --no-packages is given."
@@ -4884,6 +4887,7 @@ apply_target_release() {
     install -m 444 "$WORK/download/nirux/CHANGELOG.md" "$WORK/generation/CHANGELOG.md" || :
   activate
   [ "$operation" != update ] || whats_new_record "$wn_previous" "$VERSION"
+  webapps_apply "${NIRUX_APPLY_WEBAPPS:-}" "${NIRUX_APPLY_NEXTCLOUD:-}"
   start_selected_dm
   APPLY_OK=1
   trap - EXIT INT TERM HUP
@@ -7144,6 +7148,114 @@ sleep_remove() {
   fi
   as_root rm -f "$SLEEP_SYSTEM"
 }
+# Web apps (docs: manual chapter 12, NIRUWEBAPP). A fresh install offers the
+# NIRUWEBAPP catalogue sets and a Nextcloud address; an update never adds web
+# apps unless --webapps or --nextcloud is given. Existing web apps are never
+# changed: niruwebapp add skips a service that is already there.
+#
+# The set names mirror `niruwebapp catalog`; the question is asked before the
+# new niruwebapp is installed, so it cannot be asked of the binary.
+WEBAPPS_SETS='work ai google proton media other'
+WEBAPPS_DEFAULT='ai media'
+WEBAPPS_CHOICE=
+WEBAPPS_EXPLICIT=0
+WEBAPPS_EFFECTIVE=
+WEBAPPS_NEXTCLOUD=
+
+webapps_sets_text() {
+  say '  work    Microsoft 365: Teams, Outlook, Outlook Calendar, Copilot, Loop, Planner, OneDrive'
+  say '  ai      Claude, ChatGPT, Gemini, Grok, Gemini Notebook'
+  say '  google  Gmail, Google Calendar, Google Drive'
+  say '  proton  Proton Mail, Calendar, Drive and Pass'
+  say '  media   YouTube, YouTube Music, SVT Play'
+  say '  other   Spotify, Discord, GitHub, Excalidraw'
+}
+
+# Normalise a set list ("ai,media", "all", "none") to space-separated names,
+# or fail on an unknown name.
+webapps_normalise() {
+  wn_list=$(printf '%s' "$1" | tr ',' ' ' | tr '[:upper:]' '[:lower:]')
+  wn_out=
+  for wn_word in $wn_list; do
+    case "$wn_word" in
+      none) say none; return 0 ;;
+      all) wn_out=$WEBAPPS_SETS; continue ;;
+    esac
+    case " $WEBAPPS_SETS " in
+      *" $wn_word "*) case " $wn_out " in *" $wn_word "*) ;; *) wn_out="${wn_out:+$wn_out }$wn_word" ;; esac ;;
+      *) return 1 ;;
+    esac
+  done
+  say "${wn_out:-none}"
+}
+
+webapps_choose() {
+  wc_operation=$1
+  if [ "$WEBAPPS_EXPLICIT" = 1 ]; then
+    WEBAPPS_EFFECTIVE=$(webapps_normalise "$WEBAPPS_CHOICE") ||
+      die "webapps must be none, all or sets from: $WEBAPPS_SETS"
+  elif [ "$wc_operation" = install ] && [ -t 0 ]; then
+    say 'Web apps open sites such as Teams or Gmail in their own windows (NIRUWEBAPP).'
+    webapps_sets_text
+    while :; do
+      printf 'Which sets? Names separated by spaces, "all" or "none" [%s]: ' "$WEBAPPS_DEFAULT"
+      IFS= read -r wc_answer || wc_answer=
+      [ -n "$wc_answer" ] || wc_answer=$WEBAPPS_DEFAULT
+      WEBAPPS_EFFECTIVE=$(webapps_normalise "$wc_answer") && break
+      say "Unknown set. Choose from: $WEBAPPS_SETS"
+    done
+    if [ -z "$WEBAPPS_NEXTCLOUD" ]; then
+      printf 'Your Nextcloud address, if you have one (empty skips): '
+      IFS= read -r WEBAPPS_NEXTCLOUD || WEBAPPS_NEXTCLOUD=
+    fi
+  else
+    # A noninteractive install adds nothing it was not asked for.
+    WEBAPPS_EFFECTIVE=none
+  fi
+  [ "$WEBAPPS_EFFECTIVE" != none ] || WEBAPPS_EFFECTIVE=
+  WEBAPPS_NEXTCLOUD=$(printf '%s' "$WEBAPPS_NEXTCLOUD" | tr -d '[:space:]')
+  case "$WEBAPPS_NEXTCLOUD" in
+    *[!A-Za-z0-9:/._~%?\&=+@-]*) die 'the Nextcloud address has characters a web address cannot have' ;;
+  esac
+}
+
+# After the new programs are active: add the chosen sets, and on every
+# install or update let niruwebapp move web apps off addresses a service has
+# left. Failures never stop the install.
+webapps_apply() {
+  wa_bin=$BIN/niruwebapp
+  [ -x "$wa_bin" ] || return 0
+  wa_sets=${1:-}; wa_cloud=${2:-}
+  if [ -n "$wa_sets" ]; then
+    say "Adding web apps: $wa_sets"
+    # shellcheck disable=SC2086 # one word per set
+    "$wa_bin" add $wa_sets </dev/null | sed -n 's/^added /  added /p' ||
+      say "Could not add every web app; run: nirux webapps add $wa_sets"
+  fi
+  if [ -n "$wa_cloud" ]; then
+    "$wa_bin" add nextcloud --url "$wa_cloud" </dev/null | sed 's/^/  /' ||
+      say "Could not add Nextcloud; run: nirux webapps add nextcloud --url ADDRESS"
+  fi
+  if [ -f "${XDG_DATA_HOME:-$HOME/.local/share}/niruwebapp/apps.tsv" ]; then
+    "$wa_bin" refresh >/dev/null 2>"$WORK/webapps-refresh" || :
+    sed -n 's/^niruwebapp: /Web app /p' "$WORK/webapps-refresh" 2>/dev/null | grep ' moved from ' || :
+  fi
+}
+
+# `nirux webapps [list | add SET|KEY... [--url URL] | check]`
+webapps_command() {
+  wa_bin=$BIN/niruwebapp
+  [ -x "$wa_bin" ] || die 'niruwebapp is not installed; run nirux update'
+  case "${1:-list}" in
+    list|catalog) shift 2>/dev/null || :; "$wa_bin" catalog "$@" ;;
+    add) shift; [ "$#" -gt 0 ] || die 'usage: nirux webapps add SET|KEY... [--url URL]'; "$wa_bin" add "$@" ;;
+    check)
+      [ -x "$CHECKUP_HELPER" ] || die 'the address check comes with the checkup; run nirux update'
+      "$CHECKUP_HELPER" webapps-check "${XDG_DATA_HOME:-$HOME/.local/share}/niruwebapp/apps.tsv" ;;
+    -h|--help) say 'usage: nirux webapps [list [SET...] | add SET|KEY... [--url URL] [--dry-run] | check]' ;;
+    *) die "unknown webapps command: $1 (nirux webapps --help)" ;;
+  esac
+}
 enable_services() {
   if [ "$OS" = void ]; then
     install_void_elogind_activation
@@ -7774,6 +7886,8 @@ install_or_update() {
       --localsend) shift; [ "$#" -gt 0 ] || die 'missing localsend value'; LOCALSEND_CHOICE=$1; LOCALSEND_EXPLICIT=1 ;;
       --opencode) shift; [ "$#" -gt 0 ] || die 'missing opencode value'; OPENCODE_CHOICE=$1; OPENCODE_EXPLICIT=1 ;;
       --tailscale) shift; [ "$#" -gt 0 ] || die 'missing tailscale value'; TAILSCALE_CHOICE=$1; TAILSCALE_EXPLICIT=1 ;;
+      --webapps) shift; [ "$#" -gt 0 ] || die 'missing webapps value'; WEBAPPS_CHOICE=$1; WEBAPPS_EXPLICIT=1 ;;
+      --nextcloud) shift; [ "$#" -gt 0 ] || die 'missing Nextcloud address'; WEBAPPS_NEXTCLOUD=$1 ;;
       --icons) shift; [ "$#" -gt 0 ] || die 'missing icons value'; ICONS_CHOICE=$1; ICONS_EXPLICIT=1 ;;
       --release) shift; [ "$#" -gt 0 ] || die 'missing release version'; RELEASE=${1#v} ;;
       --apps) shift; [ "$#" -gt 0 ] || die 'missing apps value'
@@ -7800,6 +7914,7 @@ install_or_update() {
   choose_browser "$operation"
   browser_addon_choose
   choose_optional_apps "$operation"
+  webapps_choose "$operation"
   icons_choose "$operation"
   lock
   case "$BROWSER_EFFECTIVE" in
@@ -7843,6 +7958,7 @@ install_or_update() {
       NIRUX_APPLY_DM=$DM NIRUX_APPLY_BROWSER=$BROWSER_EFFECTIVE \
       NIRUX_APPLY_LOCALSEND=$LOCALSEND_EFFECTIVE NIRUX_APPLY_OPENCODE=$OPENCODE_EFFECTIVE \
       NIRUX_APPLY_TAILSCALE=$TAILSCALE_EFFECTIVE \
+      NIRUX_APPLY_WEBAPPS="$WEBAPPS_EFFECTIVE" NIRUX_APPLY_NEXTCLOUD="$WEBAPPS_NEXTCLOUD" \
       NIRUX_APPLY_OPERATION=$operation NIRUX_APPLY_WALLPAPERS="${wallpaper_decision:-}" \
       NIRUX_APPLY_ICONS="${ICONS_EFFECTIVE:-none}" \
       NIRUX_APPLY_BROWSER_ADDON="${BROWSER_ADDON_EFFECTIVE:-none}" \
@@ -7890,6 +8006,7 @@ install_or_update() {
   install_battery_rule
   install_void_udev_replay
   activate
+  webapps_apply "$WEBAPPS_EFFECTIVE" "$WEBAPPS_NEXTCLOUD"
   start_selected_dm
   auto_finished
   apply_to_running_session 'Updated.'
@@ -11483,6 +11600,7 @@ main() {
     meet-check) shift; meet_check_command "$@" ;;
     boot) shift; boot_command "$@" ;;
     hibernate) shift; sleep_command "$@" ;;
+    webapps) shift; webapps_command "$@" ;;
     resume-check) shift; resume_check_command "$@" ;;
     clean) shift; clean_command "$@" ;;
     restore) shift; restore_command "$@" ;;
