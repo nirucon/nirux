@@ -2,6 +2,15 @@
 
 Earlier releases are described in their release notes and commit messages.
 
+## 0.12.306 (2026-11-20)
+
+- NIRUWM 0.33.3: the screens keep their layout through a suspend. Some
+  graphics cards reset during a suspend (amdgpu does) and the screens came
+  back side by side without rotation, so a screen set to inverted was upside
+  down after the wake, and the watcher kept that as if it were your choice.
+  For 45 seconds after a wake the layout from before the sleep is now put
+  back, rotation included, also with automatic switching off.
+
 ## 0.12.305 (2026-11-19)
 
 - NIRUSPLASH 0.1.2: the NIRUX boot look also on Arch installations that

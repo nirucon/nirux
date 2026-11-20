@@ -129,6 +129,10 @@ Every automatic change shows a short notification. Nothing is changed while a pr
 
 Closing the lid while another screen is connected turns the built-in panel off; opening it brings the panel back through the same choice, so a *Desk* profile with the panel on returns. The session is never left dark: if the last external screen goes away with the lid closed, the panel is turned back on. Whether the laptop suspends is still decided by logind (by default it stays awake when docked and suspends otherwise).
 
+### After a suspend
+
+Some graphics cards reset during a suspend (amdgpu does) and bring the screens back side by side and without rotation. For 45 seconds after a wake the watcher treats such a change on the same screens as the system's, not yours, and puts back the layout from before the sleep, rotation included. This happens with automatic switching off too; a change you make later is kept.
+
 ### When a screen refuses its mode
 
 After every automatic change the screens are read back and compared. If a screen refuses its saved mode or rate, the layout is relaxed: first the driver chooses the rate, then the screen's preferred mode is used. The full saved settings are tried again after 10 s, 20 s, 40 s and so on, up to every 5 minutes. The saved profile is never changed.
