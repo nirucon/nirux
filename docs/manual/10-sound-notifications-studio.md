@@ -169,7 +169,7 @@ NIRUX plays short, soft sounds for the session, notifications, the keys you pres
 | `notifications` | `notification` (or the app's own sound), `timer-done` (the bar's timer), `reminder` (a calendar reminder; silent in Do Not Disturb) | yes |
 | `feedback` | `volume-up`, `volume-down`, `volume-limit`, `mute`, `unmute`, `mic-mute`, `mic-unmute` (higher and glassier than the speaker mute), `record-start`, `record-stop` (screen recording; neither ends up in the recording), `brightness-up`, `brightness-down`, `screenshot` | all except the brightness ticks |
 | `power` | `power-plug`, `power-unplug`, `battery-low`, `battery-critical`, `battery-full` | all except `battery-full` |
-| `devices` | `device-connect`, `device-disconnect` (USB, sound cards, monitors, optionally Bluetooth) | yes |
+| `devices` | `device-connect`, `device-disconnect` (USB devices you plug in, sound cards, monitors, optionally Bluetooth; built-in devices such as a fingerprint reader stay silent) | yes |
 | `dictation` | `dictation-start`, `dictation-stop`, `dictation-done`, `dictation-error` | all except `dictation-done` |
 | `network` | `network-down` (the connection has been gone for 6 seconds), `network-up` (back again) | yes |
 

@@ -84,7 +84,7 @@ battery_critical_percent = 5
 battery_full_percent = 100   # or your charge limit, for example 80
 
 [sounds.devices]
-usb = true
+usb = true           # devices you plug in; built-in ones (fingerprint reader, camera) never sound
 audio = true         # sound cards (USB headsets, docks)
 displays = true      # monitor hotplug
 bluetooth = false    # Bluetooth links; mice and keyboards reconnect often

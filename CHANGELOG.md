@@ -2,6 +2,14 @@
 
 Earlier releases are described in their release notes and commit messages.
 
+## 0.12.310 (2026-11-20)
+
+- **No more device sounds from built-in hardware (NIRUNOTIFY 0.8.1).** A
+  fingerprint reader that wakes when a finger comes near drops off USB and
+  comes back, which played the connect and disconnect sounds. Devices on
+  ports the firmware marks as built in are now silent; sticks, headsets and
+  docks still sound.
+
 ## 0.12.309 (2026-11-20)
 
 - **Web apps from a catalogue (NIRUWEBAPP 0.3.0).** `nirux install` now
