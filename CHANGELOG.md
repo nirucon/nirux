@@ -2,6 +2,18 @@
 
 Earlier releases are described in their release notes and commit messages.
 
+## 0.12.308 (2026-11-20)
+
+- **Sleep that saves to disk (NIRUSLEEP 0.1.0, new; NIRUWM 0.35.0).**
+  `nirux hibernate on` gives a laptop an encrypted swap file of its own;
+  after `[battery] hibernate_after_minutes` of sleep (120 by default, on
+  battery) it saves its memory and switches off, and the disk password at
+  the next start brings every window back. The suspend key, the power menu
+  and the lid all use it. Every kernel and boot entry resumes; only on LUKS,
+  never with kernel lockdown. `nirux hibernate delay|apply|doctor|off`.
+  Tested on encrypted Debian, Arch and Void VMs (hibernate, resume on the
+  splash, remove). Off until turned on.
+
 ## 0.12.307 (2026-11-20)
 
 - **Shutting down in the NIRUX look (NIRUSPLASH 0.2.0).** Powering off and

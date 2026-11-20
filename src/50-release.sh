@@ -211,6 +211,7 @@ apply_target_release() {
   prepare_pam
   install_greeters "$DM"
   boot_look_apply
+  sleep_apply
   # A session with no NIRUX greeter still must not keep a grant from a release
   # that installed one; the helper writes nothing when no greeter is present.
   [ -n "${rule_user:-}" ] || rule_user=${SUDO_USER:-$(id -un)}

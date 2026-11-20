@@ -482,6 +482,33 @@ Quick Settings has the same switch: *Charge to 100 % once*, or *Back to the 80 %
 
 The limit needs firmware support. ThinkPad, Framework and many Dell, ASUS and Lenovo laptops have it; many HP models do not. `niructl battery status` and `nirux doctor` say which it is. NIRUX installs a udev rule (`/etc/udev/rules.d/90-nirux-battery.rules`) so the limit can be set without root; after the first installation, log in again.
 
+## Sleep that saves to disk (hibernate)
+
+Since NIRUX 0.12.308 a laptop can save itself to disk after a while in sleep: it writes its memory to an encrypted swap file and switches off, so the battery lasts days in a bag. At the next start you type the disk password in the NIRUX boot look as usual, and every window comes back as it was. NIRUSLEEP does it; it is off until you turn it on:
+
+```sh
+nirux hibernate on          # set it up (a swap file the size of the memory)
+nirux hibernate             # on or off, the swap file, the delay
+nirux hibernate delay 3h    # sleep three hours first (minutes work too; 0: plain sleep)
+nirux hibernate doctor      # check every part
+nirux hibernate off         # plain sleep again, the swap file removed
+```
+
+How long it sleeps first is a setting:
+
+```toml
+[battery]
+hibernate_after_minutes = 120   # 0 keeps plain sleep
+```
+
+`nirux hibernate delay` writes it there and applies it at once; a change made by hand applies at the next `nirux update` (the nightly one too) or with `nirux hibernate apply`.
+
+- The suspend key, `niructl suspend`, the power menu and closing the lid all sleep first and hibernate after the delay. On the charger it only sleeps.
+- Only on an encrypted disk (LUKS): the saved memory holds open documents and passwords. Not with Secure Boot's kernel lockdown, which forbids hibernation.
+- The swap file is its own (on btrfs in a subvolume of its own, so no snapshot takes it in). Swap that was there before is left alone.
+- Every kernel in the boot menu, recovery entries too, reads a saved image back before it starts, so a sleeping session cannot be lost by choosing another kernel.
+- `nirux hibernate off` and `nirux uninstall` put everything back.
+
 ## See also
 
 - [04-bar-and-quick-settings.md](04-bar-and-quick-settings.md)

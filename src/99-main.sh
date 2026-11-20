@@ -58,6 +58,7 @@ main() {
     stale) shift; stale_command "$@" ;;
     meet-check) shift; meet_check_command "$@" ;;
     boot) shift; boot_command "$@" ;;
+    hibernate) shift; sleep_command "$@" ;;
     resume-check) shift; resume_check_command "$@" ;;
     clean) shift; clean_command "$@" ;;
     restore) shift; restore_command "$@" ;;

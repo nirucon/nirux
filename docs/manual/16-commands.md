@@ -46,6 +46,7 @@ normal user, never in a root shell; it asks for sudo itself when it needs it.
 | `nirux stale [--json] \| stale restart` | Programs still running an old version after an update, and restarting them |
 | `nirux meet-check [--notify]` | Ready for a call: camera, microphone, speakers, stale apps, network (`Super+Alt+M`) |
 | `nirux boot [status\|on\|off\|apply\|doctor]` | The NIRUX boot look: the GRUB menu and the boot splash with the disk password (chapter 8) |
+| `nirux hibernate [status\|on\|off\|apply\|delay MINUTES\|doctor]` | Sleep that saves to disk: suspend, then hibernate to an encrypted swap file after `[battery] hibernate_after_minutes` (chapter 10) |
 | `nirux fleet pending [apply\|clear [HOST]]` | Settings waiting for an offline machine |
 | `nirux sync status [HOST...] [--files]` | What differs between this machine and the others |
 | `nirux sync push HOST...\|--all [ITEM...]` | Copy settings from this machine (`--yes`, `--dry-run`) |
@@ -155,7 +156,7 @@ niructl keys --markdown        # the keys in effect, as Markdown
 
 <!-- generated: niructl (tools/manual-gen.sh; do not edit by hand) -->
 
-Every form `niructl` accepts, from its usage text (NIRUWM 0.34.0). Run `niructl`
+Every form `niructl` accepts, from its usage text (NIRUWM 0.35.0). Run `niructl`
 without arguments to print it.
 
 - `niructl status`
