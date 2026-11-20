@@ -232,8 +232,8 @@ shutdown = true
 notification_cooldown_ms = 2500
 notification_exclude_apps = ["nplay", "spotify"]
 respect_mute = true
-# A retro robot voice for rare, important events (battery, network, reminders,
-# meetings, updates, startup and shutdown, a wrong password, Teams messages).
+# A retro robot voice for a few rare, important events (battery, reminders,
+# the meeting check, a wrong password, and "Goodbye" before the shutdown tune).
 # All other sounds stay tones. Switch with: nirux sounds voice on|off
 voice = true
 EOF
@@ -916,6 +916,18 @@ install_sounds() {
   fi
   # The voice sounds, and a copy of the tones they stand in for, so the voice
   # can be switched off and on without a new download.
+  # A voice this release no longer has goes; its tone (if any) is already
+  # back in place from the copy above, and teams.ogg had no tone at all.
+  for sounds_vf in "$SOUNDS_STATE"/voice/*.ogg; do
+    [ -f "$sounds_vf" ] || continue
+    sounds_vn=$(basename "$sounds_vf" .ogg)
+    [ -f "$sounds_unpack/sounds/voice/$sounds_vn.ogg" ] && continue
+    if [ -f "$sounds_unpack/sounds/$sounds_vn.ogg" ]; then
+      cp -f "$sounds_unpack"/sounds/"$sounds_vn"*.ogg "$SOUNDS_STATE"/ 2>/dev/null || :
+    else
+      rm -f "$SOUNDS_STATE/$sounds_vn.ogg"
+    fi
+  done
   rm -rf "$SOUNDS_STATE/voice" "$SOUNDS_STATE/tones"
   if [ -d "$sounds_unpack/sounds/voice" ]; then
     mkdir -p "$SOUNDS_STATE/voice" "$SOUNDS_STATE/tones"

@@ -132,8 +132,8 @@ browser or a NIRUWEBAPP window) is sent with the browser's name, so the site
 can have its own entry: NIRUNOTIFY passes the site from the first line of the
 notification, and a quoted site key wins over the app, for example
 `"teams.cloud.microsoft" = "off"` (`nirux sounds app teams.cloud.microsoft off`).
-Teams plays `teams` ("Teams message") while the voice is on, and the normal
-notification sound otherwise. A name plays `NAME.ogg` from
+A Teams notification plays `teams.ogg` when you put one in
+`~/.config/nirux/sounds/`, and the normal notification sound otherwise. A name plays `NAME.ogg` from
 `~/.config/nirux/sounds/` first and then from the NIRUX sounds, so a file there
 replaces a bundled sound. A missing file falls back to the notification sound.
 Manage entries without editing the file:
@@ -163,13 +163,10 @@ devices sound as before:
 | Event | The voice says |
 |---|---|
 | `battery-low`, `battery-critical` | "Battery low", "Power critical" |
-| `network-down`, `network-up` | "Connection lost", "Back online" |
-| `reminder`, `timer-done` | "Reminder", "Time is up" |
-| `meet-ready`, `meet-problem` | "All systems ready", "Check your devices" |
+| `reminder` | "Reminder" |
+| `meet-ready` | "All systems ready" |
 | `auth-fail` | "Access denied" |
-| `update` | "System updated" |
-| `startup`, `shutdown` | "System online", "Goodbye" |
-| Teams notifications (the `teams` app sound) | "Teams message" |
+| `shutdown` | "Goodbye", then the shutdown tune |
 
 `mail` ("You got mail") and `chat` ("You got chat message") were voices from
 the start and stay as they are.

@@ -195,7 +195,7 @@ nirux sounds play volume-up --level 70
 
 To use your own sound for an event, put an Ogg file at `~/.config/nirux/sounds/EVENT.ogg`, for example `~/.config/nirux/sounds/startup.ogg`. A replaced `volume-up` or `volume-down` plays the same file at every level.
 
-Startup and shutdown sounds are part of the session and take effect at the next login. The startup sound plays once the sound card is ready after login. The shutdown sound plays when you log out, shut down or restart from NIRUX (the power menu, `niructl power`), and the logout waits for it, at most about 3.5 seconds; with sounds off nothing waits.
+Startup and shutdown sounds are part of the session and take effect at the next login. The startup sound plays once the sound card is ready after login. The shutdown sound plays when you log out, shut down or restart from NIRUX (the power menu, `niructl power`), and the logout waits for it, at most about 4.5 seconds; with sounds off nothing waits.
 
 ### Per-app notification sounds
 
@@ -222,12 +222,10 @@ A retro robot voice speaks for a few rare, important events. Every other sound s
 | Event | The voice says |
 |---|---|
 | Battery low or critical | "Battery low", "Power critical" |
-| Network lost or back | "Connection lost", "Back online" |
-| Reminder, timer | "Reminder", "Time is up" |
-| Meeting check | "All systems ready", "Check your devices" |
+| Reminder | "Reminder" |
+| Meeting check ready | "All systems ready" |
 | Wrong password | "Access denied" |
-| Update, startup, shutdown | "System updated", "System online", "Goodbye" |
-| A Teams notification | "Teams message" |
+| Shutdown | "Goodbye", then the shutdown tune |
 
 Mail ("You got mail") and Signal ("You got chat message") speak as before.
 

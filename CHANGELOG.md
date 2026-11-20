@@ -2,6 +2,14 @@
 
 Earlier releases are described in their release notes and commit messages.
 
+## 0.12.312 (2026-11-20)
+
+- **Fewer voices, chosen by ear.** The voice now speaks only for battery low
+  and critical, reminders, a ready meeting check and a wrong password. The
+  network, timer, meeting problem, update, startup and Teams sounds are tones
+  again. Shutdown says "Goodbye" and then plays its tune, and the logout waits
+  up to 4.5 seconds for it (NIRUWM 0.35.1).
+
 ## 0.12.311 (2026-11-20)
 
 - **A retro robot voice for rare events.** Battery low and critical, network
