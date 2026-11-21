@@ -1310,7 +1310,7 @@ browser_install > "$browser_test/install-first.log" 2>&1 || { cat "$browser_test
 browser_launcher_owned "$BIN/helium" || fail 'Helium launcher is not owned by NIRUX'
 grep -qF "exec '$STATE/browser-current/helium'" "$BIN/helium" || fail 'Helium launcher does not start the managed browser state'
 desktop=$PREFIX/share/applications/helium.desktop
-grep -qF "Exec=\"$BIN/helium\"" "$desktop" || fail 'Helium desktop entry does not use the managed command'
+grep -qF "Exec=$BIN/helium " "$desktop" || fail 'Helium desktop entry does not use the managed command'
 browser_install > "$browser_test/install-second.log" 2>&1 || fail 'reusing the installed Helium failed'
 [ "$FETCHES" = 1 ] || fail 'an unchanged Helium version was downloaded again'
 HELIUM_VERSION=99.9.10

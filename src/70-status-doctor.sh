@@ -55,7 +55,7 @@ browser_status() {
       say "installed managed browser $browser_version"
       if browser_managed; then
         desktop=$(browser_desktop_file)
-        if [ -f "$desktop" ] && grep -qF "Exec=\"$BIN/helium\"" "$desktop"; then
+        if [ -f "$desktop" ] && grep -qF "Exec=$(browser_desktop_exec)" "$desktop"; then
           say 'installed Helium desktop entry'
         else
           say 'missing or different Helium desktop entry'

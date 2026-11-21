@@ -84,7 +84,7 @@ grep -q 'subject.active' "$ROOT/etc/polkit-1/rules.d/49-nirux-power.rules"
 "$BIN/helium" --version | grep -q "Helium $HELIUM_VERSION"
 [ -f "$HOME/Pictures/Wallpapers/NIRU/nirux-wallpaper-noir-4k.png" ]
 [ -f "$PREFIX/share/applications/helium.desktop" ]
-grep -qF "Exec=\"$BIN/helium\"" "$PREFIX/share/applications/helium.desktop"
+grep -qF "Exec=$BIN/helium " "$PREFIX/share/applications/helium.desktop"
 [ -f "$XDG_CONFIG_HOME/nirux/theme/kitty.conf" ]
 grep -q 'NIRUX terminal integration' "$XDG_CONFIG_HOME/fish/config.fish"
 [ -x "$BIN/nirux-theme-hook" ]

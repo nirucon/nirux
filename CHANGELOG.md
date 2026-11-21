@@ -2,6 +2,14 @@
 
 Earlier releases are described in their release notes and commit messages.
 
+## 0.12.315 (2026-11-21)
+
+- **Links open in Helium again from other programs.** The Helium entry had
+  its command in quotes, which `xdg-open` on Debian cannot read, so it gave
+  up with "no method available". That broke the Nextcloud login and every
+  link opened by a program that uses `xdg-open`. The command is now written
+  without quotes (quotes are kept only for a path that needs them).
+
 ## 0.12.314 (2026-11-21)
 
 - **Hardware video on Intel machines installed by NIRUBOOT.** Debian's

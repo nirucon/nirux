@@ -119,6 +119,16 @@ remove_prefix_file() {
 browser_desktop_file() {
   say "$PREFIX/share/applications/helium.desktop"
 }
+# The Exec command of the Helium entry. xdg-open (xdg-utils 1.2.1, used by
+# Nextcloud, Signal and every link opened from a terminal) does not unquote
+# Exec, so a quoted path makes it fall back to a browser list and fail.
+# Quote only a path that needs it.
+browser_desktop_exec() {
+  case "$BIN" in
+    *[!A-Za-z0-9/._+-]*) say "\"$BIN/helium\"" ;;
+    *) say "$BIN/helium" ;;
+  esac
+}
 browser_write_desktop() {
   desktop_source=$STATE/browser-current/helium.desktop
   desktop_target=$(browser_desktop_file)
@@ -126,7 +136,7 @@ browser_write_desktop() {
   if [ -f "$desktop_source" ]; then
     {
       say "# NIRUX owner: $PREFIX"
-      sed -e "s|^Exec=helium|Exec=\"$BIN/helium\"|" \
+      sed -e "s|^Exec=helium|Exec=$(browser_desktop_exec)|" \
           -e "s|^Icon=helium\$|Icon=$STATE/browser-current/product_logo_256.png|" \
           "$desktop_source"
     } > "$WORK/helium.desktop"
@@ -137,7 +147,7 @@ browser_write_desktop() {
       say 'Name=Helium'
       say 'Comment=Access the Internet'
       say 'Type=Application'
-      say "Exec=\"$BIN/helium\" %U"
+      say "Exec=$(browser_desktop_exec) %U"
       say "Icon=$STATE/browser-current/product_logo_256.png"
       say 'Terminal=false'
       say 'Categories=Network;WebBrowser;'
