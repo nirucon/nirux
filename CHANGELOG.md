@@ -2,6 +2,13 @@
 
 Earlier releases are described in their release notes and commit messages.
 
+## 0.12.321 (2026-11-22)
+
+- **Super+Shift+F moves to NIRUFM on the first update.** The binding was
+  only moved when nirufm was already installed, but the configuration is
+  installed before the new programs are linked, so a machine updating from
+  before 0.12.317 kept pcmanfm until the next update.
+
 ## 0.12.320 (2026-11-21)
 
 - **NIRUTERM 0.1.0, the NIRUX terminal.** Installed beside kitty, which

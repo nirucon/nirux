@@ -1359,6 +1359,14 @@ grep -qx 'browser = \["helium"\]' "$browser_test/migrate/brave.toml" || fail 'ob
 printf 'theme = "niru-noir"\nbrowser = ["firefox"]\n' > "$browser_test/migrate/custom.toml"
 upgrade_obsolete_default_browser "$browser_test/migrate/custom.toml"
 grep -qx 'browser = \["firefox"\]' "$browser_test/migrate/custom.toml" || fail 'custom browser selection was overwritten'
+# Super+Shift+F moves from pcmanfm to NIRUFM even before nirufm is linked
+# (the configuration is installed first); another program is kept.
+printf '[[keys]]\nkeys = "super+shift+f"\naction = "start pcmanfm"\n' > "$browser_test/migrate/fm.toml"
+upgrade_file_manager_binding "$browser_test/migrate/fm.toml" >/dev/null
+grep -qx 'action = "start nirufm"' "$browser_test/migrate/fm.toml" || fail 'the pcmanfm binding was not moved to NIRUFM'
+printf '[[keys]]\nkeys = "super+shift+f"\naction = "start thunar"\n' > "$browser_test/migrate/fm2.toml"
+upgrade_file_manager_binding "$browser_test/migrate/fm2.toml" >/dev/null
+grep -qx 'action = "start thunar"' "$browser_test/migrate/fm2.toml" || fail 'a chosen file manager was replaced'
 # shellcheck disable=SC2034 # read by fresh_config_source in the sourced installer
 BROWSER_EFFECTIVE=none
 fresh_config_source "$SOURCE/config.example.toml" | grep -qx 'browser = \[\]' || fail 'fresh opt-out config kept the Helium default'

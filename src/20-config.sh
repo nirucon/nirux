@@ -529,7 +529,8 @@ browser_available() {
 # moved along; a binding the user changed to something else is kept.
 upgrade_file_manager_binding() {
   grep -qx 'action = "start pcmanfm"' "$1" || return 0
-  [ -x "$BIN/nirufm" ] || command -v nirufm >/dev/null 2>&1 || return 0
+  # No check for the nirufm program: the configuration is installed before
+  # the new generation is linked, and every release since 0.12.317 has it.
   fm_mode=$(stat -c %a "$1") || die "could not read permissions for $1"
   fm_tmp=$(mktemp "$1.nirux-fm.XXXXXX") || die "could not stage $1"
   if awk '$0 == "action = \"start pcmanfm\"" {print "action = \"start nirufm\""; next} {print}' "$1" > "$fm_tmp" &&
