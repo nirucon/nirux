@@ -88,6 +88,10 @@ status() {
   if [ -f "$ROOT/etc/polkit-1/rules.d/49-nirux-power.rules" ] &&
      owned "$ROOT/etc/polkit-1/rules.d/49-nirux-power.rules"; then
     say 'installed local power polkit rule'
+  elif [ -d "$ROOT/etc/polkit-1/rules.d" ] && [ ! -x "$ROOT/etc/polkit-1/rules.d" ]; then
+    # Newer polkit keeps rules.d 0750 root:polkitd: an account cannot look
+    # inside, so the rule can only be checked with sudo (nirux status as root).
+    say 'local power polkit rule: not checked (rules.d is readable by root only)'
   else say 'missing local power polkit rule'; result=1; fi
   browser_status || result=1
   apps_status

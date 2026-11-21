@@ -2,6 +2,16 @@
 
 Earlier releases are described in their release notes and commit messages.
 
+## 0.12.314 (2026-11-21)
+
+- **Hardware video on Intel machines installed by NIRUBOOT.** Debian's
+  non-free Intel video driver (`intel-media-va-driver-non-free`, which also
+  encodes) now counts as the Intel driver, so hardware video in Helium turns
+  on without swapping drivers.
+- **`nirux doctor` on a new Debian 13.** polkit keeps `rules.d` readable by
+  root only there, so the power rule cannot be seen from an account. Doctor
+  says it was not checked instead of reporting it missing.
+
 ## 0.12.313 (2026-11-21)
 
 - **A NIRUX demo (NIRUDEMO 0.1.0).** `Super+Alt+D`, `demo` in the launcher

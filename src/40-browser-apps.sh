@@ -404,7 +404,11 @@ hwvideo_missing_packages() {
   [ -n "${OS:-}" ] || OS=$1
   # shellcheck disable=SC2046 # fixed package names, one per word
   for hv_pkg in $(hwvideo_packages_for "$1" "$(hwvideo_vendor)"); do
-    distribution_package_present "$hv_pkg" || say "$hv_pkg"
+    distribution_package_present "$hv_pkg" && continue
+    # Debian's non-free build of the Intel driver (it adds encoding, and
+    # NIRUBOOT installs it) replaces the free one; both cannot be installed.
+    [ "$hv_pkg" = intel-media-va-driver ] && distribution_package_present intel-media-va-driver-non-free && continue
+    say "$hv_pkg"
   done
   return 0
 }

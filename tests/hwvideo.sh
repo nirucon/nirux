@@ -262,4 +262,11 @@ done
   fail 'the Arch AMD packages changed'
 [ "$(hwvideo_packages_for void intel | tr '\n' ' ')" = 'libva-utils Vulkan-Tools mesa-vulkan-overlay-layer intel-media-driver mesa-vulkan-intel ' ] ||
   fail 'the Void Intel packages changed'
+# Debian's non-free Intel driver replaces the free one (NIRUBOOT installs it).
+HV_VID=0x8086
+printf 'intel-media-va-driver\n' > "$TEST/absent"
+[ -z "$(hwvideo_missing_packages debian)" ] || fail 'intel-media-va-driver-non-free did not count as the Intel driver'
+printf 'intel-media-va-driver\nintel-media-va-driver-non-free\n' > "$TEST/absent"
+[ "$(hwvideo_missing_packages debian)" = intel-media-va-driver ] || fail 'a missing Intel driver was not reported'
+: > "$TEST/absent"
 say 'hardware video tests passed'

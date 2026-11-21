@@ -2,7 +2,7 @@
 # NIRUX: install a complete X11 desktop, or maintain an existing installation.
 set -eu
 
-VERSION=0.12.313
+VERSION=0.12.314
 PREFIX=${NIRUX_PREFIX:-$HOME/.local}
 BIN=$PREFIX/bin
 STATE=$PREFIX/share/nirux
@@ -4118,7 +4118,11 @@ hwvideo_missing_packages() {
   [ -n "${OS:-}" ] || OS=$1
   # shellcheck disable=SC2046 # fixed package names, one per word
   for hv_pkg in $(hwvideo_packages_for "$1" "$(hwvideo_vendor)"); do
-    distribution_package_present "$hv_pkg" || say "$hv_pkg"
+    distribution_package_present "$hv_pkg" && continue
+    # Debian's non-free build of the Intel driver (it adds encoding, and
+    # NIRUBOOT installs it) replaces the free one; both cannot be installed.
+    [ "$hv_pkg" = intel-media-va-driver ] && distribution_package_present intel-media-va-driver-non-free && continue
+    say "$hv_pkg"
   done
   return 0
 }
@@ -7492,6 +7496,10 @@ status() {
   if [ -f "$ROOT/etc/polkit-1/rules.d/49-nirux-power.rules" ] &&
      owned "$ROOT/etc/polkit-1/rules.d/49-nirux-power.rules"; then
     say 'installed local power polkit rule'
+  elif [ -d "$ROOT/etc/polkit-1/rules.d" ] && [ ! -x "$ROOT/etc/polkit-1/rules.d" ]; then
+    # Newer polkit keeps rules.d 0750 root:polkitd: an account cannot look
+    # inside, so the rule can only be checked with sudo (nirux status as root).
+    say 'local power polkit rule: not checked (rules.d is readable by root only)'
   else say 'missing local power polkit rule'; result=1; fi
   browser_status || result=1
   apps_status
