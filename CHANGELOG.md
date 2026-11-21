@@ -2,6 +2,15 @@
 
 Earlier releases are described in their release notes and commit messages.
 
+## 0.12.316 (2026-11-21)
+
+- **Dialogs that wait for you are shown (NIRUWM 0.36.1).** NIRUWM hides a
+  dialog whose parent window is hidden, unless you just clicked the app in
+  the tray, so tray apps cannot pop up windows by themselves. Qt names a
+  hidden helper window as the parent of every parentless dialog, so the
+  Nextcloud account wizard and its folder chooser stayed invisible. A modal
+  dialog (one that waits for an answer) is now always shown.
+
 ## 0.12.315 (2026-11-21)
 
 - **Links open in Helium again from other programs.** The Helium entry had
