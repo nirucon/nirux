@@ -2,6 +2,11 @@
 
 Earlier releases are described in their release notes and commit messages.
 
+## 0.12.323 (2026-11-22)
+
+- **NIRUTERM 0.1.1:** a keyboard layout switched while the terminal is open
+  takes effect at once (the keyboard map is read again when it changes).
+
 ## 0.12.322 (2026-11-22)
 
 - **Folders open in NIRUFM after NIRUORG too.** A machine where NIRUORG was
