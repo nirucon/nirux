@@ -2,6 +2,11 @@
 
 Earlier releases are described in their release notes and commit messages.
 
+## 0.12.319 (2026-11-21)
+
+- **NIRUFM 0.2.1:** Recent marks its own row in the side panel instead of
+  Home, and its bar says "Recently used files".
+
 ## 0.12.318 (2026-11-21)
 
 - **The nightly update keeps a release that needs a new package.** A package
