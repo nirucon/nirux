@@ -16,6 +16,7 @@ stage_component_assets() {
     niruwm) release_files niruwm "$component_version" niruwm niructl niruidle niruwm-session niruclipboard nirugestured ;;
     nirulock) release_files nirulock "$component_version" nirulock pam-arch pam-debian pam-void ;;
     nirudemo) release_files nirudemo "$component_version" nirudemo nirudemo-music.tar ;;
+    nirufm) release_files nirufm "$component_version" nirufm nirufm.desktop nirufm.svg ;;
     nirux) : ;;
     *) release_files "$component" "$component_version" "$component" ;;
   esac
@@ -223,6 +224,8 @@ apply_target_release() {
   install_sleep_hook
   install_login_wallpaper_rule
   install_wallpaper_app
+  install_file_manager_app
+  file_manager_default
   install_display_app
   install_theme_selector_app
   register_session

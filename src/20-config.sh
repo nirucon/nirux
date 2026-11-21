@@ -525,6 +525,21 @@ install_appearance() {
 browser_available() {
   command -v "$1" >/dev/null 2>&1 || [ -x "$BIN/$1" ]
 }
+# NIRUFM replaced pcmanfm (0.12.317): the default Super+Shift+F binding is
+# moved along; a binding the user changed to something else is kept.
+upgrade_file_manager_binding() {
+  grep -qx 'action = "start pcmanfm"' "$1" || return 0
+  [ -x "$BIN/nirufm" ] || command -v nirufm >/dev/null 2>&1 || return 0
+  fm_mode=$(stat -c %a "$1") || die "could not read permissions for $1"
+  fm_tmp=$(mktemp "$1.nirux-fm.XXXXXX") || die "could not stage $1"
+  if awk '$0 == "action = \"start pcmanfm\"" {print "action = \"start nirufm\""; next} {print}' "$1" > "$fm_tmp" &&
+     chmod "$fm_mode" "$fm_tmp" && mv -f "$fm_tmp" "$1"; then
+    say 'Super+Shift+F now opens NIRUFM (it was pcmanfm).'
+  else
+    rm -f "$fm_tmp"
+    die "could not update the file manager binding in $1; original kept"
+  fi
+}
 upgrade_obsolete_default_browser() {
   [ "${BROWSER_EFFECTIVE:-keep}" = helium ] || return 0
   browser_available brave && return 0

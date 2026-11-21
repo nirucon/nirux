@@ -19,7 +19,7 @@ cd nirux
 ```
 
 A normal install provisions Xorg/startx, D-Bus, PAM, Polkit, fonts, kitty, fish,
-pcmanfm, audio, notifications, screenshots, Bluetooth, power profiles and the
+audio, notifications, screenshots, Bluetooth, power profiles and the
 other runtime tools. Super+P opens the native NIRU launcher. Use
 `--no-packages` only when those dependencies are already installed; `--minimal`
 is an alias for the same behaviour, not a partial suite.
@@ -437,7 +437,8 @@ NIRUX.
 
 A normal install provisions `udisks2`, GVFS and the GVFS backends for MTP,
 SMB/CIFS, Apple devices and FUSE mounts, plus `xarchiver`, 7-Zip, ZIP and RAR
-support and `exfatprogs`. PCManFM can therefore show removable media, phones and
+support and `exfatprogs`, and poppler-utils, ffmpegthumbnailer and gdk-pixbuf for
+thumbnails and previews. NIRUFM, the file manager, shows removable media, phones and
 network shares through the normal GVFS/udisks2 path. Arch enables `udisks2` and
 Void creates the runit service link; Debian uses D-Bus activation.
 

@@ -44,9 +44,9 @@ distribution_packages_for() {
   # The root-owned, restricted standalone Wi-Fi helper uses the system Python.
   case "$1" in arch) say python ;; debian|void) say python3 ;; esac
   case "$1" in
-    arch) say "xorg-server xorg-xinit xorg-xauth xorg-xrandr xorg-xset xorg-xprop xorg-xdpyinfo xorg-xwininfo xorg-xrdb xorg-xsetroot xorg-setxkbmap xorg-xinput xf86-input-libinput libinput-tools xkeyboard-config noto-fonts-emoji ttf-liberation noto-fonts udisks2 gvfs gvfs-mtp gvfs-smb gvfs-afc gvfs-nfs gvfs-dnssd glib2 xarchiver 7zip unzip zip unrar-free exfatprogs dbus pam pipewire pipewire-audio pipewire-pulse pipewire-alsa wireplumber alsa-utils alsa-ucm-conf rtkit fontconfig libglvnd ttf-dejavu ttf-jetbrains-mono-nerd kitty fish polkit-gnome libayatana-appindicator libayatana-indicator ayatana-ido bluez bluez-utils power-profiles-daemon dunst picom feh maim slop xdotool xclip tesseract tesseract-data-swe tesseract-data-eng ffmpeg v4l-utils xorg-xrandr xorg-xprop pcmanfm playerctl libnotify brightnessctl gammastep iproute2 iw xdg-utils xdg-user-dirs unzip procps-ng util-linux smartmontools pacman-contrib gnome-keyring" ;;
-    debian) say "xserver-xorg xserver-xorg-input-libinput xinput libinput-tools xinit xauth x11-xserver-utils x11-utils x11-xkb-utils xkb-data fonts-liberation fonts-noto-core udisks2 gvfs gvfs-backends gvfs-fuse libglib2.0-bin xarchiver 7zip unzip zip unrar-free exfatprogs dbus-x11 dbus-user-session libpam0g pipewire pipewire-pulse pipewire-alsa wireplumber alsa-utils alsa-ucm-conf rtkit fontconfig libgles2 fonts-dejavu-core fonts-font-awesome fonts-jetbrains-mono fonts-noto-color-emoji kitty fish lxpolkit libayatana-appindicator3-1 libayatana-indicator3-7 libayatana-ido3-0.4-0 bluez libspa-0.2-bluetooth power-profiles-daemon dunst picom feh maim slop xdotool xclip tesseract-ocr tesseract-ocr-swe tesseract-ocr-eng ffmpeg sidplayfp v4l-utils x11-utils pcmanfm playerctl libnotify-bin brightnessctl gammastep iproute2 iw rfkill xdg-utils xdg-user-dirs unzip procps util-linux smartmontools gnome-keyring libpam-gnome-keyring" ;;
-    void) say "xorg-minimal xinit xauth xrandr xset xprop xdpyinfo xwininfo xrdb xsetroot setxkbmap xinput libinput xkeyboard-config liberation-fonts-ttf noto-fonts-ttf udisks2 gvfs gvfs-mtp gvfs-smb gvfs-afc glib xarchiver 7zip unzip zip exfatprogs dbus elogind pam pam-base pipewire wireplumber alsa-utils alsa-ucm-conf rtkit fontconfig libglvnd dejavu-fonts-ttf nerd-fonts-symbols-ttf noto-fonts-emoji kitty fish-shell polkit-gnome libayatana-appindicator libayatana-indicator ayatana-ido bluez libspa-bluetooth power-profiles-daemon dunst picom feh maim slop xdotool xclip tesseract-ocr tesseract-ocr-swe tesseract-ocr-eng ffmpeg sidplayfp v4l-utils xrandr xprop pcmanfm playerctl libnotify brightnessctl gammastep iproute2 iw xdg-utils xdg-user-dirs unzip procps-ng util-linux smartmontools gnome-keyring" ;;
+    arch) say "xorg-server xorg-xinit xorg-xauth xorg-xrandr xorg-xset xorg-xprop xorg-xdpyinfo xorg-xwininfo xorg-xrdb xorg-xsetroot xorg-setxkbmap xorg-xinput xf86-input-libinput libinput-tools xkeyboard-config noto-fonts-emoji ttf-liberation noto-fonts udisks2 gvfs gvfs-mtp gvfs-smb gvfs-afc gvfs-nfs gvfs-dnssd glib2 xarchiver 7zip unzip zip unrar-free exfatprogs dbus pam pipewire pipewire-audio pipewire-pulse pipewire-alsa wireplumber alsa-utils alsa-ucm-conf rtkit fontconfig libglvnd ttf-dejavu ttf-jetbrains-mono-nerd kitty fish polkit-gnome libayatana-appindicator libayatana-indicator ayatana-ido bluez bluez-utils power-profiles-daemon dunst picom feh maim slop xdotool xclip tesseract tesseract-data-swe tesseract-data-eng ffmpeg v4l-utils xorg-xrandr xorg-xprop poppler ffmpegthumbnailer gdk-pixbuf2 playerctl libnotify brightnessctl gammastep iproute2 iw xdg-utils xdg-user-dirs unzip procps-ng util-linux smartmontools pacman-contrib gnome-keyring" ;;
+    debian) say "xserver-xorg xserver-xorg-input-libinput xinput libinput-tools xinit xauth x11-xserver-utils x11-utils x11-xkb-utils xkb-data fonts-liberation fonts-noto-core udisks2 gvfs gvfs-backends gvfs-fuse libglib2.0-bin xarchiver 7zip unzip zip unrar-free exfatprogs dbus-x11 dbus-user-session libpam0g pipewire pipewire-pulse pipewire-alsa wireplumber alsa-utils alsa-ucm-conf rtkit fontconfig libgles2 fonts-dejavu-core fonts-font-awesome fonts-jetbrains-mono fonts-noto-color-emoji kitty fish lxpolkit libayatana-appindicator3-1 libayatana-indicator3-7 libayatana-ido3-0.4-0 bluez libspa-0.2-bluetooth power-profiles-daemon dunst picom feh maim slop xdotool xclip tesseract-ocr tesseract-ocr-swe tesseract-ocr-eng ffmpeg sidplayfp v4l-utils x11-utils poppler-utils ffmpegthumbnailer libgdk-pixbuf2.0-bin playerctl libnotify-bin brightnessctl gammastep iproute2 iw rfkill xdg-utils xdg-user-dirs unzip procps util-linux smartmontools gnome-keyring libpam-gnome-keyring" ;;
+    void) say "xorg-minimal xinit xauth xrandr xset xprop xdpyinfo xwininfo xrdb xsetroot setxkbmap xinput libinput xkeyboard-config liberation-fonts-ttf noto-fonts-ttf udisks2 gvfs gvfs-mtp gvfs-smb gvfs-afc glib xarchiver 7zip unzip zip exfatprogs dbus elogind pam pam-base pipewire wireplumber alsa-utils alsa-ucm-conf rtkit fontconfig libglvnd dejavu-fonts-ttf nerd-fonts-symbols-ttf noto-fonts-emoji kitty fish-shell polkit-gnome libayatana-appindicator libayatana-indicator ayatana-ido bluez libspa-bluetooth power-profiles-daemon dunst picom feh maim slop xdotool xclip tesseract-ocr tesseract-ocr-swe tesseract-ocr-eng ffmpeg sidplayfp v4l-utils xrandr xprop poppler-utils ffmpegthumbnailer gdk-pixbuf playerctl libnotify brightnessctl gammastep iproute2 iw xdg-utils xdg-user-dirs unzip procps-ng util-linux smartmontools gnome-keyring" ;;
   esac
 }
 # Runtime libraries and extraction tools for the pinned Helium archive. These
@@ -368,6 +368,33 @@ resolved_missing_packages() {
 # Install or check this release's runtime dependencies. Called from the newly
 # downloaded script after verification, so updates use the new package list
 # instead of the old installed one.
+# Packages an earlier release installed and this one replaced: pcmanfm by
+# NIRUFM (0.12.317). A `nirux update` in a terminal removes them once; the
+# nightly update only notes it, as it never removes software.
+retired_packages() { say pcmanfm; }
+retire_packages() {
+  rp_list=
+  for rp in $(retired_packages); do
+    case "$OS" in
+      arch) if pacman -Q "$rp" >/dev/null 2>&1; then rp_list="$rp_list $rp"; fi ;;
+      debian) if dpkg-query -W -f='${Status}' "$rp" 2>/dev/null | grep -q 'install ok installed'; then rp_list="$rp_list $rp"; fi ;;
+      void) if xbps-query "$rp" >/dev/null 2>&1; then rp_list="$rp_list $rp"; fi ;;
+    esac
+  done
+  [ -n "$rp_list" ] || return 0
+  if [ "$NIRUX_AUTO" = 1 ]; then
+    auto_pending "remove replaced packages:$rp_list"
+    return 0
+  fi
+  if [ "${NIRUX_PACKAGES_DRY_RUN:-0}" = 1 ]; then say "would remove replaced packages:$rp_list"; return 0; fi
+  say "Removing packages NIRUX no longer uses:$rp_list"
+  # shellcheck disable=SC2086 # fixed package names, one per word
+  case "$OS" in
+    arch) as_root pacman -R --noconfirm $rp_list || say 'could not remove them; they are harmless and can stay' ;;
+    debian) as_root env DEBIAN_FRONTEND=noninteractive apt-get remove -y $rp_list || say 'could not remove them; they are harmless and can stay' ;;
+    void) as_root xbps-remove -y $rp_list || say 'could not remove them; they are harmless and can stay' ;;
+  esac
+}
 provision_packages() {
   mode=${1:-missing}
   OS=${NIRUX_PROVISION_OS:-$(distro)}
@@ -381,6 +408,7 @@ provision_packages() {
       provision_sidplayfp_aur
       ;;
     missing)
+      retire_packages
       # Renames (Debian trixie's *t64 libraries) come from this machine's own
       # package database. An explicit value from the caller is kept.
       if [ -z "${NIRUX_PACKAGE_MAP:-}" ]; then

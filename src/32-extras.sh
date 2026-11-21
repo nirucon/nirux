@@ -1,6 +1,5 @@
 extras_table() {
   cat <<'EOF'
-niruorg niruorg 0.6.1 d012b5802fdf1253bb887c50395a2d611cd4958c43cad57650a0752bdefd1138
 nirunote nirunote 0.7.1 a27ba8db13915143f42f3141933a8596d96b0f02ce906fedde9b81f42870039a
 nirupres nirupres 2.4.0 ead8a48ec4d34b7f77d585ddb5ec98c9c6f9a8aa7ec273de8529dbee09e008a3
 nplay nplay 1.8.2 5bd6dc17095648017ccf5922e342574ed596cc845ada78adbc5d5ff312d433d8
@@ -11,6 +10,37 @@ nirugame nirugame 0.1.4 96288834f2ca08c08b062f6f28142c079ee6c9c9198b9cdf085143de
 niruremote niruremote 0.2.0 64571f661be436c1fb69b72439f7af69802d87c83ac1652c49b84f0cfd80f784
 nirudictate nirudictate 0.3.0 49d4fa1987ca392e4763f8a1c16551b573c018e9d6a1cda7029c3bdeebeb77b2
 EOF
+}
+# Extras that left the suite. Each is removed once with the uninstaller of
+# its last pinned source: NIRUORG was replaced by NIRUFM (0.12.317).
+extras_retired_table() {
+  say 'niruorg niruorg 0.6.1 d012b5802fdf1253bb887c50395a2d611cd4958c43cad57650a0752bdefd1138'
+}
+extras_retire() {
+  extras_retired_table | while read -r name repo version expected; do
+    installed=$(extras_installed_version "$name" 2>/dev/null || :)
+    if [ -z "$installed" ]; then
+      extras_unselect "$name" >/dev/null 2>&1 || :
+      continue
+    fi
+    say "$name left the suite (NIRUFM replaces it); removing it with its $version uninstaller."
+    tmp=$(mktemp -d "${TMPDIR:-/tmp}/nirux-extra.XXXXXX") || continue
+    archive=$tmp/$repo.tar.gz
+    if ! fetch "https://github.com/nirucon/$repo/archive/refs/tags/v$version.tar.gz" "$archive" ||
+       [ "$(sha256sum "$archive" | awk '{print $1}')" != "$expected" ] ||
+       ! tar -xzf "$archive" -C "$tmp"; then
+      rm -rf "$tmp"; say "could not fetch the $name uninstaller; it stays installed"; continue
+    fi
+    src=$(find "$tmp" -mindepth 1 -maxdepth 1 -type d | head -n 1)
+    extras_sudo_shim "$tmp"
+    if [ -f "$src/uninstall.sh" ] && ( cd "$src" && extras_consent && PATH="$EXTRAS_SHIM_PATH$HOME/.local/bin:$PATH" bash ./uninstall.sh ); then
+      extras_unselect "$name" >/dev/null 2>&1 || :
+      say "Removed $name."
+    else
+      say "the $name uninstaller failed; it stays installed"
+    fi
+    rm -rf "$tmp"
+  done
 }
 extras_row() {
   extras_table | awk -v n="$1" '$1 == n {print; found=1} END {exit found ? 0 : 1}'
@@ -186,6 +216,7 @@ extras_install() {
   for name in "$@"; do extras_install_one "$name"; done
 }
 extras_update() {
+  extras_retire
   [ -f "$EXTRAS_SELECTED" ] || die 'no extras selected'
   # Vendor installers may write their config and keys.d entries, so a round
   # that installs anything starts with a snapshot.

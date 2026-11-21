@@ -20,7 +20,7 @@
 | `Super+/` / `Super+F1` | Keybinding cheat sheet (this list) |
 | `Super+.` | Emoji and symbol picker |
 | `Super+Alt+M` | Meeting check: camera, microphone, speakers, network |
-| `Super+Shift+F` | Open the file manager (pcmanfm) |
+| `Super+Shift+F` | Open the file manager (NIRUFM) |
 
 ### Session
 

@@ -8,7 +8,6 @@ A normal `nirux install` or `nirux update` never installs an extra. You ask for 
 
 | Extra | Pinned | What it is | Status |
 |---|---|---|---|
-| [niruorg](#niruorg-file-manager) | 0.6.1 | Two-pane file manager for local folders, servers and cloud remotes | beta |
 | [nirunote](#nirunote-markdown-editor) | 0.7.1 | Minimal Markdown editor and viewer | beta |
 | [nirupres](#nirupres-presentations) | 2.4.0 | Presentation studio | beta |
 | [nplay](#nplay-terminal-music-player) | 1.8.2 | Terminal music, radio and podcast player; also fully standalone | beta |
@@ -53,38 +52,13 @@ Extra installers may install runtime packages and ask for `sudo`; read their out
 
 NIRUX never deletes an extra's user data when you unselect it. The full description is in [docs/EXTRAS.md](https://github.com/nirucon/nirux/blob/main/docs/EXTRAS.md).
 
-## NIRUORG: file manager
+## NIRUORG left the suite
 
-Keyboard-friendly two-pane file manager with tabs, a command palette and safe copy and move between local folders, Nextcloud, SSH/SFTP (through SSHFS), FTP/FTPS and rclone remotes. Copies go to a partial file first, and a move deletes the source only after the destination is complete. Python and PySide6 (Qt 6). Status: beta.
-
-```sh
-nirux extras install niruorg
-niruorg                 # or niruorg PATH, or NIRUORG in the launcher (Super+P)
-niruorg --self-test
-```
-
-| Keys | Action |
-|---|---|
-| `Ctrl+T` / `Ctrl+W` | New tab / close tab |
-| `Ctrl+Shift+T` | Reopen closed tab |
-| `Ctrl+K` | Command palette |
-| `Ctrl+L` | Type a location |
-| `Ctrl+F` / `/` | Find files and content / filter the current folder |
-| `F3` / `Space` | Quick Look / Inspector |
-| `Ctrl+Shift+Right` | Send the selection to the other pane |
-| `Ctrl+Shift+M` | Compare panes |
-| `Ctrl+D` | Work Basket (collect files from several places) |
-| `Ctrl+Alt+T` | Terminal in the current folder |
-| `Ctrl+H` | Hidden files |
-| `Ctrl+Z` | Undo the last transfer |
-
-Drag files between panes to copy; use **Move** from Actions to move. All settings are in the app (**Settings**). The theme follows NIRUX live by default.
-
-- Preferences: `~/.config/NIRU/NIRUORG.conf`
-- Servers: `~/.config/niruorg/servers.json` (or `~/Nextcloud/Backup/niruorg/servers.json` when that folder exists)
-- Logs: `~/.local/state/niruorg/launcher.log`
-
-`Super+Shift+F` still opens the default file manager (pcmanfm), not NIRUORG. Full documentation: [github.com/nirucon/niruorg](https://github.com/nirucon/niruorg).
+NIRUORG was replaced by NIRUFM, the file manager that ships with NIRUX
+(`Super+Shift+F`, see [Getting started](01-getting-started.md#files-and-folders)).
+`nirux extras update`, which the nightly update runs, removes an installed
+NIRUORG with its own uninstaller. Its settings in `~/.config/NIRU` and
+`~/.config/niruorg` are left in place.
 
 ## NIRUNOTE: Markdown editor
 

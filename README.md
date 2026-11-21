@@ -25,7 +25,7 @@ of tools. **NIRUX** adds the X: it is the X11 desktop built from those programs.
 
 - **NIRU** programs form the program family. Some are useful outside the
   desktop, and the toolkit-based apps (for example the Qt/PySide apps
-  NIRUNOTE, NIRUORG, NIRUPRES and NIRUFLOW) can run under Wayland where their
+  NIRUNOTE, NIRUPRES and NIRUFLOW) can run under Wayland where their
   toolkit allows it.
 - **NIRUX** is the X11 desktop and the supported session. NIRUWM, NIRUBAR,
   NIRU Launcher, NIRUNOTIFY, NIRULOCK, NIRUSCREENSAVER, NIRUSHOT, NIRU Display,
@@ -62,6 +62,7 @@ verified generation, at the versions pinned in [manifest](manifest).
 | [niruwm](https://github.com/nirucon/niruwm) | Tiling window manager, workspaces, `niructl`, `niruidle`, clipboard and gesture helpers | beta |
 | [nirubar](https://github.com/nirucon/nirubar) | Per-monitor status bar, panels, Quick Settings, tray, Tailscale and tasks | beta |
 | [nirulauncher](https://github.com/nirucon/nirulauncher) | Applications, windows, clipboard, settings and NIRU Actions | beta |
+| [nirufm](https://github.com/nirucon/nirufm) | File manager: views, gallery, search, two panes, drives, servers and Nextcloud links (`Super+Shift+F`) | beta |
 | [nirunotify](https://github.com/nirucon/nirunotify) | Notification service, Do Not Disturb, history, hardware OSD and event sounds | beta |
 | [nirulock](https://github.com/nirucon/nirulock) | PAM lock screen with themed CAVA visualizer or quotes | beta |
 | [niruscreensaver](https://github.com/nirucon/niruscreensaver) | Idle screen with themed CAVA visualizer or quotes | beta |
@@ -84,7 +85,6 @@ by `nirux install` or `nirux update`; install only the ones you want with
 
 | Extra | What it does | Status |
 |---|---|---|
-| [niruorg](https://github.com/nirucon/niruorg) | File and folder management | beta |
 | [nirunote](https://github.com/nirucon/nirunote) | Minimal Markdown editor | beta |
 | [nirupres](https://github.com/nirucon/nirupres) | Presentation studio | beta |
 | [nplay](https://github.com/nirucon/nplay) | Terminal music, radio and podcast player; also fully standalone | beta |

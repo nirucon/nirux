@@ -140,6 +140,31 @@ The bar's Quick Settings button opens volume, microphone, Wi-Fi, Bluetooth,
 displays, power profile, themes, Do Not Disturb, keep-awake, night light and lock in
 one view. See [The bar and Quick Settings](04-bar-and-quick-settings.md).
 
+## Files and folders
+
+`Super+Shift+F` opens **NIRUFM**, the file manager of NIRUX. It starts in a few
+hundredths of a second, uses about 15 MB of memory and follows the theme. Press
+`F1` in it for every key.
+
+- **Views:** icons, thumbnails, compact and a detailed list (`Ctrl+1` to `Ctrl+4`
+  or the buttons at the top right). Each folder remembers its view; a folder of
+  photos opens as thumbnails. `Ctrl+wheel` zooms.
+- **Files:** `Ctrl+C`, `Ctrl+X`, `Ctrl+V`, `Delete` (to the trash), `Ctrl+Z`
+  (undo), `F2` (rename), drag and drop to folders, tabs and other programs.
+  Nothing is ever overwritten: a name that exists gets " (2)".
+- **Look:** `Space` previews a picture, PDF or text; `Enter` on a photo (or
+  `Ctrl+G`) opens the gallery with a film strip, slideshow and full screen.
+- **Find:** `Ctrl+F` searches the folder and everything below it.
+- **Work:** tabs (`Ctrl+T`), two panes (`F3`), properties (`Alt+Enter`),
+  pack and unpack archives from the right-click menu, a terminal here (`F4`).
+- **Drives and servers:** USB sticks appear under DEVICES; click to mount,
+  ⏏ to eject. `Ctrl+K` connects to `sftp://`, `ftp://`, `smb://` or `davs://`
+  servers; SSH hosts from `~/.ssh/config` complete with `Tab`.
+- **Nextcloud:** in a synced folder the right-click menu copies the public or
+  internal link and opens sharing, and badges show what is synced.
+
+Folders that other programs open ("show in folder") open in NIRUFM too.
+
 ## Read this manual
 
 ```sh

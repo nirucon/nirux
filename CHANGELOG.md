@@ -2,6 +2,26 @@
 
 Earlier releases are described in their release notes and commit messages.
 
+## 0.12.317 (2026-11-21)
+
+- **NIRUFM, the new file manager (NIRUFM 0.2.0).** `Super+Shift+F` opens
+  it, and folders that other programs open go there too. It starts in a few
+  hundredths of a second, uses about 15 MB and is drawn in the NIRU theme:
+  icons, thumbnails, compact and list views that each folder remembers, a
+  gallery for photos and films, Space preview (pictures, PDF, text),
+  search below a folder, tabs and two panes, drag and drop, the trash with
+  undo, packing and unpacking, USB drives, sftp/ftp/smb servers, Nextcloud
+  links and sync badges. `F1` shows every key.
+- **pcmanfm and NIRUORG leave the suite.** A `nirux update` in a terminal
+  removes pcmanfm and moves a `Super+Shift+F` binding that still started it
+  to NIRUFM (a binding changed to something else is kept). `nirux extras
+  update`, which the nightly update runs, removes NIRUORG with its own
+  uninstaller; its settings stay.
+- **Thumbnails and previews:** the runtime packages now include poppler
+  (PDF), ffmpegthumbnailer (video) and the gdk-pixbuf thumbnailer.
+- **NIRUWM 0.36.2:** NIRUFM is the default file manager of a new
+  configuration.
+
 ## 0.12.316 (2026-11-21)
 
 - **Dialogs that wait for you are shown (NIRUWM 0.36.1).** NIRUWM hides a

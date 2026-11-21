@@ -6,7 +6,6 @@ explicit request, and never pulled in by a core `nirux update`.
 
 | Extra | Release | Role |
 |---|---|---|
-| niruorg | 0.6.1 | File and folder management |
 | nirunote | 0.6.1 | Markdown editor |
 | nirupres | 2.2.1 | Presentation studio |
 | nplay | 1.8.2 | Terminal music, radio and podcast player; standalone |

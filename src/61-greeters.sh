@@ -308,6 +308,32 @@ remove_wallpaper_app() {
   # happens to be empty would delete a system directory NIRUX never owned, and
   # the hicolor theme is shared with every other application.
 }
+# NIRUFM, the file manager: its entry and pixel icon come with its release.
+install_file_manager_app() {
+  fm_dir=$WORK/download/nirufm
+  [ -f "$fm_dir/nirufm.desktop" ] || return 0
+  [ -f "$fm_dir/nirufm.svg" ] || return 0
+  { say "# NIRUX owner: $PREFIX"; sed "s|^Exec=nirufm |Exec=$BIN/nirufm |" "$fm_dir/nirufm.desktop"; } > "$WORK/nirufm.desktop"
+  write_system "$ROOT/usr/share/applications/nirufm.desktop" "$WORK/nirufm.desktop"
+  # The icon is installed byte for byte; its ownership is recorded beside it.
+  write_binary "$ROOT/usr/share/icons/hicolor/scalable/apps/nirufm.svg" "$fm_dir/nirufm.svg"
+}
+remove_file_manager_app() {
+  remove_system "$ROOT/usr/share/applications/nirufm.desktop"
+  remove_binary "$ROOT/usr/share/icons/hicolor/scalable/apps/nirufm.svg"
+}
+# Folders opened by other programs ("show in folder", xdg-open DIR) go to
+# NIRUFM, unless the user chose a file manager other than the old pcmanfm.
+file_manager_default() {
+  [ -x "$BIN/nirufm" ] || return 0
+  command -v xdg-mime >/dev/null 2>&1 || return 0
+  fm_now=$(xdg-mime query default inode/directory 2>/dev/null || :)
+  case "$fm_now" in
+    nirufm.desktop) return 0 ;;
+    ''|pcmanfm*.desktop) xdg-mime default nirufm.desktop inode/directory 2>/dev/null || : ;;
+    *) return 0 ;;
+  esac
+}
 # NIRU Display is the graphical monitor editor. Its entry and icon travel with
 # the component release so they cannot drift from the binary's version.
 install_display_app() {

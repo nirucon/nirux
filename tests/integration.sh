@@ -34,6 +34,7 @@ io_version=$(awk '$1 == "niruio" {print $2}' "$SOURCE/manifest")
 splash_version=$(awk '$1 == "nirusplash" {print $2}' "$SOURCE/manifest")
 sleep_version=$(awk '$1 == "nirusleep" {print $2}' "$SOURCE/manifest")
 demo_version=$(awk '$1 == "nirudemo" {print $2}' "$SOURCE/manifest")
+fm_version=$(awk '$1 == "nirufm" {print $2}' "$SOURCE/manifest")
 FIXTURE=$TEST/releases
 fail() { printf 'FAIL: %s\n' "$*" >&2; exit 1; }
 no_config_candidates() {
@@ -148,6 +149,7 @@ fixture niruio "$io_version" niruio
 fixture nirusplash "$splash_version" nirusplash
 fixture nirusleep "$sleep_version" nirusleep
 fixture nirudemo "$demo_version" nirudemo
+fixture nirufm "$fm_version" nirufm nirufm.desktop nirufm.svg
 # The NIRUX music: two placeholder songs in the archive layout NIRUDEMO ships.
 mkdir -p "$TEST/music-build/music"
 printf 'OggS' > "$TEST/music-build/music/nirux-1-ginnungagap.ogg"
@@ -168,7 +170,7 @@ for os in arch void; do
   printf 'auth include system-auth\naccount include system-auth\n' > "$FIXTURE/nirulock/$lock_version/pam-$os"
 done
 printf 'auth include common-auth\naccount include common-account\n' > "$FIXTURE/nirulock/$lock_version/pam-debian"
-for item in "niruwm/$wm_version" "nirubar/$bar_version" "niruscreensaver/$saver_version" "nirulock/$lock_version" "nirulauncher/$launcher_version" "nirulogin/$login_version" "nirushare/$share_version" "nirunotify/$notifier_version" "nirushot/$shot_version" "niruclip/$clip_version" "nirufetch/$fetch_version" "niruio/$io_version" "nirusplash/$splash_version" "nirusleep/$sleep_version" "nirudemo/$demo_version" "niruwebapp/$webapp_version" "niruwallpaper/$wallpaper_app_version" "nirudisplay/$display_app_version" "niruthemeselector/$theme_selector_version"; do checksums "$FIXTURE/$item"; done
+for item in "niruwm/$wm_version" "nirubar/$bar_version" "niruscreensaver/$saver_version" "nirulock/$lock_version" "nirulauncher/$launcher_version" "nirulogin/$login_version" "nirushare/$share_version" "nirunotify/$notifier_version" "nirushot/$shot_version" "niruclip/$clip_version" "nirufetch/$fetch_version" "niruio/$io_version" "nirusplash/$splash_version" "nirusleep/$sleep_version" "nirudemo/$demo_version" "nirufm/$fm_version" "niruwebapp/$webapp_version" "niruwallpaper/$wallpaper_app_version" "nirudisplay/$display_app_version" "niruthemeselector/$theme_selector_version"; do checksums "$FIXTURE/$item"; done
 # 99.0.0 is a synthetic second release, never a real network dependency.
 for release in "$VERSION" 99.0.0; do
   mkdir -p "$FIXTURE/nirux/$release"
@@ -626,6 +628,7 @@ for TEST_OS in arch debian void; do
   [ -x "$ROOT/usr/libexec/nirux-wifi" ] || fail 'restricted Wi-Fi helper was not installed'
   [ -f "$STATE/music/nirux-1-ginnungagap.ogg" ] && [ -f "$STATE/music/nirux-2-yggdrasil.ogg" ] || fail "$TEST_OS: the NIRUX music was not installed"
   [ -L "$BIN/nirudemo" ] || fail "$TEST_OS: nirudemo is not linked"
+  [ -L "$BIN/nirufm" ] || fail "$TEST_OS: nirufm is not linked"
   # K7/K8: the nightly update helper, its settings, the fixed sudoers rule,
   # its schedule on this init system, and the root sleep hook.
   [ -x "$ROOT/usr/libexec/nirux-autoupdate" ] || fail "$TEST_OS: nightly update helper was not installed"
@@ -937,7 +940,7 @@ extras_test=$TEST/extras
 mkdir -p "$extras_test/state" "$extras_test/home"
 HOME=$extras_test/home XDG_STATE_HOME=$extras_test/state "$SOURCE/nirux" extras list > "$extras_test/list"
 grep -q 'niruflow' "$extras_test/list" || fail 'extras list omitted niruflow'
-grep -q 'niruorg' "$extras_test/list" || fail 'extras list omitted niruorg'
+! grep -q 'niruorg' "$extras_test/list" || fail 'the retired niruorg is still listed'
 grep -q 'nirudictate' "$extras_test/list" || fail 'extras list omitted nirudictate'
 # NIRUAMP installs a stale NPLAY first through a recursive call; POSIX sh has no
 # locals, so the outer call must not reuse NPLAY's row afterwards (0.12.217 bug:

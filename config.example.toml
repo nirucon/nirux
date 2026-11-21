@@ -852,7 +852,7 @@ action = "move_float down"
 # Standalone desktop actions.
 [[keys]]
 keys = "super+shift+f"
-action = "start pcmanfm"
+action = "start nirufm"
 
 [[keys]]
 keys = "super+ctrl+t"

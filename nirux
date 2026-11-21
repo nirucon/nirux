@@ -2,7 +2,7 @@
 # NIRUX: install a complete X11 desktop, or maintain an existing installation.
 set -eu
 
-VERSION=0.12.316
+VERSION=0.12.317
 PREFIX=${NIRUX_PREFIX:-$HOME/.local}
 BIN=$PREFIX/bin
 STATE=$PREFIX/share/nirux
@@ -11,7 +11,7 @@ NIRUX_CONFIG=${XDG_CONFIG_HOME:-$HOME/.config}/nirux
 SOUNDS_STATE=$STATE/sounds
 SOUNDS_CONFIG=$NIRUX_CONFIG/sounds.toml
 ROOT=${NIRUX_SYSTEM_ROOT:-}
-PROGRAMS="niruwm niructl niruidle nirubar niruscreensaver nirulock nirulauncher nirunotify nirushot niruclip nirufetch niruwebapp niruwallpaper nirudisplay niruthemeselector niruwm-session niruclipboard nirugestured nirulogin nirushare niruio nirusplash nirusleep nirudemo nirux"
+PROGRAMS="niruwm niructl niruidle nirubar niruscreensaver nirulock nirulauncher nirunotify nirushot niruclip nirufetch niruwebapp niruwallpaper nirudisplay niruthemeselector niruwm-session niruclipboard nirugestured nirulogin nirushare niruio nirusplash nirusleep nirudemo nirufm nirux"
 WORK=
 POLICY_TARGET=
 POLICY_BACKUP=
@@ -413,9 +413,9 @@ distribution_packages_for() {
   # The root-owned, restricted standalone Wi-Fi helper uses the system Python.
   case "$1" in arch) say python ;; debian|void) say python3 ;; esac
   case "$1" in
-    arch) say "xorg-server xorg-xinit xorg-xauth xorg-xrandr xorg-xset xorg-xprop xorg-xdpyinfo xorg-xwininfo xorg-xrdb xorg-xsetroot xorg-setxkbmap xorg-xinput xf86-input-libinput libinput-tools xkeyboard-config noto-fonts-emoji ttf-liberation noto-fonts udisks2 gvfs gvfs-mtp gvfs-smb gvfs-afc gvfs-nfs gvfs-dnssd glib2 xarchiver 7zip unzip zip unrar-free exfatprogs dbus pam pipewire pipewire-audio pipewire-pulse pipewire-alsa wireplumber alsa-utils alsa-ucm-conf rtkit fontconfig libglvnd ttf-dejavu ttf-jetbrains-mono-nerd kitty fish polkit-gnome libayatana-appindicator libayatana-indicator ayatana-ido bluez bluez-utils power-profiles-daemon dunst picom feh maim slop xdotool xclip tesseract tesseract-data-swe tesseract-data-eng ffmpeg v4l-utils xorg-xrandr xorg-xprop pcmanfm playerctl libnotify brightnessctl gammastep iproute2 iw xdg-utils xdg-user-dirs unzip procps-ng util-linux smartmontools pacman-contrib gnome-keyring" ;;
-    debian) say "xserver-xorg xserver-xorg-input-libinput xinput libinput-tools xinit xauth x11-xserver-utils x11-utils x11-xkb-utils xkb-data fonts-liberation fonts-noto-core udisks2 gvfs gvfs-backends gvfs-fuse libglib2.0-bin xarchiver 7zip unzip zip unrar-free exfatprogs dbus-x11 dbus-user-session libpam0g pipewire pipewire-pulse pipewire-alsa wireplumber alsa-utils alsa-ucm-conf rtkit fontconfig libgles2 fonts-dejavu-core fonts-font-awesome fonts-jetbrains-mono fonts-noto-color-emoji kitty fish lxpolkit libayatana-appindicator3-1 libayatana-indicator3-7 libayatana-ido3-0.4-0 bluez libspa-0.2-bluetooth power-profiles-daemon dunst picom feh maim slop xdotool xclip tesseract-ocr tesseract-ocr-swe tesseract-ocr-eng ffmpeg sidplayfp v4l-utils x11-utils pcmanfm playerctl libnotify-bin brightnessctl gammastep iproute2 iw rfkill xdg-utils xdg-user-dirs unzip procps util-linux smartmontools gnome-keyring libpam-gnome-keyring" ;;
-    void) say "xorg-minimal xinit xauth xrandr xset xprop xdpyinfo xwininfo xrdb xsetroot setxkbmap xinput libinput xkeyboard-config liberation-fonts-ttf noto-fonts-ttf udisks2 gvfs gvfs-mtp gvfs-smb gvfs-afc glib xarchiver 7zip unzip zip exfatprogs dbus elogind pam pam-base pipewire wireplumber alsa-utils alsa-ucm-conf rtkit fontconfig libglvnd dejavu-fonts-ttf nerd-fonts-symbols-ttf noto-fonts-emoji kitty fish-shell polkit-gnome libayatana-appindicator libayatana-indicator ayatana-ido bluez libspa-bluetooth power-profiles-daemon dunst picom feh maim slop xdotool xclip tesseract-ocr tesseract-ocr-swe tesseract-ocr-eng ffmpeg sidplayfp v4l-utils xrandr xprop pcmanfm playerctl libnotify brightnessctl gammastep iproute2 iw xdg-utils xdg-user-dirs unzip procps-ng util-linux smartmontools gnome-keyring" ;;
+    arch) say "xorg-server xorg-xinit xorg-xauth xorg-xrandr xorg-xset xorg-xprop xorg-xdpyinfo xorg-xwininfo xorg-xrdb xorg-xsetroot xorg-setxkbmap xorg-xinput xf86-input-libinput libinput-tools xkeyboard-config noto-fonts-emoji ttf-liberation noto-fonts udisks2 gvfs gvfs-mtp gvfs-smb gvfs-afc gvfs-nfs gvfs-dnssd glib2 xarchiver 7zip unzip zip unrar-free exfatprogs dbus pam pipewire pipewire-audio pipewire-pulse pipewire-alsa wireplumber alsa-utils alsa-ucm-conf rtkit fontconfig libglvnd ttf-dejavu ttf-jetbrains-mono-nerd kitty fish polkit-gnome libayatana-appindicator libayatana-indicator ayatana-ido bluez bluez-utils power-profiles-daemon dunst picom feh maim slop xdotool xclip tesseract tesseract-data-swe tesseract-data-eng ffmpeg v4l-utils xorg-xrandr xorg-xprop poppler ffmpegthumbnailer gdk-pixbuf2 playerctl libnotify brightnessctl gammastep iproute2 iw xdg-utils xdg-user-dirs unzip procps-ng util-linux smartmontools pacman-contrib gnome-keyring" ;;
+    debian) say "xserver-xorg xserver-xorg-input-libinput xinput libinput-tools xinit xauth x11-xserver-utils x11-utils x11-xkb-utils xkb-data fonts-liberation fonts-noto-core udisks2 gvfs gvfs-backends gvfs-fuse libglib2.0-bin xarchiver 7zip unzip zip unrar-free exfatprogs dbus-x11 dbus-user-session libpam0g pipewire pipewire-pulse pipewire-alsa wireplumber alsa-utils alsa-ucm-conf rtkit fontconfig libgles2 fonts-dejavu-core fonts-font-awesome fonts-jetbrains-mono fonts-noto-color-emoji kitty fish lxpolkit libayatana-appindicator3-1 libayatana-indicator3-7 libayatana-ido3-0.4-0 bluez libspa-0.2-bluetooth power-profiles-daemon dunst picom feh maim slop xdotool xclip tesseract-ocr tesseract-ocr-swe tesseract-ocr-eng ffmpeg sidplayfp v4l-utils x11-utils poppler-utils ffmpegthumbnailer libgdk-pixbuf2.0-bin playerctl libnotify-bin brightnessctl gammastep iproute2 iw rfkill xdg-utils xdg-user-dirs unzip procps util-linux smartmontools gnome-keyring libpam-gnome-keyring" ;;
+    void) say "xorg-minimal xinit xauth xrandr xset xprop xdpyinfo xwininfo xrdb xsetroot setxkbmap xinput libinput xkeyboard-config liberation-fonts-ttf noto-fonts-ttf udisks2 gvfs gvfs-mtp gvfs-smb gvfs-afc glib xarchiver 7zip unzip zip exfatprogs dbus elogind pam pam-base pipewire wireplumber alsa-utils alsa-ucm-conf rtkit fontconfig libglvnd dejavu-fonts-ttf nerd-fonts-symbols-ttf noto-fonts-emoji kitty fish-shell polkit-gnome libayatana-appindicator libayatana-indicator ayatana-ido bluez libspa-bluetooth power-profiles-daemon dunst picom feh maim slop xdotool xclip tesseract-ocr tesseract-ocr-swe tesseract-ocr-eng ffmpeg sidplayfp v4l-utils xrandr xprop poppler-utils ffmpegthumbnailer gdk-pixbuf playerctl libnotify brightnessctl gammastep iproute2 iw xdg-utils xdg-user-dirs unzip procps-ng util-linux smartmontools gnome-keyring" ;;
   esac
 }
 # Runtime libraries and extraction tools for the pinned Helium archive. These
@@ -737,6 +737,33 @@ resolved_missing_packages() {
 # Install or check this release's runtime dependencies. Called from the newly
 # downloaded script after verification, so updates use the new package list
 # instead of the old installed one.
+# Packages an earlier release installed and this one replaced: pcmanfm by
+# NIRUFM (0.12.317). A `nirux update` in a terminal removes them once; the
+# nightly update only notes it, as it never removes software.
+retired_packages() { say pcmanfm; }
+retire_packages() {
+  rp_list=
+  for rp in $(retired_packages); do
+    case "$OS" in
+      arch) if pacman -Q "$rp" >/dev/null 2>&1; then rp_list="$rp_list $rp"; fi ;;
+      debian) if dpkg-query -W -f='${Status}' "$rp" 2>/dev/null | grep -q 'install ok installed'; then rp_list="$rp_list $rp"; fi ;;
+      void) if xbps-query "$rp" >/dev/null 2>&1; then rp_list="$rp_list $rp"; fi ;;
+    esac
+  done
+  [ -n "$rp_list" ] || return 0
+  if [ "$NIRUX_AUTO" = 1 ]; then
+    auto_pending "remove replaced packages:$rp_list"
+    return 0
+  fi
+  if [ "${NIRUX_PACKAGES_DRY_RUN:-0}" = 1 ]; then say "would remove replaced packages:$rp_list"; return 0; fi
+  say "Removing packages NIRUX no longer uses:$rp_list"
+  # shellcheck disable=SC2086 # fixed package names, one per word
+  case "$OS" in
+    arch) as_root pacman -R --noconfirm $rp_list || say 'could not remove them; they are harmless and can stay' ;;
+    debian) as_root env DEBIAN_FRONTEND=noninteractive apt-get remove -y $rp_list || say 'could not remove them; they are harmless and can stay' ;;
+    void) as_root xbps-remove -y $rp_list || say 'could not remove them; they are harmless and can stay' ;;
+  esac
+}
 provision_packages() {
   mode=${1:-missing}
   OS=${NIRUX_PROVISION_OS:-$(distro)}
@@ -750,6 +777,7 @@ provision_packages() {
       provision_sidplayfp_aur
       ;;
     missing)
+      retire_packages
       # Renames (Debian trixie's *t64 libraries) come from this machine's own
       # package database. An explicit value from the caller is kept.
       if [ -z "${NIRUX_PACKAGE_MAP:-}" ]; then
@@ -1300,6 +1328,21 @@ install_appearance() {
 
 browser_available() {
   command -v "$1" >/dev/null 2>&1 || [ -x "$BIN/$1" ]
+}
+# NIRUFM replaced pcmanfm (0.12.317): the default Super+Shift+F binding is
+# moved along; a binding the user changed to something else is kept.
+upgrade_file_manager_binding() {
+  grep -qx 'action = "start pcmanfm"' "$1" || return 0
+  [ -x "$BIN/nirufm" ] || command -v nirufm >/dev/null 2>&1 || return 0
+  fm_mode=$(stat -c %a "$1") || die "could not read permissions for $1"
+  fm_tmp=$(mktemp "$1.nirux-fm.XXXXXX") || die "could not stage $1"
+  if awk '$0 == "action = \"start pcmanfm\"" {print "action = \"start nirufm\""; next} {print}' "$1" > "$fm_tmp" &&
+     chmod "$fm_mode" "$fm_tmp" && mv -f "$fm_tmp" "$1"; then
+    say 'Super+Shift+F now opens NIRUFM (it was pcmanfm).'
+  else
+    rm -f "$fm_tmp"
+    die "could not update the file manager binding in $1; original kept"
+  fi
 }
 upgrade_obsolete_default_browser() {
   [ "${BROWSER_EFFECTIVE:-keep}" = helium ] || return 0
@@ -2883,6 +2926,7 @@ install_config() {
   upgrade_bar_privacy_module "$cfg_candidate"
   add_localsend_rule "$cfg_candidate"
   upgrade_obsolete_default_browser "$cfg_candidate"
+  upgrade_file_manager_binding "$cfg_candidate"
   add_missing_key "$cfg_candidate" bar follow_default_modules true
   follow_default_bar_modules "$cfg_candidate" "$cfg_example" "$cfg_target"
   cfg_after=$(sha256sum "$cfg_candidate" | cut -d ' ' -f1)
@@ -3245,7 +3289,6 @@ browser_addon_choose() {
 
 extras_table() {
   cat <<'EOF'
-niruorg niruorg 0.6.1 d012b5802fdf1253bb887c50395a2d611cd4958c43cad57650a0752bdefd1138
 nirunote nirunote 0.7.1 a27ba8db13915143f42f3141933a8596d96b0f02ce906fedde9b81f42870039a
 nirupres nirupres 2.4.0 ead8a48ec4d34b7f77d585ddb5ec98c9c6f9a8aa7ec273de8529dbee09e008a3
 nplay nplay 1.8.2 5bd6dc17095648017ccf5922e342574ed596cc845ada78adbc5d5ff312d433d8
@@ -3256,6 +3299,37 @@ nirugame nirugame 0.1.4 96288834f2ca08c08b062f6f28142c079ee6c9c9198b9cdf085143de
 niruremote niruremote 0.2.0 64571f661be436c1fb69b72439f7af69802d87c83ac1652c49b84f0cfd80f784
 nirudictate nirudictate 0.3.0 49d4fa1987ca392e4763f8a1c16551b573c018e9d6a1cda7029c3bdeebeb77b2
 EOF
+}
+# Extras that left the suite. Each is removed once with the uninstaller of
+# its last pinned source: NIRUORG was replaced by NIRUFM (0.12.317).
+extras_retired_table() {
+  say 'niruorg niruorg 0.6.1 d012b5802fdf1253bb887c50395a2d611cd4958c43cad57650a0752bdefd1138'
+}
+extras_retire() {
+  extras_retired_table | while read -r name repo version expected; do
+    installed=$(extras_installed_version "$name" 2>/dev/null || :)
+    if [ -z "$installed" ]; then
+      extras_unselect "$name" >/dev/null 2>&1 || :
+      continue
+    fi
+    say "$name left the suite (NIRUFM replaces it); removing it with its $version uninstaller."
+    tmp=$(mktemp -d "${TMPDIR:-/tmp}/nirux-extra.XXXXXX") || continue
+    archive=$tmp/$repo.tar.gz
+    if ! fetch "https://github.com/nirucon/$repo/archive/refs/tags/v$version.tar.gz" "$archive" ||
+       [ "$(sha256sum "$archive" | awk '{print $1}')" != "$expected" ] ||
+       ! tar -xzf "$archive" -C "$tmp"; then
+      rm -rf "$tmp"; say "could not fetch the $name uninstaller; it stays installed"; continue
+    fi
+    src=$(find "$tmp" -mindepth 1 -maxdepth 1 -type d | head -n 1)
+    extras_sudo_shim "$tmp"
+    if [ -f "$src/uninstall.sh" ] && ( cd "$src" && extras_consent && PATH="$EXTRAS_SHIM_PATH$HOME/.local/bin:$PATH" bash ./uninstall.sh ); then
+      extras_unselect "$name" >/dev/null 2>&1 || :
+      say "Removed $name."
+    else
+      say "the $name uninstaller failed; it stays installed"
+    fi
+    rm -rf "$tmp"
+  done
 }
 extras_row() {
   extras_table | awk -v n="$1" '$1 == n {print; found=1} END {exit found ? 0 : 1}'
@@ -3431,6 +3505,7 @@ extras_install() {
   for name in "$@"; do extras_install_one "$name"; done
 }
 extras_update() {
+  extras_retire
   [ -f "$EXTRAS_SELECTED" ] || die 'no extras selected'
   # Vendor installers may write their config and keys.d entries, so a round
   # that installs anything starts with a snapshot.
@@ -4809,6 +4884,7 @@ stage_component_assets() {
     niruwm) release_files niruwm "$component_version" niruwm niructl niruidle niruwm-session niruclipboard nirugestured ;;
     nirulock) release_files nirulock "$component_version" nirulock pam-arch pam-debian pam-void ;;
     nirudemo) release_files nirudemo "$component_version" nirudemo nirudemo-music.tar ;;
+    nirufm) release_files nirufm "$component_version" nirufm nirufm.desktop nirufm.svg ;;
     nirux) : ;;
     *) release_files "$component" "$component_version" "$component" ;;
   esac
@@ -5016,6 +5092,8 @@ apply_target_release() {
   install_sleep_hook
   install_login_wallpaper_rule
   install_wallpaper_app
+  install_file_manager_app
+  file_manager_default
   install_display_app
   install_theme_selector_app
   register_session
@@ -6631,6 +6709,32 @@ remove_wallpaper_app() {
   # happens to be empty would delete a system directory NIRUX never owned, and
   # the hicolor theme is shared with every other application.
 }
+# NIRUFM, the file manager: its entry and pixel icon come with its release.
+install_file_manager_app() {
+  fm_dir=$WORK/download/nirufm
+  [ -f "$fm_dir/nirufm.desktop" ] || return 0
+  [ -f "$fm_dir/nirufm.svg" ] || return 0
+  { say "# NIRUX owner: $PREFIX"; sed "s|^Exec=nirufm |Exec=$BIN/nirufm |" "$fm_dir/nirufm.desktop"; } > "$WORK/nirufm.desktop"
+  write_system "$ROOT/usr/share/applications/nirufm.desktop" "$WORK/nirufm.desktop"
+  # The icon is installed byte for byte; its ownership is recorded beside it.
+  write_binary "$ROOT/usr/share/icons/hicolor/scalable/apps/nirufm.svg" "$fm_dir/nirufm.svg"
+}
+remove_file_manager_app() {
+  remove_system "$ROOT/usr/share/applications/nirufm.desktop"
+  remove_binary "$ROOT/usr/share/icons/hicolor/scalable/apps/nirufm.svg"
+}
+# Folders opened by other programs ("show in folder", xdg-open DIR) go to
+# NIRUFM, unless the user chose a file manager other than the old pcmanfm.
+file_manager_default() {
+  [ -x "$BIN/nirufm" ] || return 0
+  command -v xdg-mime >/dev/null 2>&1 || return 0
+  fm_now=$(xdg-mime query default inode/directory 2>/dev/null || :)
+  case "$fm_now" in
+    nirufm.desktop) return 0 ;;
+    ''|pcmanfm*.desktop) xdg-mime default nirufm.desktop inode/directory 2>/dev/null || : ;;
+    *) return 0 ;;
+  esac
+}
 # NIRU Display is the graphical monitor editor. Its entry and icon travel with
 # the component release so they cannot drift from the binary's version.
 install_display_app() {
@@ -7887,6 +7991,7 @@ uninstall() {
   fi
   remove_system "$ROOT/usr/share/xsessions/niruwm.desktop"
   remove_wallpaper_app
+  remove_file_manager_app
   remove_display_app
   remove_theme_selector_app
   remove_system "$ROOT/etc/pam.d/nirulock"
@@ -8160,6 +8265,8 @@ install_or_update() {
   install_sleep_hook
   install_login_wallpaper_rule
   install_wallpaper_app
+  install_file_manager_app
+  file_manager_default
   install_display_app
   install_theme_selector_app
   register_session
