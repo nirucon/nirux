@@ -2,6 +2,12 @@
 
 Earlier releases are described in their release notes and commit messages.
 
+## 0.12.322 (2026-11-22)
+
+- **Folders open in NIRUFM after NIRUORG too.** A machine where NIRUORG was
+  the file manager for folders kept pointing at it after it was removed; it
+  is now replaced by NIRUFM like pcmanfm. Another chosen file manager stays.
+
 ## 0.12.321 (2026-11-22)
 
 - **Super+Shift+F moves to NIRUFM on the first update.** The binding was

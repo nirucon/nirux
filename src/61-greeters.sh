@@ -337,14 +337,15 @@ remove_terminal_app() {
   remove_binary "$ROOT/usr/share/icons/hicolor/scalable/apps/niruterm.svg"
 }
 # Folders opened by other programs ("show in folder", xdg-open DIR) go to
-# NIRUFM, unless the user chose a file manager other than the old pcmanfm.
+# NIRUFM, unless the user chose a file manager other than pcmanfm or NIRUORG,
+# the two it replaced.
 file_manager_default() {
   [ -x "$BIN/nirufm" ] || return 0
   command -v xdg-mime >/dev/null 2>&1 || return 0
   fm_now=$(xdg-mime query default inode/directory 2>/dev/null || :)
   case "$fm_now" in
     nirufm.desktop) return 0 ;;
-    ''|pcmanfm*.desktop) xdg-mime default nirufm.desktop inode/directory 2>/dev/null || : ;;
+    ''|pcmanfm*.desktop|niruorg*.desktop) xdg-mime default nirufm.desktop inode/directory 2>/dev/null || : ;;
     *) return 0 ;;
   esac
 }
