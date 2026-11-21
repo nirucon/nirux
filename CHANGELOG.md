@@ -2,6 +2,14 @@
 
 Earlier releases are described in their release notes and commit messages.
 
+## 0.12.318 (2026-11-21)
+
+- **The nightly update keeps a release that needs a new package.** A package
+  the release asks for but the root-owned list does not have yet waits for
+  `nirux update` in a terminal; the doctor no longer counts it as a new
+  problem, which rolled 0.12.317 (NIRUFM's thumbnail and PDF packages) back
+  every night.
+
 ## 0.12.317 (2026-11-21)
 
 - **NIRUFM, the new file manager (NIRUFM 0.2.0).** `Super+Shift+F` opens

@@ -419,7 +419,20 @@ run() {
 
   # 3. Worse than before: go back.
   doctor_failures "$WORK/doctor-before" > "$WORK/fail-before"
-  doctor_failures "$WORK/doctor-after" > "$WORK/fail-after"
+  # Packages a new release needs but this run may not install (they are not
+  # in the root-owned list yet) are waiting for `nirux update`, not broken:
+  # counting them would roll every release with a new package back each night.
+  doctor_failures "$WORK/doctor-after" |
+    awk -v refused=" ${refused:-} " '
+      /^missing packages: / {
+        out = ""
+        n = split(substr($0, 19), words, " ")
+        for (i = 1; i <= n; i++) if (index(refused, " " words[i] " ") == 0) out = out " " words[i]
+        if (out == "") next
+        print "missing packages:" out
+        next
+      }
+      { print }' > "$WORK/fail-after"
   new_fail=$(LC_ALL=C comm -13 "$WORK/fail-before" "$WORK/fail-after" | head -n 5)
   if [ -n "$new_fail" ]; then
     warn Doctor "new problems after the update: $(printf '%s' "$new_fail" | tr '\n' ';')"

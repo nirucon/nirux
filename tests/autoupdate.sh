@@ -152,6 +152,20 @@ grep -Eqx 'nirux restore [0-9]{8}-[0-9]{6}-0\.12\.268-to-99\.0\.0-[0-9]+ --yes' 
 grep -q 'secret-token' "$T/curl-config" || fail 'the warning was not posted'
 if grep '^curl' "$T/calls" | grep -q 'secret-token'; then fail 'the webhook URL appeared in curl arguments'; fi
 rm -f "$T/doctor-after"
+# A package the release needs but the allowlist does not have yet waits for
+# `nirux update`: the update stays, it is not rolled back (0.12.317).
+rm -f "$st/last-day" "$T/updated"
+echo 0.12.268 > "$T/version"
+printf 'missing packages: not-listed
+' > "$T/doctor-after"
+printf 'not-listed
+' > "$T/want"
+: > "$T/calls"
+out=$(sh "$HELPER" run)
+printf '%s
+' "$out" | grep -q 'restored' && fail "a package waiting for nirux update rolled the update back: $out"
+grep -qx 'nirux rollback' "$T/calls" && fail 'rolled back for a package waiting for nirux update'
+rm -f "$T/doctor-after" "$H/.local/share/nirux/wanted-packages" "$R/etc/nirux/checkup-webhook.posted" 2>/dev/null
 # Without warnings, discord=warnings posts nothing.
 rm -f "$st/last-day" "$T/curl-config"
 out=$(sh "$HELPER" run)
