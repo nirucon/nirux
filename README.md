@@ -62,6 +62,7 @@ verified generation, at the versions pinned in [manifest](manifest).
 | [niruwm](https://github.com/nirucon/niruwm) | Tiling window manager, workspaces, `niructl`, `niruidle`, clipboard and gesture helpers | beta |
 | [nirubar](https://github.com/nirucon/nirubar) | Per-monitor status bar, panels, Quick Settings, tray, Tailscale and tasks | beta |
 | [nirulauncher](https://github.com/nirucon/nirulauncher) | Applications, windows, clipboard, settings and NIRU Actions | beta |
+| [niruterm](https://github.com/nirucon/niruterm) | Terminal with pictures and the NIRUX theme, and NIRUPROMPT (prompt styles, aliases, history for bash and fish) | beta |
 | [nirufm](https://github.com/nirucon/nirufm) | File manager: views, gallery, search, two panes, drives, servers and Nextcloud links (`Super+Shift+F`) | beta |
 | [nirunotify](https://github.com/nirucon/nirunotify) | Notification service, Do Not Disturb, history, hardware OSD and event sounds | beta |
 | [nirulock](https://github.com/nirucon/nirulock) | PAM lock screen with themed CAVA visualizer or quotes | beta |

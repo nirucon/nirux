@@ -322,6 +322,20 @@ remove_file_manager_app() {
   remove_system "$ROOT/usr/share/applications/nirufm.desktop"
   remove_binary "$ROOT/usr/share/icons/hicolor/scalable/apps/nirufm.svg"
 }
+# NIRUTERM, the terminal: entry and pixel icon from its release. kitty stays
+# the terminal of Super+Enter until the owner switches.
+install_terminal_app() {
+  term_dir=$WORK/download/niruterm
+  [ -f "$term_dir/niruterm.desktop" ] || return 0
+  [ -f "$term_dir/niruterm.svg" ] || return 0
+  { say "# NIRUX owner: $PREFIX"; sed "s|^Exec=niruterm$|Exec=$BIN/niruterm|" "$term_dir/niruterm.desktop"; } > "$WORK/niruterm.desktop"
+  write_system "$ROOT/usr/share/applications/niruterm.desktop" "$WORK/niruterm.desktop"
+  write_binary "$ROOT/usr/share/icons/hicolor/scalable/apps/niruterm.svg" "$term_dir/niruterm.svg"
+}
+remove_terminal_app() {
+  remove_system "$ROOT/usr/share/applications/niruterm.desktop"
+  remove_binary "$ROOT/usr/share/icons/hicolor/scalable/apps/niruterm.svg"
+}
 # Folders opened by other programs ("show in folder", xdg-open DIR) go to
 # NIRUFM, unless the user chose a file manager other than the old pcmanfm.
 file_manager_default() {

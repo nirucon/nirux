@@ -6,6 +6,7 @@ manifest_version() {
 component_files() {
   case "$1" in
     niruwm) say "niruwm niructl niruidle niruwm-session niruclipboard nirugestured" ;;
+    niruterm) say "niruterm niruprompt" ;;
     *) say "$1" ;;
   esac
 }
@@ -17,6 +18,7 @@ stage_component_assets() {
     nirulock) release_files nirulock "$component_version" nirulock pam-arch pam-debian pam-void ;;
     nirudemo) release_files nirudemo "$component_version" nirudemo nirudemo-music.tar ;;
     nirufm) release_files nirufm "$component_version" nirufm nirufm.desktop nirufm.svg ;;
+    niruterm) release_files niruterm "$component_version" niruterm niruprompt niruterm.desktop niruterm.svg ;;
     nirux) : ;;
     *) release_files "$component" "$component_version" "$component" ;;
   esac
@@ -226,6 +228,7 @@ apply_target_release() {
   install_wallpaper_app
   install_file_manager_app
   file_manager_default
+  install_terminal_app
   install_display_app
   install_theme_selector_app
   register_session

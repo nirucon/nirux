@@ -165,6 +165,24 @@ hundredths of a second, uses about 15 MB of memory and follows the theme. Press
 
 Folders that other programs open ("show in folder") open in NIRUFM too.
 
+## The terminal: NIRUTERM and NIRUPROMPT
+
+`Super+Enter` opens kitty. **NIRUTERM**, the NIRUX terminal, is installed
+beside it (NIRUTERM in the launcher, or `niruterm`): it opens in about 40 ms,
+uses 12 to 25 MB, follows the theme live and shows pictures with
+`niruterm icat FILE` (or `icat FILE`). Ctrl+Shift+C and Ctrl+Shift+V copy and
+paste, Ctrl+Shift+N opens a window in the same folder, Ctrl+click opens a
+link.
+
+**NIRUPROMPT** draws the fish prompt and works in bash too:
+
+```sh
+niruprompt styles                 # preview: nirux, runes, ascii, powerline, minimal, c64
+niruprompt style runes            # choose one
+niruprompt alias add gs git status   # an alias for bash and fish
+niruprompt install bash           # the prompt, aliases and a large shared history in bash
+```
+
 ## Read this manual
 
 ```sh

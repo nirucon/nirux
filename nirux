@@ -2,7 +2,7 @@
 # NIRUX: install a complete X11 desktop, or maintain an existing installation.
 set -eu
 
-VERSION=0.12.319
+VERSION=0.12.320
 PREFIX=${NIRUX_PREFIX:-$HOME/.local}
 BIN=$PREFIX/bin
 STATE=$PREFIX/share/nirux
@@ -11,7 +11,7 @@ NIRUX_CONFIG=${XDG_CONFIG_HOME:-$HOME/.config}/nirux
 SOUNDS_STATE=$STATE/sounds
 SOUNDS_CONFIG=$NIRUX_CONFIG/sounds.toml
 ROOT=${NIRUX_SYSTEM_ROOT:-}
-PROGRAMS="niruwm niructl niruidle nirubar niruscreensaver nirulock nirulauncher nirunotify nirushot niruclip nirufetch niruwebapp niruwallpaper nirudisplay niruthemeselector niruwm-session niruclipboard nirugestured nirulogin nirushare niruio nirusplash nirusleep nirudemo nirufm nirux"
+PROGRAMS="niruwm niructl niruidle nirubar niruscreensaver nirulock nirulauncher nirunotify nirushot niruclip nirufetch niruwebapp niruwallpaper nirudisplay niruthemeselector niruwm-session niruclipboard nirugestured nirulogin nirushare niruio nirusplash nirusleep nirudemo nirufm niruterm niruprompt nirux"
 WORK=
 POLICY_TARGET=
 POLICY_BACKUP=
@@ -4874,6 +4874,7 @@ manifest_version() {
 component_files() {
   case "$1" in
     niruwm) say "niruwm niructl niruidle niruwm-session niruclipboard nirugestured" ;;
+    niruterm) say "niruterm niruprompt" ;;
     *) say "$1" ;;
   esac
 }
@@ -4885,6 +4886,7 @@ stage_component_assets() {
     nirulock) release_files nirulock "$component_version" nirulock pam-arch pam-debian pam-void ;;
     nirudemo) release_files nirudemo "$component_version" nirudemo nirudemo-music.tar ;;
     nirufm) release_files nirufm "$component_version" nirufm nirufm.desktop nirufm.svg ;;
+    niruterm) release_files niruterm "$component_version" niruterm niruprompt niruterm.desktop niruterm.svg ;;
     nirux) : ;;
     *) release_files "$component" "$component_version" "$component" ;;
   esac
@@ -5094,6 +5096,7 @@ apply_target_release() {
   install_wallpaper_app
   install_file_manager_app
   file_manager_default
+  install_terminal_app
   install_display_app
   install_theme_selector_app
   register_session
@@ -6723,6 +6726,20 @@ remove_file_manager_app() {
   remove_system "$ROOT/usr/share/applications/nirufm.desktop"
   remove_binary "$ROOT/usr/share/icons/hicolor/scalable/apps/nirufm.svg"
 }
+# NIRUTERM, the terminal: entry and pixel icon from its release. kitty stays
+# the terminal of Super+Enter until the owner switches.
+install_terminal_app() {
+  term_dir=$WORK/download/niruterm
+  [ -f "$term_dir/niruterm.desktop" ] || return 0
+  [ -f "$term_dir/niruterm.svg" ] || return 0
+  { say "# NIRUX owner: $PREFIX"; sed "s|^Exec=niruterm$|Exec=$BIN/niruterm|" "$term_dir/niruterm.desktop"; } > "$WORK/niruterm.desktop"
+  write_system "$ROOT/usr/share/applications/niruterm.desktop" "$WORK/niruterm.desktop"
+  write_binary "$ROOT/usr/share/icons/hicolor/scalable/apps/niruterm.svg" "$term_dir/niruterm.svg"
+}
+remove_terminal_app() {
+  remove_system "$ROOT/usr/share/applications/niruterm.desktop"
+  remove_binary "$ROOT/usr/share/icons/hicolor/scalable/apps/niruterm.svg"
+}
 # Folders opened by other programs ("show in folder", xdg-open DIR) go to
 # NIRUFM, unless the user chose a file manager other than the old pcmanfm.
 file_manager_default() {
@@ -7992,6 +8009,7 @@ uninstall() {
   remove_system "$ROOT/usr/share/xsessions/niruwm.desktop"
   remove_wallpaper_app
   remove_file_manager_app
+  remove_terminal_app
   remove_display_app
   remove_theme_selector_app
   remove_system "$ROOT/etc/pam.d/nirulock"
@@ -8267,6 +8285,7 @@ install_or_update() {
   install_wallpaper_app
   install_file_manager_app
   file_manager_default
+  install_terminal_app
   install_display_app
   install_theme_selector_app
   register_session

@@ -69,6 +69,7 @@ uninstall() {
   remove_system "$ROOT/usr/share/xsessions/niruwm.desktop"
   remove_wallpaper_app
   remove_file_manager_app
+  remove_terminal_app
   remove_display_app
   remove_theme_selector_app
   remove_system "$ROOT/etc/pam.d/nirulock"
@@ -344,6 +345,7 @@ install_or_update() {
   install_wallpaper_app
   install_file_manager_app
   file_manager_default
+  install_terminal_app
   install_display_app
   install_theme_selector_app
   register_session

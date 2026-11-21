@@ -2,6 +2,20 @@
 
 Earlier releases are described in their release notes and commit messages.
 
+## 0.12.320 (2026-11-21)
+
+- **NIRUTERM 0.1.0, the NIRUX terminal.** Installed beside kitty, which
+  stays on `Super+Enter` for now: NIRUTERM in the launcher or `niruterm`.
+  It opens in about 40 ms, uses 12 to 25 MB, follows the theme live, draws
+  box lines as exact pixels and shows pictures (`niruterm icat FILE`, the
+  kitty graphics protocol).
+- **NIRUPROMPT:** the fish prompt now comes from `niruprompt` when it is
+  installed, with the same layout as before plus styles (`niruprompt styles`,
+  `niruprompt style runes`), aliases for bash and fish from
+  `~/.config/nirux/aliases.toml`, and `niruprompt install bash` for the
+  prompt and a large shared history in bash.
+- **NIRUFM 0.2.2:** going between Recent and Home shows each one.
+
 ## 0.12.319 (2026-11-21)
 
 - **NIRUFM 0.2.1:** Recent marks its own row in the side panel instead of

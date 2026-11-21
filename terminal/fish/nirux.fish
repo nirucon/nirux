@@ -54,6 +54,13 @@ function fish_prompt
     set_color normal
 end
 
+# NIRUPROMPT (from NIRUTERM) draws the prompt when it is installed: the same
+# layout, plus the styles of `niruprompt style` and the aliases of
+# ~/.config/nirux/aliases.toml as abbreviations.
+if status is-interactive; and command -sq niruprompt
+    niruprompt init fish | source
+end
+
 # Ctrl+F accepts the current autosuggestion, as in the NIRU dotfiles.
 if status is-interactive
     bind \cf accept-autosuggestion 2>/dev/null
