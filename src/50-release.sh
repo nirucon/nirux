@@ -15,6 +15,7 @@ stage_component_assets() {
   case "$component" in
     niruwm) release_files niruwm "$component_version" niruwm niructl niruidle niruwm-session niruclipboard nirugestured ;;
     nirulock) release_files nirulock "$component_version" nirulock pam-arch pam-debian pam-void ;;
+    nirudemo) release_files nirudemo "$component_version" nirudemo nirudemo-music.tar ;;
     nirux) : ;;
     *) release_files "$component" "$component_version" "$component" ;;
   esac
@@ -208,6 +209,7 @@ apply_target_release() {
   icons_apply
   install_terminal
   install_sounds
+  install_music
   prepare_pam
   install_greeters "$DM"
   boot_look_apply

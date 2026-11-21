@@ -33,6 +33,7 @@ share_version=$(awk '$1 == "nirushare" {print $2}' "$SOURCE/manifest")
 io_version=$(awk '$1 == "niruio" {print $2}' "$SOURCE/manifest")
 splash_version=$(awk '$1 == "nirusplash" {print $2}' "$SOURCE/manifest")
 sleep_version=$(awk '$1 == "nirusleep" {print $2}' "$SOURCE/manifest")
+demo_version=$(awk '$1 == "nirudemo" {print $2}' "$SOURCE/manifest")
 FIXTURE=$TEST/releases
 fail() { printf 'FAIL: %s\n' "$*" >&2; exit 1; }
 no_config_candidates() {
@@ -146,6 +147,12 @@ fixture nirufetch "$fetch_version" nirufetch
 fixture niruio "$io_version" niruio
 fixture nirusplash "$splash_version" nirusplash
 fixture nirusleep "$sleep_version" nirusleep
+fixture nirudemo "$demo_version" nirudemo
+# The NIRUX music: two placeholder songs in the archive layout NIRUDEMO ships.
+mkdir -p "$TEST/music-build/music"
+printf 'OggS' > "$TEST/music-build/music/nirux-1-ginnungagap.ogg"
+printf 'OggS' > "$TEST/music-build/music/nirux-2-yggdrasil.ogg"
+tar -cf "$FIXTURE/nirudemo/$demo_version/nirudemo-music.tar" -C "$TEST/music-build" music
 fixture niruwebapp "$webapp_version" niruwebapp
 # Record what the installer asks of niruwebapp.
 say 'printf "%s\n" "$*" >> "$HOME/niruwebapp-calls"' >> "$FIXTURE/niruwebapp/$webapp_version/niruwebapp"
@@ -161,7 +168,7 @@ for os in arch void; do
   printf 'auth include system-auth\naccount include system-auth\n' > "$FIXTURE/nirulock/$lock_version/pam-$os"
 done
 printf 'auth include common-auth\naccount include common-account\n' > "$FIXTURE/nirulock/$lock_version/pam-debian"
-for item in "niruwm/$wm_version" "nirubar/$bar_version" "niruscreensaver/$saver_version" "nirulock/$lock_version" "nirulauncher/$launcher_version" "nirulogin/$login_version" "nirushare/$share_version" "nirunotify/$notifier_version" "nirushot/$shot_version" "niruclip/$clip_version" "nirufetch/$fetch_version" "niruio/$io_version" "nirusplash/$splash_version" "nirusleep/$sleep_version" "niruwebapp/$webapp_version" "niruwallpaper/$wallpaper_app_version" "nirudisplay/$display_app_version" "niruthemeselector/$theme_selector_version"; do checksums "$FIXTURE/$item"; done
+for item in "niruwm/$wm_version" "nirubar/$bar_version" "niruscreensaver/$saver_version" "nirulock/$lock_version" "nirulauncher/$launcher_version" "nirulogin/$login_version" "nirushare/$share_version" "nirunotify/$notifier_version" "nirushot/$shot_version" "niruclip/$clip_version" "nirufetch/$fetch_version" "niruio/$io_version" "nirusplash/$splash_version" "nirusleep/$sleep_version" "nirudemo/$demo_version" "niruwebapp/$webapp_version" "niruwallpaper/$wallpaper_app_version" "nirudisplay/$display_app_version" "niruthemeselector/$theme_selector_version"; do checksums "$FIXTURE/$item"; done
 # 99.0.0 is a synthetic second release, never a real network dependency.
 for release in "$VERSION" 99.0.0; do
   mkdir -p "$FIXTURE/nirux/$release"
@@ -617,6 +624,8 @@ for TEST_OS in arch debian void; do
   touch "$ROOT/etc/pam.d/system-auth" "$ROOT/etc/pam.d/common-auth" "$ROOT/etc/pam.d/common-account"
   operation install_or_update install --no-packages --browser none --display-manager startx --release "$VERSION"
   [ -x "$ROOT/usr/libexec/nirux-wifi" ] || fail 'restricted Wi-Fi helper was not installed'
+  [ -f "$STATE/music/nirux-1-ginnungagap.ogg" ] && [ -f "$STATE/music/nirux-2-yggdrasil.ogg" ] || fail "$TEST_OS: the NIRUX music was not installed"
+  [ -L "$BIN/nirudemo" ] || fail "$TEST_OS: nirudemo is not linked"
   # K7/K8: the nightly update helper, its settings, the fixed sudoers rule,
   # its schedule on this init system, and the root sleep hook.
   [ -x "$ROOT/usr/libexec/nirux-autoupdate" ] || fail "$TEST_OS: nightly update helper was not installed"

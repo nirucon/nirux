@@ -945,6 +945,32 @@ install_sounds() {
   rm -rf "$sounds_unpack"
 }
 
+# The NIRUX music from NIRUDEMO (nirudemo-music.tar): nirux-N-key.ogg in
+# ~/.local/share/nirux/music, the default pause music of NIRULOCK and the
+# NIRUSCREENSAVER music scenes, and the soundtracks of the demos. Only the
+# nirux-*.ogg files are managed: other files a user puts there stay, and a
+# song a release no longer ships goes.
+MUSIC_DIR=$STATE/music
+install_music() {
+  music_archive=$WORK/download/nirudemo/nirudemo-music.tar
+  [ -f "$music_archive" ] || return 0
+  [ -n "${HOME:-}" ] || return 0
+  music_unpack=$WORK/music-unpack
+  rm -rf "$music_unpack"
+  mkdir -p "$music_unpack" || die 'could not create the music extraction directory'
+  tar -xf "$music_archive" -C "$music_unpack" || die 'could not extract the music archive'
+  set -- "$music_unpack"/music/nirux-*.ogg
+  [ -f "$1" ] || die 'the music archive is incomplete'
+  mkdir -p "$MUSIC_DIR"
+  for music_old in "$MUSIC_DIR"/nirux-*.ogg; do
+    [ -f "$music_old" ] || continue
+    [ -f "$music_unpack/music/${music_old##*/}" ] || rm -f "$music_old"
+  done
+  cp -f "$music_unpack"/music/nirux-*.ogg "$MUSIC_DIR"/ || die 'could not install the music'
+  chmod 644 "$MUSIC_DIR"/nirux-*.ogg
+  rm -rf "$music_unpack"
+}
+
 install_terminal() {
   terminal_archive=$WORK/download/nirux/nirux-terminal.tar.xz
   [ -f "$terminal_archive" ] || return 0

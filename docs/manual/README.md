@@ -18,7 +18,7 @@ from the launcher's Manual view. In NIRUNOTE, `Ctrl+G` goes to a heading.
 | 3 | [Workspaces, monitors and scratchpads](03-workspaces-monitors-scratchpads.md) | Workspaces per monitor, moving windows, the scratchpads |
 | 4 | [The bar and Quick Settings](04-bar-and-quick-settings.md) | Bar modules, Quick Settings, calendar, tray |
 | 5 | [The launcher](05-launcher.md) | Apps, NIRU Actions, files, emoji, calculator, web search, clipboard, settings views |
-| 6 | [Lock screen and screensaver](06-lock-and-screensaver.md) | Lock, idle timers, CAVA, quotes, SID pause music |
+| 6 | [Lock screen and screensaver](06-lock-and-screensaver.md) | Lock, idle timers, CAVA, quotes, pause music, the NIRUX demo |
 | 7 | [Screenshots and recording](07-screenshots-and-recording.md) | NIRUSHOT, OCR, the color picker, NIRUCLIP recording |
 | 8 | [Themes and wallpapers](08-themes-and-wallpapers.md) | Themes, theme packs, appearance, wallpapers, login wallpaper |
 | 9 | [Displays and profiles](09-displays.md) | NIRU Display, profiles, automatic switching, rotation, night light |

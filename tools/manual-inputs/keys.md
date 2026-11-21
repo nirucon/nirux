@@ -12,6 +12,7 @@
 | `Super+Shift+A` | Sound, microphones and cameras (NIRUIO) |
 | `Super+Shift+B` / `Super+Shift+M` / `Super+Shift+P` / `Super+Shift+Q` / `Super+Ctrl+T` | Unified launcher: apps, windows, actions and settings |
 | `Alt+Tab` / `` Super+` `` / `Super+W` | Window switcher |
+| `Super+Alt+D` | Play the NIRUX demo (any key ends it) |
 | `Super+Enter` | Open a terminal |
 | `Super+Shift+Enter` | Open the alternative terminal |
 | `Super+B` | Open the web browser |
@@ -30,6 +31,7 @@
 | `Super+N` | Night light on or off |
 | `Super+Shift+D` | Do Not Disturb on or off |
 | `Super+Shift+C` | Keep the screen awake on or off |
+| `Super+Alt+Z` | Start the screensaver now |
 | `Super+Shift+W` | Save the open windows as the session |
 | `Super+Escape` | Lock the screen |
 | `Super+Ctrl+Shift+Q` | Log out (end the session) |

@@ -75,22 +75,22 @@ These are not generated from an example file. The chapters describe them.
 
 <!-- generated: config (tools/manual-gen.sh; do not edit by hand) -->
 
-The example configuration files of NIRUX 0.12.312 and its components, with every
+The example configuration files of NIRUX 0.12.313 and its components, with every
 key they set or show. A value marked *commented example* is off by default:
 remove the `#` to use it. The full annotated file follows each table.
 
 | File | Read by | Example from |
 |---|---|---|
-| [`~/.config/niruwm/config.toml`](#configniruwmconfigtoml) | niruwm, nirubar, niruidle, niructl | nirux 0.12.312 `config.example.toml` |
-| [`~/.config/niruwm/appearance.toml`](#configniruwmappearancetoml) | the whole suite | nirux 0.12.312 `appearance.example.toml` |
-| [`~/.config/nirux/sounds.toml`](#configniruxsoundstoml) | nirux, nirunotify | nirux 0.12.312 `sounds.example.toml` |
-| [`~/.config/niruwm/displays.toml`](#configniruwmdisplaystoml) | niruwm, niructl, nirudisplay | nirux 0.12.312 `displays.example.toml` |
+| [`~/.config/niruwm/config.toml`](#configniruwmconfigtoml) | niruwm, nirubar, niruidle, niructl | nirux 0.12.313 `config.example.toml` |
+| [`~/.config/niruwm/appearance.toml`](#configniruwmappearancetoml) | the whole suite | nirux 0.12.313 `appearance.example.toml` |
+| [`~/.config/nirux/sounds.toml`](#configniruxsoundstoml) | nirux, nirunotify | nirux 0.12.313 `sounds.example.toml` |
+| [`~/.config/niruwm/displays.toml`](#configniruwmdisplaystoml) | niruwm, niructl, nirudisplay | nirux 0.12.313 `displays.example.toml` |
 | [`~/.config/nirubar/config.toml`](#confignirubarconfigtoml) | nirubar | nirubar 0.31.0 `weather.example.toml` |
-| [`~/.config/nirulauncher/config.toml`](#confignirulauncherconfigtoml) | nirulauncher | nirulauncher 0.17.0 `config.example.toml` |
+| [`~/.config/nirulauncher/config.toml`](#confignirulauncherconfigtoml) | nirulauncher | nirulauncher 0.18.0 `config.example.toml` |
 | [`~/.config/nirunotify/config.toml`](#confignirunotifyconfigtoml) | nirunotify | nirunotify 0.9.0 `config.example.toml` |
 | [`~/.config/nirufetch/config.toml`](#confignirufetchconfigtoml) | nirufetch | nirufetch 0.3.0 `config.example.toml` |
-| [`~/.config/niruui/lock.toml`](#configniruuilocktoml) | nirulock | nirulock 0.28.0 `config.example.toml` |
-| [`~/.config/niruui/screensaver.toml`](#configniruuiscreensavertoml) | niruscreensaver | niruscreensaver 0.17.1 `config.example.toml` |
+| [`~/.config/niruui/lock.toml`](#configniruuilocktoml) | nirulock | nirulock 0.29.0 `config.example.toml` |
+| [`~/.config/niruui/screensaver.toml`](#configniruuiscreensavertoml) | niruscreensaver | niruscreensaver 0.18.0 `config.example.toml` |
 | [`~/.config/nirushare/webhooks.toml`](#confignirusharewebhookstoml) | nirushare | nirushare 0.4.0 `webhooks.example.toml` |
 
 ### ~/.config/niruwm/config.toml
@@ -1804,7 +1804,8 @@ palette = true
 | `(top level)` | `show_hostname` | `false` | Show the machine's hostname under the clock. |
 | `(top level)` | `rune_font_path` | `"/usr/share/fonts/truetype/noto/NotoSansRunic-Regular.ttf"` (commented example) | Optional: use a specific runic font. |
 | `[pause_music]` | `enabled` | `false` |  |
-| `[pause_music]` | `folder` | `"~/Music/SID"` | .sid files, searched recursively and played in natural order (1-, 2-, 10-). |
+| `[pause_music]` | `folder` | `"~/Music/SID"` (commented example) | The default is NIRUX's own music (eleven chiptunes in Ogg Vorbis). |
+| `[pause_music]` | `folder` | `"~/.local/share/nirux/music"` |  |
 | `[pause_music]` | `track_seconds` | `180` | DOCUMENTS directory) knows the length. |
 | `[pause_music]` | `stop_on_display_off` | `true` |  |
 | `[pause_music]` | `on` | `["manual"]` | Lock reasons that may play: manual (a key, the launcher, niructl lock in a terminal), idle (NIRUIDLE), suspend (lock before suspend), s... |
@@ -1862,17 +1863,21 @@ show_hostname = false
 # no rune font is available; it never draws missing-glyph boxes.
 # rune_font_path = "/usr/share/fonts/truetype/noto/NotoSansRunic-Regular.ttf"
 
-# Pause music: Commodore 64 SID tunes while the screen is locked. Off by
-# default. Needs sidplayfp. Starts only when no other audio plays in the first
+# Pause music while the screen is locked. Off by default. Starts only when no other audio plays in the first
 # seconds after locking; Esc, unlock, suspend and (by default) the display
 # going off stop it for the rest of the lock. Only plays for the lock reasons
 # in `on` (see `nirulock --help`): by default only when you lock by hand.
 [pause_music]
 enabled = false
-# .sid files, searched recursively and played in natural order (1-, 2-, 10-).
-folder = "~/Music/SID"
-# Seconds per tune, unless the HVSC Songlengths.md5 in the folder (or its
-# DOCUMENTS directory) knows the length.
+# Searched recursively and played in natural order (1-, 2-, 10-), looping.
+# The default is NIRUX's own music (eleven chiptunes in Ogg Vorbis). The folder
+# may hold .sid tunes (played by sidplayfp) and .ogg, .oga, .opus, .flac or
+# .wav files (played by pw-play, ffplay or mpv, whichever is installed first),
+# mixed; a tune without its player is skipped. For your own SID collection:
+# folder = "~/Music/SID"
+folder = "~/.local/share/nirux/music"
+# Seconds per SID tune, unless the HVSC Songlengths.md5 in the folder (or its
+# DOCUMENTS directory) knows the length. Audio files play to their end.
 track_seconds = 180
 stop_on_display_off = true
 # Lock reasons that may play: manual (a key, the launcher, `niructl lock` in a
@@ -1936,14 +1941,17 @@ focus = "5a5a60"
 #               with a small clock; without pictures the clock is shown
 #   "dark"      black, only "NIRUX - A MINIMAL X11 DESKTOP" gliding across
 #               each screen
-#   "dark-sid"  as dark, with C64 SID tunes (sidplayfp, the folder from
-#               NIRULOCK's [pause_music], default ~/Music/SID) while nothing
-#               else plays
+#   "dark-sid"  as dark, with the NIRUX music while nothing else plays: the
+#               folder from NIRULOCK's [pause_music] (lock.toml), default
+#               ~/.local/share/nirux/music (NIRUX's own chiptunes); .sid
+#               tunes and .ogg/.opus/.flac/.wav files
 #   "ascii"     "NIRUX ascii": a large NIRUX banner in ASCII with "A MINIMAL
 #               X11 DESKTOP" under it, centred on every screen in the
 #               theme's accent colour, typed out behind a blinking cursor,
 #               erased and typed again every minute after a short pause
-#   "ascii-sid" as ascii, with C64 SID tunes like dark-sid
+#   "ascii-sid" as ascii, with the music like dark-sid
+#   "demo"      a realtime demoscene demo by NIRUDEMO on each screen,
+#               silent; dark where nirudemo is missing or fails
 #   "shuffle"   one of the scenes in `shuffle`, a new pick every time
 scene = "clock"
 shuffle = ["clock", "photos", "dark"]
@@ -1965,6 +1973,7 @@ visualizer = true
 #            quote from ~/.config/niru/quotes/ (the default)
 #   "cava"   the spectrum alone, as before 0.19 (CAVA runs whenever the display is on)
 #   "quotes" quotes alone; CAVA never starts
+#   "music"  the spectrum while music plays, otherwise nothing
 #   "none"   neither (visualizer = false also means this)
 visual = "auto"
 # Which quote collections (~/.config/niru/quotes/NAME.txt) to show, by name;

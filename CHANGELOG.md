@@ -2,6 +2,23 @@
 
 Earlier releases are described in their release notes and commit messages.
 
+## 0.12.313 (2026-11-21)
+
+- **A NIRUX demo (NIRUDEMO 0.1.0).** `Super+Alt+D`, `demo` in the launcher
+  or `nirux demo` plays "Ginnungagap", a demoscene demo in the theme colours
+  with its own music: stars, a turning N in fog, plasma with a sine scroller
+  and a tunnel. Any key ends it. The launcher has a Demos view
+  (NIRULAUNCHER 0.18.0), and the screensaver a silent `demo` scene
+  (NIRUSCREENSAVER 0.18.0).
+- **The NIRUX music.** Eleven original chiptunes in minor keys, from dark
+  ambient to the C64 sound and calm Satie-like pieces, installed in
+  `~/.local/share/nirux/music` (`nirux-1-ginnungagap` to `nirux-11-gimle`).
+  They are the new default pause music of the lock and the music scenes of
+  the screensaver (NIRULOCK 0.29.0); `folder = "~/Music/SID"` under
+  `[pause_music]` plays your own SID tunes instead.
+- **The screensaver on a key.** `Super+Alt+Z` starts the screensaver now
+  (NIRUWM 0.36.0).
+
 ## 0.12.312 (2026-11-20)
 
 - **Fewer voices, chosen by ear.** The voice now speaks only for battery low

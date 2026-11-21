@@ -49,6 +49,7 @@ normal user, never in a root shell; it asks for sudo itself when it needs it.
 | `nirux webapps [list [SET...]]` | The web app catalogue by set; `*` marks the ones you have (chapter 12) |
 | `nirux webapps add SET\|KEY... [--url URL] [--dry-run]` | Add catalogue web apps (`work`, `ai`, `google`, `proton`, `media`, `other`, `nextcloud`, or single apps) |
 | `nirux webapps check` | Whether the address of each of your web apps still works |
+| `nirux demo [N\|KEY]` | Play a NIRUX demo (`Super+Alt+D`; any key ends it); `nirux demo list` and `nirux demo songs` list the demos and the NIRUX music (chapter 6) |
 | `nirux hibernate [status\|on\|off\|apply\|delay MINUTES\|doctor]` | Sleep that saves to disk: suspend, then hibernate to an encrypted swap file after `[battery] hibernate_after_minutes` (chapter 10) |
 | `nirux fleet pending [apply\|clear [HOST]]` | Settings waiting for an offline machine |
 | `nirux sync status [HOST...] [--files]` | What differs between this machine and the others |
@@ -159,7 +160,7 @@ niructl keys --markdown        # the keys in effect, as Markdown
 
 <!-- generated: niructl (tools/manual-gen.sh; do not edit by hand) -->
 
-Every form `niructl` accepts, from its usage text (NIRUWM 0.35.1). Run `niructl`
+Every form `niructl` accepts, from its usage text (NIRUWM 0.36.0). Run `niructl`
 without arguments to print it.
 
 - `niructl status`

@@ -1,6 +1,6 @@
 # Lock screen and screensaver
 
-NIRULOCK is the PAM lock screen and NIRUSCREENSAVER is the idle screen that comes before it. This chapter covers locking and unlocking, the idle timers, keeping the screen awake, the screensaver scenes, the five layouts, the CAVA spectrum and quotes, and the optional SID pause music.
+NIRULOCK is the PAM lock screen and NIRUSCREENSAVER is the idle screen that comes before it. This chapter covers locking and unlocking, the idle timers, keeping the screen awake, the screensaver scenes, the five layouts, the CAVA spectrum and quotes, the optional pause music (the NIRUX music by default), and the NIRUX demo.
 
 ## Lock the screen
 
@@ -187,10 +187,10 @@ phone lies on the desk, raise `proximity_lock_after`.
 
 ## The screensaver
 
-NIRUSCREENSAVER covers every screen with one of five scenes: by default the date, a large clock, how long you have been away and, while music plays, a CAVA spectrum with the playing track. It is **not a lock**: any key or click dismisses it, and that key or click is swallowed so it never reaches the window underneath. Pointer motion does not dismiss it unless `dismiss_on_motion = true` (after 24 px).
+NIRUSCREENSAVER covers every screen with one of its scenes: by default the date, a large clock, how long you have been away and, while music plays, a CAVA spectrum with the playing track. It is **not a lock**: any key or click dismisses it, and that key or click is swallowed so it never reaches the window underneath. Pointer motion does not dismiss it unless `dismiss_on_motion = true` (after 24 px).
 
 ```sh
-niructl screensaver          # show it now on every monitor
+niructl screensaver          # show it now on every monitor (also Super+Alt+Z)
 niruscreensaver --preview    # show it on one monitor only, to compare settings
 niruscreensaver --preview photos   # preview a scene without choosing it
 niruscreensaver --config     # print the effective settings
@@ -214,12 +214,13 @@ Changes are written to `~/.config/niruui/screensaver.toml` with its comments kep
 | `clock` | Default. The clock in one of the layouts below, with the spectrum or a quote |
 | `photos` | The pictures in `photos_folder` (default `~/Pictures/Wallpapers/NIRU`, the NIRUX wallpapers), each for `photos_seconds`, drifting slowly and crossfading, with a small clock in the corner. Without pictures the clock is shown |
 | `dark` | Black, with only the line "NIRUX - A MINIMAL X11 DESKTOP" gliding slowly across each screen |
-| `dark-sid` | As `dark`, with C64 SID tunes and the tune's title, composer and year under the line |
+| `dark-sid` | As `dark`, with the [pause music](#pause-music) (the NIRUX music by default) and the tune's name under the line |
 | `ascii` | "NIRUX ascii": black, with a large NIRUX banner in ASCII and "A MINIMAL X11 DESKTOP" under it, centred and sized for each screen. The banner takes the theme's accent colour (the text colour when the accent is too dark to read on black). It is typed out one character at a time behind a block cursor that blinks once a second when the text is done; after a minute it is erased backwards, the screen stays black for a few seconds, and it is typed again, shifted a little from the centre (NIRUSCREENSAVER 0.17.1 and later) |
-| `ascii-sid` | As `ascii`, with C64 SID tunes like `dark-sid` and the tune under the text |
+| `ascii-sid` | As `ascii`, with the pause music like `dark-sid` and the tune under the text |
+| `demo` | The [NIRUX demo](#the-nirux-demo-and-music) on every screen, silent and in a loop. Without NIRUDEMO, or when it fails to start, that screen shows `dark` (NIRUSCREENSAVER 0.18.0 and later) |
 | `shuffle` | One of the scenes in `shuffle` (default `clock`, `photos`, `dark`), a new pick every time |
 
-`dark-sid` and `ascii-sid` use the lock's [SID pause music](#sid-pause-music) player and folder (`[pause_music] folder` in `lock.toml`, default `~/Music/SID`; `sidplayfp` must be installed). It starts only when nothing else played during the first 2 seconds. Unlike the lock, it also plays when the screensaver starts by itself after the idle timeout, because choosing `dark-sid` or `ascii-sid` is the choice to play. The music stops when the display goes off, when a key or click ends the screensaver, and when the idle lock takes over.
+`dark-sid` and `ascii-sid` use the lock's [pause music](#pause-music) player and folder (`[pause_music] folder` in `lock.toml`, default the NIRUX music in `~/.local/share/nirux/music`). It starts only when nothing else played during the first 2 seconds. Unlike the lock, it also plays when the screensaver starts by itself after the idle timeout, because choosing `dark-sid` or `ascii-sid` is the choice to play. The music stops when the display goes off, when a key or click ends the screensaver, and when the idle lock takes over.
 
 `photos` reads PNG and JPEG files two folder levels deep; when a wallpaper exists as `-4k` and `-8k`, the 4K one is used. With several monitors every scene draws on each one. `reduced_motion = true` stops the photo drift and crossfade and moves the dark line once a minute instead of gliding; `ascii` then shows the whole text at once, with a still cursor, shifted a little every minute.
 
@@ -288,19 +289,21 @@ All selected quotes go into one shuffled pool: each is shown once before any rep
 
 The old single file `~/.config/niru/quotes.txt` (NIRULOCK 0.19 and NIRUSCREENSAVER 0.11) is ignored if you never edited it; an edited one still counts as the collection `quotes`.
 
-## SID pause music
+## Pause music
 
-NIRULOCK can play Commodore 64 SID tunes while the screen is locked. It is off by default and plays only for the lock reasons you allow (by default only a manual lock), so an idle lock, a suspend or a script never starts music.
+NIRULOCK can play music while the screen is locked. It is off by default and plays only for the lock reasons you allow (by default only a manual lock), so an idle lock, a suspend or a script never starts music.
 
-1. Install `sidplayfp` (Debian and Void: `sidplayfp`; Arch: the AUR package `sidplayfp`). `dbus-monitor` is used to stop the music before suspend.
-2. Put `.sid` files in `~/Music/SID` (searched recursively; none are shipped). An HVSC `Songlengths.md5` in the folder (or its `DOCUMENTS` directory) gives each tune its real length.
-3. Turn it on in `~/.config/niruui/lock.toml`:
+By default it plays the NIRUX music: eleven original chiptunes in minor keys made for NIRUX by [NIRUDEMO](#the-nirux-demo-and-music), installed by NIRUX in `~/.local/share/nirux/music` as `nirux-1-ginnungagap.ogg` to `nirux-11-gimle.ogg` (NIRULOCK 0.29.0 and later; before that the default folder was `~/Music/SID`). They play with `pw-play`, `ffplay` or `mpv`, whichever is installed.
+
+To play your own C64 SID tunes instead, put the `.sid` files in a folder and name it as `folder`, for example `~/Music/SID`. They need `sidplayfp` (Debian and Void: `sidplayfp`; Arch: the AUR package `sidplayfp`). An HVSC `Songlengths.md5` in the folder (or its `DOCUMENTS` directory) gives each tune its real length. A folder may mix `.sid` files with `.ogg`, `.opus`, `.flac` and `.wav` files.
+
+Turn it on in `~/.config/niruui/lock.toml`:
 
 ```toml
 [pause_music]
 enabled = true
-folder = "~/Music/SID"
-track_seconds = 180          # per tune without Songlengths.md5 (5 to 3600)
+# folder = "~/Music/SID"     # your own tunes instead of the NIRUX music
+track_seconds = 180          # per SID tune without Songlengths.md5 (5 to 3600)
 stop_on_display_off = true
 on = ["manual"]              # reasons that play: manual, idle, suspend, script, session, unspecified
 ```
@@ -308,22 +311,39 @@ on = ["manual"]              # reasons that play: manual, idle, suspend, script,
 | Key | Default | Meaning |
 |---|---|---|
 | `enabled` | `false` | Master switch |
-| `folder` | `"~/Music/SID"` | Where the `.sid` files are |
-| `track_seconds` | `180` | Tune length when `Songlengths.md5` does not know it |
+| `folder` | `"~/.local/share/nirux/music"` | Where the tunes are |
+| `track_seconds` | `180` | SID tune length when `Songlengths.md5` does not know it; other files play to their end |
 | `stop_on_display_off` | `true` | Stop when the display goes off |
 | `on` | `["manual"]` | Lock reasons that may play |
 
-Both `enabled = true` and a matching reason in `on` are needed.
+Both `enabled = true` and a matching reason in `on` are needed. `dbus-monitor` is used to stop the music before suspend.
 
 How it behaves:
 
 - It waits 2 seconds after locking (up to 5 while a quiet stream exists) and starts only if no other audio played in that time.
-- Tunes play in natural order (`1-`, `2-`, `10-`) and loop. A line under the clock names the tune (title, author and year from the SID header) and reminds you that `Esc` stops the music.
+- Tunes play in natural order (`1-`, `2-`, `10-`) and loop. A line under the clock names the tune (for the NIRUX music "♪ Ginnungagap · NIRUX 1"; for SID tunes the title, author and year from the SID header) and reminds you that `Esc` stops the music.
 - With the spectrum shown, it visualises the tune.
 - `Escape`, unlocking, suspend and (by default) the display going off stop it for the rest of that lock. After `Escape` the lock returns to quotes.
-- The player is an ordinary `sidplayfp` child with no input: nothing you type reaches it, and it cannot affect authentication.
+- The player is an ordinary child process with no input: nothing you type reaches it, and it cannot affect authentication.
 
 If it does not start, `~/.local/state/nirulock/trace.log` says why (for example "other audio is playing" or "lock reason idle"). `nirulock --config` prints the effective pause music setting.
+
+## The NIRUX demo and music
+
+NIRUDEMO is the NIRUX easter egg: a demoscene demo in the spirit of the home computer and console intros of the 1980s and 1990s, drawn at 320 by 180 pixels and scaled up with sharp pixels, in the colours of the active theme, with its own music.
+
+| Keys / command | Effect |
+|---|---|
+| `Super+Alt+D` | Play the demo on every screen. Any key or click ends it |
+| `demo` in the launcher (`Super+P`) | The same |
+| `demos` in the launcher, or `nirulauncher --demos` | The Demos view: every demo with its length; `Enter` plays one |
+| `nirux demo [N]` | Play demo N (default the first) |
+| `nirux demo list` / `nirux demo songs` | The demos, and the NIRUX music |
+| `scene = "demo"` in `screensaver.toml` | The demo as the screensaver, silent and in a loop |
+
+Demo 1 is **Ginnungagap**: stars out of the void, the title, raster bars, a low-poly N turning over a grid in fog, plasma with a sine scroller, a tunnel and greetings from the machine it runs on. Every demo is named after its song. The music stays off while Do Not Disturb is on, and the demo ends at once if the screen locks.
+
+The NIRUX music (the default pause music above) is eleven pieces, each about two minutes: Ginnungagap, Yggdrasil, Hel, Fimbulvetr, Mimir, Surtr, Norns, Nidhogg, Vanaheim, Ragnarok and Gimle. They are in minor keys, between dark ambient, the C64 sound (fast arpeggios, pulse bass, vibrato and echo) and calm pieces in the spirit of Erik Satie. Any music player plays the files in `~/.local/share/nirux/music`.
 
 ## Lock settings
 
@@ -385,7 +405,7 @@ The next lock uses the new layout; nothing needs a restart.
 
 | Key | Default | Meaning |
 |---|---|---|
-| `scene` | `"clock"` | `clock`, `photos`, `dark`, `dark-sid`, `ascii`, `ascii-sid` or `shuffle`; see [Choose a scene](#choose-a-scene) |
+| `scene` | `"clock"` | `clock`, `photos`, `dark`, `dark-sid`, `ascii`, `ascii-sid`, `demo` or `shuffle`; see [Choose a scene](#choose-a-scene) |
 | `shuffle` | `["clock", "photos", "dark"]` | The scenes `shuffle` picks from |
 | `photos_folder` | `"~/Pictures/Wallpapers/NIRU"` | Pictures for `photos` |
 | `photos_seconds` | `20` | Seconds per photo, 5 to 3600 |

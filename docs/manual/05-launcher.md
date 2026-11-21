@@ -232,7 +232,7 @@ Each settings view is a front end over the same `niructl`, `nirux` and system pr
 | Option | View |
 |---|---|
 | `--quick` | Quick Settings (see [04-bar-and-quick-settings.md](04-bar-and-quick-settings.md)) |
-| `--settings` | NIRUX Settings: Appearance and themes, Wallpaper, Displays, Audio, Keybindings, Input devices, Idle and lock timing, Bar, Screensaver, Wi-Fi |
+| `--settings` | NIRUX Settings: Appearance and themes, Wallpaper, Displays, Audio, Keybindings, Input devices, Idle and lock timing, Bar, Screensaver, Demos, Wi-Fi |
 | `--wifi` | Wi-Fi: radio, connected network, saved and scanned networks. `Enter` connects or disconnects, `Ctrl+R` rescans. Passwords are typed into the launcher and never put in a command line or log |
 | `--wired` | Wired Ethernet: link, address, speed; connect or disconnect one interface (NetworkManager), read-only otherwise |
 | `--bluetooth` | Bluetooth devices and power |
@@ -246,6 +246,7 @@ Each settings view is a front end over the same `niructl`, `nirux` and system pr
 | `--input` | Keyboard layout and repeat, pointer settings, reset |
 | `--bar` | The bar's modules, on the bar first and in their order, then the rest. `Enter` turns a module on or off, `Alt+Up` and `Alt+Down` move it. Rows below switch position, icons, window title, date, time, tray and panels, and put the NIRUX default list back. See [Arranging the bar](04-bar-and-quick-settings.md#arranging-the-bar) |
 | `--screensaver` | The screensaver's scenes, the chosen one first with a Preview row; `Enter` chooses another. Rows below choose what shuffle may pick and step through the clock layout, clock panel, track line, seconds per photo and reduced motion. See [Choose a scene](06-lock-and-screensaver.md#choose-a-scene) |
+| `--demos` | The NIRUX demos with their length; `Enter` plays one (also `demos` in the launcher; `demo` plays the first). See [The NIRUX demo and music](06-lock-and-screensaver.md#the-nirux-demo-and-music) |
 | `--keys` | Keybinding cheat sheet |
 | `--clip` | NIRUCLIP capture profiles, camera check and preview, export, share, recovery |
 | `--share`, `--share-pair` | NIRUSHARE devices, inbox, pairing and Discord webhooks |
@@ -285,7 +286,7 @@ The view lists the chapters and headings of the installed manual and searches ac
 --quick  --clipboard  --keys  --emoji  --colors  --files  --settings
 --themes  --displays  --power  --timing  --input
 --wifi  --wired  --bluetooth  --tailscale  --sound  --microphone
---clip  --share  --share-pair  --health  --agent  --note  --hints
+--clip  --share  --share-pair  --health  --agent  --note  --hints  --demos
 ```
 
 `--overview` is the workspace overview on `Super+E` (see [Workspaces](03-workspaces-monitors-scratchpads.md)); until NIRULAUNCHER 0.14.0 it was another name for `--windows`.

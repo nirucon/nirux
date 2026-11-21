@@ -28,7 +28,7 @@ entries in `config.example.toml`; see
 
 <!-- generated: keys (tools/manual-gen.sh; do not edit by hand) -->
 
-The key bindings of a fresh NIRUX installation: NIRUWM 0.35.1 defaults with
+The key bindings of a fresh NIRUX installation: NIRUWM 0.36.0 defaults with
 the `[[keys]]` of the NIRUX `config.example.toml`. Your own `[[keys]]` and the keys
 that extras register are added on top; `Super+F1` shows the keys in effect.
 
@@ -46,6 +46,7 @@ that extras register are added on top; `Super+F1` shows the keys in effect.
 | `Super+Shift+A` | Sound, microphones and cameras (NIRUIO) |
 | `Super+Shift+B` / `Super+Shift+M` / `Super+Shift+P` / `Super+Shift+Q` / `Super+Ctrl+T` | Unified launcher: apps, windows, actions and settings |
 | `Alt+Tab` / `` Super+` `` / `Super+W` | Window switcher |
+| `Super+Alt+D` | Play the NIRUX demo (any key ends it) |
 | `Super+Enter` | Open a terminal |
 | `Super+Shift+Enter` | Open the alternative terminal |
 | `Super+B` | Open the web browser |
@@ -64,6 +65,7 @@ that extras register are added on top; `Super+F1` shows the keys in effect.
 | `Super+N` | Night light on or off |
 | `Super+Shift+D` | Do Not Disturb on or off |
 | `Super+Shift+C` | Keep the screen awake on or off |
+| `Super+Alt+Z` | Start the screensaver now |
 | `Super+Shift+W` | Save the open windows as the session |
 | `Super+Escape` | Lock the screen |
 | `Super+Ctrl+Shift+Q` | Log out (end the session) |

@@ -106,3 +106,18 @@ webapps_command() {
     *) die "unknown webapps command: $1 (nirux webapps --help)" ;;
   esac
 }
+
+# `nirux demo [N|KEY|list|songs]`: the NIRUX demo (NIRUDEMO), also on
+# Super+Alt+D and `demo` in the launcher.
+demo_command() {
+  demo_bin=$BIN/nirudemo
+  [ -x "$demo_bin" ] || die 'nirudemo is not installed; run nirux update'
+  case "${1:-}" in
+    list|--list) "$demo_bin" --list | awk -F '\t' '{printf "%2s  %-14s %d:%02d  %s\n", $1, $3, $4 / 60, $4 % 60, $5}' ;;
+    songs|--songs) "$demo_bin" --songs | awk -F '\t' '{printf "%2s  %-12s %d:%02d  %s\n", $1, $3, $4 / 60, $4 % 60, $5}'
+      say "Files: $STATE/music" ;;
+    -h|--help) say 'usage: nirux demo [N|KEY|list|songs]   (Super+Alt+D; any key ends the demo)' ;;
+    '') exec "$demo_bin" ;;
+    *) exec "$demo_bin" "$1" ;;
+  esac
+}
