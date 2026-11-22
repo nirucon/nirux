@@ -165,7 +165,7 @@ Check that the key is free first with `Super+F1` and `Ctrl+R`.
 | `--webcam` | `off`, `corner`, `only` |
 | `--corner` | `top-left`, `top-right`, `bottom-left`, `bottom-right` |
 | `--webcam-size` | `small`, `medium` (default), `large`: 20, 26 or 34 % of the video height |
-| `--camera` | A device, or `auto` (first camera, infrared sensors skipped) |
+| `--camera` | A device, or `auto` (a plugged-in camera, USB or dock, before the built-in one; infrared sensors skipped) |
 | `--camera-shape` | `rounded` (default), `circle`, `rect` |
 | `--camera-border` | `theme` (default), `none`, or `RRGGBB` |
 | `--mirror`, `--no-mirror` | Mirror the camera (default: not mirrored, so text reads correctly) |

@@ -2,6 +2,14 @@
 
 Earlier releases are described in their release notes and commit messages.
 
+## 0.12.332 (2026-11-22)
+
+- **Recording films with the external camera when docked.** NIRUCLIP 0.8.1
+  takes a camera on a USB port, hub or dock before the laptop's own when no
+  camera is chosen. With the lid closed in a dock the built-in camera gave a
+  black picture; now the docked webcam is used, and the built-in camera
+  again when undocked.
+
 ## 0.12.331 (2026-11-22)
 
 - **The NIRUX icons in file search too.** NIRU Launcher 0.19.0 shows the
