@@ -1430,6 +1430,14 @@ grep -qx 'command = \["kitty"\]' "$browser_test/migrate/cmds2.toml" || fail 'kit
 printf 'terminal = ["kitty"]\ncommand = ["kitty"]\n' > "$browser_test/migrate/cmds3.toml"
 XDG_STATE_HOME=$browser_test/cstate3 upgrade_terminal_commands "$browser_test/migrate/cmds3.toml" >/dev/null
 grep -qx 'command = \["kitty"\]' "$browser_test/migrate/cmds3.toml" || fail 'kitty commands moved while kitty is the terminal'
+# The default wallpaper scale moves from fill to smart; a screen's own choice stays.
+printf '[wallpaper]\nscale = "fill"\n[[wallpaper.outputs]]\noutput = "DP-1"\nscale = "fill"\n' > "$browser_test/migrate/wp.toml"
+XDG_STATE_HOME=$browser_test/wpstate upgrade_wallpaper_scale "$browser_test/migrate/wp.toml" >/dev/null
+[ "$(grep -c '^scale = "smart"' "$browser_test/migrate/wp.toml")" = 1 ] && [ "$(grep -c '^scale = "fill"' "$browser_test/migrate/wp.toml")" = 1 ] ||
+  fail "wallpaper scale migration: $(cat "$browser_test/migrate/wp.toml")"
+printf '[wallpaper]\nscale = "fill"\n' > "$browser_test/migrate/wp2.toml"
+XDG_STATE_HOME=$browser_test/wpstate upgrade_wallpaper_scale "$browser_test/migrate/wp2.toml" >/dev/null
+grep -qx 'scale = "fill"' "$browser_test/migrate/wp2.toml" || fail 'wallpaper scale changed a second time'
 # shellcheck disable=SC2034 # read by fresh_config_source in the sourced installer
 BROWSER_EFFECTIVE=none
 fresh_config_source "$SOURCE/config.example.toml" | grep -qx 'browser = \[\]' || fail 'fresh opt-out config kept the Helium default'

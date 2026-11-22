@@ -4,7 +4,7 @@ Extras are optional NIRU applications with their own repositories and release ca
 
 ## How extras work
 
-All extras are native programs drawn directly on X11, like the core suite: NIRUNOTE, NIRUPRES and NIRUFLOW are no longer Python and Qt, and NIRUAMP, NIRUSEC, NIRUGAME and NIRUDICTATE no longer use a GPU toolkit. They open in a few hundredths of a second and use about 8 to 20 MB. Updating an extra from an older version replaces the old install and keeps your files and settings.
+All extras are native programs drawn directly on X11, like the core suite: NIRUNOTE, NIRUPRES and NIRUFLOW are no longer Python and Qt, NPLAY is no longer Python, and NIRUAMP, NIRUSEC, NIRUGAME and NIRUDICTATE no longer use a GPU toolkit. They open in a few hundredths of a second and use about 8 to 20 MB. Updating an extra from an older version replaces the old install and keeps your files and settings.
 
 A normal `nirux install` or `nirux update` never installs an extra. You ask for each one by name. Every NIRUX release pins one version of each extra, together with the SHA-256 of its source archive.
 
@@ -12,7 +12,7 @@ A normal `nirux install` or `nirux update` never installs an extra. You ask for 
 |---|---|---|---|
 | [nirunote](#nirunote-markdown-editor) | 1.0.0 | Minimal Markdown editor and viewer | beta |
 | [nirupres](#nirupres-presentations) | 3.0.0 | Presentation studio | beta |
-| [nplay](#nplay-terminal-music-player) | 1.8.2 | Terminal music, radio and podcast player; also fully standalone | beta |
+| [nplay](#nplay-terminal-music-player) | 2.0.1 | Terminal music, radio and podcast player; also fully standalone | beta |
 | [niruamp](#niruamp-graphical-frontend-for-nplay) | 0.6.0 | Winamp-inspired graphical frontend for NPLAY (requires NPLAY) | alpha |
 | [niruflow](#niruflow-maintenance-and-cleanup) | 1.0.0 | Local maintenance and automation | alpha |
 | [nirusec](#nirusec-firewall-and-security-overview) | 0.3.2 | Firewall, ports, updates, firmware and security overview | alpha |

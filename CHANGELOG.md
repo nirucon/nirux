@@ -2,6 +2,21 @@
 
 Earlier releases are described in their release notes and commit messages.
 
+## 0.12.329 (2026-11-22)
+
+- **Wallpapers look right on every screen.** With screens of different sizes
+  (an ultrawide beside a laptop) each picture could land on the other screen
+  and be stretched to fit it. NIRUWM 0.37.1 now builds one picture for the
+  whole desktop with every screen's part in its exact place. The new default
+  scale `smart` crops a little when the shapes are close and otherwise shows
+  the whole picture over a blurred copy of itself, so nothing is stretched or
+  cut off on ultrawide or portrait screens. An existing default `fill`
+  becomes `smart` once; a scale chosen for one screen stays.
+- **NPLAY 2.0.1 is native (Rust):** the service uses 7.6 MB instead of 31 MB
+  and the player opens in a few milliseconds. Library, playlists, statistics,
+  Spotify and settings carry over; NIRUAMP works with it as before.
+- NIRUBAR 0.32.1, NIRUWALLPAPER 0.3.1 (the `smart` scale).
+
 ## 0.12.328 (2026-11-22)
 
 - **NIRUSEC 0.3.2 updates with the nightly update.** Its installer asked for

@@ -357,6 +357,7 @@ install_config() {
   upgrade_file_manager_binding "$cfg_candidate"
   upgrade_terminal_binding "$cfg_candidate"
   upgrade_terminal_commands "$cfg_candidate"
+  upgrade_wallpaper_scale "$cfg_candidate"
   add_missing_key "$cfg_candidate" bar follow_default_modules true
   follow_default_bar_modules "$cfg_candidate" "$cfg_example" "$cfg_target"
   cfg_after=$(sha256sum "$cfg_candidate" | cut -d ' ' -f1)

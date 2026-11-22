@@ -1,10 +1,10 @@
 # Inputs of the generated manual sections (tools/manual-gen.sh --refresh)
-niruwm 0.37.0
-nirubar 0.32.0
+niruwm 0.37.1
+nirubar 0.32.1
 nirufetch 0.3.0
 nirulauncher 0.18.1
 nirulock 0.29.0
 nirunotify 0.9.0
 niruscreensaver 0.18.0
 nirushare 0.4.0
-config.example.toml ebd59b018f91d765f73e6edfc5d6c6dbf79ec911b02b2880358a0372d251e28a
+config.example.toml bb0560cb4865c30985f98798119df78c24f5c039b33aec306c587dc265ff4f73

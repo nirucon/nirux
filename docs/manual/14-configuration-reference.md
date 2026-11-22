@@ -75,17 +75,17 @@ These are not generated from an example file. The chapters describe them.
 
 <!-- generated: config (tools/manual-gen.sh; do not edit by hand) -->
 
-The example configuration files of NIRUX 0.12.328 and its components, with every
+The example configuration files of NIRUX 0.12.329 and its components, with every
 key they set or show. A value marked *commented example* is off by default:
 remove the `#` to use it. The full annotated file follows each table.
 
 | File | Read by | Example from |
 |---|---|---|
-| [`~/.config/niruwm/config.toml`](#configniruwmconfigtoml) | niruwm, nirubar, niruidle, niructl | nirux 0.12.328 `config.example.toml` |
-| [`~/.config/niruwm/appearance.toml`](#configniruwmappearancetoml) | the whole suite | nirux 0.12.328 `appearance.example.toml` |
-| [`~/.config/nirux/sounds.toml`](#configniruxsoundstoml) | nirux, nirunotify | nirux 0.12.328 `sounds.example.toml` |
-| [`~/.config/niruwm/displays.toml`](#configniruwmdisplaystoml) | niruwm, niructl, nirudisplay | nirux 0.12.328 `displays.example.toml` |
-| [`~/.config/nirubar/config.toml`](#confignirubarconfigtoml) | nirubar | nirubar 0.32.0 `weather.example.toml` |
+| [`~/.config/niruwm/config.toml`](#configniruwmconfigtoml) | niruwm, nirubar, niruidle, niructl | nirux 0.12.329 `config.example.toml` |
+| [`~/.config/niruwm/appearance.toml`](#configniruwmappearancetoml) | the whole suite | nirux 0.12.329 `appearance.example.toml` |
+| [`~/.config/nirux/sounds.toml`](#configniruxsoundstoml) | nirux, nirunotify | nirux 0.12.329 `sounds.example.toml` |
+| [`~/.config/niruwm/displays.toml`](#configniruwmdisplaystoml) | niruwm, niructl, nirudisplay | nirux 0.12.329 `displays.example.toml` |
+| [`~/.config/nirubar/config.toml`](#confignirubarconfigtoml) | nirubar | nirubar 0.32.1 `weather.example.toml` |
 | [`~/.config/nirulauncher/config.toml`](#confignirulauncherconfigtoml) | nirulauncher | nirulauncher 0.18.1 `config.example.toml` |
 | [`~/.config/nirunotify/config.toml`](#confignirunotifyconfigtoml) | nirunotify | nirunotify 0.9.0 `config.example.toml` |
 | [`~/.config/nirufetch/config.toml`](#confignirufetchconfigtoml) | nirufetch | nirufetch 0.3.0 `config.example.toml` |
@@ -116,7 +116,7 @@ remove the `#` to use it. The full annotated file follows each table.
 | `[wallpaper]` | `mode` | `"random"` | random = a new picture each rotation fixed  = one picture, chosen once and kept single = always file |
 | `[wallpaper]` | `file` | `""` |  |
 | `[wallpaper]` | `rotation_minutes` | `10` | Minutes between changes. |
-| `[wallpaper]` | `scale` | `"fill"` | How a picture fills the screen: fill (crop), fit (letterbox), stretch, center. |
+| `[wallpaper]` | `scale` | `"smart"` | How a picture fills each screen: smart (crop when the shapes are close, otherwise the whole picture over a blurred copy of itself: right ... |
 | `[wallpaper]` | `files` | `[]` | Rotate through these files instead of the whole directory. |
 | `[wallpaper]` | `shuffle_on_start` | `true` | Pick a fresh picture at login, even in fixed mode. |
 | `[wallpaper]` | `follow_theme` | `true` | When the theme changes, apply that theme's wallpaper from theme_dir. |
@@ -347,8 +347,11 @@ mode = "random"
 file = ""
 # Minutes between changes. 0 disables rotation.
 rotation_minutes = 10
-# How a picture fills the screen: fill (crop), fit (letterbox), stretch, center.
-scale = "fill"
+# How a picture fills each screen: smart (crop when the shapes are close,
+# otherwise the whole picture over a blurred copy of itself: right on any
+# screen, ultrawide and portrait too), fill (crop), fit (letterbox), stretch,
+# center.
+scale = "smart"
 # Rotate through these files instead of the whole directory. Empty = the
 # directory, for example:
 #   files = ["~/Pictures/one.jpg", "~/Pictures/two.png"]

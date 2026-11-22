@@ -226,10 +226,12 @@ niructl wallpaper follow-theme on        # back to the theme's picture
 niructl wallpaper follow-theme off
 niructl wallpaper mode random            # random, fixed or single
 niructl wallpaper rotation 30            # minutes between changes; 0 turns rotation off
-niructl wallpaper scale fit              # fill, fit, stretch or center
+niructl wallpaper scale smart            # smart, fill, fit, stretch or center
 niructl wallpaper style toggle           # Art or Signature theme pictures
 niructl wallpaper apply                  # set the wallpaper again now
 ```
+
+**On several screens of different shapes** each screen gets its own picture, sized for that screen. The default scale, `smart`, crops a little when the picture and the screen have a similar shape (16:9 on 16:10) and otherwise shows the whole picture, sharp in the middle, over a blurred copy of itself that fills the rest (16:9 on an ultrawide 21:9 or a portrait screen): nothing is stretched or cut off. A screen can have its own scale in the Wallpaper view or under `[[wallpaper.outputs]]`.
 
 `wallpaper set` switches to `mode = "single"`, which keeps that picture across theme changes. `follow-theme on` turns following back on and changes `single` to `fixed`; the file stays in the config, so `wallpaper mode single` returns to it.
 

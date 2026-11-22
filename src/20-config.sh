@@ -599,6 +599,25 @@ upgrade_terminal_commands() {
   fi
   mkdir -p "${tc_mark%/*}" && : > "$tc_mark" || :
 }
+# The wallpaper scale "fill" was the default; "smart" (0.12.329) is right on
+# every shape of screen. Only the shared default line under [wallpaper] is
+# changed, once; a per-screen choice or another scale stays.
+upgrade_wallpaper_scale() {
+  ws_mark=${XDG_STATE_HOME:-$HOME/.local/state}/nirux/wallpaper-scale-smart
+  [ -e "$ws_mark" ] && return 0
+  if awk '/^\[/ {sec = $0} sec == "[wallpaper]" && $0 == "scale = \"fill\"" {f = 1} END {exit !f}' "$1"; then
+    ws_mode=$(stat -c %a "$1") || die "could not read permissions for $1"
+    ws_tmp=$(mktemp "$1.nirux-wpscale.XXXXXX") || die "could not stage $1"
+    if awk '/^\[/ {sec = $0} sec == "[wallpaper]" && $0 == "scale = \"fill\"" {print "scale = \"smart\""; next} {print}' "$1" > "$ws_tmp" &&
+       chmod "$ws_mode" "$ws_tmp" && mv -f "$ws_tmp" "$1"; then
+      say 'Wallpapers now use the smart scale: right on every screen shape.'
+    else
+      rm -f "$ws_tmp"
+      die "could not update the wallpaper scale in $1; original kept"
+    fi
+  fi
+  mkdir -p "${ws_mark%/*}" && : > "$ws_mark" || :
+}
 upgrade_obsolete_default_browser() {
   [ "${BROWSER_EFFECTIVE:-keep}" = helium ] || return 0
   browser_available brave && return 0
