@@ -1367,6 +1367,17 @@ grep -qx 'action = "start nirufm"' "$browser_test/migrate/fm.toml" || fail 'the 
 printf '[[keys]]\nkeys = "super+shift+f"\naction = "start thunar"\n' > "$browser_test/migrate/fm2.toml"
 upgrade_file_manager_binding "$browser_test/migrate/fm2.toml" >/dev/null
 grep -qx 'action = "start thunar"' "$browser_test/migrate/fm2.toml" || fail 'a chosen file manager was replaced'
+# Super+Enter moves to NIRUTERM once, only from the exact kitty default pair.
+term_state=$browser_test/state
+printf 'terminal = ["kitty"]\nterminal_alt = []\n' > "$browser_test/migrate/term.toml"
+XDG_STATE_HOME=$term_state upgrade_terminal_binding "$browser_test/migrate/term.toml" >/dev/null
+grep -qx 'terminal = \["niruterm"\]' "$browser_test/migrate/term.toml" && grep -qx 'terminal_alt = \["kitty"\]' "$browser_test/migrate/term.toml" || fail 'the terminal default was not moved to NIRUTERM'
+printf 'terminal = ["kitty"]\nterminal_alt = []\n' > "$browser_test/migrate/term2.toml"
+XDG_STATE_HOME=$term_state upgrade_terminal_binding "$browser_test/migrate/term2.toml" >/dev/null
+grep -qx 'terminal = \["kitty"\]' "$browser_test/migrate/term2.toml" || fail 'kitty chosen again after the move was replaced'
+printf 'terminal = ["alacritty"]\nterminal_alt = []\n' > "$browser_test/migrate/term3.toml"
+XDG_STATE_HOME=$browser_test/state3 upgrade_terminal_binding "$browser_test/migrate/term3.toml" >/dev/null
+grep -qx 'terminal = \["alacritty"\]' "$browser_test/migrate/term3.toml" || fail 'a chosen terminal was replaced'
 # shellcheck disable=SC2034 # read by fresh_config_source in the sourced installer
 BROWSER_EFFECTIVE=none
 fresh_config_source "$SOURCE/config.example.toml" | grep -qx 'browser = \[\]' || fail 'fresh opt-out config kept the Helium default'

@@ -541,6 +541,26 @@ upgrade_file_manager_binding() {
     die "could not update the file manager binding in $1; original kept"
   fi
 }
+# NIRUTERM becomes the terminal on Super+Enter and kitty moves to
+# Super+Shift+Enter (owner decision 2026-11-22). Only the exact old default pair
+# is changed, and only once: someone who chooses kitty again later keeps it.
+upgrade_terminal_binding() {
+  term_mark=${XDG_STATE_HOME:-$HOME/.local/state}/nirux/terminal-niruterm
+  [ -e "$term_mark" ] && return 0
+  if grep -qx 'terminal = \["kitty"\]' "$1" && grep -qx 'terminal_alt = \[\]' "$1"; then
+    term_mode=$(stat -c %a "$1") || die "could not read permissions for $1"
+    term_tmp=$(mktemp "$1.nirux-term.XXXXXX") || die "could not stage $1"
+    if awk '$0 == "terminal = [\"kitty\"]" {print "terminal = [\"niruterm\"]"; next}
+            $0 == "terminal_alt = []" {print "terminal_alt = [\"kitty\"]"; next} {print}' "$1" > "$term_tmp" &&
+       chmod "$term_mode" "$term_tmp" && mv -f "$term_tmp" "$1"; then
+      say 'Super+Enter now opens NIRUTERM; kitty is on Super+Shift+Enter.'
+    else
+      rm -f "$term_tmp"
+      die "could not update the terminal in $1; original kept"
+    fi
+  fi
+  mkdir -p "${term_mark%/*}" && : > "$term_mark" || :
+}
 upgrade_obsolete_default_browser() {
   [ "${BROWSER_EFFECTIVE:-keep}" = helium ] || return 0
   browser_available brave && return 0

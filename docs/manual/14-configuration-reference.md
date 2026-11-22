@@ -103,8 +103,8 @@ remove the `#` to use it. The full annotated file follows each table.
 | `(top level)` | `border_width` | `2` | Border around each window, in pixels. |
 | `(top level)` | `bar_height` | `28` | Height of the bar, in pixels. |
 | `(top level)` | `master_ratio` | `0.55` | Each workspace keeps its own ratio after Super+H/L; this is only the default. |
-| `(top level)` | `terminal` | `["kitty"]` | Commands are argument lists, never passed through a shell. |
-| `(top level)` | `terminal_alt` | `[]` | Bound to Super+Shift+Enter. |
+| `(top level)` | `terminal` | `["niruterm"]` | Commands are argument lists, never passed through a shell. |
+| `(top level)` | `terminal_alt` | `["kitty"]` | Bound to Super+Shift+Enter. |
 | `[browser]` | `browser` | `["helium"]` | hardware_video = "auto"   # auto (AMD/Intel on, NVIDIA off), on, off nirux update applies it; nirux doctor shows the GPU and the result. |
 | `[browser]` | `launcher` | `["nirulauncher", "--apps"]` | Super+P and the native action launcher. |
 | `[browser]` | `font_size` | `15.0` |  |
@@ -306,9 +306,9 @@ master_ratio = 0.55
 
 # ── Programs ────────────────────────────────────────────────────────────────
 # Commands are argument lists, never passed through a shell.
-terminal = ["kitty"]
+terminal = ["niruterm"]
 # Bound to Super+Shift+Enter. Empty means the terminal above.
-terminal_alt = []
+terminal_alt = ["kitty"]
 # Super+B starts this. Install/select a browser.
 # Hardware video decoding in the NIRUX-managed Helium is set in a NIRUX-only
 # file, ~/.config/nirux/browser.toml, because this file refuses unknown keys:

@@ -4,6 +4,9 @@ Earlier releases are described in their release notes and commit messages.
 
 ## 0.12.324 (2026-11-22)
 
+- **NIRUTERM on Super+Enter, kitty on Super+Shift+Enter.** An existing
+  configuration with the old default (kitty and no alternative) is switched
+  once; a terminal you chose yourself is kept.
 - **An update no longer stops when the device queue is slow.** After new
   packages, NIRUX waits for the input devices to be refreshed. When another
   device kept that queue busy for more than ten seconds, the update stopped

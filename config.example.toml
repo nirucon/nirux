@@ -87,9 +87,9 @@ master_ratio = 0.55
 
 # ── Programs ────────────────────────────────────────────────────────────────
 # Commands are argument lists, never passed through a shell.
-terminal = ["kitty"]
+terminal = ["niruterm"]
 # Bound to Super+Shift+Enter. Empty means the terminal above.
-terminal_alt = []
+terminal_alt = ["kitty"]
 # Super+B starts this. Install/select a browser.
 # Hardware video decoding in the NIRUX-managed Helium is set in a NIRUX-only
 # file, ~/.config/nirux/browser.toml, because this file refuses unknown keys:

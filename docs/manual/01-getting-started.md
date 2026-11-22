@@ -167,12 +167,13 @@ Folders that other programs open ("show in folder") open in NIRUFM too.
 
 ## The terminal: NIRUTERM and NIRUPROMPT
 
-`Super+Enter` opens kitty. **NIRUTERM**, the NIRUX terminal, is installed
-beside it (NIRUTERM in the launcher, or `niruterm`): it opens in about 40 ms,
-uses 12 to 25 MB, follows the theme live and shows pictures with
-`niruterm icat FILE` (or `icat FILE`). Ctrl+Shift+C and Ctrl+Shift+V copy and
-paste, Ctrl+Shift+N opens a window in the same folder, Ctrl+click opens a
-link.
+`Super+Enter` opens **NIRUTERM**, the NIRUX terminal, and `Super+Shift+Enter`
+opens kitty. NIRUTERM opens in about 40 ms, uses 12 to 25 MB, follows the
+theme live and shows pictures with `niruterm icat FILE` (or `icat FILE`).
+Ctrl+Shift+C and Ctrl+Shift+V copy and paste, Ctrl+Shift+N opens a window in
+the same folder, Ctrl+click opens a link. To swap them back, set
+`terminal = ["kitty"]` and `terminal_alt = ["niruterm"]` under Programs in
+`~/.config/niruwm/config.toml`.
 
 **NIRUPROMPT** draws the fish prompt and works in bash too:
 
