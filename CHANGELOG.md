@@ -2,6 +2,22 @@
 
 Earlier releases are described in their release notes and commit messages.
 
+## 0.12.325 (2026-11-22)
+
+- **Everything that started in kitty starts in NIRUTERM.** Autostart,
+  recipes, the scratchpad and key bindings that ran kitty are moved to
+  NIRUTERM once (same window classes, so the window rules keep working).
+  NIRUFM's terminal (F4 and terminal programs), the NIRUIO window, the
+  update and shut down window and the launcher's agent window use NIRUTERM
+  too. kitty stays on Super+Shift+Enter.
+- **NIRUTERM 0.1.3** understands kitty's options (`--class`, `--hold`, a
+  program right after the options), and **0.1.2** starts the same shell as
+  kitty (fish in NIRUX): suggestions from the history as you type, Tab
+  completion that ignores case, and the NIRUPROMPT prompt.
+- **Updates download only what changed.** A program already on the computer
+  with the release's checksum is copied instead of downloaded again.
+- NIRUWM 0.36.3, NIRULAUNCHER 0.18.1, NIRUFM 0.2.3, NIRUIO 0.2.1.
+
 ## 0.12.324 (2026-11-22)
 
 - **NIRUTERM on Super+Enter, kitty on Super+Shift+Enter.** An existing

@@ -2,7 +2,7 @@
 # NIRUX: install a complete X11 desktop, or maintain an existing installation.
 set -eu
 
-VERSION=0.12.324
+VERSION=0.12.325
 PREFIX=${NIRUX_PREFIX:-$HOME/.local}
 BIN=$PREFIX/bin
 STATE=$PREFIX/share/nirux
@@ -1368,6 +1368,44 @@ upgrade_terminal_binding() {
     fi
   fi
   mkdir -p "${term_mark%/*}" && : > "$term_mark" || :
+}
+# With NIRUTERM as the terminal, the programs a configuration starts in kitty
+# (autostart, recipes, scratchpads, key bindings) move to NIRUTERM too, once.
+# NIRUTERM understands kitty's options, so the rest of each command and its
+# window class stay as they are. A bare kitty window placed by class "kitty"
+# gets class "niruterm", the class NIRUTERM's window has. Comments and
+# terminal_alt are left alone, so kitty stays on Super+Shift+Enter.
+upgrade_terminal_commands() {
+  tc_mark=${XDG_STATE_HOME:-$HOME/.local/state}/nirux/terminal-commands-niruterm
+  [ -e "$tc_mark" ] && return 0
+  grep -qx 'terminal = \["niruterm"\]' "$1" || return 0
+  if grep -Eq '^(command = \["kitty"[],]|action = "start kitty( |"))' "$1"; then
+    tc_mode=$(stat -c %a "$1") || die "could not read permissions for $1"
+    tc_tmp=$(mktemp "$1.nirux-termcmd.XXXXXX") || die "could not stage $1"
+    if awk '
+      function out(l) {
+        if (l ~ /^command = \["kitty"[],]/) sub(/^command = \["kitty"/, "command = [\"niruterm\"", l)
+        else if (l ~ /^action = "start kitty( |")/) sub(/^action = "start kitty/, "action = \"start niruterm", l)
+        print l
+      }
+      {
+        if (held != "") {
+          if (held == "class = \"kitty\"" && $0 == "command = [\"kitty\"]") { print "class = \"niruterm\""; print "command = [\"niruterm\"]"; held = ""; next }
+          if ($0 == "class = \"kitty\"" && held == "command = [\"kitty\"]") { print "command = [\"niruterm\"]"; print "class = \"niruterm\""; held = ""; next }
+          out(held); held = ""
+        }
+        if ($0 == "class = \"kitty\"" || $0 == "command = [\"kitty\"]") { held = $0; next }
+        out($0)
+      }
+      END { if (held != "") out(held) }' "$1" > "$tc_tmp" &&
+       chmod "$tc_mode" "$tc_tmp" && mv -f "$tc_tmp" "$1"; then
+      say 'Programs started in kitty (autostart, scratchpads, keys) now start in NIRUTERM.'
+    else
+      rm -f "$tc_tmp"
+      die "could not move the kitty commands in $1 to NIRUTERM; original kept"
+    fi
+  fi
+  mkdir -p "${tc_mark%/*}" && : > "$tc_mark" || :
 }
 upgrade_obsolete_default_browser() {
   [ "${BROWSER_EFFECTIVE:-keep}" = helium ] || return 0
@@ -2953,6 +2991,7 @@ install_config() {
   upgrade_obsolete_default_browser "$cfg_candidate"
   upgrade_file_manager_binding "$cfg_candidate"
   upgrade_terminal_binding "$cfg_candidate"
+  upgrade_terminal_commands "$cfg_candidate"
   add_missing_key "$cfg_candidate" bar follow_default_modules true
   follow_default_bar_modules "$cfg_candidate" "$cfg_example" "$cfg_target"
   cfg_after=$(sha256sum "$cfg_candidate" | cut -d ' ' -f1)
@@ -3093,18 +3132,39 @@ verify() {
   actual=$(sha256sum "$1/$2" | cut -d ' ' -f1)
   [ "$actual" = "$expected" ] || die "checksum mismatch for $2; current installation kept"
 }
+# A program already in an installed generation is copied from there when it
+# matches the checksum of the release being installed, so an update downloads
+# only what changed. The checksum list is always fetched fresh from the
+# release, so a local copy is trusted exactly as much as a download.
+local_release_file() {
+  lr_expected=$(awk -v n="$2" '$2 == n {print $1}' "$1/SHA256SUMS")
+  [ "${#lr_expected}" = 64 ] || return 1
+  for lr_candidate in "$STATE"/generations/*/bin/"$2"; do
+    [ -f "$lr_candidate" ] && [ ! -L "$lr_candidate" ] || continue
+    [ "$(sha256sum "$lr_candidate" | cut -d ' ' -f1)" = "$lr_expected" ] || continue
+    cp "$lr_candidate" "$1/$2" && verify "$1" "$2" && return 0
+    rm -f "$1/$2"
+  done
+  return 1
+}
 release_files() {
   download_repo=$1; download_version=$2; shift 2
   valid_version "$download_version" || die "invalid version: $download_version"
   download_dir=$WORK/download/$download_repo
   mkdir -p "$download_dir"
   download_base=https://github.com/nirucon/$download_repo/releases/download/v$download_version
-  say "Downloading $download_repo $download_version..."
   fetch "$download_base/SHA256SUMS" "$download_dir/SHA256SUMS"
+  download_said=0
   for download_file in "$@"; do
+    local_release_file "$download_dir" "$download_file" && continue
+    if [ "$download_said" = 0 ]; then
+      say "Downloading $download_repo $download_version..."
+      download_said=1
+    fi
     fetch "$download_base/$download_file" "$download_dir/$download_file"
     verify "$download_dir" "$download_file"
   done
+  [ "$download_said" = 1 ] || say "$download_repo $download_version is already on this computer."
 }
 release_optional_file() {
   download_repo=$1; download_version=$2; download_file=$3

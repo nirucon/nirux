@@ -113,18 +113,39 @@ verify() {
   actual=$(sha256sum "$1/$2" | cut -d ' ' -f1)
   [ "$actual" = "$expected" ] || die "checksum mismatch for $2; current installation kept"
 }
+# A program already in an installed generation is copied from there when it
+# matches the checksum of the release being installed, so an update downloads
+# only what changed. The checksum list is always fetched fresh from the
+# release, so a local copy is trusted exactly as much as a download.
+local_release_file() {
+  lr_expected=$(awk -v n="$2" '$2 == n {print $1}' "$1/SHA256SUMS")
+  [ "${#lr_expected}" = 64 ] || return 1
+  for lr_candidate in "$STATE"/generations/*/bin/"$2"; do
+    [ -f "$lr_candidate" ] && [ ! -L "$lr_candidate" ] || continue
+    [ "$(sha256sum "$lr_candidate" | cut -d ' ' -f1)" = "$lr_expected" ] || continue
+    cp "$lr_candidate" "$1/$2" && verify "$1" "$2" && return 0
+    rm -f "$1/$2"
+  done
+  return 1
+}
 release_files() {
   download_repo=$1; download_version=$2; shift 2
   valid_version "$download_version" || die "invalid version: $download_version"
   download_dir=$WORK/download/$download_repo
   mkdir -p "$download_dir"
   download_base=https://github.com/nirucon/$download_repo/releases/download/v$download_version
-  say "Downloading $download_repo $download_version..."
   fetch "$download_base/SHA256SUMS" "$download_dir/SHA256SUMS"
+  download_said=0
   for download_file in "$@"; do
+    local_release_file "$download_dir" "$download_file" && continue
+    if [ "$download_said" = 0 ]; then
+      say "Downloading $download_repo $download_version..."
+      download_said=1
+    fi
     fetch "$download_base/$download_file" "$download_dir/$download_file"
     verify "$download_dir" "$download_file"
   done
+  [ "$download_said" = 1 ] || say "$download_repo $download_version is already on this computer."
 }
 release_optional_file() {
   download_repo=$1; download_version=$2; download_file=$3

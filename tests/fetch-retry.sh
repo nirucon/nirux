@@ -85,4 +85,30 @@ if fetch https://github.com/nirucon/niruwm/releases/download/v0.20.0/niruwm "$TE
 fi
 [ "$(wc -l < "$LOG")" = 4 ] || fail "expected 2 GitHub + 2 mirror attempts"
 [ ! -e "$TEST/out6" ] || fail "a failed mirror download left a file"
+
+# release_files copies a program that an installed generation already holds
+# with the release's checksum, and downloads one whose checksum differs.
+reuse=$TEST/reuse
+mkdir -p "$reuse/gen/old/bin" "$reuse/release"
+printf 'same\n' > "$reuse/gen/old/bin/niruwm"
+printf 'stale\n' > "$reuse/gen/old/bin/niructl"
+printf 'same\n' > "$reuse/release/niruwm"
+printf 'payload\n' > "$reuse/release/niructl"
+(cd "$reuse/release" && sha256sum niruwm niructl > SHA256SUMS)
+mkdir -p "$reuse/state"
+mv "$reuse/gen" "$reuse/state/generations"
+fetch() {
+  printf '%s\n' "$1" >> "$reuse/fetched"
+  cp "$reuse/release/${1##*/}" "$2"
+}
+(STATE=$reuse/state WORK=$reuse/work; release_files niruwm 1.0.0 niruwm niructl) > "$reuse/out"
+grep -q '/niruwm$' "$reuse/fetched" && fail 'a program already installed was downloaded again'
+grep -q '/niructl$' "$reuse/fetched" || fail 'a changed program was not downloaded'
+cmp -s "$reuse/work/download/niruwm/niruwm" "$reuse/release/niruwm" || fail 'the reused copy differs'
+cmp -s "$reuse/work/download/niruwm/niructl" "$reuse/release/niructl" || fail 'the downloaded copy differs'
+: > "$reuse/fetched"
+(STATE=$reuse/state WORK=$reuse/work2; release_files niruwm 1.0.0 niruwm) > "$reuse/out2"
+[ "$(cat "$reuse/fetched")" = https://github.com/nirucon/niruwm/releases/download/v1.0.0/SHA256SUMS ] ||
+  fail 'only the checksum list should be fetched when everything is local'
+grep -q 'already on this computer' "$reuse/out2" || fail 'no message for a local release'
 printf 'fetch-retry: ok\n'

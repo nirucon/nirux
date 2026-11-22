@@ -75,18 +75,18 @@ These are not generated from an example file. The chapters describe them.
 
 <!-- generated: config (tools/manual-gen.sh; do not edit by hand) -->
 
-The example configuration files of NIRUX 0.12.324 and its components, with every
+The example configuration files of NIRUX 0.12.325 and its components, with every
 key they set or show. A value marked *commented example* is off by default:
 remove the `#` to use it. The full annotated file follows each table.
 
 | File | Read by | Example from |
 |---|---|---|
-| [`~/.config/niruwm/config.toml`](#configniruwmconfigtoml) | niruwm, nirubar, niruidle, niructl | nirux 0.12.324 `config.example.toml` |
-| [`~/.config/niruwm/appearance.toml`](#configniruwmappearancetoml) | the whole suite | nirux 0.12.324 `appearance.example.toml` |
-| [`~/.config/nirux/sounds.toml`](#configniruxsoundstoml) | nirux, nirunotify | nirux 0.12.324 `sounds.example.toml` |
-| [`~/.config/niruwm/displays.toml`](#configniruwmdisplaystoml) | niruwm, niructl, nirudisplay | nirux 0.12.324 `displays.example.toml` |
+| [`~/.config/niruwm/config.toml`](#configniruwmconfigtoml) | niruwm, nirubar, niruidle, niructl | nirux 0.12.325 `config.example.toml` |
+| [`~/.config/niruwm/appearance.toml`](#configniruwmappearancetoml) | the whole suite | nirux 0.12.325 `appearance.example.toml` |
+| [`~/.config/nirux/sounds.toml`](#configniruxsoundstoml) | nirux, nirunotify | nirux 0.12.325 `sounds.example.toml` |
+| [`~/.config/niruwm/displays.toml`](#configniruwmdisplaystoml) | niruwm, niructl, nirudisplay | nirux 0.12.325 `displays.example.toml` |
 | [`~/.config/nirubar/config.toml`](#confignirubarconfigtoml) | nirubar | nirubar 0.31.0 `weather.example.toml` |
-| [`~/.config/nirulauncher/config.toml`](#confignirulauncherconfigtoml) | nirulauncher | nirulauncher 0.18.0 `config.example.toml` |
+| [`~/.config/nirulauncher/config.toml`](#confignirulauncherconfigtoml) | nirulauncher | nirulauncher 0.18.1 `config.example.toml` |
 | [`~/.config/nirunotify/config.toml`](#confignirunotifyconfigtoml) | nirunotify | nirunotify 0.9.0 `config.example.toml` |
 | [`~/.config/nirufetch/config.toml`](#confignirufetchconfigtoml) | nirufetch | nirufetch 0.3.0 `config.example.toml` |
 | [`~/.config/niruui/lock.toml`](#configniruuilocktoml) | nirulock | nirulock 0.29.0 `config.example.toml` |
@@ -130,15 +130,15 @@ remove the `#` to use it. The full annotated file follows each table.
 | `[autostart.apps]` | `class` | `"nirushare"` (commented example) |  |
 | `[autostart.apps]` | `command` | `["nirushare", "serve"]` (commented example) |  |
 | `[autostart.apps]` | `workspace` | `1` (commented example) |  |
-| `[autostart.apps]` | `class` | `"kitty"` (commented example) |  |
-| `[autostart.apps]` | `command` | `["kitty"]` (commented example) |  |
+| `[autostart.apps]` | `class` | `"niruterm"` (commented example) |  |
+| `[autostart.apps]` | `command` | `["niruterm"]` (commented example) |  |
 | `[autostart.apps]` | `workspace` | `3` (commented example) |  |
 | `[autostart.apps]` | `class` | `"helium"` (commented example) |  |
 | `[autostart.apps]` | `command` | `["helium"]` (commented example) |  |
 | `[recipes]` | `name` | `"Development"` (commented example) |  |
 | `[recipes.apps]` | `workspace` | `1` (commented example) |  |
-| `[recipes.apps]` | `class` | `"kitty"` (commented example) |  |
-| `[recipes.apps]` | `command` | `["kitty"]` (commented example) |  |
+| `[recipes.apps]` | `class` | `"niruterm"` (commented example) |  |
+| `[recipes.apps]` | `command` | `["niruterm"]` (commented example) |  |
 | `[recipes.apps]` | `workspace` | `2` (commented example) |  |
 | `[recipes.apps]` | `class` | `"helium"` (commented example) |  |
 | `[recipes.apps]` | `command` | `["helium"]` (commented example) |  |
@@ -198,12 +198,12 @@ remove the `#` to use it. The full annotated file follows each table.
 | `[bar]` | `graph_width` | `24` | Width of the graph in the pulse panel, in characters. |
 | `[bar]` | `update_check_minutes` | `30` | Minutes between package update checks. |
 | `[bar]` | `tray` | `true` | Let the bar own a system tray. |
-| `[scratchpad]` | `command` | `["kitty", "--class", "scratchpad"]` |  |
+| `[scratchpad]` | `command` | `["niruterm", "--class", "scratchpad"]` |  |
 | `[scratchpad]` | `width` | `0.6` |  |
 | `[scratchpad]` | `height` | `0.6` |  |
 | `[scratchpad]` | `hide_on_focus_loss` | `false` | A shown scratchpad stays on top until you hide it with its key, even when the mouse moves onto another window (that window gets the keybo... |
 | `[scratchpad]` | `number` | `1` (commented example) | Numbered scratchpads need no settings: any window can be sent to any slot with Super+Alt+Shift+N. |
-| `[scratchpad]` | `command` | `["kitty", "--class", "scratch-btop", "-e", "btop"]` (commented example) |  |
+| `[scratchpad]` | `command` | `["niruterm", "--class", "scratch-btop", "-e", "btop"]` (commented example) |  |
 | `[scratchpad]` | `width` | `0.8` (commented example) |  |
 | `[scratchpad]` | `height` | `0.8` (commented example) |  |
 | `[rules]` | `class` | `"localsend"` (commented example) |  |
@@ -394,8 +394,8 @@ return_workspace = 1
 #
 # [[autostart.apps]]
 # workspace = 1
-# class = "kitty"
-# command = ["kitty"]
+# class = "niruterm"
+# command = ["niruterm"]
 #
 # [[autostart.apps]]
 # workspace = 3
@@ -408,8 +408,8 @@ return_workspace = 1
 # name = "Development"
 # [[recipes.apps]]
 # workspace = 1
-# class = "kitty"
-# command = ["kitty"]
+# class = "niruterm"
+# command = ["niruterm"]
 # [[recipes.apps]]
 # workspace = 2
 # class = "helium"
@@ -685,7 +685,7 @@ tray = true
 # is how the window is recognised. width/height: share of the screen,
 # 0.1 to 0.95, default 0.6.
 [scratchpad]
-command = ["kitty", "--class", "scratchpad"]
+command = ["niruterm", "--class", "scratchpad"]
 width = 0.6
 height = 0.6
 # A shown scratchpad stays on top until you hide it with its key, even when
@@ -701,7 +701,7 @@ hide_on_focus_loss = false
 #
 # [[scratchpad.slot]]     # Super+Alt+1
 # number = 1
-# command = ["kitty", "--class", "scratch-btop", "-e", "btop"]
+# command = ["niruterm", "--class", "scratch-btop", "-e", "btop"]
 # width = 0.8
 # height = 0.8
 

@@ -175,6 +175,14 @@ the same folder, Ctrl+click opens a link. To swap them back, set
 `terminal = ["kitty"]` and `terminal_alt = ["niruterm"]` under Programs in
 `~/.config/niruwm/config.toml`.
 
+NIRUTERM starts the same shell as kitty, fish in NIRUX. As you type, fish
+suggests the rest of a command from your history in grey: the Right arrow (or
+Ctrl+F) takes it, Alt+Right takes one word. Tab completes commands, options
+and file names, and ignores upper and lower case when nothing matches
+exactly; Tab twice shows a menu. The Up arrow searches the history for what
+you have typed so far, and Ctrl+R searches all of it. Everything that
+started in kitty (autostart, the scratchpad, key bindings) starts in NIRUTERM.
+
 **NIRUPROMPT** draws the fish prompt and works in bash too:
 
 ```sh

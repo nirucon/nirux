@@ -1378,6 +1378,58 @@ grep -qx 'terminal = \["kitty"\]' "$browser_test/migrate/term2.toml" || fail 'ki
 printf 'terminal = ["alacritty"]\nterminal_alt = []\n' > "$browser_test/migrate/term3.toml"
 XDG_STATE_HOME=$browser_test/state3 upgrade_terminal_binding "$browser_test/migrate/term3.toml" >/dev/null
 grep -qx 'terminal = \["alacritty"\]' "$browser_test/migrate/term3.toml" || fail 'a chosen terminal was replaced'
+# The programs started in kitty move to NIRUTERM once NIRUTERM is the terminal.
+cat > "$browser_test/migrate/cmds.toml" <<'EOF'
+terminal = ["niruterm"]
+terminal_alt = ["kitty"]
+[[autostart.apps]]
+workspace = 4
+class = "kitty"
+command = ["kitty"]
+[[autostart.apps]]
+class = "kitty-claude"
+command = ["kitty", "--class", "kitty-claude", "/usr/bin/claude"]
+# command = ["kitty", "--class", "x"]
+[[keys]]
+keys = "super+t"
+action = "start kitty -e htop"
+[[keys]]
+keys = "super+y"
+action = "start kittyish"
+[[autostart.apps]]
+class = "kitty"
+command = ["alacritty"]
+EOF
+cat > "$browser_test/migrate/cmds-expected" <<'EOF'
+terminal = ["niruterm"]
+terminal_alt = ["kitty"]
+[[autostart.apps]]
+workspace = 4
+class = "niruterm"
+command = ["niruterm"]
+[[autostart.apps]]
+class = "kitty-claude"
+command = ["niruterm", "--class", "kitty-claude", "/usr/bin/claude"]
+# command = ["kitty", "--class", "x"]
+[[keys]]
+keys = "super+t"
+action = "start niruterm -e htop"
+[[keys]]
+keys = "super+y"
+action = "start kittyish"
+[[autostart.apps]]
+class = "kitty"
+command = ["alacritty"]
+EOF
+XDG_STATE_HOME=$browser_test/cstate upgrade_terminal_commands "$browser_test/migrate/cmds.toml" >/dev/null
+cmp -s "$browser_test/migrate/cmds.toml" "$browser_test/migrate/cmds-expected" ||
+  fail "kitty commands not moved as expected: $(diff "$browser_test/migrate/cmds-expected" "$browser_test/migrate/cmds.toml")"
+printf 'terminal = ["niruterm"]\ncommand = ["kitty"]\n' > "$browser_test/migrate/cmds2.toml"
+XDG_STATE_HOME=$browser_test/cstate upgrade_terminal_commands "$browser_test/migrate/cmds2.toml" >/dev/null
+grep -qx 'command = \["kitty"\]' "$browser_test/migrate/cmds2.toml" || fail 'kitty commands moved a second time'
+printf 'terminal = ["kitty"]\ncommand = ["kitty"]\n' > "$browser_test/migrate/cmds3.toml"
+XDG_STATE_HOME=$browser_test/cstate3 upgrade_terminal_commands "$browser_test/migrate/cmds3.toml" >/dev/null
+grep -qx 'command = \["kitty"\]' "$browser_test/migrate/cmds3.toml" || fail 'kitty commands moved while kitty is the terminal'
 # shellcheck disable=SC2034 # read by fresh_config_source in the sourced installer
 BROWSER_EFFECTIVE=none
 fresh_config_source "$SOURCE/config.example.toml" | grep -qx 'browser = \[\]' || fail 'fresh opt-out config kept the Helium default'

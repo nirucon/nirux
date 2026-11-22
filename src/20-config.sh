@@ -561,6 +561,44 @@ upgrade_terminal_binding() {
   fi
   mkdir -p "${term_mark%/*}" && : > "$term_mark" || :
 }
+# With NIRUTERM as the terminal, the programs a configuration starts in kitty
+# (autostart, recipes, scratchpads, key bindings) move to NIRUTERM too, once.
+# NIRUTERM understands kitty's options, so the rest of each command and its
+# window class stay as they are. A bare kitty window placed by class "kitty"
+# gets class "niruterm", the class NIRUTERM's window has. Comments and
+# terminal_alt are left alone, so kitty stays on Super+Shift+Enter.
+upgrade_terminal_commands() {
+  tc_mark=${XDG_STATE_HOME:-$HOME/.local/state}/nirux/terminal-commands-niruterm
+  [ -e "$tc_mark" ] && return 0
+  grep -qx 'terminal = \["niruterm"\]' "$1" || return 0
+  if grep -Eq '^(command = \["kitty"[],]|action = "start kitty( |"))' "$1"; then
+    tc_mode=$(stat -c %a "$1") || die "could not read permissions for $1"
+    tc_tmp=$(mktemp "$1.nirux-termcmd.XXXXXX") || die "could not stage $1"
+    if awk '
+      function out(l) {
+        if (l ~ /^command = \["kitty"[],]/) sub(/^command = \["kitty"/, "command = [\"niruterm\"", l)
+        else if (l ~ /^action = "start kitty( |")/) sub(/^action = "start kitty/, "action = \"start niruterm", l)
+        print l
+      }
+      {
+        if (held != "") {
+          if (held == "class = \"kitty\"" && $0 == "command = [\"kitty\"]") { print "class = \"niruterm\""; print "command = [\"niruterm\"]"; held = ""; next }
+          if ($0 == "class = \"kitty\"" && held == "command = [\"kitty\"]") { print "command = [\"niruterm\"]"; print "class = \"niruterm\""; held = ""; next }
+          out(held); held = ""
+        }
+        if ($0 == "class = \"kitty\"" || $0 == "command = [\"kitty\"]") { held = $0; next }
+        out($0)
+      }
+      END { if (held != "") out(held) }' "$1" > "$tc_tmp" &&
+       chmod "$tc_mode" "$tc_tmp" && mv -f "$tc_tmp" "$1"; then
+      say 'Programs started in kitty (autostart, scratchpads, keys) now start in NIRUTERM.'
+    else
+      rm -f "$tc_tmp"
+      die "could not move the kitty commands in $1 to NIRUTERM; original kept"
+    fi
+  fi
+  mkdir -p "${tc_mark%/*}" && : > "$tc_mark" || :
+}
 upgrade_obsolete_default_browser() {
   [ "${BROWSER_EFFECTIVE:-keep}" = helium ] || return 0
   browser_available brave && return 0
