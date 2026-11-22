@@ -15,7 +15,7 @@ A normal `nirux install` or `nirux update` never installs an extra. You ask for 
 | [nplay](#nplay-terminal-music-player) | 1.8.2 | Terminal music, radio and podcast player; also fully standalone | beta |
 | [niruamp](#niruamp-graphical-frontend-for-nplay) | 0.6.0 | Winamp-inspired graphical frontend for NPLAY (requires NPLAY) | alpha |
 | [niruflow](#niruflow-maintenance-and-cleanup) | 1.0.0 | Local maintenance and automation | alpha |
-| [nirusec](#nirusec-firewall-and-security-overview) | 0.3.0 | Firewall, ports, updates, firmware and security overview | alpha |
+| [nirusec](#nirusec-firewall-and-security-overview) | 0.3.2 | Firewall, ports, updates, firmware and security overview | alpha |
 | [nirugame](#nirugame-game-launcher) | 0.2.0 | Steam, RetroArch and native games, with optional SID music | alpha |
 | [niruremote](#niruremote-remote-desktop) | 0.2.0 | Graphical remote desktop over Tailscale and SSH | alpha |
 | [nirudictate](#nirudictate-local-dictation) | 0.4.0 | Local speech-to-text dictation, voice commands, and voice messages to opencode | alpha |

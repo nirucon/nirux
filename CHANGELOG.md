@@ -2,6 +2,13 @@
 
 Earlier releases are described in their release notes and commit messages.
 
+## 0.12.328 (2026-11-22)
+
+- **NIRUSEC 0.3.2 updates with the nightly update.** Its installer asked for
+  sudo even when nothing needed root, so the nightly update could not update
+  it. It now needs root only for a new privileged helper, puts the helper in
+  place first, and changes nothing when root is not available.
+
 ## 0.12.327 (2026-11-22)
 
 - **The whole suite is fast and light.** Every extra is now a native program
