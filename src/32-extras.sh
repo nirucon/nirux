@@ -1,14 +1,14 @@
 extras_table() {
   cat <<'EOF'
-nirunote nirunote 0.7.1 a27ba8db13915143f42f3141933a8596d96b0f02ce906fedde9b81f42870039a
-nirupres nirupres 2.4.0 ead8a48ec4d34b7f77d585ddb5ec98c9c6f9a8aa7ec273de8529dbee09e008a3
+nirunote nirunote 1.0.0 b76c2c10a60ec1a5b9563372f356b3203d9ca04aa90c81b6a92d95466b51b988
+nirupres nirupres 3.0.0 e418e229236bfde4ecc3cacf5ecad36e1893ddf9dcfdd25a67c2dc4cc6c2b738
 nplay nplay 1.8.2 5bd6dc17095648017ccf5922e342574ed596cc845ada78adbc5d5ff312d433d8
-niruamp niruamp 0.5.2 d6623c81a23959eb3eb350e34f7203651b84a818a9896296d217ceaae55b65fe
-niruflow niruflow 0.6.1 8c5611a3d719fb0ec6f0dc8f296ffde1b22e5d4aa9e6f600b5d5c76e8934a26e
-nirusec nirusec 0.2.0 f3f7b85a1e0e3e91880721c060d24c50eadf843c602624eb8345bf8f3c5ae6d2
-nirugame nirugame 0.1.4 96288834f2ca08c08b062f6f28142c079ee6c9c9198b9cdf085143deac719e54
+niruamp niruamp 0.6.0 1ac76207c47a6080fe9b609a950893466cfad0fe116ac0e68590bd0727976d09
+niruflow niruflow 1.0.0 288ea78a0b4b6945624d1529c5581b74d13be9269057698e7fa4d5832496746c
+nirusec nirusec 0.3.0 dcc9f176624e4bc0598b3e283f26950ef76a6bdb035b6078856e6df851963c1b
+nirugame nirugame 0.2.0 145f3e327702b296f7b6bb83dea2b263dd4662526b1224df174d0d0e00d0e258
 niruremote niruremote 0.2.0 64571f661be436c1fb69b72439f7af69802d87c83ac1652c49b84f0cfd80f784
-nirudictate nirudictate 0.3.0 49d4fa1987ca392e4763f8a1c16551b573c018e9d6a1cda7029c3bdeebeb77b2
+nirudictate nirudictate 0.4.0 759cd574286b97291ac7f35cc923a1596deac0de3f92c9515e408fb8c46e7b21
 EOF
 }
 # Extras that left the suite. Each is removed once with the uninstaller of

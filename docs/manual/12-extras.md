@@ -4,19 +4,21 @@ Extras are optional NIRU applications with their own repositories and release ca
 
 ## How extras work
 
+All extras are native programs drawn directly on X11, like the core suite: NIRUNOTE, NIRUPRES and NIRUFLOW are no longer Python and Qt, and NIRUAMP, NIRUSEC, NIRUGAME and NIRUDICTATE no longer use a GPU toolkit. They open in a few hundredths of a second and use about 8 to 20 MB. Updating an extra from an older version replaces the old install and keeps your files and settings.
+
 A normal `nirux install` or `nirux update` never installs an extra. You ask for each one by name. Every NIRUX release pins one version of each extra, together with the SHA-256 of its source archive.
 
 | Extra | Pinned | What it is | Status |
 |---|---|---|---|
-| [nirunote](#nirunote-markdown-editor) | 0.7.1 | Minimal Markdown editor and viewer | beta |
-| [nirupres](#nirupres-presentations) | 2.4.0 | Presentation studio | beta |
+| [nirunote](#nirunote-markdown-editor) | 1.0.0 | Minimal Markdown editor and viewer | beta |
+| [nirupres](#nirupres-presentations) | 3.0.0 | Presentation studio | beta |
 | [nplay](#nplay-terminal-music-player) | 1.8.2 | Terminal music, radio and podcast player; also fully standalone | beta |
-| [niruamp](#niruamp-graphical-frontend-for-nplay) | 0.5.2 | Winamp-inspired graphical frontend for NPLAY (requires NPLAY) | alpha |
-| [niruflow](#niruflow-maintenance-and-cleanup) | 0.6.1 | Local maintenance and automation | alpha |
-| [nirusec](#nirusec-firewall-and-security-overview) | 0.2.0 | Firewall, ports, updates, firmware and security overview | alpha |
-| [nirugame](#nirugame-game-launcher) | 0.1.4 | Steam, RetroArch and native games, with optional SID music | alpha |
+| [niruamp](#niruamp-graphical-frontend-for-nplay) | 0.6.0 | Winamp-inspired graphical frontend for NPLAY (requires NPLAY) | alpha |
+| [niruflow](#niruflow-maintenance-and-cleanup) | 1.0.0 | Local maintenance and automation | alpha |
+| [nirusec](#nirusec-firewall-and-security-overview) | 0.3.0 | Firewall, ports, updates, firmware and security overview | alpha |
+| [nirugame](#nirugame-game-launcher) | 0.2.0 | Steam, RetroArch and native games, with optional SID music | alpha |
 | [niruremote](#niruremote-remote-desktop) | 0.2.0 | Graphical remote desktop over Tailscale and SSH | alpha |
-| [nirudictate](#nirudictate-local-dictation) | 0.3.0 | Local speech-to-text dictation, voice commands, and voice messages to opencode | alpha |
+| [nirudictate](#nirudictate-local-dictation) | 0.4.0 | Local speech-to-text dictation, voice commands, and voice messages to opencode | alpha |
 
 ### Install, update and remove
 
@@ -166,7 +168,7 @@ health marks such slides with an orange **FIT** badge. New layouts: CODE,
 IMAGE + CAPTION and THREE COLUMN (columns separated by `|||`); TABLE wraps its
 cells.
 
-There is no config file to edit; choices are stored as small JSON files in `~/.local/share/nirupres/`. Talk recordings go to `~/Videos/` (`NIRUPRES_TALK_DIR` changes that). Talk mode needs NIRUCLIP, which is alpha. Full documentation: [github.com/nirucon/nirupres](https://github.com/nirucon/nirupres).
+There is no config file to edit; choices are stored as small JSON files in `~/.local/share/nirupres/`. Talk recordings go to `~/Videos/` (`NIRUPRES_TALK_DIR` changes that). Talk mode needs NIRUCLIP, which is alpha. Video slides play through mpv (web videos through yt-dlp); without mpv the poster frame is shown. Full documentation: [github.com/nirucon/nirupres](https://github.com/nirucon/nirupres).
 
 ## NPLAY: terminal music player
 
@@ -263,6 +265,7 @@ nirusec --status                # the last check, from the shared cache
 nirusec --profile-rules soft    # the exact UFW rules of a profile
 ```
 
+- **Keys:** `Ctrl+1` to `Ctrl+7` switch views, `Tab` moves between controls, `F5` checks again.
 - **Profiles:** Soft (home and office), Medium (public Wi-Fi), Hard (Tailscale only), Gaming and Off. **Preview** shows the exact UFW commands and warns when a change would cut the SSH session you are using.
 - **Safe undo:** any change that could cut access is tried for 120 seconds. Press **Keep**, or the previous settings return by themselves, even if NIRUSEC crashes or you log out.
 - **Passwords:** the window runs as you; changes go through a small PolicyKit helper and ask for the administrator password every time.

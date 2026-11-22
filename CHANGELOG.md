@@ -2,6 +2,30 @@
 
 Earlier releases are described in their release notes and commit messages.
 
+## 0.12.327 (2026-11-22)
+
+- **The whole suite is fast and light.** Every extra is now a native program
+  drawn on X11 like the core suite:
+
+  | | Before | Now |
+  |---|---|---|
+  | NIRUNOTE 1.0.0 (was Python/Qt) | 275 ms, 86 MB | 20-28 ms, 14 MB |
+  | NIRUPRES 3.0.0 (was Python/Qt) | 325-650 ms, 100 MB | 9-30 ms, 18-20 MB |
+  | NIRUFLOW 1.0.0 (was Python/Qt) | 530 ms, 90 MB | 11-40 ms, 13 MB |
+  | NIRUAMP 0.6.0 (was egui/GL) | 118 ms, 120 MB, 305% CPU playing | 28 ms, 8-10 MB, 2% playing |
+  | NIRUSEC 0.3.0 (was egui) | 80-117 ms, 115 MB | 13-16 ms, 8 MB |
+  | NIRUGAME 0.2.0 (was egui) | 62-114 ms, 115 MB | 20-24 ms, 8 MB |
+  | NIRUDICTATE 0.4.0 settings (was egui) | 87 ms, 114 MB | 7-19 ms, 14 MB |
+
+  Your files and settings keep working; updating an extra replaces the old
+  install.
+- **NIRUWM 0.37.0 and NIRUBAR 0.32.0:** the bar is event driven (sound,
+  microphone, Tailscale, notifications, displays, drives): idle CPU for two
+  bars went from 6-11% of a core to about 0.6%, and it no longer starts
+  helper programs every few seconds. The clipboard history and touchpad
+  gestures helpers are small native programs (under 1 MB, no CPU while idle)
+  instead of Python.
+
 ## 0.12.326 (2026-11-22)
 
 - **NIRUFM 0.2.4: bookmarks in your order.** Drag a bookmark in the side
