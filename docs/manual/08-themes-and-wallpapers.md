@@ -4,7 +4,7 @@ This chapter covers the NIRU themes, theme packs, NIRU Theme Selector, the `niru
 
 ## How themes work
 
-One theme is active at a time, and it is followed everywhere: NIRUWM's borders, NIRUBAR, NIRU Launcher, NIRUNOTIFY, NIRULOCK, NIRUSCREENSAVER, NIRUSHOT, the toolkit apps that choose *Follow NIRUX*, the kitty and fish colours and, unless you chose your own picture, the wallpaper and the login screen.
+One theme is active at a time, and it is followed everywhere: NIRUWM's borders, NIRUBAR, NIRU Launcher, NIRUNOTIFY, NIRULOCK, NIRUSCREENSAVER, NIRUSHOT, NIRUFM and its icons, the toolkit apps that choose *Follow NIRUX*, the kitty and fish colours and, unless you chose your own picture, the wallpaper and the login screen.
 
 - The active theme is the `theme` key at the top of `~/.config/niruwm/config.toml`.
 - Built-in themes are compiled into NIRUWM, so they always work.

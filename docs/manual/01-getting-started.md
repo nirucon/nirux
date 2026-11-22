@@ -165,6 +165,11 @@ hundredths of a second, uses about 15 MB of memory and follows the theme. Press
   rename it, open it in a new tab or remove it.
 - **Nextcloud:** in a synced folder the right-click menu copies the public or
   internal link and opens sharing, and badges show what is synced.
+- **Icons:** folders, places, drives and the common file types have NIRUX's
+  own retro pixel icons (NIRUICONS) in the colours of the theme, and a theme
+  change recolours them at once. Other file types take the Papirus icon in
+  grey. To use the icon theme alone, in its own colours, put
+  `icons = "theme"` in `~/.config/nirufm/config.toml`.
 
 Folders that other programs open ("show in folder") open in NIRUFM too.
 

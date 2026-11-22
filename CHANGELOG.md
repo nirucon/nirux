@@ -2,6 +2,17 @@
 
 Earlier releases are described in their release notes and commit messages.
 
+## 0.12.330 (2026-11-22)
+
+- **NIRUX has its own icons.** NIRUFM 0.3.0 draws folders, places, drives and
+  the common file types with NIRUICONS, a new set of 40 retro pixel icons in
+  the style of the suite. They take the colours of the theme in effect, also
+  your own themes, and a theme change recolours them at once. File types the
+  set has no picture for take the Papirus icon in grey, so they sit quietly
+  beside the set. The trash shows when it has something in it.
+  `icons = "theme"` in `~/.config/nirufm/config.toml` goes back to the icon
+  theme alone.
+
 ## 0.12.329 (2026-11-22)
 
 - **Wallpapers look right on every screen.** With screens of different sizes
