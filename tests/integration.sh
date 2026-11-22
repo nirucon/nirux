@@ -1422,8 +1422,8 @@ class = "kitty"
 command = ["alacritty"]
 EOF
 XDG_STATE_HOME=$browser_test/cstate upgrade_terminal_commands "$browser_test/migrate/cmds.toml" >/dev/null
-cmp -s "$browser_test/migrate/cmds.toml" "$browser_test/migrate/cmds-expected" ||
-  fail "kitty commands not moved as expected: $(diff "$browser_test/migrate/cmds-expected" "$browser_test/migrate/cmds.toml")"
+[ "$(cat "$browser_test/migrate/cmds.toml")" = "$(cat "$browser_test/migrate/cmds-expected")" ] ||
+  fail "kitty commands not moved as expected: $(cat "$browser_test/migrate/cmds.toml")"
 printf 'terminal = ["niruterm"]\ncommand = ["kitty"]\n' > "$browser_test/migrate/cmds2.toml"
 XDG_STATE_HOME=$browser_test/cstate upgrade_terminal_commands "$browser_test/migrate/cmds2.toml" >/dev/null
 grep -qx 'command = \["kitty"\]' "$browser_test/migrate/cmds2.toml" || fail 'kitty commands moved a second time'

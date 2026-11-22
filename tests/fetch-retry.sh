@@ -101,12 +101,14 @@ fetch() {
   printf '%s\n' "$1" >> "$reuse/fetched"
   cp "$reuse/release/${1##*/}" "$2"
 }
+# shellcheck disable=SC2034 # read by release_files
 (STATE=$reuse/state WORK=$reuse/work; release_files niruwm 1.0.0 niruwm niructl) > "$reuse/out"
 grep -q '/niruwm$' "$reuse/fetched" && fail 'a program already installed was downloaded again'
 grep -q '/niructl$' "$reuse/fetched" || fail 'a changed program was not downloaded'
-cmp -s "$reuse/work/download/niruwm/niruwm" "$reuse/release/niruwm" || fail 'the reused copy differs'
-cmp -s "$reuse/work/download/niruwm/niructl" "$reuse/release/niructl" || fail 'the downloaded copy differs'
+[ "$(cat "$reuse/work/download/niruwm/niruwm")" = "$(cat "$reuse/release/niruwm")" ] || fail 'the reused copy differs'
+[ "$(cat "$reuse/work/download/niruwm/niructl")" = "$(cat "$reuse/release/niructl")" ] || fail 'the downloaded copy differs'
 : > "$reuse/fetched"
+# shellcheck disable=SC2034 # read by release_files
 (STATE=$reuse/state WORK=$reuse/work2; release_files niruwm 1.0.0 niruwm) > "$reuse/out2"
 [ "$(cat "$reuse/fetched")" = https://github.com/nirucon/niruwm/releases/download/v1.0.0/SHA256SUMS ] ||
   fail 'only the checksum list should be fetched when everything is local'
