@@ -173,6 +173,7 @@ Type an arithmetic expression such as `2+2*3`, `(1920/1080)` or `15% of 240`. A 
 
 Press `Super+O`, or type `/` and a name in `Super+P`, `Super+Shift+P` or `Super+A` (`/ faktura`, `/kvitto 2024`).
 
+- Each row shows the NIRUX icon for its kind (folder, PDF, document, picture, music, code and so on) in the theme's colours, the same icons as in NIRUFM.
 - An empty field (or a lone `/`) lists recently used files from `~/.local/share/recently-used.xbel`, newest first, marked ↺.
 - Words match in any order, in the file name or its folders, ignoring case and diacritics (`faktura aao` finds `faktura-åäö.pdf`).
 - Hidden files and folders are skipped, and so are `.cache`, the trash, `.git`, `node_modules`, `target`, `__pycache__`, `.venv` and similar.

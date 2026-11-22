@@ -2,6 +2,13 @@
 
 Earlier releases are described in their release notes and commit messages.
 
+## 0.12.331 (2026-11-22)
+
+- **The NIRUX icons in file search too.** NIRU Launcher 0.19.0 shows the
+  icon for each result's kind in file search (`Super+O` or `/ name`): the
+  same theme-coloured NIRUICONS as in NIRUFM, also for Home and the usual
+  home folders.
+
 ## 0.12.330 (2026-11-22)
 
 - **NIRUX has its own icons.** NIRUFM 0.3.0 draws folders, places, drives and
