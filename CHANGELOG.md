@@ -2,6 +2,13 @@
 
 Earlier releases are described in their release notes and commit messages.
 
+## 0.12.334 (2026-11-22)
+
+- **NPLAY shows the right album cover in NIRUTERM.** NIRUTERM 0.1.5: a
+  program that sends a new picture under the same image id and size (NPLAY's
+  cover at every track change) got the old, already scaled picture back, so
+  the first cover stayed. The scaled copy is now tied to the picture itself.
+
 ## 0.12.333 (2026-11-22)
 
 - **Screens follow the lid again after a restart.** NIRUWM 0.37.2: the
