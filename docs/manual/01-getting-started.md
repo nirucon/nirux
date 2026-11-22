@@ -160,6 +160,9 @@ hundredths of a second, uses about 15 MB of memory and follows the theme. Press
 - **Drives and servers:** USB sticks appear under DEVICES; click to mount,
   ⏏ to eject. `Ctrl+K` connects to `sftp://`, `ftp://`, `smb://` or `davs://`
   servers; SSH hosts from `~/.ssh/config` complete with `Tab`.
+- **Bookmarks:** `Ctrl+D` or "Add to bookmarks" on a folder. Drag them in the
+  side panel to put them in order; right-click one to move it up or down,
+  rename it, open it in a new tab or remove it.
 - **Nextcloud:** in a synced folder the right-click menu copies the public or
   internal link and opens sharing, and badges show what is synced.
 

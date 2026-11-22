@@ -2,6 +2,15 @@
 
 Earlier releases are described in their release notes and commit messages.
 
+## 0.12.326 (2026-11-22)
+
+- **NIRUFM 0.2.4: bookmarks in your order.** Drag a bookmark in the side
+  panel to move it; right-click for move up or down, rename, open in a new
+  tab and remove. Folders get "Add to bookmarks" in their menu. Start time
+  and memory are unchanged.
+- **NIRUTERM 0.1.4:** `SHELL` inside is the shell NIRUTERM runs (fish), so
+  nirufetch and other programs show fish and not the login shell.
+
 ## 0.12.325 (2026-11-22)
 
 - **Everything that started in kitty starts in NIRUTERM.** Autostart,

@@ -1,5 +1,5 @@
 schema 1
-suite 0.12.325
+suite 0.12.326
 niruwm 0.36.3
 nirubar 0.31.0
 niruscreensaver 0.18.0
@@ -19,5 +19,5 @@ niruio 0.2.1
 nirusplash 0.2.0
 nirusleep 0.1.0
 nirudemo 0.1.0
-nirufm 0.2.3
-niruterm 0.1.3
+nirufm 0.2.4
+niruterm 0.1.4
