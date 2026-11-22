@@ -2,6 +2,15 @@
 
 Earlier releases are described in their release notes and commit messages.
 
+## 0.12.333 (2026-11-22)
+
+- **Screens follow the lid again after a restart.** NIRUWM 0.37.2: the
+  display and place watchers keep a PID file. After a reboot the old file
+  could name a process number that now belonged to another program, so the
+  watchers thought they were running and quit: the lid and docking were not
+  followed until the next login. The PID now only counts when it is a
+  watcher.
+
 ## 0.12.332 (2026-11-22)
 
 - **Recording films with the external camera when docked.** NIRUCLIP 0.8.1
