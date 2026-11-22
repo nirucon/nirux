@@ -2,7 +2,7 @@
 # NIRUX: install a complete X11 desktop, or maintain an existing installation.
 set -eu
 
-VERSION=0.12.323
+VERSION=0.12.324
 PREFIX=${NIRUX_PREFIX:-$HOME/.local}
 BIN=$PREFIX/bin
 STATE=$PREFIX/share/nirux
@@ -494,7 +494,11 @@ refresh_runtime_state() {
   if command -v udevadm >/dev/null 2>&1 && as_root test -S /run/udev/control; then
     as_root udevadm control --reload-rules || die 'could not reload input device rules'
     as_root udevadm trigger --action=change --subsystem-match=input || die 'could not refresh input device properties'
-    as_root udevadm settle --timeout=10 || die 'input device refresh did not finish'
+    # A slow device elsewhere (a disk, a dock) can keep the queue busy past the
+    # timeout. The input rules are already reloaded and triggered, so a late
+    # queue is no reason to stop the update half way.
+    as_root udevadm settle --timeout=30 ||
+      say 'nirux: input devices are still being refreshed; continuing (a new keyboard or touchpad setting may need a replug or the next login)'
   fi
 }
 

@@ -98,7 +98,7 @@ as_root() {
   case "$1" in
     test) return "${NO_DAEMONS:-0}" ;;
     dbus-send) return "${BUS_RESULT:-0}" ;;
-    udevadm) return "${UDEV_RESULT:-0}" ;;
+    udevadm) [ "$2" = settle ] && return "${SETTLE_RESULT:-0}"; return "${UDEV_RESULT:-0}" ;;
     *) fail "unexpected runtime command: $*" ;;
   esac
 }
@@ -112,7 +112,7 @@ dbus-send --system --type=method_call --print-reply --reply-timeout=5000 --dest=
 test -S /run/udev/control
 udevadm control --reload-rules
 udevadm trigger --action=change --subsystem-match=input
-udevadm settle --timeout=10
+udevadm settle --timeout=30
 EOF
   same_file "$TEST/runtime.log" "$TEST/runtime-expected" || fail "$OS refresh sequence changed"
 
@@ -132,4 +132,7 @@ bus_failure() ( BUS_RESULT=1; refresh_runtime_state; )
 udev_failure() ( UDEV_RESULT=1; refresh_runtime_state; )
 expect_status 1 bus_failure
 expect_status 1 udev_failure
+# A queue still busy after the timeout warns and goes on (niruxwork 2026-11-22).
+settle_late() ( SETTLE_RESULT=1; refresh_runtime_state; )
+expect_status 0 settle_late
 printf 'PASS: selective Debian DM policy, original-policy delegation/restoration, apt failure handling, and D-Bus/input refresh on Debian/Arch/Void\n'

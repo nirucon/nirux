@@ -2,6 +2,14 @@
 
 Earlier releases are described in their release notes and commit messages.
 
+## 0.12.324 (2026-11-22)
+
+- **An update no longer stops when the device queue is slow.** After new
+  packages, NIRUX waits for the input devices to be refreshed. When another
+  device kept that queue busy for more than ten seconds, the update stopped
+  after the packages and the new version was never installed. It now waits up
+  to 30 seconds, says so, and goes on.
+
 ## 0.12.323 (2026-11-22)
 
 - **NIRUTERM 0.1.1:** a keyboard layout switched while the terminal is open
