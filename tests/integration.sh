@@ -144,7 +144,9 @@ fixture nirulogin "$login_version" nirulogin
 fixture nirushare "$share_version" nirushare
 fixture nirunotify "$notifier_version" nirunotify
 fixture nirushot "$shot_version" nirushot
-fixture niruclip "$clip_version" niruclip
+fixture niruclip "$clip_version" niruclip niruclip-edit.desktop niruclip.svg
+printf '[Desktop Entry]\nType=Application\nName=NIRUCLIP Editor\nExec=niruclip edit %%F\n' > "$FIXTURE/niruclip/$clip_version/niruclip-edit.desktop"
+printf '<svg xmlns="http://www.w3.org/2000/svg"/>\n' > "$FIXTURE/niruclip/$clip_version/niruclip.svg"
 fixture nirufetch "$fetch_version" nirufetch
 fixture niruio "$io_version" niruio
 fixture nirusplash "$splash_version" nirusplash
@@ -707,6 +709,9 @@ for TEST_OS in arch debian void; do
     "$(sha256sum "$FIXTURE/niruwallpaper/$wallpaper_app_version/niruwallpaper.png" | cut -d ' ' -f1)" ] ||
     fail 'installed icon differs from the released icon'
   find "$ROOT" -name '*.sha256' -path '*nirux-owned*' | grep -q niruwallpaper.png || fail 'icon ownership was not recorded beside the file'
+  clip_desktop=$ROOT/usr/share/applications/niruclip-edit.desktop
+  grep -qxF "Exec=$BIN/niruclip edit %F" "$clip_desktop" || fail 'video editor entry does not use the managed binary'
+  [ -f "$ROOT/usr/share/icons/hicolor/scalable/apps/niruclip.svg" ] || fail 'video editor icon was not installed'
   display_desktop=$ROOT/usr/share/applications/nirudisplay.desktop
   grep -qxF "Exec=$BIN/nirudisplay" "$display_desktop" || fail 'display app entry does not use the managed binary'
   display_icon=$ROOT/usr/share/icons/hicolor/256x256/apps/nirudisplay.png
@@ -763,6 +768,8 @@ for TEST_OS in arch debian void; do
   [ ! -e "$ROOT/usr/share/icons/hicolor/256x256/apps/niruwallpaper.png" ] || fail 'wallpaper app icon remained after uninstall'
   find "$ROOT" -name '*.sha256' -path '*nirux-owned*' | grep -q niruwallpaper.png && fail 'icon ownership record remained after uninstall'
   [ ! -e "$ROOT/usr/share/applications/nirudisplay.desktop" ] || fail 'display app entry remained after uninstall'
+  [ ! -e "$ROOT/usr/share/applications/niruclip-edit.desktop" ] || fail 'video editor entry remained after uninstall'
+  [ ! -e "$ROOT/usr/share/icons/hicolor/scalable/apps/niruclip.svg" ] || fail 'video editor icon remained after uninstall'
   [ ! -e "$ROOT/usr/share/icons/hicolor/256x256/apps/nirudisplay.png" ] || fail 'display app icon remained after uninstall'
   find "$ROOT" -name '*.sha256' -path '*nirux-owned*' | grep -q nirudisplay.png && fail 'display icon ownership record remained after uninstall'
   [ ! -e "$ROOT/usr/share/applications/niruthemeselector.desktop" ] || fail 'theme selector entry remained after uninstall'

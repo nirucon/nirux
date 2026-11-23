@@ -70,6 +70,7 @@ uninstall() {
   remove_wallpaper_app
   remove_file_manager_app
   remove_terminal_app
+  remove_video_editor_app
   remove_display_app
   remove_theme_selector_app
   remove_system "$ROOT/etc/pam.d/nirulock"
@@ -348,6 +349,7 @@ install_or_update() {
   install_file_manager_app
   file_manager_default
   install_terminal_app
+  install_video_editor_app
   install_display_app
   install_theme_selector_app
   register_session

@@ -2,6 +2,15 @@
 
 Earlier releases are described in their release notes and commit messages.
 
+## 0.12.340 (2026-11-23)
+
+- **NIRUCLIP Editor.** NIRUCLIP 0.9.0 adds `niruclip edit`: a fast video
+  editor with a timeline (cut, split, trim, reorder), music, titles, speed,
+  volume, fades, transitions and picture effects, a live mpv preview inside
+  the window, and export to MP4, WebM, MKV, GIF or sound only. It is in the
+  launcher as NIRUCLIP Editor and under Open with for videos. NIRUX installs
+  `mpv` for its preview. Manual chapter 7, "Edit a video".
+
 ## 0.12.339 (2026-11-23)
 
 - **`nirux browser-m365` and `nirux browser-addon` work outside an update.**

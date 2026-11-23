@@ -2,7 +2,7 @@
 # NIRUX: install a complete X11 desktop, or maintain an existing installation.
 set -eu
 
-VERSION=0.12.339
+VERSION=0.12.340
 PREFIX=${NIRUX_PREFIX:-$HOME/.local}
 BIN=$PREFIX/bin
 STATE=$PREFIX/share/nirux
@@ -414,9 +414,9 @@ distribution_packages_for() {
   # The root-owned, restricted standalone Wi-Fi helper uses the system Python.
   case "$1" in arch) say python ;; debian|void) say python3 ;; esac
   case "$1" in
-    arch) say "xorg-server xorg-xinit xorg-xauth xorg-xrandr xorg-xset xorg-xprop xorg-xdpyinfo xorg-xwininfo xorg-xrdb xorg-xsetroot xorg-setxkbmap xorg-xinput xf86-input-libinput libinput-tools xkeyboard-config noto-fonts-emoji ttf-liberation noto-fonts udisks2 gvfs gvfs-mtp gvfs-smb gvfs-afc gvfs-nfs gvfs-dnssd glib2 xarchiver 7zip unzip zip unrar-free exfatprogs dbus pam pipewire pipewire-audio pipewire-pulse pipewire-alsa wireplumber alsa-utils alsa-ucm-conf rtkit fontconfig libglvnd ttf-dejavu ttf-jetbrains-mono-nerd kitty fish polkit-gnome libayatana-appindicator libayatana-indicator ayatana-ido bluez bluez-utils power-profiles-daemon dunst picom feh maim slop xdotool xclip tesseract tesseract-data-swe tesseract-data-eng ffmpeg v4l-utils xorg-xrandr xorg-xprop poppler ffmpegthumbnailer gdk-pixbuf2 playerctl libnotify brightnessctl gammastep iproute2 iw xdg-utils xdg-user-dirs unzip procps-ng util-linux smartmontools pacman-contrib gnome-keyring" ;;
-    debian) say "xserver-xorg xserver-xorg-input-libinput xinput libinput-tools xinit xauth x11-xserver-utils x11-utils x11-xkb-utils xkb-data fonts-liberation fonts-noto-core udisks2 gvfs gvfs-backends gvfs-fuse libglib2.0-bin xarchiver 7zip unzip zip unrar-free exfatprogs dbus-x11 dbus-user-session libpam0g pipewire pipewire-pulse pipewire-alsa wireplumber alsa-utils alsa-ucm-conf rtkit fontconfig libgles2 fonts-dejavu-core fonts-font-awesome fonts-jetbrains-mono fonts-noto-color-emoji kitty fish lxpolkit libayatana-appindicator3-1 libayatana-indicator3-7 libayatana-ido3-0.4-0 bluez libspa-0.2-bluetooth power-profiles-daemon dunst picom feh maim slop xdotool xclip tesseract-ocr tesseract-ocr-swe tesseract-ocr-eng ffmpeg sidplayfp v4l-utils x11-utils poppler-utils ffmpegthumbnailer libgdk-pixbuf2.0-bin playerctl libnotify-bin brightnessctl gammastep iproute2 iw rfkill xdg-utils xdg-user-dirs unzip procps util-linux smartmontools gnome-keyring libpam-gnome-keyring" ;;
-    void) say "xorg-minimal xinit xauth xrandr xset xprop xdpyinfo xwininfo xrdb xsetroot setxkbmap xinput libinput xkeyboard-config liberation-fonts-ttf noto-fonts-ttf udisks2 gvfs gvfs-mtp gvfs-smb gvfs-afc glib xarchiver 7zip unzip zip exfatprogs dbus elogind pam pam-base pipewire wireplumber alsa-utils alsa-ucm-conf rtkit fontconfig libglvnd dejavu-fonts-ttf nerd-fonts-symbols-ttf noto-fonts-emoji kitty fish-shell polkit-gnome libayatana-appindicator libayatana-indicator ayatana-ido bluez libspa-bluetooth power-profiles-daemon dunst picom feh maim slop xdotool xclip tesseract-ocr tesseract-ocr-swe tesseract-ocr-eng ffmpeg sidplayfp v4l-utils xrandr xprop poppler-utils ffmpegthumbnailer gdk-pixbuf playerctl libnotify brightnessctl gammastep iproute2 iw xdg-utils xdg-user-dirs unzip procps-ng util-linux smartmontools gnome-keyring" ;;
+    arch) say "xorg-server xorg-xinit xorg-xauth xorg-xrandr xorg-xset xorg-xprop xorg-xdpyinfo xorg-xwininfo xorg-xrdb xorg-xsetroot xorg-setxkbmap xorg-xinput xf86-input-libinput libinput-tools xkeyboard-config noto-fonts-emoji ttf-liberation noto-fonts udisks2 gvfs gvfs-mtp gvfs-smb gvfs-afc gvfs-nfs gvfs-dnssd glib2 xarchiver 7zip unzip zip unrar-free exfatprogs dbus pam pipewire pipewire-audio pipewire-pulse pipewire-alsa wireplumber alsa-utils alsa-ucm-conf rtkit fontconfig libglvnd ttf-dejavu ttf-jetbrains-mono-nerd kitty fish polkit-gnome libayatana-appindicator libayatana-indicator ayatana-ido bluez bluez-utils power-profiles-daemon dunst picom feh maim slop xdotool xclip tesseract tesseract-data-swe tesseract-data-eng ffmpeg mpv v4l-utils xorg-xrandr xorg-xprop poppler ffmpegthumbnailer gdk-pixbuf2 playerctl libnotify brightnessctl gammastep iproute2 iw xdg-utils xdg-user-dirs unzip procps-ng util-linux smartmontools pacman-contrib gnome-keyring" ;;
+    debian) say "xserver-xorg xserver-xorg-input-libinput xinput libinput-tools xinit xauth x11-xserver-utils x11-utils x11-xkb-utils xkb-data fonts-liberation fonts-noto-core udisks2 gvfs gvfs-backends gvfs-fuse libglib2.0-bin xarchiver 7zip unzip zip unrar-free exfatprogs dbus-x11 dbus-user-session libpam0g pipewire pipewire-pulse pipewire-alsa wireplumber alsa-utils alsa-ucm-conf rtkit fontconfig libgles2 fonts-dejavu-core fonts-font-awesome fonts-jetbrains-mono fonts-noto-color-emoji kitty fish lxpolkit libayatana-appindicator3-1 libayatana-indicator3-7 libayatana-ido3-0.4-0 bluez libspa-0.2-bluetooth power-profiles-daemon dunst picom feh maim slop xdotool xclip tesseract-ocr tesseract-ocr-swe tesseract-ocr-eng ffmpeg mpv sidplayfp v4l-utils x11-utils poppler-utils ffmpegthumbnailer libgdk-pixbuf2.0-bin playerctl libnotify-bin brightnessctl gammastep iproute2 iw rfkill xdg-utils xdg-user-dirs unzip procps util-linux smartmontools gnome-keyring libpam-gnome-keyring" ;;
+    void) say "xorg-minimal xinit xauth xrandr xset xprop xdpyinfo xwininfo xrdb xsetroot setxkbmap xinput libinput xkeyboard-config liberation-fonts-ttf noto-fonts-ttf udisks2 gvfs gvfs-mtp gvfs-smb gvfs-afc glib xarchiver 7zip unzip zip exfatprogs dbus elogind pam pam-base pipewire wireplumber alsa-utils alsa-ucm-conf rtkit fontconfig libglvnd dejavu-fonts-ttf nerd-fonts-symbols-ttf noto-fonts-emoji kitty fish-shell polkit-gnome libayatana-appindicator libayatana-indicator ayatana-ido bluez libspa-bluetooth power-profiles-daemon dunst picom feh maim slop xdotool xclip tesseract-ocr tesseract-ocr-swe tesseract-ocr-eng ffmpeg mpv sidplayfp v4l-utils xrandr xprop poppler-utils ffmpegthumbnailer gdk-pixbuf playerctl libnotify brightnessctl gammastep iproute2 iw xdg-utils xdg-user-dirs unzip procps-ng util-linux smartmontools gnome-keyring" ;;
   esac
 }
 # Runtime libraries and extraction tools for the pinned Helium archive. These
@@ -5110,6 +5110,7 @@ stage_component_assets() {
     nirudemo) release_files nirudemo "$component_version" nirudemo nirudemo-music.tar ;;
     nirufm) release_files nirufm "$component_version" nirufm nirufm.desktop nirufm.svg ;;
     niruterm) release_files niruterm "$component_version" niruterm niruprompt niruterm.desktop niruterm.svg ;;
+    niruclip) release_files niruclip "$component_version" niruclip niruclip-edit.desktop niruclip.svg ;;
     nirux) : ;;
     *) release_files "$component" "$component_version" "$component" ;;
   esac
@@ -5321,6 +5322,7 @@ apply_target_release() {
   install_file_manager_app
   file_manager_default
   install_terminal_app
+  install_video_editor_app
   install_display_app
   install_theme_selector_app
   register_session
@@ -6964,6 +6966,20 @@ remove_terminal_app() {
   remove_system "$ROOT/usr/share/applications/niruterm.desktop"
   remove_binary "$ROOT/usr/share/icons/hicolor/scalable/apps/niruterm.svg"
 }
+# The NIRUCLIP editor: entry and pixel icon from its release, so videos get
+# "Open with NIRUCLIP Editor" and the launcher lists it.
+install_video_editor_app() {
+  clip_dir=$WORK/download/niruclip
+  [ -f "$clip_dir/niruclip-edit.desktop" ] || return 0
+  [ -f "$clip_dir/niruclip.svg" ] || return 0
+  { say "# NIRUX owner: $PREFIX"; sed "s|^Exec=niruclip |Exec=$BIN/niruclip |" "$clip_dir/niruclip-edit.desktop"; } > "$WORK/niruclip-edit.desktop"
+  write_system "$ROOT/usr/share/applications/niruclip-edit.desktop" "$WORK/niruclip-edit.desktop"
+  write_binary "$ROOT/usr/share/icons/hicolor/scalable/apps/niruclip.svg" "$clip_dir/niruclip.svg"
+}
+remove_video_editor_app() {
+  remove_system "$ROOT/usr/share/applications/niruclip-edit.desktop"
+  remove_binary "$ROOT/usr/share/icons/hicolor/scalable/apps/niruclip.svg"
+}
 # Folders opened by other programs ("show in folder", xdg-open DIR) go to
 # NIRUFM, unless the user chose a file manager other than pcmanfm or NIRUORG,
 # the two it replaced.
@@ -8235,6 +8251,7 @@ uninstall() {
   remove_wallpaper_app
   remove_file_manager_app
   remove_terminal_app
+  remove_video_editor_app
   remove_display_app
   remove_theme_selector_app
   remove_system "$ROOT/etc/pam.d/nirulock"
@@ -8513,6 +8530,7 @@ install_or_update() {
   install_file_manager_app
   file_manager_default
   install_terminal_app
+  install_video_editor_app
   install_display_app
   install_theme_selector_app
   register_session

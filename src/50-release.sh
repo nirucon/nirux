@@ -19,6 +19,7 @@ stage_component_assets() {
     nirudemo) release_files nirudemo "$component_version" nirudemo nirudemo-music.tar ;;
     nirufm) release_files nirufm "$component_version" nirufm nirufm.desktop nirufm.svg ;;
     niruterm) release_files niruterm "$component_version" niruterm niruprompt niruterm.desktop niruterm.svg ;;
+    niruclip) release_files niruclip "$component_version" niruclip niruclip-edit.desktop niruclip.svg ;;
     nirux) : ;;
     *) release_files "$component" "$component_version" "$component" ;;
   esac
@@ -230,6 +231,7 @@ apply_target_release() {
   install_file_manager_app
   file_manager_default
   install_terminal_app
+  install_video_editor_app
   install_display_app
   install_theme_selector_app
   register_session

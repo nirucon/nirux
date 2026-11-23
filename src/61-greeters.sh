@@ -336,6 +336,20 @@ remove_terminal_app() {
   remove_system "$ROOT/usr/share/applications/niruterm.desktop"
   remove_binary "$ROOT/usr/share/icons/hicolor/scalable/apps/niruterm.svg"
 }
+# The NIRUCLIP editor: entry and pixel icon from its release, so videos get
+# "Open with NIRUCLIP Editor" and the launcher lists it.
+install_video_editor_app() {
+  clip_dir=$WORK/download/niruclip
+  [ -f "$clip_dir/niruclip-edit.desktop" ] || return 0
+  [ -f "$clip_dir/niruclip.svg" ] || return 0
+  { say "# NIRUX owner: $PREFIX"; sed "s|^Exec=niruclip |Exec=$BIN/niruclip |" "$clip_dir/niruclip-edit.desktop"; } > "$WORK/niruclip-edit.desktop"
+  write_system "$ROOT/usr/share/applications/niruclip-edit.desktop" "$WORK/niruclip-edit.desktop"
+  write_binary "$ROOT/usr/share/icons/hicolor/scalable/apps/niruclip.svg" "$clip_dir/niruclip.svg"
+}
+remove_video_editor_app() {
+  remove_system "$ROOT/usr/share/applications/niruclip-edit.desktop"
+  remove_binary "$ROOT/usr/share/icons/hicolor/scalable/apps/niruclip.svg"
+}
 # Folders opened by other programs ("show in folder", xdg-open DIR) go to
 # NIRUFM, unless the user chose a file manager other than pcmanfm or NIRUORG,
 # the two it replaced.

@@ -300,6 +300,68 @@ niruclip --share                      # export MP4 and open NIRU Share with it
 
 The MKV itself is never changed.
 
+## Edit a video
+
+NIRUCLIP has an editor for recordings and other videos: cut, split, trim and
+reorder clips, add music, titles, simple effects and transitions, and export,
+without another program. The sources are never changed.
+
+```sh
+niruclip edit                        # empty: Open (Ctrl+O) or Import (Ctrl+I) from Videos
+niruclip edit ~/Videos/NIRUCLIP-*.mkv
+niruclip edit film.niruclip          # a saved project
+```
+
+It is also in the launcher as **NIRUCLIP Editor**, and under *Open with* for
+video files in NIRUFM. The preview is mpv inside the window (NIRUX installs
+it); the editor itself uses next to no processor time while it waits.
+
+The window shows the imported media on the left, the preview in the middle,
+the settings of the selected clip on the right and the timeline at the
+bottom, with lanes for the picture, its sound and music. F1 lists every key.
+
+| Keys | Action |
+|---|---|
+| `Space`, `J` `K` `L` | Play or pause; back 2 s, pause, play (`L` again: faster) |
+| `←` `→`, `Shift+←` `→` | One frame, one second |
+| `↑` `↓`, `Home` `End` | Previous or next cut, start or end of the film |
+| `S` | Split the clip at the playhead |
+| `I`, `O`, `X`, `C` | Mark the start and end of a part; cut it out, or keep only it |
+| `Delete` | Remove the clip, or the marked part |
+| `Alt+←` `→` | Move the clip earlier or later |
+| `M`, `T` | Mute the clip; write a title over it |
+| `P` | Preview with effects and transitions |
+| `Tab` | Timeline, settings panel, media list |
+| `Ctrl+O`, `Ctrl+I`, `Ctrl+M` | Open, import, add music |
+| `Ctrl+S`, `Ctrl+E`, `Ctrl+Z` | Save, export, undo (`Ctrl+Y` redo) |
+
+With the mouse, drag media to the timeline, drag clips to reorder them and
+their edges to trim, and Shift+drag on the ruler to mark a part. The wheel
+scrolls the timeline; with Ctrl it zooms.
+
+A clip has speed (0.25 to 4 times), volume and mute, fade in and out, a
+transition from the clip before (cross fade, dissolve, through black or
+white, wipes, slides, circle, pixelize), brightness, contrast, colour,
+blur, sharpen, rotation, mirroring, cropping and a title. The live preview
+plays every cut; `P` renders a few seconds around the playhead (or the
+marked part) with every effect, exactly as it will be exported.
+
+**Formats.** Import anything ffmpeg reads: mkv, mp4, mov, webm, avi, mpg,
+ts and more, sound (mp3, wav, flac, ogg, opus, m4a) and pictures (png, jpg,
+webp). Export to MP4, a small MP4 to share, WebM, MKV, GIF, or sound only as
+MP3, WAV, FLAC or Opus, at the original size or 2160p to 480p. With a part
+marked, only that part is exported. Exports run in the background with
+progress in the top bar and a notification when done, and never overwrite
+a file.
+
+**Folders and projects.** Open and Import start in Videos and exports go
+there; both can be changed under Settings. Ctrl+S saves a small
+`.niruclip` project next to your videos. An unsaved project is kept every
+20 seconds and offered when the editor starts again.
+
+`niruclip edit --export film.niruclip --format webm --height 720` renders a
+saved project without opening a window.
+
 ## Recover an interrupted recording
 
 Recordings are written as `.part.mkv` and renamed only when they contain a usable video. If a recording ends unexpectedly (crash, killed encoder, power loss):
@@ -323,6 +385,9 @@ NIRUCLIP warns below 2 GB free space and stops cleanly (or does not start) below
 | `~/Videos/NIRUCLIP-*.mkv` | Recordings (`*.part.mkv` while recording), exports next to them |
 | `~/.config/niruclip/config.toml` | Profiles, default profile, encoder, microphone, camera recovery |
 | `~/.local/state/niruclip/session.json` | Recording state, read by the bar and the launcher |
+| `~/.config/niruclip/edit.toml` | Editor folders, last export format, recent projects |
+| `~/.local/state/niruclip/autosave.niruclip` | The editor's unsaved project |
+| `~/.cache/niruclip/` | Editor thumbnails and sound waves (safe to delete) |
 
 ## See also
 
