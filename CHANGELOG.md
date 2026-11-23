@@ -2,6 +2,15 @@
 
 Earlier releases are described in their release notes and commit messages.
 
+## 0.12.335 (2026-11-23)
+
+- **Super+Shift+K gets any window into the middle of `centered`.** NIRUWM
+  0.37.3: when a swap put another window under a mouse pointer that stood
+  still, that window took the focus, so the next swap moved it instead. In
+  the centered layout the middle is under the pointer, and it flipped between
+  two windows. The focus now stays on the window you move; moving the mouse
+  focuses as before.
+
 ## 0.12.334 (2026-11-22)
 
 - **NPLAY shows the right album cover in NIRUTERM.** NIRUTERM 0.1.5: a

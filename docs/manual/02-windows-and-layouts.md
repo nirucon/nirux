@@ -98,7 +98,7 @@ The focused window's border uses the theme's focus colour. `gap`, `border_width`
 | `Super+W` / `Alt+Tab` / `` Super+` `` | Window switcher |
 | `Super+Q` | Close the window |
 
-Moving a window swaps it with its neighbour in the order, so you can bring a stack window into the master position with a few presses of `Super+Shift+K`. Floating windows are not part of the order and are not moved.
+Moving a window swaps it with its neighbour in the order, so you can bring a stack window into the master position with a few presses of `Super+Shift+K`. Floating windows are not part of the order and are not moved. The focus stays on the window you move, even when the layout puts another window under a mouse pointer that stands still (in `centered` the master sits right under it); moving the mouse focuses the window under it as usual.
 
 In `[[keys]]` the actions are `focus_next`, `focus_prev`, `move_next` and `move_prev` (`swap_next` and `swap_prev` are the same actions under other names).
 
