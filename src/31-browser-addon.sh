@@ -266,8 +266,22 @@ browser_m365_status() {
   if [ -f "$BROWSER_M365_POLICY" ]; then say "policy: $BROWSER_M365_POLICY"; else say 'policy: not installed'; fi
 }
 
+# write_binary keeps its ownership record in $WORK, which only an install or
+# update sets up. A direct browser command gets its own for the call.
+browser_command_work() {
+  [ -z "$WORK" ] || return 0
+  WORK=$(mktemp -d "${TMPDIR:-/tmp}/nirux-browser.XXXXXX") || die 'could not create a work directory'
+  BROWSER_COMMAND_WORK=$WORK
+}
+
+browser_command_work_done() {
+  [ -z "${BROWSER_COMMAND_WORK:-}" ] || rm -rf "$BROWSER_COMMAND_WORK"
+  BROWSER_COMMAND_WORK=
+}
+
 browser_m365_command() {
   [ "$#" = 1 ] || die 'usage: nirux browser-m365 on|off|status'
+  [ "$1" = status ] || browser_command_work
   case "$1" in
     status) browser_m365_status ;;
     on|off)
@@ -281,6 +295,7 @@ browser_m365_command() {
       fi ;;
     *) die 'browser-m365 must be on, off or status' ;;
   esac
+  browser_command_work_done
 }
 
 browser_m365_remove() {

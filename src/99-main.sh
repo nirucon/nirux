@@ -45,7 +45,10 @@ main() {
       [ "$#" = 2 ] || die 'usage: nirux browser-addon bonjourr|none|status'
       case "$2" in
         status) browser_addon_status ;;
-        bonjourr|none) browser_addon_policy_set "$2"; browser_addon_apply "$2" ;;
+        bonjourr|none)
+          browser_command_work
+          browser_addon_policy_set "$2"; browser_addon_apply "$2"
+          browser_command_work_done ;;
         *) die 'browser-addon must be bonjourr, none or status' ;;
       esac ;;
     browser-m365) shift; browser_m365_command "$@" ;;

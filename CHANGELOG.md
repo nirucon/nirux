@@ -2,6 +2,13 @@
 
 Earlier releases are described in their release notes and commit messages.
 
+## 0.12.339 (2026-11-23)
+
+- **`nirux browser-m365` and `nirux browser-addon` work outside an update.**
+  Run on their own they installed the Helium policy but stopped before they
+  recorded it, so the choice was not kept. They now get a work folder of
+  their own.
+
 ## 0.12.338 (2026-11-23)
 
 - **Teams and Microsoft 365 stay signed in in Helium.** `nirux browser-m365 on`
