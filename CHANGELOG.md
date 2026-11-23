@@ -2,6 +2,11 @@
 
 Earlier releases are described in their release notes and commit messages.
 
+## 0.12.345 (2026-11-23)
+
+- **docker-stacks 1.0.1.** `docker-stacks list | head` ends quietly
+  instead of reporting a broken pipe.
+
 ## 0.12.344 (2026-11-23)
 
 - **New extra: docker-stacks 1.0.0.** Docker Compose stacks, containers,

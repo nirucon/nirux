@@ -19,7 +19,7 @@ A normal `nirux install` or `nirux update` never installs an extra. You ask for 
 | [nirugame](#nirugame-game-launcher) | 0.2.0 | Steam, RetroArch and native games, with optional SID music | alpha |
 | [niruremote](#niruremote-remote-desktop) | 0.2.0 | Graphical remote desktop over Tailscale and SSH | alpha |
 | [nirudictate](#nirudictate-local-dictation) | 0.4.0 | Local speech-to-text dictation, voice commands, and voice messages to opencode | alpha |
-| [docker-stacks](#docker-stacks-docker-in-the-terminal) | 1.0.0 | Docker Compose stacks, containers, images, volumes and networks in the terminal | beta |
+| [docker-stacks](#docker-stacks-docker-in-the-terminal) | 1.0.1 | Docker Compose stacks, containers, images, volumes and networks in the terminal | beta |
 
 ### Install, update and remove
 
