@@ -2,6 +2,20 @@
 
 Earlier releases are described in their release notes and commit messages.
 
+## 0.12.336 (2026-11-23)
+
+- **Super+Shift+J/K rotate the stack like dwm.** NIRUWM 0.37.4: the keys now
+  turn every tiled window on the workspace one place and the focus stays
+  where it is, as dwm's rotatestack does. Keep pressing `Super+Shift+K` and
+  each window comes into the master (the middle of `centered`) in turn. The
+  old swap is still there as `move_next` and `move_prev` for `[[keys]]`.
+  `scroll` keeps its column move.
+- **The display module no longer says Bottom-right on a single screen.**
+  NIRUBAR 0.32.2: a laptop panel that is connected but switched off (docked
+  with the lid shut) counted as a tiny screen in the corner, so the big
+  screen was labelled as if it sat below and to the right of it. Switched-off
+  outputs are now left out, and the module stays empty with one screen.
+
 ## 0.12.335 (2026-11-23)
 
 - **Super+Shift+K gets any window into the middle of `centered`.** NIRUWM

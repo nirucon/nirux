@@ -93,14 +93,14 @@ The focused window's border uses the theme's focus colour. `gap`, `border_width`
 |---|---|
 | `Super+J` / `Super+Right` / `Super+Down` | Focus the next window |
 | `Super+K` / `Super+Left` / `Super+Up` | Focus the previous window |
-| `Super+Shift+J` / `Super+Shift+Right` / `Super+Shift+Down` | Move the window down the stack |
-| `Super+Shift+K` / `Super+Shift+Left` / `Super+Shift+Up` | Move the window up the stack |
+| `Super+Shift+J` / `Super+Shift+Right` / `Super+Shift+Down` | Rotate the stack down, the focus stays |
+| `Super+Shift+K` / `Super+Shift+Left` / `Super+Shift+Up` | Rotate the stack up, the focus stays |
 | `Super+W` / `Alt+Tab` / `` Super+` `` | Window switcher |
 | `Super+Q` | Close the window |
 
-Moving a window swaps it with its neighbour in the order, so you can bring a stack window into the master position with a few presses of `Super+Shift+K`. Floating windows are not part of the order and are not moved. The focus stays on the window you move, even when the layout puts another window under a mouse pointer that stands still (in `centered` the master sits right under it); moving the mouse focuses the window under it as usual.
+Rotating works like dwm's rotatestack: every tiled window on the workspace moves one place in the order and the focus stays on the window it was on. Each press of `Super+Shift+K` brings the next window into the master position (the middle in `centered`), so you keep pressing until the window you want is there. Floating windows are not part of the order and are not moved. In `scroll` the keys move the focused window one column instead. The focus stays put even when the layout puts another window under a mouse pointer that stands still (in `centered` the master sits right under it); moving the mouse focuses the window under it as usual.
 
-In `[[keys]]` the actions are `focus_next`, `focus_prev`, `move_next` and `move_prev` (`swap_next` and `swap_prev` are the same actions under other names).
+In `[[keys]]` the actions are `focus_next`, `focus_prev`, `rotate_next` and `rotate_prev`. `move_next` and `move_prev` (also called `swap_next` and `swap_prev`) swap only the focused window with its neighbour, the way these keys worked before NIRUWM 0.37.4; bind them to a key of your own if you prefer that.
 
 ## Floating windows
 
