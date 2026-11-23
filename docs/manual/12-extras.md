@@ -19,6 +19,7 @@ A normal `nirux install` or `nirux update` never installs an extra. You ask for 
 | [nirugame](#nirugame-game-launcher) | 0.2.0 | Steam, RetroArch and native games, with optional SID music | alpha |
 | [niruremote](#niruremote-remote-desktop) | 0.2.0 | Graphical remote desktop over Tailscale and SSH | alpha |
 | [nirudictate](#nirudictate-local-dictation) | 0.4.0 | Local speech-to-text dictation, voice commands, and voice messages to opencode | alpha |
+| [docker-stacks](#docker-stacks-docker-in-the-terminal) | 1.0.0 | Docker Compose stacks, containers, images, volumes and networks in the terminal | beta |
 
 ### Install, update and remove
 
@@ -40,7 +41,7 @@ What happens on `install`:
 2. It runs that project's own `install.sh`.
 3. It checks that the command works (`NAME --version`) and marks the extra as selected in `~/.local/share/nirux/extras-selected`.
 
-`update` only touches selected extras whose installed version differs from the pin, and takes a NIRUX snapshot first when anything will be installed. `uninstall` (also spelled `remove`) runs the extra's own `uninstall.sh` from the same pinned source and unselects it. Every extra keeps your data on a normal uninstall; `--purge` is passed to the uninstallers that support it (NPLAY, NIRUAMP, NIRUPRES, NIRUFLOW, NIRUREMOTE, NIRUDICTATE). Uninstall extras before `nirux uninstall`, which removes the `nirux` command itself.
+`update` only touches selected extras whose installed version differs from the pin, and takes a NIRUX snapshot first when anything will be installed. `uninstall` (also spelled `remove`) runs the extra's own `uninstall.sh` from the same pinned source and unselects it. Every extra keeps your data on a normal uninstall; `--purge` is passed to the uninstallers that support it (NPLAY, NIRUAMP, NIRUPRES, NIRUFLOW, NIRUREMOTE, NIRUDICTATE, docker-stacks). Uninstall extras before `nirux uninstall`, which removes the `nirux` command itself.
 
 The bar's update module tracks the core NIRUX release only, not each extra. After `nirux update`, run `nirux extras update` to follow the new pins.
 
@@ -395,6 +396,33 @@ when the second language has to try. It needs NIRUWM 0.26 and NIRULAUNCHER 0.14 
 - Sounds: the `dictation` category of `nirux sounds` (see [10-sound-notifications-studio.md](10-sound-notifications-studio.md#event-sounds))
 
 Full documentation: [github.com/nirucon/nirudictate](https://github.com/nirucon/nirudictate).
+
+## docker-stacks: Docker in the terminal
+
+A fast terminal view of everything Docker runs: Compose stacks (wherever
+their files are, running, stopped or taken down), containers, images,
+volumes, networks and disk use, with live CPU and memory from Docker's own
+events and stats. It works the same at the desk and over SSH on a server,
+and wears the desktop's NIRU theme or a retro one (`t`). Status: beta.
+
+```sh
+nirux extras install docker-stacks
+docker-stacks                    # the view; ? lists every key
+docker-stacks list               # stacks, state and links
+docker-stacks update NAME        # pull and up, in this terminal
+```
+
+On a stack: `u` up, `d` down, `s` stop, `r` restart, `U` update, `l` logs,
+`e` a shell in a service, `o` open its link (Traefik, Caddy and published
+ports; over SSH it is copied to the terminal's clipboard), `E` edit the
+compose file, `B` dump its PostgreSQL or MySQL, and `x` uninstall, with a
+choice to dump the databases first, delete volumes and images and move the
+folder to `.trash`. Anything that deletes data asks first, and deleting
+volumes wants the name typed. Stacks are also read from `~/Docker` (the
+`roots` setting in `~/.config/docker-stacks/config.toml`). It needs Docker
+with Compose v2 and membership of the `docker` group.
+
+Full documentation: [github.com/nirucon/docker-stacks](https://github.com/nirucon/docker-stacks).
 
 ## Other suite tools
 

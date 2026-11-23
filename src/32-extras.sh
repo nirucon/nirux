@@ -9,6 +9,7 @@ nirusec nirusec 0.3.2 0d941c0bff02c6677b359ea31a7b54c62b5a93bde9c0e377001e314a48
 nirugame nirugame 0.2.0 145f3e327702b296f7b6bb83dea2b263dd4662526b1224df174d0d0e00d0e258
 niruremote niruremote 0.2.0 64571f661be436c1fb69b72439f7af69802d87c83ac1652c49b84f0cfd80f784
 nirudictate nirudictate 0.4.0 759cd574286b97291ac7f35cc923a1596deac0de3f92c9515e408fb8c46e7b21
+docker-stacks docker-stacks 1.0.0 290cc84710e4604ae1b09575a2ae9cbbe3e0f836d0045e54e682b5511f5e3587
 EOF
 }
 # Extras that left the suite. Each is removed once with the uninstaller of

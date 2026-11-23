@@ -95,6 +95,7 @@ by `nirux install` or `nirux update`; install only the ones you want with
 | [nirugame](https://github.com/nirucon/nirugame) | Steam, RetroArch and native games, with optional user-supplied SID music | alpha |
 | [niruremote](https://github.com/nirucon/niruremote) | Graphical remote desktop over Tailscale and SSH | alpha |
 | [nirudictate](https://github.com/nirucon/nirudictate) | Local speech-to-text dictation with `Ctrl+Alt+Space`; `Shift+Alt+Space` talks to the opencode agent | alpha |
+| [docker-stacks](https://github.com/nirucon/docker-stacks) | Docker Compose stacks, containers, images, volumes and networks in the terminal | beta |
 
 ### Accessories
 

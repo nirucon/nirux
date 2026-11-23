@@ -2,6 +2,14 @@
 
 Earlier releases are described in their release notes and commit messages.
 
+## 0.12.344 (2026-11-23)
+
+- **New extra: docker-stacks 1.0.0.** Docker Compose stacks, containers,
+  images, volumes and networks in one fast terminal view, rewritten in
+  Rust: live state from Docker's events, links from ports and proxies,
+  logs, shells, database dumps, safe uninstall, and the NIRU theme or a
+  retro one. `nirux extras install docker-stacks`. Manual chapter 12.
+
 ## 0.12.343 (2026-11-23)
 
 - **Rotate the stack has no dead step.** NIRUWM 0.37.6: a hidden
