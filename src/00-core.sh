@@ -2,7 +2,7 @@
 # NIRUX: install a complete X11 desktop, or maintain an existing installation.
 set -eu
 
-VERSION=0.12.337
+VERSION=0.12.338
 PREFIX=${NIRUX_PREFIX:-$HOME/.local}
 BIN=$PREFIX/bin
 STATE=$PREFIX/share/nirux
@@ -116,6 +116,7 @@ usage() {
   say "       nirux repair-session | repair-wallpaper"
   say "       nirux remove helium|localsend|opencode"
   say "       nirux browser-addon bonjourr|none|status"
+  say "       nirux browser-m365 on|off|status"
   say "       nirux extras [list|status|select NAME|unselect NAME|install [NAME...]|uninstall NAME... [--purge]|update]"
   say "       nirux sounds [status|list|on|off|toggle|test|app ...] (see docs/SOUNDS.md)"
   say "       nirux fleet [status [--json]|update HOST...|--all|--behind|setup [HOST...]|set KEY VALUE [HOST...]|pending [apply|clear]|top]"

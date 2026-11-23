@@ -69,6 +69,27 @@ update then restarts the bar only and says so: log out and back in once, and fro
 on updates apply without logging out. `nirux status` says when the running WM is
 still the old generation, and whether `niructl restart-wm` can activate it.
 
+## Teams and Microsoft 365 in Helium
+
+Helium blocks third-party cookies and pop-ups. Teams, Outlook and the other
+Microsoft 365 web apps renew their sign-in in a hidden frame from
+`login.microsoftonline.com`; when that is blocked they show a "sign in again"
+banner, and its button opens a pop-up that is blocked too, so nothing happens.
+
+```sh
+nirux browser-m365 on       # allow Microsoft 365 sign-in in Helium
+nirux browser-m365 status
+nirux browser-m365 off
+```
+
+`on` installs a managed policy (`/etc/chromium/policies/managed/nirux-m365.json`,
+sudo) that lets only Microsoft's sign-in and Microsoft 365 sites keep their
+cookies and open pop-ups, keeps the storage of Teams and Outlook in one piece,
+and lets Teams use the microphone, camera and notifications without asking
+every time. Every other site keeps Helium's defaults. Quit Helium once, every
+window, so it reads the policy; `helium://policy` lists it. The choice is kept
+across updates.
+
 ## Hardware video in Helium
 
 Video in Helium, and the video in Teams calls, is decoded by the graphics card

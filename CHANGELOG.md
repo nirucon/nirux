@@ -2,6 +2,16 @@
 
 Earlier releases are described in their release notes and commit messages.
 
+## 0.12.338 (2026-11-23)
+
+- **Teams and Microsoft 365 stay signed in in Helium.** `nirux browser-m365 on`
+  installs a managed Helium policy that lets Microsoft's sign-in and the
+  Microsoft 365 sites keep their cookies and open pop-ups, so the "sign in
+  again" banner in Teams works (before, its button did nothing because
+  Helium blocked the sign-in pop-up). Teams also gets the microphone, camera
+  and notifications without asking each time. Other sites are unchanged. Off
+  by default; the choice is kept across updates. Manual chapter 11.
+
 ## 0.12.337 (2026-11-23)
 
 - **Super+Shift+J/K rotate the stack like dwm.** NIRUWM 0.37.5: the keys now

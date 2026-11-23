@@ -48,6 +48,7 @@ main() {
         bonjourr|none) browser_addon_policy_set "$2"; browser_addon_apply "$2" ;;
         *) die 'browser-addon must be bonjourr, none or status' ;;
       esac ;;
+    browser-m365) shift; browser_m365_command "$@" ;;
     extras) shift; extras_command "$@" ;;
     fleet) shift; fleet_command "$@" ;;
     sync) shift; sync_command "$@" ;;

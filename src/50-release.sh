@@ -195,6 +195,7 @@ apply_target_release() {
   browser_install
   hwvideo_apply
   browser_addon_apply "${NIRUX_APPLY_BROWSER_ADDON:-$(browser_addon_policy)}"
+  browser_m365_apply
   if [ "$LOCALSEND_EFFECTIVE" = yes ]; then localsend_install; else localsend_remove_managed; fi
   if [ "$OPENCODE_EFFECTIVE" = yes ]; then opencode_install; else opencode_remove_managed; fi
   ensure_user_dirs

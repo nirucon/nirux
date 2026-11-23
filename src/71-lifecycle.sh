@@ -86,6 +86,7 @@ uninstall() {
   browser_remove_managed
   browser_remove_policy
   browser_addon_remove
+  browser_m365_remove
   rm -f "$STATE/localsend-policy" "$STATE/opencode-policy"
   remove_terminal
   if [ "$purge" = 1 ]; then
@@ -319,6 +320,7 @@ install_or_update() {
   browser_install
   hwvideo_apply
   browser_addon_apply "$BROWSER_ADDON_EFFECTIVE"
+  browser_m365_apply
   if [ "$LOCALSEND_EFFECTIVE" = yes ]; then localsend_install; else localsend_remove_managed; fi
   if [ "$OPENCODE_EFFECTIVE" = yes ]; then opencode_install; else opencode_remove_managed; fi
   ensure_user_dirs

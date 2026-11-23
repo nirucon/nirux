@@ -186,3 +186,104 @@ browser_addon_choose() {
   fi
 }
 
+
+# ── Microsoft 365 in Helium ─────────────────────────────────────────────────
+# Helium blocks third-party cookies and pop-ups. Teams, Outlook and the other
+# Microsoft 365 web apps renew their sign-in in a hidden frame from
+# login.microsoftonline.com and fall back to a pop-up, so a blocked frame shows
+# "sign in again" and the button then does nothing. This managed policy lets
+# only Microsoft's own sign-in and Microsoft 365 sites keep their cookies and
+# open pop-ups, keeps Teams' and Outlook's storage unpartitioned, and lets
+# Teams use the microphone, camera and notifications without asking each time.
+# Every other site keeps Helium's defaults. Opt-in: nirux browser-m365 on.
+BROWSER_M365_POLICY=$ROOT/etc/chromium/policies/managed/nirux-m365.json
+
+browser_m365_policy() {
+  value=
+  [ ! -f "$STATE/browser-m365" ] || \
+    value=$(awk '$1 == "m365" && ($2 == "on" || $2 == "off") {print $2; exit}' "$STATE/browser-m365")
+  say "${value:-off}"
+}
+
+browser_m365_policy_set() {
+  mkdir -p "$STATE"
+  printf '# NIRUX owner: %s\nm365 %s\n' "$PREFIX" "$1" > "$STATE/.browser-m365.$$" || \
+    die 'could not stage the Microsoft 365 browser setting'
+  mv -f "$STATE/.browser-m365.$$" "$STATE/browser-m365" || \
+    die 'could not persist the Microsoft 365 browser setting'
+}
+
+browser_m365_json() {
+  cat <<'JSON'
+{
+  "CookiesAllowedForUrls": [
+    "[*.]microsoftonline.com", "[*.]microsoft.com", "[*.]cloud.microsoft",
+    "[*.]microsoft365.com", "[*.]office.com", "[*.]office.net",
+    "[*.]office365.com", "[*.]live.com", "[*.]sharepoint.com",
+    "[*.]onenote.com", "[*.]msauth.net", "[*.]msftauth.net",
+    "[*.]msauthimages.net", "[*.]msftauthimages.net", "[*.]skype.com",
+    "[*.]sfbassets.com", "[*.]teams.microsoft.com"
+  ],
+  "PopupsAllowedForUrls": [
+    "[*.]cloud.microsoft", "[*.]microsoft.com", "[*.]microsoftonline.com",
+    "[*.]microsoft365.com", "[*.]office.com", "[*.]live.com",
+    "[*.]sharepoint.com"
+  ],
+  "ThirdPartyStoragePartitioningBlockedForOrigins": [
+    "https://teams.cloud.microsoft", "https://teams.microsoft.com",
+    "https://outlook.cloud.microsoft", "https://outlook.office.com",
+    "https://m365.cloud.microsoft", "https://www.office.com"
+  ],
+  "NotificationsAllowedForUrls": [
+    "https://teams.cloud.microsoft", "https://teams.microsoft.com",
+    "https://outlook.cloud.microsoft", "https://outlook.office.com"
+  ],
+  "AudioCaptureAllowedUrls": [
+    "https://teams.cloud.microsoft", "https://teams.microsoft.com"
+  ],
+  "VideoCaptureAllowedUrls": [
+    "https://teams.cloud.microsoft", "https://teams.microsoft.com"
+  ]
+}
+JSON
+}
+
+browser_m365_apply() {
+  m365=${1:-$(browser_m365_policy)}
+  case "$m365" in
+    off) remove_binary "$BROWSER_M365_POLICY"; return 0 ;;
+    on) ;;
+    *) die "unknown Microsoft 365 browser setting: $m365" ;;
+  esac
+  policy_tmp=$(mktemp "${TMPDIR:-/tmp}/nirux-m365.XXXXXX") || die 'could not create browser policy temp file'
+  browser_m365_json > "$policy_tmp"
+  write_binary "$BROWSER_M365_POLICY" "$policy_tmp"
+  rm -f "$policy_tmp"
+}
+
+browser_m365_status() {
+  say "microsoft 365 sign-in: $(browser_m365_policy)"
+  if [ -f "$BROWSER_M365_POLICY" ]; then say "policy: $BROWSER_M365_POLICY"; else say 'policy: not installed'; fi
+}
+
+browser_m365_command() {
+  [ "$#" = 1 ] || die 'usage: nirux browser-m365 on|off|status'
+  case "$1" in
+    status) browser_m365_status ;;
+    on|off)
+      # Install or remove the policy first: a failed sudo leaves the old choice.
+      browser_m365_apply "$1"
+      browser_m365_policy_set "$1"
+      if [ "$1" = on ]; then
+        say 'Microsoft 365 sign-in allowed in Helium. Quit and start Helium once (every window) to load it.'
+      else
+        say 'Microsoft 365 sign-in policy removed. Restart Helium to drop it.'
+      fi ;;
+    *) die 'browser-m365 must be on, off or status' ;;
+  esac
+}
+
+browser_m365_remove() {
+  remove_binary "$BROWSER_M365_POLICY"
+  rm -f "$STATE/browser-m365"
+}
