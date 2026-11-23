@@ -2,6 +2,14 @@
 
 Earlier releases are described in their release notes and commit messages.
 
+## 0.12.341 (2026-11-23)
+
+- **Record from the NIRUCLIP Editor.** NIRUCLIP 0.10.0: Ctrl+R chooses full
+  screen, a window, an area or the camera, the sound and microphone, the
+  camera corner and size, and a countdown. The editor hides while it
+  records and puts the film on the timeline when you stop. Manual
+  chapter 7.
+
 ## 0.12.340 (2026-11-23)
 
 - **NIRUCLIP Editor.** NIRUCLIP 0.9.0 adds `niruclip edit`: a fast video

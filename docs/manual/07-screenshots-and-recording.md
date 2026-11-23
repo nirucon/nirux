@@ -334,6 +334,7 @@ bottom, with lanes for the picture, its sound and music. F1 lists every key.
 | `Tab` | Timeline, settings panel, media list |
 | `Ctrl+O`, `Ctrl+I`, `Ctrl+M` | Open, import, add music |
 | `Ctrl+S`, `Ctrl+E`, `Ctrl+Z` | Save, export, undo (`Ctrl+Y` redo) |
+| `Ctrl+R` | Record from the editor |
 
 With the mouse, drag media to the timeline, drag clips to reorder them and
 their edges to trim, and Shift+drag on the ruler to mark a part. The wheel
@@ -345,6 +346,16 @@ white, wipes, slides, circle, pixelize), brightness, contrast, colour,
 blur, sharpen, rotation, mirroring, cropping and a title. The live preview
 plays every cut; `P` renders a few seconds around the playhead (or the
 marked part) with every effect, exactly as it will be exported.
+
+**Record from the editor.** `Ctrl+R` (or **Record**) chooses full screen
+and which screen, a window, an area or the camera only; no sound, the
+microphone and which one, desktop sound or both; the camera in a corner and
+its size; a countdown; and whether the film goes at the end or at the
+playhead. The editor hides while it records, so it is not in the film. For
+a window or an area it waits the countdown first, so you can switch
+workspace before you click. Stop as usual, from the bar or with
+`niruclip --stop`: the editor comes back with the recording on the
+timeline. The choices are remembered.
 
 **Formats.** Import anything ffmpeg reads: mkv, mp4, mov, webm, avi, mpg,
 ts and more, sound (mp3, wav, flac, ogg, opus, m4a) and pictures (png, jpg,
