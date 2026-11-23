@@ -2,6 +2,13 @@
 
 Earlier releases are described in their release notes and commit messages.
 
+## 0.12.343 (2026-11-23)
+
+- **Rotate the stack has no dead step.** NIRUWM 0.37.6: a hidden
+  scratchpad (or a fullscreen or withdrawn window) on the workspace counted
+  as a place in the rotation, so every round had one press where nothing
+  moved. Rotation now turns exactly the windows the layout tiles.
+
 ## 0.12.342 (2026-11-23)
 
 - **NIRUCLIP Editor 0.11.** Titles in any installed font with colour,
