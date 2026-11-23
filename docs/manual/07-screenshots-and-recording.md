@@ -303,8 +303,10 @@ The MKV itself is never changed.
 ## Edit a video
 
 NIRUCLIP has an editor for recordings and other videos: cut, split, trim and
-reorder clips, add music, titles, simple effects and transitions, and export,
-without another program. The sources are never changed.
+reorder clips, add music, titles in any font, effects and transitions, zoom
+in or hide a part of the picture, make speech sound clear and even, cut
+pauses, add captions and a logo, and export, without another program. The
+sources are never changed.
 
 ```sh
 niruclip edit                        # empty: Open (Ctrl+O) or Import (Ctrl+I) from Videos
@@ -329,12 +331,16 @@ bottom, with lanes for the picture, its sound and music. F1 lists every key.
 | `I`, `O`, `X`, `C` | Mark the start and end of a part; cut it out, or keep only it |
 | `Delete` | Remove the clip, or the marked part |
 | `Alt+←` `→` | Move the clip earlier or later |
-| `M`, `T` | Mute the clip; write a title over it |
+| `M`, `T` | Mute the clip; write a title over it (`\|` starts a new line) |
+| `Ctrl+T` | A title card: text on a colour |
 | `P` | Preview with effects and transitions |
 | `Tab` | Timeline, settings panel, media list |
 | `Ctrl+O`, `Ctrl+I`, `Ctrl+M` | Open, import, add music |
 | `Ctrl+S`, `Ctrl+E`, `Ctrl+Z` | Save, export, undo (`Ctrl+Y` redo) |
 | `Ctrl+R` | Record from the editor |
+| `Ctrl+F` | The whole film: loudness, music under speech, logo, caption size |
+| `Ctrl+K` | Cut pauses |
+| `Ctrl+L` | Captions from the speech |
 
 With the mouse, drag media to the timeline, drag clips to reorder them and
 their edges to trim, and Shift+drag on the ruler to mark a part. The wheel
@@ -343,9 +349,46 @@ scrolls the timeline; with Ctrl it zooms.
 A clip has speed (0.25 to 4 times), volume and mute, fade in and out, a
 transition from the clip before (cross fade, dissolve, through black or
 white, wipes, slides, circle, pixelize), brightness, contrast, colour,
-blur, sharpen, rotation, mirroring, cropping and a title. The live preview
-plays every cut; `P` renders a few seconds around the playhead (or the
-marked part) with every effect, exactly as it will be exported.
+blur, sharpen, rotation, mirroring, cropping, a zoom, a hidden part and a
+title. The panel shows only what applies; the rest of a group appears once
+its first setting is used. In the panel, `Enter` on a start or a length
+takes it from the playhead. The live preview plays every cut; `P` renders a
+few seconds around the playhead (or the marked part) with every effect,
+exactly as it will be exported.
+
+**Titles.** Any installed font (the list shows each name in its own
+letters), regular, bold, italic or bold italic, eight colours, a box
+behind, an outline, a shadow or plain, nine places and a size; when it
+starts, how long it lasts and a fade. Templates set a heading, a name tag
+or a subtitle bar in one go. `Ctrl+T` (or **+ Card**) adds a title card:
+text on a colour of its own, as a clip.
+
+**Sound for speech.** A clip's treatment is Voice (rumble out, light noise
+reduction, softer s sounds, an even level), Voice in a noisy room, or Even
+out for other sound, and is heard live in the preview. A NIRUCLIP
+recording with both microphone and desktop sound keeps them on tracks of
+their own, so the treatment works on the voice alone and the desktop sound
+has its own level. Recordings made from the editor with a microphone get
+Voice from the start. Under `Ctrl+F` the whole film is measured and
+levelled to −16 LUFS (speech and web, the default), −14 (streaming) or
+−23 (broadcast), and music can be lowered a little or a lot while someone
+speaks.
+
+**Cut pauses.** `Ctrl+K` finds the silences longer than a chosen length,
+marks them red on the timeline and cuts them with `Enter`, keeping a little
+air around the speech. `Ctrl+Z` brings them back.
+
+**Captions.** `Ctrl+L` makes captions from the speech in Swedish or
+English with NIRUDICTATE, on this computer, in the background. It needs
+the NIRUDICTATE extra and a model (`nirudictate models install sv-small`).
+The captions follow every later edit and can be corrected in the list. At
+export they are left out, burnt into the picture, or added as a subtitle
+track with an `.srt` file beside the film.
+
+**Zoom and hide.** Draw a rectangle on a still of the clip to glide into
+that part for a while, or to blur, pixelate or black out a part (an
+e-mail address, a password field). **Logo**: a picture over the whole film
+in a corner, with size and strength, under `Ctrl+F`.
 
 **Record from the editor.** `Ctrl+R` (or **Record**) chooses full screen
 and which screen, a window, an area or the camera only; no sound, the
@@ -360,8 +403,10 @@ timeline. The choices are remembered.
 **Formats.** Import anything ffmpeg reads: mkv, mp4, mov, webm, avi, mpg,
 ts and more, sound (mp3, wav, flac, ogg, opus, m4a) and pictures (png, jpg,
 webp). Export to MP4, a small MP4 to share, WebM, MKV, GIF, or sound only as
-MP3, WAV, FLAC or Opus, at the original size or 2160p to 480p. With a part
-marked, only that part is exported. Exports run in the background with
+MP3, WAV, FLAC or Opus, at the original size or 2160p to 480p. A size
+limit (8, 10 for Discord, 25 for mail, 50 or 100 MB) encodes in two passes
+so the file lands just under it, with a smaller picture when needed. With a
+part marked, only that part is exported. Exports run in the background with
 progress in the top bar and a notification when done, and never overwrite
 a file.
 
@@ -371,7 +416,8 @@ there; both can be changed under Settings. Ctrl+S saves a small
 20 seconds and offered when the editor starts again.
 
 `niruclip edit --export film.niruclip --format webm --height 720` renders a
-saved project without opening a window.
+saved project without opening a window; `--limit 10` fits it in 10 MB and
+`--captions burn` or `--captions track` adds the captions.
 
 ## Recover an interrupted recording
 
@@ -396,7 +442,7 @@ NIRUCLIP warns below 2 GB free space and stops cleanly (or does not start) below
 | `~/Videos/NIRUCLIP-*.mkv` | Recordings (`*.part.mkv` while recording), exports next to them |
 | `~/.config/niruclip/config.toml` | Profiles, default profile, encoder, microphone, camera recovery |
 | `~/.local/state/niruclip/session.json` | Recording state, read by the bar and the launcher |
-| `~/.config/niruclip/edit.toml` | Editor folders, last export format, recent projects |
+| `~/.config/niruclip/edit.toml` | Editor folders, last export choices, pause and caption settings, recent projects |
 | `~/.local/state/niruclip/autosave.niruclip` | The editor's unsaved project |
 | `~/.cache/niruclip/` | Editor thumbnails and sound waves (safe to delete) |
 

@@ -2,6 +2,17 @@
 
 Earlier releases are described in their release notes and commit messages.
 
+## 0.12.342 (2026-11-23)
+
+- **NIRUCLIP Editor 0.11.** Titles in any installed font with colour,
+  outline, shadow or box, nine places, timing and fades, and title cards;
+  sound treatment for speech, heard live; the film levelled to −16 LUFS in
+  two passes; music lowered under speech; microphone and desktop recorded on
+  tracks of their own; cut pauses in one go; captions from the speech with
+  NIRUDICTATE (Swedish or English, on this computer), burnt in or as a
+  subtitle track; zoom into or hide part of the picture; a logo; and export
+  to a size limit such as 10 MB for Discord. Manual chapter 7.
+
 ## 0.12.341 (2026-11-23)
 
 - **Record from the NIRUCLIP Editor.** NIRUCLIP 0.10.0: Ctrl+R chooses full
