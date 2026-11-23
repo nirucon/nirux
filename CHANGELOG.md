@@ -2,9 +2,9 @@
 
 Earlier releases are described in their release notes and commit messages.
 
-## 0.12.336 (2026-11-23)
+## 0.12.337 (2026-11-23)
 
-- **Super+Shift+J/K rotate the stack like dwm.** NIRUWM 0.37.4: the keys now
+- **Super+Shift+J/K rotate the stack like dwm.** NIRUWM 0.37.5: the keys now
   turn every tiled window on the workspace one place and the focus stays
   where it is, as dwm's rotatestack does. Keep pressing `Super+Shift+K` and
   each window comes into the master (the middle of `centered`) in turn. The

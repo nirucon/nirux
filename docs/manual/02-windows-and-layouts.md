@@ -100,7 +100,7 @@ The focused window's border uses the theme's focus colour. `gap`, `border_width`
 
 Rotating works like dwm's rotatestack: every tiled window on the workspace moves one place in the order and the focus stays on the window it was on. Each press of `Super+Shift+K` brings the next window into the master position (the middle in `centered`), so you keep pressing until the window you want is there. Floating windows are not part of the order and are not moved. In `scroll` the keys move the focused window one column instead. The focus stays put even when the layout puts another window under a mouse pointer that stands still (in `centered` the master sits right under it); moving the mouse focuses the window under it as usual.
 
-In `[[keys]]` the actions are `focus_next`, `focus_prev`, `rotate_next` and `rotate_prev`. `move_next` and `move_prev` (also called `swap_next` and `swap_prev`) swap only the focused window with its neighbour, the way these keys worked before NIRUWM 0.37.4; bind them to a key of your own if you prefer that.
+In `[[keys]]` the actions are `focus_next`, `focus_prev`, `rotate_next` and `rotate_prev`. `move_next` and `move_prev` (also called `swap_next` and `swap_prev`) swap only the focused window with its neighbour, the way these keys worked before NIRUWM 0.37.5; bind them to a key of your own if you prefer that.
 
 ## Floating windows
 
