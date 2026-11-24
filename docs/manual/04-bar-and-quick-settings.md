@@ -22,7 +22,8 @@ The mouse works the same way in every module:
 | `volume` | Mute or unmute; 25, 50, 75 or 100 %; the output device (speakers, HDMI, headphones); a mixer when `pavucontrol` is installed |
 | `microphone` | Mute or unmute; the input device |
 | `media` | Play or pause, next, previous |
-| `bluetooth` | Turn Bluetooth on or off; connect or disconnect each paired device |
+| `bluetooth` | Turn Bluetooth on or off; connect or disconnect each paired device; pair a new device |
+| `timer` | Start 5, 15, 25, 45 or 60 minutes; pause or resume; a minute or five more or less; reset. Typed digits and `Enter` start that many minutes |
 | `powerprofile` | Each profile, or Automatic (follow the charger) |
 | `battery` | The power profile selector |
 | `network` | Choose a Wi-Fi network |
@@ -37,6 +38,12 @@ Only one panel is open at a time. `Escape`, a click elsewhere or a second click 
 A few modules skip the panel and act on a left click: `wifi`, `agent`, `share`, `nirusec`, `dnd` and `quicksettings` (one click opens Quick Settings). A right click on `wifi` shows the connection's details.
 
 When the bar is too narrow, low-priority modules collapse into a clickable `+N`; click it to see the hidden modules.
+
+### Bluetooth devices
+
+Click the Bluetooth mark (`bluetooth` module) to turn Bluetooth on or off and to connect or disconnect the devices this computer has paired. **Pair a new device…** opens the launcher's search (`nirulauncher --bluetooth-pair`): put the device in pairing mode (often by holding its power or Bluetooth button), wait ten seconds, then pick it and press `Enter`. NIRUX pairs it, trusts it so it reconnects by itself, and connects it; a notice says how it went. Each computer pairs its own devices. The Bluetooth view in the launcher and Quick Settings also lists **Forget** for each paired device. From a terminal: `niructl bluetooth scan`, `niructl bluetooth pair MAC`, `niructl bluetooth forget MAC`.
+
+The `headset` module shows the battery of connected headphones, mice and keyboards and warns once at 15 %.
 
 ## Modules
 
@@ -55,7 +62,7 @@ Choose and order the modules with `[bar] modules`. A module without a provider h
 | `tailscale` | Online Tailscale peers; only when `tailscale` is installed | Peer state; footer opens `nirulauncher --tailscale` | |
 | `network` | Wired link; `!` means link up without a default route. Also Wi-Fi when `wifi = false` | Interface, route and address | |
 | `wifi` | Wi-Fi radio and connection; `!` means radio off or not connected | Opens the Wi-Fi selector (`nirulauncher --wifi`) | Right: connection details |
-| `bluetooth` | Off, on or the connected device; follows BlueZ's own signals, nothing is polled | Information and actions (power, connect, disconnect) | Right: power on/off. Middle: device selector |
+| `bluetooth` | On the default bar; hidden on a computer without Bluetooth. A mark for off, on and connected; connected shows the device's name and battery in the accent colour. Follows BlueZ's own signals, nothing is polled | Information and actions (power, connect, disconnect, pair a new device) | Right: power on/off. Middle: device selector |
 | `powerprofile` | Active power profile (needs `power-profiles-daemon`) | Information and the profiles to choose | Right: next profile. Middle: `nirulauncher --power` |
 | `battery` | Aggregated charge and state; laptops only. Red at 15 % or less while discharging, with one notice at 15 % and one at 7 % | Charge, state, remaining time, battery health (percent of the design capacity), charge cycles and a graph of the last 24 hours | |
 | `mode` | Active work mode (focus/presentation) and minutes left, and *studio* while studio mode is on | Shows `niructl mode stop` or `niructl studio off` | |
@@ -75,7 +82,7 @@ Choose and order the modules with `[bar] modules`. A module without a provider h
 | `uptime` | Uptime | Memory use and the fullest file system | |
 | `sun` | Sunrise and sunset for the top-level coordinates | Details | |
 | `weather` | Cached temperature, condition and rain | Eight-hour timeline | |
-| `timer` | An hourglass; `MM:SS` while it runs, a pause mark while paused | State and the controls | Scroll: set the length (25 minutes by default; while running, add or take a minute). Right: start, pause, resume. Middle: reset |
+| `timer` | An hourglass; `MM:SS` while it runs, a pause mark while paused | State and actions: start 5, 15, 25, 45 or 60 minutes; pause or resume, more or less time, reset. Type minutes and press `Enter` to start that long; `Space` pauses | Scroll: set the length (25 minutes by default; while running, add or take a minute). Right: start, pause, resume. Middle: reset |
 | `disk` | Hidden until `/` or your home folder is `disk_warn` percent full (default 90); then a red disk icon with the percentage | Used and free space; `Enter` or a click opens a terminal with `nirux clean`, which shows what it would remove and asks first | |
 | `drives` | Removable USB sticks, SD cards and external disks: the label, or a count for several; hidden when none is attached. A disk in `/etc/fstab` or `crypttab`, or mounted outside `/media`, is never shown | Label, size, mount point and free space; `Enter` opens the first drive | Right: unmount and power off every drive, then a notice that it can be removed (or why not, for example in use). Middle: mount if needed and open in the file manager |
 | `quicksettings` | A gear | Panel; `Enter` or a click on it opens Quick Settings | |

@@ -2,6 +2,19 @@
 
 Earlier releases are described in their release notes and commit messages.
 
+## 0.12.351 (2026-11-24)
+
+- **Bluetooth on every bar, and pairing.** The `bluetooth` module is now in
+  the default list (hidden on a computer without Bluetooth), with marks for
+  off, on and connected, the connected device's name and battery, and
+  **Pair a new device…**: a ten-second search lists the devices nearby, and
+  Enter pairs, trusts and connects one. Forget a device in the launcher's
+  Bluetooth view. `niructl bluetooth scan|pair|forget` from a terminal.
+  NIRUBAR 0.34.0, NIRU Launcher 0.20.0, NIRUWM 0.37.8.
+- **A timer you can use from its panel.** Start 5, 15, 25, 45 or 60 minutes,
+  pause, add or take time and reset with a click or the keyboard; type
+  minutes and press Enter to start that long, Space pauses.
+
 ## 0.12.350 (2026-11-24)
 
 - **niruprodrive 0.1.3.** The cloud in the bar no longer stays black when
