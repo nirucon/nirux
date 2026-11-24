@@ -2,6 +2,13 @@
 
 Earlier releases are described in their release notes and commit messages.
 
+## 0.12.354 (2026-11-24)
+
+- **No program starts twice at login.** An entry in `~/.config/autostart` for
+  a program that NIRUWM's own autostart also starts (Nextcloud or Proton Mail
+  Bridge listed in both) is left to NIRUWM's list, and the other entries start
+  after it. NIRUWM 0.37.10.
+
 ## 0.12.353 (2026-11-24)
 
 - **Autostart programs start, and come back after sleep.** Entries in
