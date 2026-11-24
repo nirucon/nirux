@@ -2181,12 +2181,13 @@ case "$1" in
   default) printf '%s\n' "$2" > "$VD_DIR/$(printf '%s' "$3" | tr / _)"; echo "default $3" >> "$VD_DIR/calls" ;;
 esac
 EOF
-chmod +x "$vd/bin/xdg-mime"; printf '#!/bin/sh\n' > "$vd/prefix/nirueditview"; chmod +x "$vd/prefix/nirueditview"
-(PATH="$vd/bin:$PATH" VD_DIR=$vd BIN=$vd/prefix STATE=$vd/state; export VD_DIR; viewer_default)
+chmod +x "$vd/bin/xdg-mime"; mkdir -p "$vd/work/download/nirueditview"; : > "$vd/work/download/nirueditview/nirueditview.desktop"
+# The first update that brings it: not linked yet, only downloaded.
+(PATH="$vd/bin:$PATH" VD_DIR=$vd BIN=$vd/prefix WORK=$vd/work STATE=$vd/state; export VD_DIR; viewer_default)
 [ "$(grep -c '^default ' "$vd/calls")" = 7 ] || fail 'NIRUEDITVIEW was not made the viewer of every photo type and PDF'
 grep -q 'image/jpeg=photocraft.desktop' "$vd/state/viewer-default" || fail 'the viewer before was not written down'
 printf 'other.desktop\n' > "$vd/image_jpeg"
-(PATH="$vd/bin:$PATH" VD_DIR=$vd BIN=$vd/prefix STATE=$vd/state; export VD_DIR; viewer_default)
+(PATH="$vd/bin:$PATH" VD_DIR=$vd BIN=$vd/prefix WORK=$vd/work STATE=$vd/state; export VD_DIR; viewer_default)
 [ "$(cat "$vd/image_jpeg")" = other.desktop ] || fail 'a viewer chosen afterwards was replaced'
 rm -rf "$vd"
 

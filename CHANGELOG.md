@@ -2,6 +2,11 @@
 
 Earlier releases are described in their release notes and commit messages.
 
+## 0.12.356 (2026-11-24)
+
+- NIRUEDITVIEW is made the viewer for photos and PDFs by the update that
+  installs it, not only by the one after.
+
 ## 0.12.355 (2026-11-24)
 
 - **NIRUEDITVIEW, pictures and PDFs.** A new part of NIRUX and the viewer for

@@ -341,7 +341,9 @@ remove_viewer_app() {
 # afterwards is kept.
 VIEWER_TYPES="image/jpeg image/png image/gif image/webp image/bmp image/tiff application/pdf"
 viewer_default() {
-  [ -x "$BIN/nirueditview" ] || return 0
+  # The new generation is linked after this runs: the component downloaded
+  # in this run counts too, so the first update that brings it sets it.
+  [ -x "$BIN/nirueditview" ] || [ -f "$WORK/download/nirueditview/nirueditview.desktop" ] || return 0
   command -v xdg-mime >/dev/null 2>&1 || return 0
   vd_mark=$STATE/viewer-default
   [ ! -f "$vd_mark" ] || return 0
