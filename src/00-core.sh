@@ -2,7 +2,7 @@
 # NIRUX: install a complete X11 desktop, or maintain an existing installation.
 set -eu
 
-VERSION=0.12.357
+VERSION=0.12.358
 PREFIX=${NIRUX_PREFIX:-$HOME/.local}
 BIN=$PREFIX/bin
 STATE=$PREFIX/share/nirux
@@ -78,8 +78,8 @@ TRAPS_ARMED=0
 # switched. OpenCode 2 comes from opencode.ai (the GitHub anomalyco/opencode
 # releases are OpenCode 1); its binary is identical to the npm package
 # @opencode/cli-linux-x64, whose sha512 integrity anchors the pin.
-HELIUM_VERSION=0.21.2.1
-HELIUM_SHA256=e55c253e082f78fb5ae094ca465a59e06882fd7c87ebf383165beb3560e0b519
+HELIUM_VERSION=0.22.2.1
+HELIUM_SHA256=f7546bc7dd86027e924916fdeb62604dfc9b4507bc74c572cbd1c596cec4d0ca
 LOCALSEND_VERSION=1.18.2
 LOCALSEND_SHA256=287690a9a8eb6da9c83cc97b3e3030ac67daf32a7331fcf307d0939300658d16
 OPENCODE_VERSION=2.2.7
@@ -129,6 +129,7 @@ usage() {
   say "       nirux remove helium|localsend|opencode"
   say "       nirux browser-addon bonjourr|none|status"
   say "       nirux browser-m365 on|off|status"
+  say "       nirux widevine [status|on|off]"
   say "       nirux extras [list|status|select NAME|unselect NAME|install [NAME...]|uninstall NAME... [--purge]|update]"
   say "       nirux sounds [status|list|on|off|toggle|test|app ...] (see docs/SOUNDS.md)"
   say "       nirux fleet [status [--json]|update HOST...|--all|--behind|setup [HOST...]|set KEY VALUE [HOST...]|pending [apply|clear]|top]"

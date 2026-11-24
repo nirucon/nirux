@@ -2,6 +2,17 @@
 
 Earlier releases are described in their release notes and commit messages.
 
+## 0.12.358 (2026-11-24)
+
+- **Netflix and other protected video in Helium.** `nirux update` downloads
+  Google's Widevine module, checks it against the checksum Mozilla publishes
+  for Firefox, and points Helium at it, so Netflix, Disney+, Max, Prime Video
+  and Spotify on the web play. On by default; `nirux widevine off` removes it
+  and `nirux widevine on` brings it back. `nirux doctor` shows the version.
+  Helium itself is not changed, and a module you set up yourself is left
+  alone. Quit and start Helium once after the update.
+- Helium is pinned to 0.22.2.1 (was 0.21.2.1).
+
 ## 0.12.357 (2026-11-24)
 
 - NIRUWM 0.37.11: a window closed to its tray (NIRUPRODRIVE, Nextcloud)

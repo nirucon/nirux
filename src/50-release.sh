@@ -196,6 +196,7 @@ apply_target_release() {
   trap 'apply_restore_config' EXIT INT TERM HUP
   browser_install
   hwvideo_apply
+  widevine_apply
   browser_addon_apply "${NIRUX_APPLY_BROWSER_ADDON:-$(browser_addon_policy)}"
   browser_m365_apply
   if [ "$LOCALSEND_EFFECTIVE" = yes ]; then localsend_install; else localsend_remove_managed; fi

@@ -38,6 +38,7 @@ remove_app() {
   case "$app" in
     helium)
       browser_remove_managed
+      widevine_remove
       browser_policy_set none
       say 'Removed managed Helium. External Helium installations were not touched.'
       ;;
@@ -86,6 +87,8 @@ uninstall() {
   localsend_remove_managed
   opencode_remove_managed
   browser_remove_managed
+  widevine_remove
+  rm -f "$STATE/widevine-policy"
   browser_remove_policy
   browser_addon_remove
   browser_m365_remove
@@ -218,6 +221,7 @@ auto_current_release() {
   say "NIRUX $RELEASE is current; checking the apps."
   browser_install
   hwvideo_apply
+  widevine_apply
   if [ "$LOCALSEND_EFFECTIVE" = yes ]; then localsend_install; fi
   if [ "$OPENCODE_EFFECTIVE" = yes ]; then opencode_install; fi
   return 0
@@ -321,6 +325,7 @@ install_or_update() {
   fi
   browser_install
   hwvideo_apply
+  widevine_apply
   browser_addon_apply "$BROWSER_ADDON_EFFECTIVE"
   browser_m365_apply
   if [ "$LOCALSEND_EFFECTIVE" = yes ]; then localsend_install; else localsend_remove_managed; fi

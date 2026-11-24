@@ -165,6 +165,38 @@ nightly run, and installs them when the list of packages it may install (written
 by `nirux update`) names them, so the first `nirux update` after 0.12.271 adds
 them to that list.
 
+## Netflix and other protected video in Helium
+
+Netflix, Disney+, Max, Prime Video, Spotify on the web and other services that
+protect their video need Google's Widevine module. Helium does not include it,
+so NIRUX adds it: `nirux update` downloads the module from Google, checks it
+against the checksum Mozilla publishes for Firefox, and points Helium at it.
+Helium itself is not changed, and it works for a Helium NIRUX did not install
+too. It is on by default.
+
+```sh
+nirux widevine            # is it on, and which version
+nirux widevine off        # remove it; nirux update leaves it off
+nirux widevine on         # download it now and turn it back on
+```
+
+Quit Helium (every window) and start it again after it is installed. A newer
+module comes with the next `nirux update` or the nightly update; the previous
+one is kept until then, because a running Helium may still use it.
+
+- The module lives in `~/.local/share/nirux/widevine/VERSION`, and Helium finds
+  it through `~/.config/net.imput.helium/WidevineCdm/latest-component-updated-widevine-cdm`.
+- If that file names another module that exists (one you set up yourself),
+  NIRUX leaves it alone, and `nirux doctor` says so.
+- On Linux, Netflix and most services play at most 720p in a browser, the same
+  as in Chrome. That is the services' limit, not Helium's.
+- Google does not allow the module to be passed on, so every computer downloads
+  its own copy, and no NIRUX release contains it.
+- When Helium ships its own Widevine support, NIRUX will stop adding it.
+
+`nirux doctor` shows `widevine: 4.10.3050.0 on, Netflix and other protected
+video play in Helium`, or offers to install it (`nirux doctor --fix`).
+
 ## Update everything, then power off or restart
 
 ```sh

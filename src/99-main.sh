@@ -49,6 +49,7 @@ main() {
         *) die 'browser-addon must be bonjourr, none or status' ;;
       esac ;;
     browser-m365) shift; browser_m365_command "$@" ;;
+    widevine) shift; widevine_command "$@" ;;
     extras) shift; extras_command "$@" ;;
     fleet) shift; fleet_command "$@" ;;
     sync) shift; sync_command "$@" ;;

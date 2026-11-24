@@ -163,6 +163,7 @@ doctor_fix_text() {
     audio) say 'restart PipeWire and WirePlumber (user services)' ;;
     niruio) say 'apply the NIRUIO sound fixes: unmute, reset remembered mutes, ports and profiles (niruio doctor --fix)' ;;
     hwvideo) say 'install the hardware video packages and turn on hardware video decoding in Helium (sudo)' ;;
+    widevine) say 'download the Widevine module from Google so Netflix and other protected video play in Helium' ;;
   esac
 }
 # Start a session helper detached from this shell, as the session would.
@@ -185,6 +186,7 @@ doctor_fix_one() {
     audio) systemctl --user restart pipewire pipewire-pulse wireplumber ;;
     niruio) "$BIN/niruio" doctor --fix ;;
     hwvideo) OS=$(distro) && packages=1 && hwvideo_apply && [ -s "$STATE/helium-flags" ] ;;
+    widevine) widevine_command on ;;
     *) return 1 ;;
   esac
 }
@@ -314,6 +316,7 @@ doctor() {
   done
   if [ -n "$bluez_spa" ]; then say "Bluetooth BlueZ SPA available ($bluez_spa)"; else say 'Bluetooth BlueZ SPA missing; install the distribution PipeWire BlueZ package'; result=1; fi
   hwvideo_doctor
+  widevine_doctor
   for tool in ffmpeg slop maim; do
     if command -v "$tool" >/dev/null 2>&1; then say "capture dependency available: $tool"; else say "capture dependency missing: $tool"; result=1; fi
   done

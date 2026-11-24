@@ -105,6 +105,7 @@ Options of `install` and `update`:
 | `nirux repair-wallpaper` | Repair the wallpaper setup |
 | `nirux browser-addon bonjourr\|none\|status` | The optional browser start page |
 | `nirux browser-m365 on\|off\|status` | Let Teams and Microsoft 365 sign in inside Helium (chapter 11) |
+| `nirux widevine [status\|on\|off]` | Netflix and other protected video in Helium: the Widevine module (chapter 11) |
 | `nirux remove helium\|localsend\|opencode` | Remove an optional app that NIRUX installed |
 | `nirux --version`, `nirux --help` | The installed release, the usage text |
 
