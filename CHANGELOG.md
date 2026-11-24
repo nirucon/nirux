@@ -2,6 +2,13 @@
 
 Earlier releases are described in their release notes and commit messages.
 
+## 0.12.352 (2026-11-24)
+
+- **niruprodrive 0.1.4 stays up.** A small supervisor starts the service
+  again when it is killed or stopped by a signal sent to it alone, and the
+  signal and its sender are written to its log. A logout still ends it.
+  `nirux extras update` on the computers that have it.
+
 ## 0.12.351 (2026-11-24)
 
 - **Bluetooth on every bar, and pairing.** The `bluetooth` module is now in
