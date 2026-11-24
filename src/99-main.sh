@@ -7,10 +7,7 @@ main() {
   #
   # The copy is per process: a subshell must not delete the file its caller is
   # still using, so only the process that created it removes it.
-  if [ -n "${NIRUX_SUDO_SECRET_FILE:-}" ]; then
-    SUDO_SECRET_FILE=$NIRUX_SUDO_SECRET_FILE
-    SUDO_SECRET_BORROWED=1
-  fi
+  sudo_secret_adopt
   if [ -n "${NIRUX_SUDO_PASSWORD:-}" ]; then sudo_secret_keep "$NIRUX_SUDO_PASSWORD"; fi
   unset NIRUX_SUDO_PASSWORD
   # A subshell of an install (or a function inside one) inherits the location,
@@ -66,6 +63,7 @@ main() {
     webapps) shift; webapps_command "$@" ;;
     demo) shift; demo_command "$@" ;;
     resume-check) shift; resume_check_command "$@" ;;
+    update-check) shift; update_check_command "$@" ;;
     clean) shift; clean_command "$@" ;;
     restore) shift; restore_command "$@" ;;
     backup) shift; backup_command "$@" ;;

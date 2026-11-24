@@ -167,7 +167,7 @@ opacity = 92         # percent, needs the compositor
 | `sticky` | `false` | Open sticky (and floating) |
 | `opacity` | none | Compositor opacity, 1 to 100 percent |
 
-The first rule whose `class` matches wins, and rules apply only when a window first appears. To find a class, run `xprop WM_CLASS` and click the window. Opacity needs picom running (`niructl compositor status`).
+The first rule whose `class` matches wins, and rules apply only when a window first appears. `[autostart]` and `[[recipes]]` count workspaces from 1, rules from 0: `niruwm --check-config` warns when a rule and a recipe or autostart entry for the same program are one apart. To find a class, run `xprop WM_CLASS` and click the window. Opacity needs picom running (`niructl compositor status`).
 
 ## Window swallowing
 
@@ -236,7 +236,7 @@ niructl save                 # the same as Super+Shift+W
 niructl clear-session        # forget the saved session
 ```
 
-The saved session is `~/.local/state/niruwm/session.tsv`. When a session is restored, `[autostart]` does not run, so programs are not opened twice. If the window manager crashes, `niruwm-session` starts it again and every open window keeps its workspace and scratchpad; this is separate from saving.
+The saved session is `~/.local/state/niruwm/session.tsv`. When a session is restored, `[autostart]` does not run, so programs are not opened twice. Programs in `~/.config/autostart` (tray programs such as Nextcloud or niruprodrive write their entry there) start at every login, restored session or not, unless they already run; `niructl autostart list` shows them all. One that dies while the computer sleeps is started again after the wake-up. If the window manager crashes, `niruwm-session` starts it again and every open window keeps its workspace and scratchpad; this is separate from saving.
 
 ## Rescue lost windows
 

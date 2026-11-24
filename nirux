@@ -2,7 +2,7 @@
 # NIRUX: install a complete X11 desktop, or maintain an existing installation.
 set -eu
 
-VERSION=0.12.352
+VERSION=0.12.353
 PREFIX=${NIRUX_PREFIX:-$HOME/.local}
 BIN=$PREFIX/bin
 STATE=$PREFIX/share/nirux
@@ -47,6 +47,18 @@ sudo_secret_keep() {
   export SUDO_SECRET_FILE
   SUDO_SECRET=$secret_value
   unset secret_value
+}
+# A password file from the caller (NIRUX_SUDO_SECRET_FILE, or SUDO_SECRET_FILE
+# from a parent nirux or a rollout script) is borrowed: the caller removes it.
+# Deleting it here left `nirux extras update` right after `nirux update`
+# without the password.
+sudo_secret_adopt() {
+  if [ -n "${NIRUX_SUDO_SECRET_FILE:-}" ]; then
+    SUDO_SECRET_FILE=$NIRUX_SUDO_SECRET_FILE
+    SUDO_SECRET_BORROWED=1
+  elif [ -n "${SUDO_SECRET_FILE:-}" ] && [ -f "$SUDO_SECRET_FILE" ]; then
+    SUDO_SECRET_BORROWED=1
+  fi
 }
 # Remove the file on every normal and failing exit path.
 sudo_secret_forget() {
@@ -127,7 +139,7 @@ usage() {
   say "       nirux manual [TOPIC] | manual --list | manual --path"
   say "       nirux checkup [--dry-run] | last | status | enable | disable | discord set|test"
   say "       nirux autoupdate [status|last|enable|disable|run-now]"
-  say "       nirux whats-new [--notify] | resume-check [--notify] | clean [--yes] [--dry-run]"
+  say "       nirux whats-new [--notify] | resume-check [--notify] | update-check [--notify] | clean [--yes] [--dry-run]"
   say "       nirux meet-check [--notify] | stale [--json] | stale restart"
   say "       nirux boot [status|on|off|apply|doctor]"
   say "       nirux hibernate [status|on|off|apply|delay MINUTES|doctor]"
@@ -10777,6 +10789,7 @@ whats_new_command() {
   fi
   # --notify runs at login: settings waiting for another host go out now.
   fleet_pending_background
+  update_check_background
   # --notify: once per version, in a graphical session, never twice.
   [ -n "$wn_version" ] || return 0
   [ "$(cat "$WHATS_NEW_SHOWN" 2>/dev/null)" != "$wn_version" ] || return 0
@@ -10883,6 +10896,21 @@ resume_tailscale() {
   RC_SAY="${RC_SAY}Tailscale is not connected after sleep.
 "
 }
+# Session programs (tray apps, NIRUWM autostart) that ran before the suspend
+# and are gone now: NIRUWM wrote them down when the sleep began. Started
+# again now, and once more a minute later for one that dies late.
+resume_autostart() {
+  RC_APPS=skipped
+  [ -n "${DISPLAY:-}" ] && [ -x "$BIN/niructl" ] || return 0
+  ra_names=$(resume_bounded 5 "$BIN/niructl" autostart revive --keep 2>/dev/null | head -n 5 | paste -sd ',' - | sed 's/,/, /g')
+  RC_APPS=ok
+  if [ -n "$ra_names" ]; then
+    RC_APPS=restarted
+    RC_SAY="${RC_SAY}Started again after sleep: $ra_names.
+"
+  fi
+  (sleep "${NIRUX_RESUME_LATE:-60}"; "$BIN/niructl" autostart revive >/dev/null 2>&1) </dev/null >/dev/null 2>&1 &
+}
 resume_check_command() {
   rc_notify=0
   for rc_arg in "$@"; do
@@ -10893,16 +10921,17 @@ resume_check_command() {
     esac
   done
   RESUME_DEADLINE=$(( $(date +%s) + ${NIRUX_RESUME_SECONDS:-18} ))
-  RC_SAY='' RC_NET=skipped RC_AUDIO=skipped RC_SCREENS=skipped RC_TS=skipped
+  RC_SAY='' RC_NET=skipped RC_AUDIO=skipped RC_SCREENS=skipped RC_TS=skipped RC_APPS=skipped
   resume_network
   resume_audio
   resume_screens
   resume_tailscale
-  rc_line="$(date '+%Y-%m-%d %H:%M:%S') network=$RC_NET audio=$RC_AUDIO screens=$RC_SCREENS tailscale=$RC_TS"
+  resume_autostart
+  rc_line="$(date '+%Y-%m-%d %H:%M:%S') network=$RC_NET audio=$RC_AUDIO screens=$RC_SCREENS tailscale=$RC_TS apps=$RC_APPS"
   mkdir -p "${RESUME_LOG%/*}" 2>/dev/null || :
   { tail -n 49 "$RESUME_LOG" 2>/dev/null || :; say "$rc_line"; } > "$RESUME_LOG.$$" 2>/dev/null &&
     mv -f "$RESUME_LOG.$$" "$RESUME_LOG" 2>/dev/null || rm -f "$RESUME_LOG.$$"
-  [ "$rc_notify" = 0 ] || fleet_pending_background
+  [ "$rc_notify" = 0 ] || { fleet_pending_background; update_check_background; }
   if [ "$rc_notify" = 0 ]; then
     say "$rc_line"
     printf '%s' "$RC_SAY"
@@ -11384,6 +11413,104 @@ autoupdate_command() {
       sudo "$AUTOUPDATE_HELPER" "$1" ;;
     *) die "unknown autoupdate command: $1 (nirux autoupdate --help)" ;;
   esac
+}
+
+# ── Behind after a night away (docs: manual chapter 11) ─────────────────────
+# A laptop that sleeps or is off between 03:00 and 05:00 misses the nightly
+# update, night after night. At login and after a wake-up (NIRUWM's hooks)
+# this asks GitHub at most every six hours and, when NIRUX or a selected
+# extra is behind, says so once per version, with *Update now*, which runs
+# the nightly update at once (`nirux autoupdate run-now`, allowed without a
+# password).
+UPDATE_CHECK_CACHE=${XDG_CACHE_HOME:-$HOME/.cache}/nirux/latest-release
+UPDATE_CHECK_SEEN=$STATE/update-check-notified
+UPDATE_CHECK_FIRST=$STATE/update-check-first-seen
+update_check_latest() {
+  uc_now=$(date +%s)
+  uc_age=$((uc_now - $(stat -c %Y "$UPDATE_CHECK_CACHE" 2>/dev/null || echo 0)))
+  if [ "$uc_age" -ge "${NIRUX_UPDATE_CHECK_SECONDS:-21600}" ]; then
+    mkdir -p "${UPDATE_CHECK_CACHE%/*}" 2>/dev/null || :
+    uc_tmp=$UPDATE_CHECK_CACHE.$$
+    if (NIRUX_FETCH_ATTEMPTS=1 NIRUX_MIRROR_ATTEMPTS=1 fetch https://api.github.com/repos/nirucon/nirux/releases/latest "$uc_tmp") >/dev/null 2>&1; then
+      uc_tag=$(sed -n 's/.*"tag_name"[[:space:]]*:[[:space:]]*"v\{0,1\}\([0-9][0-9.]*\)".*/\1/p' "$uc_tmp" | head -n 1)
+      [ -n "$uc_tag" ] && say "$uc_tag" > "$UPDATE_CHECK_CACHE"
+    fi
+    rm -f "$uc_tmp"
+  fi
+  head -n 1 "$UPDATE_CHECK_CACHE" 2>/dev/null || :
+}
+# "name version" for each selected extra whose installed version is not the pin.
+update_check_extras() {
+  [ -f "$EXTRAS_SELECTED" ] || return 0
+  while read -r uce_name; do
+    [ -n "$uce_name" ] || continue
+    uce_pin=$(extras_row "$uce_name" 2>/dev/null | awk '{print $3}') || continue
+    [ -n "$uce_pin" ] || continue
+    [ "$(extras_installed_version "$uce_name" 2>/dev/null || :)" = "$uce_pin" ] || say "$uce_name $uce_pin"
+  done < "$EXTRAS_SELECTED"
+}
+update_check_command() {
+  uc_notify=0
+  for uc_arg in "$@"; do
+    case "$uc_arg" in
+      --notify) uc_notify=1 ;;
+      -h|--help) say 'usage: nirux update-check [--notify]'; return 0 ;;
+      *) die "unknown update-check option: $uc_arg" ;;
+    esac
+  done
+  uc_latest=$(update_check_latest)
+  uc_core=''
+  if [ -n "$uc_latest" ] && fleet_older "$VERSION" "$uc_latest"; then
+    uc_core="NIRUX $uc_latest is out; this computer has $VERSION."
+  fi
+  uc_extras=$(update_check_extras | paste -sd ',' - | sed 's/,/, /g')
+  uc_body=$uc_core
+  [ -z "$uc_extras" ] || uc_body="${uc_body:+$uc_body
+}Extras waiting: $uc_extras."
+  if [ "$uc_notify" = 0 ]; then
+    if [ -n "$uc_body" ]; then say "$uc_body"; else say "NIRUX ${VERSION} and the selected extras are current${uc_latest:+ (latest release $uc_latest)}."; fi
+    return 0
+  fi
+  [ -n "$uc_body" ] && [ -n "${DISPLAY:-}" ] && command -v notify-send >/dev/null 2>&1 || return 0
+  uc_key=$(printf '%s|%s' "$uc_latest" "$uc_extras")
+  # A release out since this afternoon is the nightly update's job: tell only
+  # when it has been waiting for more than a night (30 hours) and still is.
+  uc_first_key=$(sed -n 1p "$UPDATE_CHECK_FIRST" 2>/dev/null || :)
+  uc_first_at=$(sed -n 2p "$UPDATE_CHECK_FIRST" 2>/dev/null || :)
+  if [ "$uc_first_key" != "$uc_key" ] || [ -z "$uc_first_at" ]; then
+    mkdir -p "$STATE" 2>/dev/null || :
+    printf '%s\n%s\n' "$uc_key" "$(date +%s)" > "$UPDATE_CHECK_FIRST" 2>/dev/null || :
+    uc_first_at=$(date +%s)
+  fi
+  if [ -x "$AUTOUPDATE_HELPER" ] && [ $(( $(date +%s) - uc_first_at )) -lt "${NIRUX_UPDATE_CHECK_WAIT:-108000}" ]; then
+    return 0
+  fi
+  # Once per state: a new release or another extra is told again.
+  [ "$(cat "$UPDATE_CHECK_SEEN" 2>/dev/null)" != "$uc_key" ] || return 0
+  mkdir -p "$STATE" 2>/dev/null || :
+  printf '%s\n' "$uc_key" > "$UPDATE_CHECK_SEEN" 2>/dev/null || :
+  if [ -x "$AUTOUPDATE_HELPER" ]; then
+    uc_answer=$(timeout 3600 notify-send -a NIRUX --action=update='Update now' --wait \
+      "NIRUX update waiting" "$uc_body
+It missed the nightly update. Update now, or leave it locked tonight." 2>/dev/null) || uc_answer=''
+  else
+    notify-send -a NIRUX "NIRUX update waiting" "$uc_body
+Run in a terminal: nirux update; nirux extras update" >/dev/null 2>&1 || :
+    return 0
+  fi
+  [ "$uc_answer" = update ] || return 0
+  notify-send -a NIRUX "Updating NIRUX" "System packages, NIRUX and extras. You can keep working." >/dev/null 2>&1 || :
+  if sudo -n "$AUTOUPDATE_HELPER" run-now >/dev/null 2>&1; then
+    notify-send -a NIRUX "NIRUX is up to date" "New NIRUWM programs start after niructl restart-wm or the next login." >/dev/null 2>&1 || :
+  else
+    notify-send -a NIRUX -u critical "NIRUX update did not finish" "See: nirux autoupdate last" >/dev/null 2>&1 || :
+  fi
+}
+# Started from the login and wake-up hooks, never in their way.
+update_check_background() {
+  ucb_self=$HOME/.local/bin/nirux
+  [ -x "$ucb_self" ] || return 0
+  (cd / && "$ucb_self" update-check --notify >/dev/null 2>&1 < /dev/null &) || :
 }
 
 # ── nirux backup and nirux migrate (docs: manual chapter 11) ────────────────
@@ -12085,10 +12212,7 @@ main() {
   #
   # The copy is per process: a subshell must not delete the file its caller is
   # still using, so only the process that created it removes it.
-  if [ -n "${NIRUX_SUDO_SECRET_FILE:-}" ]; then
-    SUDO_SECRET_FILE=$NIRUX_SUDO_SECRET_FILE
-    SUDO_SECRET_BORROWED=1
-  fi
+  sudo_secret_adopt
   if [ -n "${NIRUX_SUDO_PASSWORD:-}" ]; then sudo_secret_keep "$NIRUX_SUDO_PASSWORD"; fi
   unset NIRUX_SUDO_PASSWORD
   # A subshell of an install (or a function inside one) inherits the location,
@@ -12144,6 +12268,7 @@ main() {
     webapps) shift; webapps_command "$@" ;;
     demo) shift; demo_command "$@" ;;
     resume-check) shift; resume_check_command "$@" ;;
+    update-check) shift; update_check_command "$@" ;;
     clean) shift; clean_command "$@" ;;
     restore) shift; restore_command "$@" ;;
     backup) shift; backup_command "$@" ;;

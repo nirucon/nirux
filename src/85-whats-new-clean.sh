@@ -78,6 +78,7 @@ whats_new_command() {
   fi
   # --notify runs at login: settings waiting for another host go out now.
   fleet_pending_background
+  update_check_background
   # --notify: once per version, in a graphical session, never twice.
   [ -n "$wn_version" ] || return 0
   [ "$(cat "$WHATS_NEW_SHOWN" 2>/dev/null)" != "$wn_version" ] || return 0
@@ -184,6 +185,21 @@ resume_tailscale() {
   RC_SAY="${RC_SAY}Tailscale is not connected after sleep.
 "
 }
+# Session programs (tray apps, NIRUWM autostart) that ran before the suspend
+# and are gone now: NIRUWM wrote them down when the sleep began. Started
+# again now, and once more a minute later for one that dies late.
+resume_autostart() {
+  RC_APPS=skipped
+  [ -n "${DISPLAY:-}" ] && [ -x "$BIN/niructl" ] || return 0
+  ra_names=$(resume_bounded 5 "$BIN/niructl" autostart revive --keep 2>/dev/null | head -n 5 | paste -sd ',' - | sed 's/,/, /g')
+  RC_APPS=ok
+  if [ -n "$ra_names" ]; then
+    RC_APPS=restarted
+    RC_SAY="${RC_SAY}Started again after sleep: $ra_names.
+"
+  fi
+  (sleep "${NIRUX_RESUME_LATE:-60}"; "$BIN/niructl" autostart revive >/dev/null 2>&1) </dev/null >/dev/null 2>&1 &
+}
 resume_check_command() {
   rc_notify=0
   for rc_arg in "$@"; do
@@ -194,16 +210,17 @@ resume_check_command() {
     esac
   done
   RESUME_DEADLINE=$(( $(date +%s) + ${NIRUX_RESUME_SECONDS:-18} ))
-  RC_SAY='' RC_NET=skipped RC_AUDIO=skipped RC_SCREENS=skipped RC_TS=skipped
+  RC_SAY='' RC_NET=skipped RC_AUDIO=skipped RC_SCREENS=skipped RC_TS=skipped RC_APPS=skipped
   resume_network
   resume_audio
   resume_screens
   resume_tailscale
-  rc_line="$(date '+%Y-%m-%d %H:%M:%S') network=$RC_NET audio=$RC_AUDIO screens=$RC_SCREENS tailscale=$RC_TS"
+  resume_autostart
+  rc_line="$(date '+%Y-%m-%d %H:%M:%S') network=$RC_NET audio=$RC_AUDIO screens=$RC_SCREENS tailscale=$RC_TS apps=$RC_APPS"
   mkdir -p "${RESUME_LOG%/*}" 2>/dev/null || :
   { tail -n 49 "$RESUME_LOG" 2>/dev/null || :; say "$rc_line"; } > "$RESUME_LOG.$$" 2>/dev/null &&
     mv -f "$RESUME_LOG.$$" "$RESUME_LOG" 2>/dev/null || rm -f "$RESUME_LOG.$$"
-  [ "$rc_notify" = 0 ] || fleet_pending_background
+  [ "$rc_notify" = 0 ] || { fleet_pending_background; update_check_background; }
   if [ "$rc_notify" = 0 ]; then
     say "$rc_line"
     printf '%s' "$RC_SAY"

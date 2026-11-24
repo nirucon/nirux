@@ -1,6 +1,6 @@
 # Inputs of the generated manual sections (tools/manual-gen.sh --refresh)
-niruwm 0.37.8
-nirubar 0.34.0
+niruwm 0.37.9
+nirubar 0.34.1
 nirufetch 0.3.0
 nirulauncher 0.20.0
 nirulock 0.29.0

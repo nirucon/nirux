@@ -2,7 +2,7 @@
 # NIRUX: install a complete X11 desktop, or maintain an existing installation.
 set -eu
 
-VERSION=0.12.352
+VERSION=0.12.353
 PREFIX=${NIRUX_PREFIX:-$HOME/.local}
 BIN=$PREFIX/bin
 STATE=$PREFIX/share/nirux
@@ -47,6 +47,18 @@ sudo_secret_keep() {
   export SUDO_SECRET_FILE
   SUDO_SECRET=$secret_value
   unset secret_value
+}
+# A password file from the caller (NIRUX_SUDO_SECRET_FILE, or SUDO_SECRET_FILE
+# from a parent nirux or a rollout script) is borrowed: the caller removes it.
+# Deleting it here left `nirux extras update` right after `nirux update`
+# without the password.
+sudo_secret_adopt() {
+  if [ -n "${NIRUX_SUDO_SECRET_FILE:-}" ]; then
+    SUDO_SECRET_FILE=$NIRUX_SUDO_SECRET_FILE
+    SUDO_SECRET_BORROWED=1
+  elif [ -n "${SUDO_SECRET_FILE:-}" ] && [ -f "$SUDO_SECRET_FILE" ]; then
+    SUDO_SECRET_BORROWED=1
+  fi
 }
 # Remove the file on every normal and failing exit path.
 sudo_secret_forget() {
@@ -127,7 +139,7 @@ usage() {
   say "       nirux manual [TOPIC] | manual --list | manual --path"
   say "       nirux checkup [--dry-run] | last | status | enable | disable | discord set|test"
   say "       nirux autoupdate [status|last|enable|disable|run-now]"
-  say "       nirux whats-new [--notify] | resume-check [--notify] | clean [--yes] [--dry-run]"
+  say "       nirux whats-new [--notify] | resume-check [--notify] | update-check [--notify] | clean [--yes] [--dry-run]"
   say "       nirux meet-check [--notify] | stale [--json] | stale restart"
   say "       nirux boot [status|on|off|apply|doctor]"
   say "       nirux hibernate [status|on|off|apply|delay MINUTES|doctor]"

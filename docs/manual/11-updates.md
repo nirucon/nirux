@@ -538,6 +538,14 @@ nirux autoupdate run-now    # run it now (also while you are logged in)
 nirux autoupdate disable    # or enable
 ```
 
+**A computer that sleeps at night.** A laptop that is asleep or off between
+03:00 and 05:00 misses the nightly update, every night. At login and after a
+wake-up NIRUX checks for a newer release (at most every six hours) and for
+selected extras that are behind their pins. When the same thing has been waiting
+for more than 30 hours, a notice says so once, with **Update now**, which runs
+the nightly update straight away (`nirux autoupdate run-now`), while you keep
+working. `nirux update-check` shows the same answer in a terminal.
+
 **Waiting system changes.** The nightly update runs your NIRUX as you, without a
 password. Whatever needs root and would change something (a new rule, a changed
 helper, a package NIRUX now needs) is left for later and listed in `nirux

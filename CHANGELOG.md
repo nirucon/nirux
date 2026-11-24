@@ -2,6 +2,25 @@
 
 Earlier releases are described in their release notes and commit messages.
 
+## 0.12.353 (2026-11-24)
+
+- **Autostart programs start, and come back after sleep.** Entries in
+  `~/.config/autostart` (Nextcloud, niruprodrive and other tray programs)
+  now start at every login; before, NIRUX did not run them. Programs that ran
+  before a suspend and died with it are started again after the wake-up, at
+  once and a minute later. `niructl autostart list` shows them. NIRUWM 0.37.9.
+- **A laptop that sleeps at night is told when it falls behind.** At login and
+  after a wake-up NIRUX checks for a newer release and for extras behind their
+  pins; after more than a night of waiting, one notice with **Update now**
+  runs the nightly update at once. `nirux update-check`.
+- **Rollouts finish the extras too.** A password file handed to `nirux update`
+  is left for its caller, so `nirux extras update` right after it can still
+  use sudo (NIRUSEC on debian could not update its helper).
+- **A window rule numbered from 1 is pointed out.** Rules count workspaces
+  from 0, autostart and recipes from 1; `niruwm --check-config` warns when a
+  rule and a recipe for the same program are one apart.
+- **NIRUBAR 0.34.1:** restarting the bar no longer panics in its D-Bus thread.
+
 ## 0.12.352 (2026-11-24)
 
 - **niruprodrive 0.1.4 stays up.** A small supervisor starts the service

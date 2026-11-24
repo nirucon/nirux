@@ -36,7 +36,8 @@ normal user, never in a root shell; it asks for sudo itself when it needs it.
 | `nirux autoupdate last` | The report of the last nightly update (the last seven are kept) |
 | `nirux autoupdate enable\|disable\|run-now` | Turn the nightly update on or off, or run it now (sudo, fixed rule) |
 | `nirux whats-new [--notify]` | The highlights of the NIRUX releases the last update installed; `--notify` shows them once as a notice |
-| `nirux resume-check [--notify]` | After sleep: check and repair the network, Wi-Fi, sound, screens and Tailscale |
+| `nirux resume-check [--notify]` | After sleep: check and repair the network, Wi-Fi, sound, screens and Tailscale, and start programs that died with the sleep |
+| `nirux update-check [--notify]` | Is NIRUX or a selected extra behind? With `--notify` (login and wake-up), a notice with Update now after a missed night |
 | `nirux clean [--yes] [--dry-run]` | Show what can be freed (package cache, journal, thumbnails, old generations, old trash), ask once, clean |
 | `nirux fleet [status [--json]]` | Status of your other NIRUX machines |
 | `nirux fleet update HOST...\|--all\|--behind` | Update other machines over SSH, one at a time |
@@ -161,7 +162,7 @@ niructl keys --markdown        # the keys in effect, as Markdown
 
 <!-- generated: niructl (tools/manual-gen.sh; do not edit by hand) -->
 
-Every form `niructl` accepts, from its usage text (NIRUWM 0.37.8). Run `niructl`
+Every form `niructl` accepts, from its usage text (NIRUWM 0.37.9). Run `niructl`
 without arguments to print it.
 
 - `niructl status`
@@ -179,6 +180,7 @@ without arguments to print it.
 - `niructl reload`
 - `niructl restart-bar`
 - `niructl restart-wm [--check]`
+- `niructl autostart [list|snapshot|revive [--keep]]`
 - `niructl bar top|bottom|hide|show|toggle|cycle|status`
 - `niructl quit`
 - `niructl save`

@@ -193,3 +193,101 @@ autoupdate_command() {
     *) die "unknown autoupdate command: $1 (nirux autoupdate --help)" ;;
   esac
 }
+
+# ── Behind after a night away (docs: manual chapter 11) ─────────────────────
+# A laptop that sleeps or is off between 03:00 and 05:00 misses the nightly
+# update, night after night. At login and after a wake-up (NIRUWM's hooks)
+# this asks GitHub at most every six hours and, when NIRUX or a selected
+# extra is behind, says so once per version, with *Update now*, which runs
+# the nightly update at once (`nirux autoupdate run-now`, allowed without a
+# password).
+UPDATE_CHECK_CACHE=${XDG_CACHE_HOME:-$HOME/.cache}/nirux/latest-release
+UPDATE_CHECK_SEEN=$STATE/update-check-notified
+UPDATE_CHECK_FIRST=$STATE/update-check-first-seen
+update_check_latest() {
+  uc_now=$(date +%s)
+  uc_age=$((uc_now - $(stat -c %Y "$UPDATE_CHECK_CACHE" 2>/dev/null || echo 0)))
+  if [ "$uc_age" -ge "${NIRUX_UPDATE_CHECK_SECONDS:-21600}" ]; then
+    mkdir -p "${UPDATE_CHECK_CACHE%/*}" 2>/dev/null || :
+    uc_tmp=$UPDATE_CHECK_CACHE.$$
+    if (NIRUX_FETCH_ATTEMPTS=1 NIRUX_MIRROR_ATTEMPTS=1 fetch https://api.github.com/repos/nirucon/nirux/releases/latest "$uc_tmp") >/dev/null 2>&1; then
+      uc_tag=$(sed -n 's/.*"tag_name"[[:space:]]*:[[:space:]]*"v\{0,1\}\([0-9][0-9.]*\)".*/\1/p' "$uc_tmp" | head -n 1)
+      [ -n "$uc_tag" ] && say "$uc_tag" > "$UPDATE_CHECK_CACHE"
+    fi
+    rm -f "$uc_tmp"
+  fi
+  head -n 1 "$UPDATE_CHECK_CACHE" 2>/dev/null || :
+}
+# "name version" for each selected extra whose installed version is not the pin.
+update_check_extras() {
+  [ -f "$EXTRAS_SELECTED" ] || return 0
+  while read -r uce_name; do
+    [ -n "$uce_name" ] || continue
+    uce_pin=$(extras_row "$uce_name" 2>/dev/null | awk '{print $3}') || continue
+    [ -n "$uce_pin" ] || continue
+    [ "$(extras_installed_version "$uce_name" 2>/dev/null || :)" = "$uce_pin" ] || say "$uce_name $uce_pin"
+  done < "$EXTRAS_SELECTED"
+}
+update_check_command() {
+  uc_notify=0
+  for uc_arg in "$@"; do
+    case "$uc_arg" in
+      --notify) uc_notify=1 ;;
+      -h|--help) say 'usage: nirux update-check [--notify]'; return 0 ;;
+      *) die "unknown update-check option: $uc_arg" ;;
+    esac
+  done
+  uc_latest=$(update_check_latest)
+  uc_core=''
+  if [ -n "$uc_latest" ] && fleet_older "$VERSION" "$uc_latest"; then
+    uc_core="NIRUX $uc_latest is out; this computer has $VERSION."
+  fi
+  uc_extras=$(update_check_extras | paste -sd ',' - | sed 's/,/, /g')
+  uc_body=$uc_core
+  [ -z "$uc_extras" ] || uc_body="${uc_body:+$uc_body
+}Extras waiting: $uc_extras."
+  if [ "$uc_notify" = 0 ]; then
+    if [ -n "$uc_body" ]; then say "$uc_body"; else say "NIRUX ${VERSION} and the selected extras are current${uc_latest:+ (latest release $uc_latest)}."; fi
+    return 0
+  fi
+  [ -n "$uc_body" ] && [ -n "${DISPLAY:-}" ] && command -v notify-send >/dev/null 2>&1 || return 0
+  uc_key=$(printf '%s|%s' "$uc_latest" "$uc_extras")
+  # A release out since this afternoon is the nightly update's job: tell only
+  # when it has been waiting for more than a night (30 hours) and still is.
+  uc_first_key=$(sed -n 1p "$UPDATE_CHECK_FIRST" 2>/dev/null || :)
+  uc_first_at=$(sed -n 2p "$UPDATE_CHECK_FIRST" 2>/dev/null || :)
+  if [ "$uc_first_key" != "$uc_key" ] || [ -z "$uc_first_at" ]; then
+    mkdir -p "$STATE" 2>/dev/null || :
+    printf '%s\n%s\n' "$uc_key" "$(date +%s)" > "$UPDATE_CHECK_FIRST" 2>/dev/null || :
+    uc_first_at=$(date +%s)
+  fi
+  if [ -x "$AUTOUPDATE_HELPER" ] && [ $(( $(date +%s) - uc_first_at )) -lt "${NIRUX_UPDATE_CHECK_WAIT:-108000}" ]; then
+    return 0
+  fi
+  # Once per state: a new release or another extra is told again.
+  [ "$(cat "$UPDATE_CHECK_SEEN" 2>/dev/null)" != "$uc_key" ] || return 0
+  mkdir -p "$STATE" 2>/dev/null || :
+  printf '%s\n' "$uc_key" > "$UPDATE_CHECK_SEEN" 2>/dev/null || :
+  if [ -x "$AUTOUPDATE_HELPER" ]; then
+    uc_answer=$(timeout 3600 notify-send -a NIRUX --action=update='Update now' --wait \
+      "NIRUX update waiting" "$uc_body
+It missed the nightly update. Update now, or leave it locked tonight." 2>/dev/null) || uc_answer=''
+  else
+    notify-send -a NIRUX "NIRUX update waiting" "$uc_body
+Run in a terminal: nirux update; nirux extras update" >/dev/null 2>&1 || :
+    return 0
+  fi
+  [ "$uc_answer" = update ] || return 0
+  notify-send -a NIRUX "Updating NIRUX" "System packages, NIRUX and extras. You can keep working." >/dev/null 2>&1 || :
+  if sudo -n "$AUTOUPDATE_HELPER" run-now >/dev/null 2>&1; then
+    notify-send -a NIRUX "NIRUX is up to date" "New NIRUWM programs start after niructl restart-wm or the next login." >/dev/null 2>&1 || :
+  else
+    notify-send -a NIRUX -u critical "NIRUX update did not finish" "See: nirux autoupdate last" >/dev/null 2>&1 || :
+  fi
+}
+# Started from the login and wake-up hooks, never in their way.
+update_check_background() {
+  ucb_self=$HOME/.local/bin/nirux
+  [ -x "$ucb_self" ] || return 0
+  (cd / && "$ucb_self" update-check --notify >/dev/null 2>&1 < /dev/null &) || :
+}

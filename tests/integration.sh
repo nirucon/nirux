@@ -1113,6 +1113,18 @@ if command -v sudo >/dev/null 2>&1 && [ "$(id -u)" != 0 ]; then
   rm -rf "$shim"
 fi
 
+# A password file handed over by the caller (a rollout: `nirux update` and
+# then `nirux extras update` with the same SUDO_SECRET_FILE) is left for the
+# caller to remove; one NIRUX made itself is removed.
+sf=$TEST/handed-secret; ( umask 077; printf 'x\n' > "$sf" )
+( SUDO_SECRET_FILE=$sf SUDO_SECRET_BORROWED=0; unset NIRUX_SUDO_SECRET_FILE; sudo_secret_adopt; sudo_secret_forget )
+[ -f "$sf" ] || fail 'nirux removed a password file its caller handed it'
+rm -f "$sf"
+(
+  SUDO_SECRET_FILE='' SUDO_SECRET_BORROWED=0
+  sudo_secret_keep 'y' && own=$SUDO_SECRET_FILE && sudo_secret_forget && [ ! -e "$own" ]
+) || fail 'nirux kept a password file it made itself'
+
 # I07: a new shared-library dependency is provisioned before staged components
 # are executed. The synthetic component fails its version check without it.
 TEST_OS=debian; PREFIX=$TEST/libdep; BIN=$PREFIX/bin; STATE=$PREFIX/share/nirux
@@ -2108,6 +2120,53 @@ grep -q 'network=wifi-reconnected audio=restarted screens=skipped tailscale=off'
 for _ in $(seq 1 60); do say "old run" >> "$TEST/rc-xdg/nirux/resume-check.log"; done
 (PATH="$rc_bin:$PATH" NIRUX_RESUME_WAIT=1 RESUME_LOG=$TEST/rc-xdg/nirux/resume-check.log resume_check_command >/dev/null)
 [ "$(wc -l < "$TEST/rc-xdg/nirux/resume-check.log")" = 50 ] || fail 'resume-check keeps more than 50 runs'
+
+# Session programs that died with the suspend are started again, and once
+# more a minute later (here at once), and the notice names them.
+rc_ctl=$TEST/rcctl; mkdir -p "$rc_ctl"
+cat > "$rc_ctl/niructl" <<'EOF'
+#!/bin/sh
+echo "niructl $*" >> "$RC_CALLS"
+[ "$*" = "autostart revive --keep" ] && echo Nextcloud
+exit 0
+EOF
+chmod +x "$rc_ctl/niructl"
+: > "$NOTIFY_LOG"
+(PATH="$rc_bin:$PATH" BIN=$rc_ctl DISPLAY=:99 NIRUX_RESUME_WAIT=1 NIRUX_RESUME_LATE=0 RESUME_LOG=$TEST/rc-xdg/nirux/resume-check.log resume_check_command --notify)
+grep -q 'Started again after sleep: Nextcloud' "$NOTIFY_LOG" || fail 'resume-check did not report the programs it started again'
+for _ in $(seq 1 30); do grep -qx 'niructl autostart revive' "$RC_CALLS" && break; sleep 0.1; done
+grep -qx 'niructl autostart revive' "$RC_CALLS" || fail 'resume-check did not check the session programs again later'
+grep -q 'apps=restarted' "$TEST/rc-xdg/nirux/resume-check.log" || fail 'resume-check did not log the programs'
+
+# A computer that missed the nightly update hears about it once, after a
+# night's grace, and Update now runs the nightly update at once.
+uc=$TEST/update-check; mkdir -p "$uc/bin" "$uc/cache/nirux"
+cat > "$uc/bin/notify-send" <<'EOF'
+#!/bin/sh
+printf '%s\n' "$*" >> "$NOTIFY_LOG"
+case "$*" in *--action=update*) echo update ;; esac
+EOF
+cat > "$uc/bin/sudo" <<'EOF'
+#!/bin/sh
+echo "sudo $*" >> "$RC_CALLS"
+EOF
+printf '#!/bin/sh\nexit 0\n' > "$uc/helper"
+chmod +x "$uc/bin/notify-send" "$uc/bin/sudo" "$uc/helper"
+say 99.0.0 > "$uc/cache/nirux/latest-release"
+: > "$NOTIFY_LOG"; : > "$RC_CALLS"
+(PATH="$uc/bin:$PATH" DISPLAY=:99 UPDATE_CHECK_CACHE=$uc/cache/nirux/latest-release UPDATE_CHECK_SEEN=$uc/seen UPDATE_CHECK_FIRST=$uc/first \
+  AUTOUPDATE_HELPER=$uc/helper EXTRAS_SELECTED=$uc/none update_check_command --notify)
+[ ! -s "$NOTIFY_LOG" ] || fail 'update-check told about a release the nightly update has not had a night for'
+(PATH="$uc/bin:$PATH" DISPLAY=:99 NIRUX_UPDATE_CHECK_WAIT=0 UPDATE_CHECK_CACHE=$uc/cache/nirux/latest-release UPDATE_CHECK_SEEN=$uc/seen UPDATE_CHECK_FIRST=$uc/first \
+  AUTOUPDATE_HELPER=$uc/helper EXTRAS_SELECTED=$uc/none update_check_command --notify)
+grep -q 'NIRUX 99.0.0 is out' "$NOTIFY_LOG" || fail 'update-check did not tell about a missed release'
+grep -q "sudo -n $uc/helper run-now" "$RC_CALLS" || fail 'Update now did not run the nightly update'
+grep -q 'NIRUX is up to date' "$NOTIFY_LOG" || fail 'update-check did not say the update finished'
+: > "$NOTIFY_LOG"
+(PATH="$uc/bin:$PATH" DISPLAY=:99 NIRUX_UPDATE_CHECK_WAIT=0 UPDATE_CHECK_CACHE=$uc/cache/nirux/latest-release UPDATE_CHECK_SEEN=$uc/seen UPDATE_CHECK_FIRST=$uc/first \
+  AUTOUPDATE_HELPER=$uc/helper EXTRAS_SELECTED=$uc/none update_check_command --notify)
+[ ! -s "$NOTIFY_LOG" ] || fail 'update-check told about the same release twice'
+rm -rf "$uc"
 
 # K5: nirux clean --dry-run lists what can go and changes nothing.
 cl_home=$TEST/cleanhome; mkdir -p "$cl_home/.cache/thumbnails/normal"
