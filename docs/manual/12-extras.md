@@ -20,7 +20,7 @@ A normal `nirux install` or `nirux update` never installs an extra. You ask for 
 | [niruremote](#niruremote-remote-desktop) | 0.2.0 | Graphical remote desktop over Tailscale and SSH | alpha |
 | [nirudictate](#nirudictate-local-dictation) | 0.4.0 | Local speech-to-text dictation, voice commands, and voice messages to opencode | alpha |
 | [docker-stacks](#docker-stacks-docker-in-the-terminal) | 1.0.1 | Docker Compose stacks, containers, images, volumes and networks in the terminal | beta |
-| [niruprodrive](#niruprodrive-proton-drive-backup-and-sharing) | 0.1.1 | Proton Drive backups per computer, sending, fetching and links, with a tray cloud and NIRUFM badges | alpha |
+| [niruprodrive](#niruprodrive-proton-drive-backup-and-sharing) | 0.1.2 | Proton Drive backups per computer, sending, fetching and links, with a tray cloud and NIRUFM badges | alpha |
 
 ### Install, update and remove
 

@@ -2,7 +2,10 @@
 
 Earlier releases are described in their release notes and commit messages.
 
-## 0.12.348 (2026-11-24)
+## 0.12.349 (2026-11-24)
+
+- **niruprodrive 0.1.2.** The window opens on the workspace you are on,
+  also when it was hidden, minimised or open on another workspace.
 
 - **NIRUBAR 0.33.0: panels you can use.** A module's panel now ends with
   what you can do, by click or with Up/Down and Return: mute, a volume
@@ -19,7 +22,7 @@ Earlier releases are described in their release notes and commit messages.
   stop at 100 % and are never lost, the CPU temperature in the load panel
   (accent from 80 °C, red from 90 °C), a red battery and a notice at 15 %
   and 7 %, middle-click on tray icons, and Quick Settings on one click.
-  Manual chapter 4.
+  Manual chapter 4. NIRUWM 0.37.7 carries this NIRUBAR.
 
 ## 0.12.347 (2026-11-24)
 
