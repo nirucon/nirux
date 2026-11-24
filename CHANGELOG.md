@@ -2,6 +2,13 @@
 
 Earlier releases are described in their release notes and commit messages.
 
+## 0.12.357 (2026-11-24)
+
+- NIRUWM 0.37.11: a window closed to its tray (NIRUPRODRIVE, Nextcloud)
+  frees its tile at once. The windows left on the workspace take the space
+  and the keyboard, where before they kept their old size until the next
+  workspace switch.
+
 ## 0.12.356 (2026-11-24)
 
 - NIRUEDITVIEW is made the viewer for photos and PDFs by the update that
