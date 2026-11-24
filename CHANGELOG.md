@@ -2,6 +2,25 @@
 
 Earlier releases are described in their release notes and commit messages.
 
+## 0.12.348 (2026-11-24)
+
+- **NIRUBAR 0.33.0: panels you can use.** A module's panel now ends with
+  what you can do, by click or with Up/Down and Return: mute, a volume
+  level and the output device, the microphone input, play/pause/next,
+  Bluetooth power and devices, power profiles, Wi-Fi, check for updates or
+  upgrade in a terminal, clear notifications and Do Not Disturb, a system
+  monitor. Rows that change something show the new state at once.
+- **Faster and lighter.** A scrolling media title no longer re-reads every
+  module 30 times a second, Bluetooth follows BlueZ's signals instead of a
+  helper every two seconds, the power profile is read every 20 seconds and
+  after a change, the load graph wakes once a second, and nothing polls
+  NIRUNOTIFY's command line every second when its daemon is not running.
+- **Easier:** scroll over the workspaces to move between them, volume steps
+  stop at 100 % and are never lost, the CPU temperature in the load panel
+  (accent from 80 °C, red from 90 °C), a red battery and a notice at 15 %
+  and 7 %, middle-click on tray icons, and Quick Settings on one click.
+  Manual chapter 4.
+
 ## 0.12.347 (2026-11-24)
 
 - **niruprodrive 0.1.1.** Sign-in works right after `nirux extras install`

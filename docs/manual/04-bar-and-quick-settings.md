@@ -10,14 +10,31 @@ The mouse works the same way in every module:
 
 | Mouse | Effect |
 |---|---|
-| Left click | Opens an information panel. It never changes playback, mute or power. |
-| Right click | The module's explicit action (play/pause, mute, power, next profile, stop). |
-| Scroll | Change a value (volume, microphone gain, previous/next track). |
-| Middle click | Opens the keyboard-first control view where one exists. |
+| Left click | Opens the module's panel: what it shows, and under it what you can do. Opening it never changes anything. |
+| Right click | The module's quick action (play/pause, mute, power, next profile, stop). |
+| Scroll | Change a value (volume, microphone gain, previous/next track). Over the workspaces: the next or previous workspace. |
+| Middle click | Opens the keyboard-first control view where one exists; on a tray icon, the icon's secondary action. |
 
-Only one panel is open at a time. `Escape`, a click elsewhere or a second click on the same module closes it. Quick-glance panels (volume, microphone, network, battery, Bluetooth, media, power profile, brightness, updates, uptime, display and the rest) also close by themselves after `popup_timeout_seconds` (default 4). Panels you read stay open until you close them: the calendar (clock), weather, tasks, pulse and notifications. See [Panel timeouts](#panel-timeouts). The panel footer says whether it is informational or has controls; press `Enter` or click the footer to open the control view (usually a NIRU Launcher view).
+**Panel actions.** Many panels end with rows you can use: click one, or choose with `Up`/`Down` and press `Enter` (the chosen row gets a bar in the accent colour). A row that changes a state (mute, a level, a device, a profile) shows the panel again with the new state. The module's own control view, where there is one, is the last row, **Open settings…**
 
-A few modules skip the panel and act on a left click: `wifi`, `agent`, `share`, `nirusec` and `dnd`.
+| Module | Panel actions |
+|---|---|
+| `volume` | Mute or unmute; 25, 50, 75 or 100 %; the output device (speakers, HDMI, headphones); a mixer when `pavucontrol` is installed |
+| `microphone` | Mute or unmute; the input device |
+| `media` | Play or pause, next, previous |
+| `bluetooth` | Turn Bluetooth on or off; connect or disconnect each paired device |
+| `powerprofile` | Each profile, or Automatic (follow the charger) |
+| `battery` | The power profile selector |
+| `network` | Choose a Wi-Fi network |
+| `updates` | Check now; upgrade the system in a terminal; update NIRUX in a terminal |
+| `notifications` | Clear all; Do Not Disturb on or off |
+| `pulse` | A system monitor (`btop`, `htop` or `top`) in a terminal |
+
+Volume steps from the wheel stop at 100 % and unmute on the way up, and quick wheel turns are added up rather than lost.
+
+Only one panel is open at a time. `Escape`, a click elsewhere or a second click on the same module closes it. Quick-glance panels (volume, microphone, network, battery, Bluetooth, media, power profile, brightness, updates, uptime, display and the rest) also close by themselves after `popup_timeout_seconds` (default 4); a panel with actions waits at least 10 seconds, counted from the last move of the pointer in it. Panels you read stay open until you close them: the calendar (clock), weather, tasks, pulse and notifications. See [Panel timeouts](#panel-timeouts). A panel without actions says in its footer whether it is informational or has controls; press `Enter` or click the footer to open the control view (usually a NIRU Launcher view).
+
+A few modules skip the panel and act on a left click: `wifi`, `agent`, `share`, `nirusec`, `dnd` and `quicksettings` (one click opens Quick Settings). A right click on `wifi` shows the connection's details.
 
 When the bar is too narrow, low-priority modules collapse into a clickable `+N`; click it to see the hidden modules.
 
@@ -27,7 +44,7 @@ Choose and order the modules with `[bar] modules`. A module without a provider h
 
 | Module | Shows | Left click | Right click / scroll / middle |
 |---|---|---|---|
-| `workspaces` | Ten cells for this monitor: active, occupied (small accent marker), urgent (attention colour) | Switch to that workspace | |
+| `workspaces` | Ten cells for this monitor: active, occupied (small accent marker), urgent (attention colour) | Switch to that workspace | Scroll: next or previous workspace |
 | `layout` | Current NIRUWM layout; the Scroll layout shows `scroll 1` / `scroll 2` | List of layouts and column controls | |
 | `media` | Playing title with a progress hairline; long titles scroll | Track information | Right: play/pause. Scroll up: previous, down: next. Middle: switch to the next player |
 | `volume` | Output level or mute | Information | Right: mute. Scroll: volume up/down 5 %. Middle: microphone mute |
@@ -37,10 +54,10 @@ Choose and order the modules with `[bar] modules`. A module without a provider h
 | `display` | This bar's screen position (`Left`, `Center`, `Right`, `Top`, `Bottom`, diagonals or `Mirror`) | Outputs; footer opens display profiles | Middle: `nirulauncher --displays` |
 | `tailscale` | Online Tailscale peers; only when `tailscale` is installed | Peer state; footer opens `nirulauncher --tailscale` | |
 | `network` | Wired link; `!` means link up without a default route. Also Wi-Fi when `wifi = false` | Interface, route and address | |
-| `wifi` | Wi-Fi radio and connection; `!` means radio off or not connected | Opens the Wi-Fi selector (`nirulauncher --wifi`) | |
-| `bluetooth` | Off, on or the connected device | Information; footer opens devices | Right: power on/off. Middle: device selector |
-| `powerprofile` | Active power profile (needs `power-profiles-daemon`) | Information | Right: next profile. Middle: `nirulauncher --power` |
-| `battery` | Aggregated charge and state; laptops only | Charge, state, remaining time, battery health (percent of the design capacity), charge cycles and a graph of the last 24 hours | |
+| `wifi` | Wi-Fi radio and connection; `!` means radio off or not connected | Opens the Wi-Fi selector (`nirulauncher --wifi`) | Right: connection details |
+| `bluetooth` | Off, on or the connected device; follows BlueZ's own signals, nothing is polled | Information and actions (power, connect, disconnect) | Right: power on/off. Middle: device selector |
+| `powerprofile` | Active power profile (needs `power-profiles-daemon`) | Information and the profiles to choose | Right: next profile. Middle: `nirulauncher --power` |
+| `battery` | Aggregated charge and state; laptops only. Red at 15 % or less while discharging, with one notice at 15 % and one at 7 % | Charge, state, remaining time, battery health (percent of the design capacity), charge cycles and a graph of the last 24 hours | |
 | `mode` | Active work mode (focus/presentation) and minutes left, and *studio* while studio mode is on | Shows `niructl mode stop` or `niructl studio off` | |
 | `tasks` | Running or waiting NIRU/OpenCode tasks (`niructl task list`) | Recent states; footer opens NIRU Actions | |
 | `agent` | OpenCode entry | Opens a one-line prompt (`nirulauncher --agent`) | |
@@ -54,7 +71,7 @@ Choose and order the modules with `[bar] modules`. A module without a provider h
 | `share` | NIRUSHARE entry | Opens the inbox (`nirulauncher --share`) | |
 | `updates` | Available package upgrades (`apt`, `pacman` or `xbps`); hidden when there are none. With `niruxupdate` in the list it counts only system packages | Details and the command to run | |
 | `niruxupdate` | A newer NIRUX release, or an installed one that needs a new login; silent otherwise | The command to run (it never installs anything) | |
-| `pulse` | CPU and memory | Graph of the last minute | |
+| `pulse` | CPU and memory; the accent from 80 °C and red from 90 °C CPU temperature | CPU temperature, graph of the last minute, a system monitor | |
 | `uptime` | Uptime | Memory use and the fullest file system | |
 | `sun` | Sunrise and sunset for the top-level coordinates | Details | |
 | `weather` | Cached temperature, condition and rain | Eight-hour timeline | |
@@ -236,6 +253,7 @@ With `tray = true` (default) the bar is the session's system tray, on the primar
 
 - Left click activates an item.
 - Right click opens its menu in a bar panel, where you select an entry. Items without a menu get their secondary action.
+- Middle click gives the item its secondary action.
 
 Set `tray = false` if another tray program runs.
 
