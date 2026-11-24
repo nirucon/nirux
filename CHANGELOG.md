@@ -2,6 +2,16 @@
 
 Earlier releases are described in their release notes and commit messages.
 
+## 0.12.360 (2026-11-24)
+
+- NIRUCLIP 0.12.0: the camera on a video track of its own
+  (`--camera-track separate`, the default when recording from the editor),
+  picture in picture in the editor (move, size, shape, border, shadow, fade
+  or slide in, off per clip, or any picture or film), the placing view (`E`)
+  to drag the camera and the title into place on a rendered picture, and
+  titles with new looks (lower third, neon, marker) and effects (slide up,
+  slide in, pop, type itself).
+
 ## 0.12.359 (2026-11-24)
 
 - **NIRUTODAY, a new extra:** today at a glance in a retro teletext look.

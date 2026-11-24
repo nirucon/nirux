@@ -169,6 +169,7 @@ Check that the key is free first with `Super+F1` and `Ctrl+R`.
 | `--camera-shape` | `rounded` (default), `circle`, `rect` |
 | `--camera-border` | `theme` (default), `none`, or `RRGGBB` |
 | `--mirror`, `--no-mirror` | Mirror the camera (default: not mirrored, so text reads correctly) |
+| `--camera-track` | `burned` (default: in the picture), `separate` (its own video track: the screen stays clean and the editor places the camera), `both` |
 | `--preset` | `share` (default, up to 1080p), `small` (up to 720p), `quality`; never upscales |
 | `--encoder` | `auto` (default: VAAPI when a probe succeeds), `software`, `vaapi` |
 | `--countdown` | `0` to `10` seconds (default 3) |
@@ -333,6 +334,7 @@ bottom, with lanes for the picture, its sound and music. F1 lists every key.
 | `Alt+←` `→` | Move the clip earlier or later |
 | `M`, `T` | Mute the clip; write a title over it (`\|` starts a new line) |
 | `Ctrl+T` | A title card: text on a colour |
+| `E` | Place the title and the camera on the picture |
 | `P` | Preview with effects and transitions |
 | `Tab` | Timeline, settings panel, media list |
 | `Ctrl+O`, `Ctrl+I`, `Ctrl+M` | Open, import, add music |
@@ -357,11 +359,33 @@ few seconds around the playhead (or the marked part) with every effect,
 exactly as it will be exported.
 
 **Titles.** Any installed font (the list shows each name in its own
-letters), regular, bold, italic or bold italic, eight colours, a box
-behind, an outline, a shadow or plain, nine places and a size; when it
-starts, how long it lasts and a fade. Templates set a heading, a name tag
-or a subtitle bar in one go. `Ctrl+T` (or **+ Card**) adds a title card:
-text on a colour of its own, as a clip.
+letters), regular, bold, italic or bold italic, eight colours, nine places
+or anywhere you drag it, and a size; when it starts, how long it lasts and a
+fade. Seven looks: a box behind, an outline, a shadow, plain, a lower third
+(a bar in an accent colour beside a dark box), neon and marker. Five
+effects: appear or fade, slide up, slide in, pop and type itself. Templates
+set a heading, a name tag, a subtitle bar, a lower third, a neon heading, a
+marker, a pop heading or a typewriter in one go. `Ctrl+T` (or **+ Card**)
+adds a title card: text on a colour of its own, as a clip.
+
+**The camera as picture in picture.** Record with `--camera-track
+separate` (the record dialog's *Camera track*; recording from the editor
+uses it by default) and the camera is kept on a video track of its own: the
+screen stays clean and every clip shows the camera where it was recorded.
+Per clip, in the *Picture in picture* group, it can be moved and sized, be
+rounded, a circle or a rectangle, get another border or none and a soft
+shadow, fade or slide in, show for only part of the clip, or be turned off,
+for instance where the camera should not be seen. *Shows* can also put any
+picture or film of the project there instead. `niruclip --export mp4` of
+such a recording puts the camera back in its corner.
+
+**Placing (`E`).** One picture of the clip, rendered exactly as it will be
+exported, with the camera and the title on it: drag them where they belong,
+the wheel or `+` `−` sizes the one chosen, the arrows nudge it, and single
+keys change it (camera: `S` shape, `B` border, `D` shadow, `E` effect, `R`
+as recorded; title: `L` look, `E` effect, `C` colour, `B` accent, `R` back
+to the bottom). `Tab` switches between them, `Delete` hides the camera in
+this clip or removes the title, `Ctrl+Z` undoes, `Enter` closes.
 
 **Sound for speech.** A clip's treatment is Voice (rumble out, light noise
 reduction, softer s sounds, an even level), Voice in a noisy room, or Even
