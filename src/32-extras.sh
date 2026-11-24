@@ -10,7 +10,7 @@ nirugame nirugame 0.2.0 145f3e327702b296f7b6bb83dea2b263dd4662526b1224df174d0d0e
 niruremote niruremote 0.2.0 64571f661be436c1fb69b72439f7af69802d87c83ac1652c49b84f0cfd80f784
 nirudictate nirudictate 0.4.0 759cd574286b97291ac7f35cc923a1596deac0de3f92c9515e408fb8c46e7b21
 docker-stacks docker-stacks 1.0.1 e6abbfe0edb1c9424e52e691d54ca9bf409fbdc6845706e83a8ccd95456a87e6
-niruprodrive niruprodrive 0.1.0 72fbba422f4ac8bf08ce8d3b82262783a6c66be19b61e2331b2fe2991c6148b0
+niruprodrive niruprodrive 0.1.1 d3547d4229ab4e10913a0265a842c6b7d1a63fd2f851e6c8eb4405f1be4488df
 EOF
 }
 # Extras that left the suite. Each is removed once with the uninstaller of

@@ -2,6 +2,13 @@
 
 Earlier releases are described in their release notes and commit messages.
 
+## 0.12.347 (2026-11-24)
+
+- **niruprodrive 0.1.1.** Sign-in works right after `nirux extras install`
+  (the service no longer runs in the installer's deleted temporary folder,
+  which made Proton's CLI refuse with "no contact"), and the cloud in the
+  bar is easier to see before sign-in.
+
 ## 0.12.346 (2026-11-24)
 
 - **NIRUFM 0.4.0: select with the mouse.** Drag a band from blank space,
