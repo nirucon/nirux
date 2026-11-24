@@ -36,6 +36,7 @@ sleep_version=$(awk '$1 == "nirusleep" {print $2}' "$SOURCE/manifest")
 demo_version=$(awk '$1 == "nirudemo" {print $2}' "$SOURCE/manifest")
 fm_version=$(awk '$1 == "nirufm" {print $2}' "$SOURCE/manifest")
 term_version=$(awk '$1 == "niruterm" {print $2}' "$SOURCE/manifest")
+viewer_version=$(awk '$1 == "nirueditview" {print $2}' "$SOURCE/manifest")
 FIXTURE=$TEST/releases
 fail() { printf 'FAIL: %s\n' "$*" >&2; exit 1; }
 no_config_candidates() {
@@ -153,6 +154,7 @@ fixture nirusplash "$splash_version" nirusplash
 fixture nirusleep "$sleep_version" nirusleep
 fixture nirudemo "$demo_version" nirudemo
 fixture nirufm "$fm_version" nirufm nirufm.desktop nirufm.svg
+fixture nirueditview "$viewer_version" nirueditview nirueditview.desktop nirueditview.svg
 fixture niruterm "$term_version" niruterm niruprompt niruterm.desktop niruterm.svg
 # The NIRUX music: two placeholder songs in the archive layout NIRUDEMO ships.
 mkdir -p "$TEST/music-build/music"
@@ -174,7 +176,7 @@ for os in arch void; do
   printf 'auth include system-auth\naccount include system-auth\n' > "$FIXTURE/nirulock/$lock_version/pam-$os"
 done
 printf 'auth include common-auth\naccount include common-account\n' > "$FIXTURE/nirulock/$lock_version/pam-debian"
-for item in "niruwm/$wm_version" "nirubar/$bar_version" "niruscreensaver/$saver_version" "nirulock/$lock_version" "nirulauncher/$launcher_version" "nirulogin/$login_version" "nirushare/$share_version" "nirunotify/$notifier_version" "nirushot/$shot_version" "niruclip/$clip_version" "nirufetch/$fetch_version" "niruio/$io_version" "nirusplash/$splash_version" "nirusleep/$sleep_version" "nirudemo/$demo_version" "nirufm/$fm_version" "niruterm/$term_version" "niruwebapp/$webapp_version" "niruwallpaper/$wallpaper_app_version" "nirudisplay/$display_app_version" "niruthemeselector/$theme_selector_version"; do checksums "$FIXTURE/$item"; done
+for item in "niruwm/$wm_version" "nirubar/$bar_version" "niruscreensaver/$saver_version" "nirulock/$lock_version" "nirulauncher/$launcher_version" "nirulogin/$login_version" "nirushare/$share_version" "nirunotify/$notifier_version" "nirushot/$shot_version" "niruclip/$clip_version" "nirufetch/$fetch_version" "niruio/$io_version" "nirusplash/$splash_version" "nirusleep/$sleep_version" "nirudemo/$demo_version" "nirufm/$fm_version" "nirueditview/$viewer_version" "niruterm/$term_version" "niruwebapp/$webapp_version" "niruwallpaper/$wallpaper_app_version" "nirudisplay/$display_app_version" "niruthemeselector/$theme_selector_version"; do checksums "$FIXTURE/$item"; done
 # 99.0.0 is a synthetic second release, never a real network dependency.
 for release in "$VERSION" 99.0.0; do
   mkdir -p "$FIXTURE/nirux/$release"
@@ -633,6 +635,7 @@ for TEST_OS in arch debian void; do
   [ -f "$STATE/music/nirux-1-ginnungagap.ogg" ] && [ -f "$STATE/music/nirux-2-yggdrasil.ogg" ] || fail "$TEST_OS: the NIRUX music was not installed"
   [ -L "$BIN/nirudemo" ] || fail "$TEST_OS: nirudemo is not linked"
   [ -L "$BIN/nirufm" ] || fail "$TEST_OS: nirufm is not linked"
+  [ -L "$BIN/nirueditview" ] || fail "$TEST_OS: nirueditview is not linked"
   [ -L "$BIN/niruterm" ] || fail "$TEST_OS: niruterm is not linked"
   [ -L "$BIN/niruprompt" ] || fail "$TEST_OS: niruprompt is not linked"
   # K7/K8: the nightly update helper, its settings, the fixed sudoers rule,
@@ -2167,6 +2170,25 @@ grep -q 'NIRUX is up to date' "$NOTIFY_LOG" || fail 'update-check did not say th
   AUTOUPDATE_HELPER=$uc/helper EXTRAS_SELECTED=$uc/none update_check_command --notify)
 [ ! -s "$NOTIFY_LOG" ] || fail 'update-check told about the same release twice'
 rm -rf "$uc"
+
+# NIRUEDITVIEW becomes the viewer for photos and PDFs once, whatever opened
+# them before, and a viewer chosen afterwards is kept.
+vd=$TEST/viewer-default; mkdir -p "$vd/bin" "$vd/state" "$vd/prefix"
+cat > "$vd/bin/xdg-mime" <<'EOF'
+#!/bin/sh
+case "$1" in
+  query) cat "$VD_DIR/$(printf '%s' "$3" | tr / _)" 2>/dev/null || echo photocraft.desktop ;;
+  default) printf '%s\n' "$2" > "$VD_DIR/$(printf '%s' "$3" | tr / _)"; echo "default $3" >> "$VD_DIR/calls" ;;
+esac
+EOF
+chmod +x "$vd/bin/xdg-mime"; printf '#!/bin/sh\n' > "$vd/prefix/nirueditview"; chmod +x "$vd/prefix/nirueditview"
+(PATH="$vd/bin:$PATH" VD_DIR=$vd BIN=$vd/prefix STATE=$vd/state; export VD_DIR; viewer_default)
+[ "$(grep -c '^default ' "$vd/calls")" = 7 ] || fail 'NIRUEDITVIEW was not made the viewer of every photo type and PDF'
+grep -q 'image/jpeg=photocraft.desktop' "$vd/state/viewer-default" || fail 'the viewer before was not written down'
+printf 'other.desktop\n' > "$vd/image_jpeg"
+(PATH="$vd/bin:$PATH" VD_DIR=$vd BIN=$vd/prefix STATE=$vd/state; export VD_DIR; viewer_default)
+[ "$(cat "$vd/image_jpeg")" = other.desktop ] || fail 'a viewer chosen afterwards was replaced'
+rm -rf "$vd"
 
 # K5: nirux clean --dry-run lists what can go and changes nothing.
 cl_home=$TEST/cleanhome; mkdir -p "$cl_home/.cache/thumbnails/normal"

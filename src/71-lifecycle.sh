@@ -69,6 +69,7 @@ uninstall() {
   remove_system "$ROOT/usr/share/xsessions/niruwm.desktop"
   remove_wallpaper_app
   remove_file_manager_app
+  remove_viewer_app
   remove_terminal_app
   remove_video_editor_app
   remove_display_app
@@ -348,6 +349,8 @@ install_or_update() {
   install_wallpaper_app
   install_file_manager_app
   file_manager_default
+  install_viewer_app
+  viewer_default
   install_terminal_app
   install_video_editor_app
   install_display_app

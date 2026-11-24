@@ -322,6 +322,39 @@ remove_file_manager_app() {
   remove_system "$ROOT/usr/share/applications/nirufm.desktop"
   remove_binary "$ROOT/usr/share/icons/hicolor/scalable/apps/nirufm.svg"
 }
+# NIRUEDITVIEW, the picture and PDF viewer: entry and pixel icon from its
+# release.
+install_viewer_app() {
+  ev_dir=$WORK/download/nirueditview
+  [ -f "$ev_dir/nirueditview.desktop" ] || return 0
+  [ -f "$ev_dir/nirueditview.svg" ] || return 0
+  { say "# NIRUX owner: $PREFIX"; sed "s|^Exec=nirueditview |Exec=$BIN/nirueditview |" "$ev_dir/nirueditview.desktop"; } > "$WORK/nirueditview.desktop"
+  write_system "$ROOT/usr/share/applications/nirueditview.desktop" "$WORK/nirueditview.desktop"
+  write_binary "$ROOT/usr/share/icons/hicolor/scalable/apps/nirueditview.svg" "$ev_dir/nirueditview.svg"
+}
+remove_viewer_app() {
+  remove_system "$ROOT/usr/share/applications/nirueditview.desktop"
+  remove_binary "$ROOT/usr/share/icons/hicolor/scalable/apps/nirueditview.svg"
+}
+# Photos and PDFs open in NIRUEDITVIEW (owner decision 2026-11-24). It is made
+# the default once per user, whatever opened them before; a viewer chosen
+# afterwards is kept.
+VIEWER_TYPES="image/jpeg image/png image/gif image/webp image/bmp image/tiff application/pdf"
+viewer_default() {
+  [ -x "$BIN/nirueditview" ] || return 0
+  command -v xdg-mime >/dev/null 2>&1 || return 0
+  vd_mark=$STATE/viewer-default
+  [ ! -f "$vd_mark" ] || return 0
+  vd_before=''
+  for vd_type in $VIEWER_TYPES; do
+    vd_now=$(xdg-mime query default "$vd_type" 2>/dev/null || :)
+    vd_before="$vd_before$vd_type=${vd_now:-none} "
+    [ "$vd_now" = nirueditview.desktop ] || xdg-mime default nirueditview.desktop "$vd_type" 2>/dev/null || :
+  done
+  # What opened them before, so it can be put back by hand.
+  mkdir -p "$STATE" 2>/dev/null || :
+  say "$vd_before" > "$vd_mark" 2>/dev/null || :
+}
 # NIRUTERM, the terminal: entry and pixel icon from its release. kitty stays
 # the terminal of Super+Enter until the owner switches.
 install_terminal_app() {

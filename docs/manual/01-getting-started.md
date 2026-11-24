@@ -182,6 +182,41 @@ hundredths of a second, uses about 15 MB of memory and follows the theme. Press
 
 Folders that other programs open ("show in folder") open in NIRUFM too.
 
+## Pictures and PDFs: NIRUEDITVIEW
+
+Photos and PDFs open in **NIRUEDITVIEW**, from NIRUFM, the launcher or any
+program (`nirueditview FILE` in a terminal; a folder opens its gallery). It
+follows the theme, uses a few tens of megabytes and shows every key with `?`.
+
+- **Look through:** the arrows (or a click at the left or right edge) turn to
+  the next picture in the folder, already decoded in the background. The
+  wheel zooms at the pointer, `0` fits, `1` is actual size, a drag moves
+  around, a double click or `F` goes full screen. Photos are turned upright
+  from their camera data and animated GIFs play.
+- **Gallery and slideshow:** `G` shows the folder as thumbnails (shared with
+  NIRUFM); `S` or `F5` starts a slideshow in full screen, `Space` pauses and
+  `+` `-` set the pace. `O` sorts by name, date or size, `I` shows the size,
+  the date taken and the camera, `Delete` moves a file to the trash after
+  asking, `Ctrl+C` copies the picture.
+- **Simple edits:** `R` rotates, `H` mirrors, `C` crops (drag a frame,
+  `Enter`), `P` pen, `A` arrow, `B` box, `T` text, `X` pixelates faces or
+  number plates, `K` changes the ink, `Ctrl+R` resizes and `Ctrl+Z` undoes.
+  `Ctrl+S` saves a copy beside the original (`photo-edited.jpg`);
+  `Ctrl+Shift+S` replaces the original after asking.
+- **Sign a PDF:** `S` puts your signature on the page. The first time you
+  draw it with the mouse or the touchpad (or drop a picture of it); it is
+  kept in `~/.local/share/nirueditview/signature.png`. `T` adds text, `D`
+  today's date and `X` a cross. Drag to move, drag the corner to resize,
+  `Delete` removes. `Ctrl+S` saves `form-signed.pdf` beside the original,
+  which is left as it was. The signature is a picture on the page, like a
+  scanned one, not a cryptographic signature.
+
+NIRUX makes NIRUEDITVIEW the viewer for photos (JPEG, PNG, GIF, WebP, BMP,
+TIFF) and PDFs once; what opened them before is written in
+`~/.local/share/nirux/viewer-default`. To choose another viewer later, use
+"Open with" in NIRUFM or `xdg-mime default other.desktop image/jpeg`; NIRUX
+keeps that choice.
+
 ## The terminal: NIRUTERM and NIRUPROMPT
 
 `Super+Enter` opens **NIRUTERM**, the NIRUX terminal, and `Super+Shift+Enter`

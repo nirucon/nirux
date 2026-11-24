@@ -2,6 +2,17 @@
 
 Earlier releases are described in their release notes and commit messages.
 
+## 0.12.355 (2026-11-24)
+
+- **NIRUEDITVIEW, pictures and PDFs.** A new part of NIRUX and the viewer for
+  photos and PDFs: the folder turns with the arrows (decoded ahead), a
+  gallery, a slideshow, camera details, the trash, zoom and full screen.
+  Simple edits (rotate, mirror, crop, resize, pen, arrow, box, text,
+  pixelate) saved as a copy. PDFs get your signature, text, the date or a
+  cross and are saved as a signed copy; the original stays as it was.
+  NIRUX makes it the default for photos and PDFs once and keeps a viewer you
+  choose later. NIRUEDITVIEW 0.1.0.
+
 ## 0.12.354 (2026-11-24)
 
 - **No program starts twice at login.** An entry in `~/.config/autostart` for
