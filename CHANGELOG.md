@@ -2,6 +2,12 @@
 
 Earlier releases are described in their release notes and commit messages.
 
+## 0.12.350 (2026-11-24)
+
+- **niruprodrive 0.1.3.** The cloud in the bar no longer stays black when
+  the service starts before the bar, and it shows a dash until folders are
+  chosen for backup.
+
 ## 0.12.349 (2026-11-24)
 
 - **niruprodrive 0.1.2.** The window opens on the workspace you are on,
