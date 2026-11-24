@@ -1124,6 +1124,7 @@ sf=$TEST/handed-secret; ( umask 077; printf 'x\n' > "$sf" )
 [ -f "$sf" ] || fail 'nirux removed a password file its caller handed it'
 rm -f "$sf"
 (
+  # shellcheck disable=SC2034 # read by sudo_secret_keep and sudo_secret_forget
   SUDO_SECRET_FILE='' SUDO_SECRET_BORROWED=0
   sudo_secret_keep 'y' && own=$SUDO_SECRET_FILE && sudo_secret_forget && [ ! -e "$own" ]
 ) || fail 'nirux kept a password file it made itself'
