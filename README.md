@@ -96,6 +96,7 @@ by `nirux install` or `nirux update`; install only the ones you want with
 | [niruremote](https://github.com/nirucon/niruremote) | Graphical remote desktop over Tailscale and SSH | alpha |
 | [nirudictate](https://github.com/nirucon/nirudictate) | Local speech-to-text dictation with `Ctrl+Alt+Space`; `Shift+Alt+Space` talks to the opencode agent | alpha |
 | [docker-stacks](https://github.com/nirucon/docker-stacks) | Docker Compose stacks, containers, images, volumes and networks in the terminal | beta |
+| [niruprodrive](https://github.com/nirucon/niruprodrive) | Proton Drive backups per computer, sending, fetching and links, with a tray cloud and NIRUFM badges (third-party, through Proton's CLI) | alpha |
 
 ### Accessories
 

@@ -2,6 +2,19 @@
 
 Earlier releases are described in their release notes and commit messages.
 
+## 0.12.346 (2026-11-24)
+
+- **NIRUFM 0.4.0: select with the mouse.** Drag a band from blank space,
+  or from beside a name, over the files; `Ctrl` adds, `Shift` flips, `Esc`
+  puts the selection back, and the folder scrolls at its edges. Dragging
+  files shows a label with the count and whether they move or copy, a
+  folder held under the pointer opens, and `Esc` cancels.
+- **New extra: niruprodrive 0.1.0.** Proton Drive backups of chosen folders
+  per computer, sending, fetching and public links, a pixel cloud in the
+  bar, and NIRUFM's menu and badges while it runs. A third-party
+  application on Proton's own Proton Drive CLI.
+  `nirux extras install niruprodrive`. Manual chapter 12.
+
 ## 0.12.345 (2026-11-23)
 
 - **docker-stacks 1.0.1.** `docker-stacks list | head` ends quietly

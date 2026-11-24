@@ -20,6 +20,7 @@ A normal `nirux install` or `nirux update` never installs an extra. You ask for 
 | [niruremote](#niruremote-remote-desktop) | 0.2.0 | Graphical remote desktop over Tailscale and SSH | alpha |
 | [nirudictate](#nirudictate-local-dictation) | 0.4.0 | Local speech-to-text dictation, voice commands, and voice messages to opencode | alpha |
 | [docker-stacks](#docker-stacks-docker-in-the-terminal) | 1.0.1 | Docker Compose stacks, containers, images, volumes and networks in the terminal | beta |
+| [niruprodrive](#niruprodrive-proton-drive-backup-and-sharing) | 0.1.0 | Proton Drive backups per computer, sending, fetching and links, with a tray cloud and NIRUFM badges | alpha |
 
 ### Install, update and remove
 
@@ -41,7 +42,7 @@ What happens on `install`:
 2. It runs that project's own `install.sh`.
 3. It checks that the command works (`NAME --version`) and marks the extra as selected in `~/.local/share/nirux/extras-selected`.
 
-`update` only touches selected extras whose installed version differs from the pin, and takes a NIRUX snapshot first when anything will be installed. `uninstall` (also spelled `remove`) runs the extra's own `uninstall.sh` from the same pinned source and unselects it. Every extra keeps your data on a normal uninstall; `--purge` is passed to the uninstallers that support it (NPLAY, NIRUAMP, NIRUPRES, NIRUFLOW, NIRUREMOTE, NIRUDICTATE, docker-stacks). Uninstall extras before `nirux uninstall`, which removes the `nirux` command itself.
+`update` only touches selected extras whose installed version differs from the pin, and takes a NIRUX snapshot first when anything will be installed. `uninstall` (also spelled `remove`) runs the extra's own `uninstall.sh` from the same pinned source and unselects it. Every extra keeps your data on a normal uninstall; `--purge` is passed to the uninstallers that support it (NPLAY, NIRUAMP, NIRUPRES, NIRUFLOW, NIRUREMOTE, NIRUDICTATE, docker-stacks, niruprodrive). Uninstall extras before `nirux uninstall`, which removes the `nirux` command itself.
 
 The bar's update module tracks the core NIRUX release only, not each extra. After `nirux update`, run `nirux extras update` to follow the new pins.
 
@@ -423,6 +424,53 @@ volumes wants the name typed. Stacks are also read from `~/Docker` (the
 with Compose v2 and membership of the `docker` group.
 
 Full documentation: [github.com/nirucon/docker-stacks](https://github.com/nirucon/docker-stacks).
+
+## niruprodrive: Proton Drive backup and sharing
+
+A backup of the folders you choose on each computer to Proton Drive, files
+sent, fetched and shared, a pixel cloud in the bar and a small window in the
+NIRU theme. It is a third-party application, not made or supported by
+Proton: it works through Proton's own Proton Drive CLI, which the installer
+fetches from proton.me (pinned to a tested version and checked with the
+SHA-512 Proton publishes). Status: alpha.
+
+```sh
+nirux extras install niruprodrive    # only on the computers that should have it
+niruprodrive                         # the window: Drive, Transfers, Backup
+niruprodrive upload FILE...          # to My files/NIRUX/Uploads
+niruprodrive link FILE [DAYS]        # a public link on the clipboard
+niruprodrive backup                  # back up now
+```
+
+- **Sign in** once per computer: Enter in the window opens Proton's sign-in
+  page in the browser, with two-factor if you use it. niruprodrive never sees
+  the password; the session is kept in the keyring (or `pass`, with
+  `credentials = "pass"`).
+- **Backup, per computer.** On the Backup tab each computer chooses its own
+  folders (drop them from NIRUFM or press `A`), the schedule (`S`: hourly,
+  daily or manual) and whether to back up on battery (`O`). They go to
+  `My files/NIRUX/<computer>/`. Only changes are sent. Nothing is ever
+  removed in the Drive: a deleted file stays there and a changed file keeps
+  its old revisions. Names such as `node_modules`, `target`, `.cache` and
+  `*.iso` are left out (`E` opens the settings,
+  `~/.config/niruprodrive/config.toml`).
+- **Drive tab:** browse My files, `D` downloads to `~/Downloads`, `C` copies
+  a public link, `Shift+C` one that ends after 7 days, `X` removes a link,
+  and files dropped on the window are sent to the folder shown. To restore a
+  backup, open This computer and download.
+- **The bar:** the cloud shows a tick when all is sent, an arrow while
+  sending, bars when paused, `!` after a failure and an outline when signed
+  out. Click for the window, right-click for back up now, pause and quit.
+- **NIRUFM:** while niruprodrive runs, the right-click menu has *Send to
+  Proton Drive* and *Copy Proton Drive link*, and files in backed-up folders
+  carry a badge (sent, or waiting for the next backup). Computers without
+  niruprodrive show nothing of it.
+
+niruprodrive can only list, upload, download, make folders and add or remove
+links: there is no command in it that trashes, deletes, moves or replaces
+anything in the Drive.
+
+Full documentation: [github.com/nirucon/niruprodrive](https://github.com/nirucon/niruprodrive).
 
 ## Other suite tools
 

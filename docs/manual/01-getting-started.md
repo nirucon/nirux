@@ -152,6 +152,12 @@ hundredths of a second, uses about 15 MB of memory and follows the theme. Press
 - **Files:** `Ctrl+C`, `Ctrl+X`, `Ctrl+V`, `Delete` (to the trash), `Ctrl+Z`
   (undo), `F2` (rename), drag and drop to folders, tabs and other programs.
   Nothing is ever overwritten: a name that exists gets " (2)".
+- **Mouse:** drag a band from blank space, or from beside a name, to select
+  several files; `Ctrl` adds to the selection, `Shift` flips what the band
+  covers and `Esc` puts it back. While files are dragged a label beside the
+  pointer says whether they move or copy (`Ctrl` copies, `Shift` moves), a
+  folder held under the pointer for a moment opens, the folder scrolls at its
+  edges and `Esc` cancels.
 - **Look:** `Space` previews a picture, PDF or text; `Enter` on a photo (or
   `Ctrl+G`) opens the gallery with a film strip, slideshow and full screen.
 - **Find:** `Ctrl+F` searches the folder and everything below it.
@@ -165,6 +171,9 @@ hundredths of a second, uses about 15 MB of memory and follows the theme. Press
   rename it, open it in a new tab or remove it.
 - **Nextcloud:** in a synced folder the right-click menu copies the public or
   internal link and opens sharing, and badges show what is synced.
+- **Proton Drive:** with the niruprodrive extra running, the right-click menu
+  sends files and copies a link, and badges show what is backed up
+  (chapter 12).
 - **Icons:** folders, places, drives and the common file types have NIRUX's
   own retro pixel icons (NIRUICONS) in the colours of the theme, and a theme
   change recolours them at once. Other file types take the Papirus icon in
