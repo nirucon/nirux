@@ -2,6 +2,15 @@
 
 Earlier releases are described in their release notes and commit messages.
 
+## 0.12.359 (2026-11-24)
+
+- **NIRUTODAY, a new extra:** today at a glance in a retro teletext look.
+  SMHI weather, Sveriges Radio news (P4 Väst and Ekot, local news first),
+  VMA and SMHI warnings with a notice, the electricity price per hour, name
+  day, sunrise and sunset, and today's calendar events. LIVE plays P4 Väst
+  in NIRUAMP. Traffic from Trafikverket is there once you add a free key.
+  `nirux extras install nirutoday`.
+
 ## 0.12.358 (2026-11-24)
 
 - **Netflix and other protected video in Helium.** `nirux update` downloads

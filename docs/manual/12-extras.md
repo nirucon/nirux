@@ -21,6 +21,7 @@ A normal `nirux install` or `nirux update` never installs an extra. You ask for 
 | [nirudictate](#nirudictate-local-dictation) | 0.4.0 | Local speech-to-text dictation, voice commands, and voice messages to opencode | alpha |
 | [docker-stacks](#docker-stacks-docker-in-the-terminal) | 1.0.1 | Docker Compose stacks, containers, images, volumes and networks in the terminal | beta |
 | [niruprodrive](#niruprodrive-proton-drive-backup-and-sharing) | 0.1.4 | Proton Drive backups per computer, sending, fetching and links, with a tray cloud and NIRUFM badges | alpha |
+| [nirutoday](#nirutoday-today-at-a-glance) | 0.1.0 | Today at a glance in a teletext look: SMHI weather, Sveriges Radio news, VMA, electricity price, name day and calendar | alpha |
 
 ### Install, update and remove
 
@@ -42,7 +43,7 @@ What happens on `install`:
 2. It runs that project's own `install.sh`.
 3. It checks that the command works (`NAME --version`) and marks the extra as selected in `~/.local/share/nirux/extras-selected`.
 
-`update` only touches selected extras whose installed version differs from the pin, and takes a NIRUX snapshot first when anything will be installed. `uninstall` (also spelled `remove`) runs the extra's own `uninstall.sh` from the same pinned source and unselects it. Every extra keeps your data on a normal uninstall; `--purge` is passed to the uninstallers that support it (NPLAY, NIRUAMP, NIRUPRES, NIRUFLOW, NIRUREMOTE, NIRUDICTATE, docker-stacks, niruprodrive). Uninstall extras before `nirux uninstall`, which removes the `nirux` command itself.
+`update` only touches selected extras whose installed version differs from the pin, and takes a NIRUX snapshot first when anything will be installed. `uninstall` (also spelled `remove`) runs the extra's own `uninstall.sh` from the same pinned source and unselects it. Every extra keeps your data on a normal uninstall; `--purge` is passed to the uninstallers that support it (NPLAY, NIRUAMP, NIRUPRES, NIRUFLOW, NIRUREMOTE, NIRUDICTATE, docker-stacks, niruprodrive, NIRUTODAY). Uninstall extras before `nirux uninstall`, which removes the `nirux` command itself.
 
 The bar's update module tracks the core NIRUX release only, not each extra. After `nirux update`, run `nirux extras update` to follow the new pins.
 
@@ -475,6 +476,45 @@ links: there is no command in it that trashes, deletes, moves or replaces
 anything in the Drive.
 
 Full documentation: [github.com/nirucon/niruprodrive](https://github.com/nirucon/niruprodrive).
+
+## NIRUTODAY: today at a glance
+
+One page with the day, in a retro teletext look that follows the NIRU theme:
+the weather from SMHI, news from Sveriges Radio, VMA and warnings, the
+electricity price, the name day and your calendar. Three columns on a wide
+screen, two on a laptop, one in a narrow window or a scratchpad. Status: alpha.
+
+```sh
+nirux extras install nirutoday
+nirutoday                  # the page (also NIRUTODAY in the launcher)
+nirutoday --print          # today as text, for a terminal
+```
+
+- **101 Weather:** now, the next hours and the week from SMHI, with "feels
+  like", wind and rain.
+- **102 News:** Sveriges Radio articles, P4 Väst and Ekot by default; news
+  naming a nearby place (Ljungskile, Uddevalla and around by default) is
+  marked and comes first. `Tab` switches between all, local and one program,
+  `Enter` opens a story. `L` (or **LIVE**) plays P4 Väst live, or Ekot's
+  newest broadcast, in NIRUAMP, which is started if it is not running.
+- **103 Alerts:** VMA for the county as a red banner, SMHI warnings and
+  Krisinformation.se. A new VMA or an orange or red warning also comes as a
+  notice, once, while NIRUTODAY runs (also hidden in a scratchpad).
+- **104 Electricity:** the spot price per hour for the elområde, the price
+  now and the cheapest three hours; `T` shows tomorrow after about 13:00.
+- **105 Today:** name day, flag day and holiday, sunrise and sunset, and
+  today's events from the calendars NIRUBAR reads.
+- **106 Traffic** is off until you add a free Trafikverket key.
+
+Dates and times are written the Swedish way (tisdag 24 november, v. 48,
+24-hour clock). Settings: `~/.config/nirutoday/config.toml`, written with
+the defaults at the first start: the place, county, nearby places, the news
+programs and channels, the elområde, calendar, notices, and `[traffic]`
+(`enabled`, `key`, `radius_km`; keep the file private with `chmod 600` when
+it holds the key). Cache: `~/.cache/nirutoday/` (private; the page opens with
+the last data and works offline).
+
+Full documentation: [github.com/nirucon/nirutoday](https://github.com/nirucon/nirutoday).
 
 ## Other suite tools
 
