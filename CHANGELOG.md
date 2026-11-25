@@ -2,6 +2,12 @@
 
 Earlier releases are described in their release notes and commit messages.
 
+## 0.12.368 (2026-11-25)
+
+- NIRUTERM 0.2.1: with fish 4 the notification for a long command and the
+  copied output know the command line (fish 4 names it in its own shell
+  mark).
+
 ## 0.12.367 (2026-11-25)
 
 - NIRUTERM 0.2.0: search the history (`Ctrl+Shift+F`), jump between
