@@ -2,14 +2,16 @@
 
 Earlier releases are described in their release notes and commit messages.
 
-## 0.12.372 (2026-11-25)
+## 0.12.373 (2026-11-25)
 
 - New extra NIRUSYS 0.1.0: a retro, console-style system monitor in the
   NIRUX theme with phosphor graphs, a 24-hour history, alerts, a desktop
   widget and a mini strip, and the day the system was installed next to the
   uptime. `nirux extras install nirusys`.
 - NIRUBAR 0.34.2 (the pulse module's System monitor action) and NIRUPANEL
-  0.22.3 (a click on the SYSTEM card) open NIRUSYS when it is installed.
+  0.22.3 (a click on the SYSTEM card) open NIRUSYS when it is installed;
+  NIRUWM 0.37.15 carries NIRUBAR 0.34.2. (0.12.372 was tagged without
+  NIRUWM bundling the new NIRUBAR and was never released.)
 
 ## 0.12.371 (2026-11-25)
 
