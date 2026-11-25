@@ -2,7 +2,12 @@
 
 Earlier releases are described in their release notes and commit messages.
 
-## 0.12.362 (2026-11-25)
+## 0.12.363 (2026-11-25)
+
+The 0.12.362 tag was not released (a generated manual input was left out).
+Everything below ships in 0.12.363.
+
+## 0.12.362 (2026-11-25, not released)
 
 - NIRUWM 0.37.12: an application's tray icon is never handled as a window.
   A docked icon (NIRUPRODRIVE's, for one) could become a tile of its own,
