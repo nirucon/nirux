@@ -33,19 +33,46 @@ The launcher is one process per opening. It has no daemon, no index service and 
 | `system` | CPU, memory, free disk, temperature, battery and uptime, updated every two seconds while the panel is open |
 | `updates` | The installed NIRUX, a newer release and the system package updates NIRUBAR counted, with **Update…** |
 | `media` | What NIRUAMP plays, with previous, play or pause and next, or **Open NIRUAMP** |
+| `computers` | Your computers on Tailscale: online or offline, the system, "this computer", when an offline one was last seen, and whether an online one is reached directly or through a relay (dropped when Tailscale is not installed) |
 | `toggles` | Do not disturb, night light, Wi-Fi and Bluetooth |
 | `power` | Lock, sleep, log out, restart and shut down; the last three ask once more |
+| `keys` | Makes the search find key bindings too |
 
 Type to search; Enter starts the chosen app (with no match, Enter hands the search to the launcher). Tab and the arrows move between apps and buttons, a click works too, and Esc clears the search or closes the panel. A click on Today opens NIRUTODAY, on System the launcher's Health view.
+
+**Computers.** The panel asks the local Tailscale daemon once when it opens;
+nothing runs at login and nothing connects in the background. It shows this
+computer and the others of the same Tailscale user, online ones first. On a
+computer: `Enter` or a click opens `ssh NAME` in your terminal (type the
+password there), `Shift+Enter` or a middle click opens `sftp://NAME/` in the
+file handler, `Ctrl+C` or a right click copies its Tailscale address and
+`Ctrl+Shift+C` its name.
+
+**Key bindings.** Typing also finds key bindings: words in any order, without
+regard to case or accents, or a combination such as `super+t`. They show
+where the cards are, the keys beside what they do. `Enter` or a click runs
+one, as if the key were pressed; ending the session, sleeping, or closing or
+killing a window asks once more. `Super+/` lists every key.
+
+Long text wraps onto a second or third line and ends in "…" only when that
+is not enough.
 
 Choose the modules and their order, and the rows of apps (1 to 4):
 
 ```toml
 # ~/.config/nirulauncher/config.toml
 [panel]
-modules = ["apps", "today", "system", "updates", "media", "toggles", "power"]
+modules = ["apps", "today", "system", "updates", "media", "computers", "toggles", "power", "keys"]
 app_rows = 2
+
+[panel.computers]
+hosts = []     # names in the order to show them; empty: this computer and your others
+hide = []      # names never shown
+rows = 2       # rows of computers, 1 to 4
 ```
+
+A `modules` list you wrote yourself keeps exactly its modules: add
+`computers` and `keys` to it to get them.
 
 Everything the panel shows is read on this computer; slow sources are read in the background, so it opens at once. App icons come from the icon themes (PNG and SVG), drawn once and kept in `~/.cache/nirulauncher/icons/`; an app without one gets a letter tile. The launcher itself is unchanged.
 

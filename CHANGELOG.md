@@ -2,6 +2,22 @@
 
 Earlier releases are described in their release notes and commit messages.
 
+## 0.12.369 (2026-11-25)
+
+- **NIRUSID**, a new extra (`nirux extras install nirusid`): a retro SID
+  music player with libsidplayfp, song lengths and STIL comments from the
+  HVSC, raster bars, a chip view with oscilloscopes and a piano roll, a
+  playlist, favourites, export to WAV and FLAC, MPRIS, and the NIRUX music.
+  The library is `~/Music/SID` by default, and it becomes the player for
+  `.sid` files.
+- NIRUGAME 0.3.0: finds every ROM in your ROM folders (not only RetroArch
+  playlists), detects the system and starts it with an installed core, tabs
+  per system, box art, favourites and recently played, a cached index, and
+  hands SID tracks to NIRUSID.
+- NIRUPANEL (NIRULAUNCHER 0.22.2): your computers on Tailscale (online or
+  offline, ssh, files, copy the address), key bindings in the search, and
+  text that wraps instead of ending in "…".
+
 ## 0.12.368 (2026-11-25)
 
 - NIRUTERM 0.2.1: with fish 4 the notification for a long command and the

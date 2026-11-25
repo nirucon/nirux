@@ -16,12 +16,13 @@ A normal `nirux install` or `nirux update` never installs an extra. You ask for 
 | [niruamp](#niruamp-graphical-frontend-for-nplay) | 0.6.0 | Winamp-inspired graphical frontend for NPLAY (requires NPLAY) | alpha |
 | [niruflow](#niruflow-maintenance-and-cleanup) | 1.0.0 | Local maintenance and automation | alpha |
 | [nirusec](#nirusec-firewall-and-security-overview) | 0.3.2 | Firewall, ports, updates, firmware and security overview | alpha |
-| [nirugame](#nirugame-game-launcher) | 0.2.0 | Steam, RetroArch and native games, with optional SID music | alpha |
+| [nirugame](#nirugame-game-launcher) | 0.3.0 | Steam games, ROMs from your folders and RetroArch, and native games, with box art and optional SID music | alpha |
 | [niruremote](#niruremote-remote-desktop) | 0.2.0 | Graphical remote desktop over Tailscale and SSH | alpha |
 | [nirudictate](#nirudictate-local-dictation) | 0.4.0 | Local speech-to-text dictation, voice commands, and voice messages to opencode | alpha |
 | [docker-stacks](#docker-stacks-docker-in-the-terminal) | 1.0.1 | Docker Compose stacks, containers, images, volumes and networks in the terminal | beta |
 | [niruprodrive](#niruprodrive-proton-drive-backup-and-sharing) | 0.1.4 | Proton Drive backups per computer, sending, fetching and links, with a tray cloud | alpha |
-| [nirutoday](#nirutoday-today-at-a-glance) | 0.1.0 | Today at a glance in a teletext look: SMHI weather, Sveriges Radio news, VMA, electricity price, name day and calendar | alpha |
+| [nirutoday](#nirutoday-today-at-a-glance) | 0.1.1 | Today at a glance in a teletext look: SMHI weather, Sveriges Radio news, VMA, electricity price, name day and calendar | alpha |
+| [nirusid](#nirusid-sid-music-player) | 0.1.0 | SID music player with HVSC lengths and STIL, raster bars and a chip view; the default player for .sid files | alpha |
 
 ### Install, update and remove
 
@@ -287,19 +288,22 @@ State is in `/var/lib/nirusec`, firewall backups in `/var/backups/nirusec`, loca
 
 ## NIRUGAME: game launcher
 
-A retro-themed launcher for games you already have: Steam games, RetroArch playlists and native games with a `Categories=Game` desktop entry. It downloads and bundles nothing. Status: alpha.
+A retro launcher for games you already have: Steam games, your ROMs and RetroArch playlists, and native games with a `Categories=Game` desktop entry. It never installs, downloads or bundles games, ROMs, cores or music. Status: alpha.
 
 ```sh
 nirux extras install nirugame
-nirugame                         # or nirugame --open steam|retroarch|native|music
-nirugame --list
+nirugame                         # or nirugame --open steam|retroarch|native|favourites|recent|music|SYSTEM
+nirugame --list                  # --list --rescan ignores the cache
+nirugame --cores                 # which core or emulator each system uses
 nirugame --setup-plan all        # print a package plan for Steam and RetroArch; installs nothing
 nirugame --music-status
 ```
 
-In the window, use the tabs to narrow the list, type to search, then `Up` / `Down` and `Enter` to launch.
+It finds ROMs in `~/Games/roms`, `~/Games/ROMs`, `~/ROMs`, `~/roms`, system folders in `~/Games` such as `PS1`, RetroArch's file browser folder, the folders of your playlists and `[roms] dirs` in `~/.config/nirugame/config.toml`. The system comes from the extension or the folder name (a `.zip` in `snes/` is a SNES game), and each game starts with an installed libretro core (`retroarch -L CORE ROM`, or the Flatpak). Choose a core per system under `[cores]` (`snes = "snes9x"`) or a stand-alone emulator under `[emulators]` (`c64 = "x64sc"`; `Shift+Enter` then uses RetroArch). A game without a core is greyed out with the core to install. The list is kept in `~/.cache/nirugame/roms.json`, so the window opens with the library at once; `F5` scans again.
 
-**SID music:** put your own `.sid`, `.psid` or `.rsid` files in `~/.local/share/nirugame/music/` and pick a track (or **Off**) in the Music tab. Playback needs `sidplayfp` from your distribution. The chosen track is stored in `~/.config/nirugame/config.toml`.
+The window has tabs for All, Favourites, Recent, Steam, RetroArch, Native, each system (with its count) and Music, RetroArch box art where you have it and a details pane. Arrows move, `Enter` launches, `/` searches, `Tab` switches tabs, `F` marks a favourite, `G` switches between list and grid, `Esc` closes.
+
+**SID music:** put your own `.sid` files in `~/.local/share/nirugame/music/` and pick a track (or **Off**) in the Music tab; it plays in the background with `sidplayfp`. `N` or **Open in NIRUSID** hands the track to [NIRUSID](#nirusid-sid-music-player), the full SID player.
 
 Full documentation: [github.com/nirucon/nirugame](https://github.com/nirucon/nirugame).
 
@@ -511,6 +515,29 @@ it holds the key). Cache: `~/.cache/nirutoday/` (private; the page opens with
 the last data and works offline).
 
 Full documentation: [github.com/nirucon/nirutoday](https://github.com/nirucon/nirutoday).
+
+## NIRUSID: SID music player
+
+A player for Commodore 64 SID music with the libsidplayfp engine. It plays PSID and RSID tunes, takes song lengths and comments from the High Voltage SID Collection (HVSC), and shows what the SID chip does while it plays: raster bars, and per voice the note, waveform, pulse width, ADSR, gate and filter routing with an oscilloscope, plus a piano roll. It follows the theme live, can use a C64 pixel font or the C64's own colours, and also plays the NIRUX music. Status: alpha.
+
+```sh
+nirux extras install nirusid   # builds it on this computer (installs libsidplayfp's development files and cargo if missing)
+nirusid                        # open the window
+nirusid tune.sid               # play a file; a second call hands it to the open window
+nirusid --info tune.sid        # header, HVSC length and STIL as text
+```
+
+Put your SID files, or the whole HVSC, in `~/Music/SID` (or choose another folder with `F2`). The first scan runs in the background; later starts show the library at once. The installer makes NIRUSID the player for `.sid` files once and remembers what opened them before; `nirux extras uninstall nirusid` gives them back. On Void, whose libsidplayfp has no reSIDfp, it uses the lighter SIDLite emulation; `nirusid --version` shows which.
+
+- **Play:** `Space` plays or pauses, `v` stops, `Enter` plays the selected tune. `n` and `p` go to the next and previous tune, `]` and `[` to the next and previous subtune, and `Left`/`Right` seek. Tunes move on at their HVSC length, or after 3 minutes when it is unknown.
+- **Find:** `/` searches every title, author, year and path; `Tab` switches between Library, Search, Playlist, Favourites, History, NIRUX music and your saved playlists; `o` sorts.
+- **The chip:** `1` to `9` mute single voices, `0` turns them all on, `m` switches the chip model (6581/8580) and `t` the clock (PAL/NTSC).
+- **Keep:** `a` adds to the playlist, `f` marks a favourite, `Ctrl+S` saves the playlist under a name. `e` exports the subtune to WAV and `E` to FLAC (with `flac` or `ffmpeg`), in `~/Music/NIRUSID`.
+- `?` shows every key. NIRUBAR's media module and the media keys control NIRUSID through MPRIS.
+
+Settings are in `~/.config/nirusid/config.toml`; playlists, favourites and history are in `~/.local/share/nirusid`.
+
+Full documentation: [github.com/nirucon/nirusid](https://github.com/nirucon/nirusid).
 
 ## Other suite tools
 
