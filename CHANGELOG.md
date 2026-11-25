@@ -2,6 +2,11 @@
 
 Earlier releases are described in their release notes and commit messages.
 
+## 0.12.370 (2026-11-25)
+
+- NIRUSID 0.1.1: the installer makes NIRUSID the explicit default for SID
+  files and no longer records itself as the player that opened them before.
+
 ## 0.12.369 (2026-11-25)
 
 - **NIRUSID**, a new extra (`nirux extras install nirusid`): a retro SID

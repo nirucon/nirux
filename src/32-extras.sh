@@ -12,7 +12,7 @@ nirudictate nirudictate 0.4.0 759cd574286b97291ac7f35cc923a1596deac0de3f92c9515e
 docker-stacks docker-stacks 1.0.1 e6abbfe0edb1c9424e52e691d54ca9bf409fbdc6845706e83a8ccd95456a87e6
 niruprodrive niruprodrive 0.1.4 892872a3db70f5f52f2c12be12f4a7b0fa40a4e489f84a017402cac5af01a0b9
 nirutoday nirutoday 0.1.1 04e795ef4e4098fd7f6eb6fe6fa3c723cd2f928449c5c6880fd504369989560f
-nirusid nirusid 0.1.0 ebefa12a95c96d3cbd87ed3fdad47936e8c40028f20a5de111b03d6923ede97e
+nirusid nirusid 0.1.1 437b1b257dcfcdfe2ea64ffd96c8cca8b17d340114ef9ee19a0845139b92b940
 EOF
 }
 # Extras that left the suite. Each is removed once with the uninstaller of

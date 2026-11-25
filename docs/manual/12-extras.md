@@ -22,7 +22,7 @@ A normal `nirux install` or `nirux update` never installs an extra. You ask for 
 | [docker-stacks](#docker-stacks-docker-in-the-terminal) | 1.0.1 | Docker Compose stacks, containers, images, volumes and networks in the terminal | beta |
 | [niruprodrive](#niruprodrive-proton-drive-backup-and-sharing) | 0.1.4 | Proton Drive backups per computer, sending, fetching and links, with a tray cloud | alpha |
 | [nirutoday](#nirutoday-today-at-a-glance) | 0.1.1 | Today at a glance in a teletext look: SMHI weather, Sveriges Radio news, VMA, electricity price, name day and calendar | alpha |
-| [nirusid](#nirusid-sid-music-player) | 0.1.0 | SID music player with HVSC lengths and STIL, raster bars and a chip view; the default player for .sid files | alpha |
+| [nirusid](#nirusid-sid-music-player) | 0.1.1 | SID music player with HVSC lengths and STIL, raster bars and a chip view; the default player for .sid files | alpha |
 
 ### Install, update and remove
 
