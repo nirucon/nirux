@@ -2,6 +2,7 @@
 
 | Keys | Action |
 |---|---|
+| `Super+Space` | NIRUPANEL: apps, today, system, updates, media and switches |
 | `Super+A` | NIRU Actions: maintenance, diagnostics, contexts and OpenCode |
 | `Super+S` | Web search: type a phrase, Enter opens it |
 | `Super+V` | Clipboard history |

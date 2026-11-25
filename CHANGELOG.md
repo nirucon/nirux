@@ -2,6 +2,16 @@
 
 Earlier releases are described in their release notes and commit messages.
 
+## 0.12.364 (2026-11-25)
+
+- **NIRUPANEL** (NIRULAUNCHER 0.21.1, NIRUWM 0.37.13): `Super+Space` opens a
+  panel in the middle of the screen with a retro logo, app search with icons,
+  and modules for today (from NIRUTODAY), the system, updates, what NIRUAMP
+  plays, quick switches and power. Choose the modules in `[panel]`; the
+  launcher is unchanged. See the launcher chapter of the manual.
+- NIRUTODAY 0.1.1: `nirutoday --brief`, today as JSON from the cache, for
+  the panel.
+
 ## 0.12.363 (2026-11-25)
 
 The 0.12.362 tag was not released (a generated manual input was left out).

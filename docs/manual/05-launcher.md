@@ -6,6 +6,7 @@ NIRU Launcher (`nirulauncher`) is the keyboard entry point to NIRUX: application
 
 | Keys | Opens | Command |
 |---|---|---|
+| `Super+Space` | NIRUPANEL (see below) | `nirulauncher --panel` |
 | `Super+P` | Applications | `nirulauncher --apps` |
 | `Super+Shift+P` (also `Super+Shift+B`, `Super+Shift+M`) | Unified view: applications, windows, actions and settings | `nirulauncher --actions` |
 | `Super+A` | NIRU Actions | `nirulauncher --system-actions` |
@@ -20,6 +21,33 @@ NIRU Launcher (`nirulauncher`) is the keyboard entry point to NIRUX: application
 On Swedish, German and similar layouts `/` is `Shift+7`, so `Super+/` is the workspace 7 key there; use `Super+F1` for the cheat sheet.
 
 The launcher is one process per opening. It has no daemon, no index service and makes no network requests of its own.
+
+## NIRUPANEL
+
+`Super+Space` opens NIRUPANEL, a panel in the middle of the screen; the same key closes it. It shows a retro NIRUPANEL logo with the date, week and time, a search field over your apps with their icons, and modules:
+
+| Module | Shows |
+|---|---|
+| `apps` | The apps you use most (favourites first) with their icons; typing searches all of them |
+| `today` | Date and week, weather now and today's high and low, warnings and VMA, name day, sunrise and sunset, today's events (from NIRUTODAY, when it is installed) |
+| `system` | CPU, memory, free disk, temperature, battery and uptime, updated every two seconds while the panel is open |
+| `updates` | The installed NIRUX, a newer release and the system package updates NIRUBAR counted, with **Update…** |
+| `media` | What NIRUAMP plays, with previous, play or pause and next, or **Open NIRUAMP** |
+| `toggles` | Do not disturb, night light, Wi-Fi and Bluetooth |
+| `power` | Lock, sleep, log out, restart and shut down; the last three ask once more |
+
+Type to search; Enter starts the chosen app (with no match, Enter hands the search to the launcher). Tab and the arrows move between apps and buttons, a click works too, and Esc clears the search or closes the panel. A click on Today opens NIRUTODAY, on System the launcher's Health view.
+
+Choose the modules and their order, and the rows of apps (1 to 4):
+
+```toml
+# ~/.config/nirulauncher/config.toml
+[panel]
+modules = ["apps", "today", "system", "updates", "media", "toggles", "power"]
+app_rows = 2
+```
+
+Everything the panel shows is read on this computer; slow sources are read in the background, so it opens at once. App icons come from the icon themes (PNG and SVG), drawn once and kept in `~/.cache/nirulauncher/icons/`; an app without one gets a letter tile. The launcher itself is unchanged.
 
 ## Keys inside the launcher
 

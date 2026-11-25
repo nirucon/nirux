@@ -28,7 +28,7 @@ entries in `config.example.toml`; see
 
 <!-- generated: keys (tools/manual-gen.sh; do not edit by hand) -->
 
-The key bindings of a fresh NIRUX installation: NIRUWM 0.37.12 defaults with
+The key bindings of a fresh NIRUX installation: NIRUWM 0.37.13 defaults with
 the `[[keys]]` of the NIRUX `config.example.toml`. Your own `[[keys]]` and the keys
 that extras register are added on top; `Super+F1` shows the keys in effect.
 
@@ -36,6 +36,7 @@ that extras register are added on top; `Super+F1` shows the keys in effect.
 
 | Keys | Action |
 |---|---|
+| `Super+Space` | NIRUPANEL: apps, today, system, updates, media and switches |
 | `Super+A` | NIRU Actions: maintenance, diagnostics, contexts and OpenCode |
 | `Super+S` | Web search: type a phrase, Enter opens it |
 | `Super+V` | Clipboard history |
