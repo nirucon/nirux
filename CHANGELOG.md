@@ -2,6 +2,20 @@
 
 Earlier releases are described in their release notes and commit messages.
 
+## 0.12.366 (2026-11-25)
+
+- NIRUFM 0.6.1: renaming you can edit (the name without its extension
+  chosen, cursor, selection, mouse, clipboard, `Tab` to the next item), never
+  over another file, case-only renames on USB drives, and rename several
+  items at once with find, replace and numbering. The path bar, search and
+  Connect form edit the same way. Pasting onto a name that exists asks:
+  replace safely, keep both, skip or merge folders. New empty file
+  (`Ctrl+Alt+N`) and new from `~/Templates`, redo (`Ctrl+Shift+Z`, `Ctrl+Y`),
+  *Open with…* that can make a program the default, and permissions in
+  Properties.
+- The manual no longer describes Proton Drive menu entries in NIRUFM: they
+  are not part of it yet.
+
 ## 0.12.365 (2026-11-25)
 
 - The NIRUTODAY 0.1.1 extra installs: 0.12.364 pinned it with the wrong

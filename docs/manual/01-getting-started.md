@@ -150,8 +150,20 @@ hundredths of a second, uses about 15 MB of memory and follows the theme. Press
   or the buttons at the top right). Each folder remembers its view; a folder of
   photos opens as thumbnails. `Ctrl+wheel` zooms.
 - **Files:** `Ctrl+C`, `Ctrl+X`, `Ctrl+V`, `Delete` (to the trash), `Ctrl+Z`
-  (undo), `F2` (rename), drag and drop to folders, tabs and other programs.
-  Nothing is ever overwritten: a name that exists gets " (2)".
+  (undo) and `Ctrl+Shift+Z` or `Ctrl+Y` (redo), drag and drop to folders, tabs
+  and other programs. `Ctrl+Alt+N` makes a new empty file; the right-click menu
+  also makes one from a template in `~/Templates`.
+- **Names that exist:** pasting, moving or dropping onto a name that exists
+  asks: Replace (the old one goes to the trash only once the new one is
+  complete), Keep both (" (2)"), Skip, or Merge for a folder onto a folder,
+  for this one or all remaining. Undo puts it all back.
+- **Rename:** `F2` selects the name without its extension, so typing
+  replaces it; the field has a cursor, selection, word keys (`Ctrl+←` `→`),
+  the mouse and the clipboard, and `Tab` goes on to the next item. A rename
+  never replaces another file. With several items selected, *Rename…* finds
+  and replaces in all the names, with `{n}` for a running number, and shows
+  the result first. The path bar (`Ctrl+L`), search (`Ctrl+F`) and the
+  Connect form edit the same way.
 - **Mouse:** drag a band from blank space, or from beside a name, to select
   several files; `Ctrl` adds to the selection, `Shift` flips what the band
   covers and `Esc` puts it back. While files are dragged a label beside the
@@ -161,8 +173,12 @@ hundredths of a second, uses about 15 MB of memory and follows the theme. Press
 - **Look:** `Space` previews a picture, PDF or text; `Enter` on a photo (or
   `Ctrl+G`) opens the gallery with a film strip, slideshow and full screen.
 - **Find:** `Ctrl+F` searches the folder and everything below it.
-- **Work:** tabs (`Ctrl+T`), two panes (`F3`), properties (`Alt+Enter`),
-  pack and unpack archives from the right-click menu, a terminal here (`F4`).
+- **Work:** tabs (`Ctrl+T`), two panes (`F3`), properties (`Alt+Enter`, with
+  read, write and run boxes for owner, group and others, and `X` to make a
+  script executable), pack and unpack archives from the right-click menu, a
+  terminal here (`F4`). *Open with…* lists every program for the type and can
+  make one the default (*Always open … with it*, kept in
+  `~/.config/mimeapps.list`).
 - **Drives and servers:** USB sticks appear under DEVICES; click to mount,
   ⏏ to eject. `Ctrl+K` connects to `sftp://`, `ftp://`, `smb://` or `davs://`
   servers; SSH hosts from `~/.ssh/config` complete with `Tab`.
@@ -171,9 +187,6 @@ hundredths of a second, uses about 15 MB of memory and follows the theme. Press
   rename it, open it in a new tab or remove it.
 - **Nextcloud:** in a synced folder the right-click menu copies the public or
   internal link and opens sharing, and badges show what is synced.
-- **Proton Drive:** with the niruprodrive extra running, the right-click menu
-  sends files and copies a link, and badges show what is backed up
-  (chapter 12).
 - **Icons:** folders, places, drives and the common file types have NIRUX's
   own retro pixel icons (NIRUICONS) in the colours of the theme, and a theme
   change recolours them at once. Other file types take the Papirus icon in
