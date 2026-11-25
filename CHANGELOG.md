@@ -2,6 +2,18 @@
 
 Earlier releases are described in their release notes and commit messages.
 
+## 0.12.361 (2026-11-25)
+
+- NIRUCLIP 0.13.1, the editor works like a full video editor: the camera
+  plays live over the film, each clip's title and camera are bars of their
+  own on lanes above the picture (drag to time them, double-click to place
+  them), lanes can be hidden or muted, a transport bar (start, previous and
+  next cut or marker, end, time with frames, loop, snapping, full screen),
+  several clips chosen at once with copy, cut and paste, markers that become
+  chapters in the export, J and L cuts, and a volume line on each clip's
+  sound. A film that starts with a title card now has sound in the live
+  preview.
+
 ## 0.12.360 (2026-11-24)
 
 - NIRUCLIP 0.12.0: the camera on a video track of its own

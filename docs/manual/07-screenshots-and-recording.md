@@ -319,23 +319,33 @@ It is also in the launcher as **NIRUCLIP Editor**, and under *Open with* for
 video files in NIRUFM. The preview is mpv inside the window (NIRUX installs
 it); the editor itself uses next to no processor time while it waits.
 
-The window shows the imported media on the left, the preview in the middle,
-the settings of the selected clip on the right and the timeline at the
-bottom, with lanes for the picture, its sound and music. F1 lists every key.
+The window shows the imported media on the left, the preview in the middle
+with the transport bar under it, the settings of the selected clip on the
+right and the timeline at the bottom. The timeline has five lanes: titles,
+camera, picture, sound and music. F1 lists every key.
+
+The transport bar has buttons for the start, the previous cut or marker,
+play, the next cut or marker and the end, the time with frames
+(`00:01:23:12`), and switches for **Loop**, **Snap** and **Full** screen.
 
 | Keys | Action |
 |---|---|
 | `Space`, `J` `K` `L` | Play or pause; back 2 s, pause, play (`L` again: faster) |
 | `←` `→`, `Shift+←` `→` | One frame, one second |
-| `↑` `↓`, `Home` `End` | Previous or next cut, start or end of the film |
+| `↑` `↓`, `Home` `End` | Previous or next cut or marker, start or end of the film |
 | `S` | Split the clip at the playhead |
 | `I`, `O`, `X`, `C` | Mark the start and end of a part; cut it out, or keep only it |
-| `Delete` | Remove the clip, or the marked part |
+| `Delete` | Remove the chosen clips or the marked part; on a lane, the title or the camera |
+| `Ctrl+click`, `Shift+click` | Choose more clips; panel changes apply to all of them |
+| `Ctrl+C`, `Ctrl+X`, `Ctrl+V`, `Ctrl+A` | Copy, cut, paste at the playhead, choose all clips |
 | `Alt+←` `→` | Move the clip earlier or later |
-| `M`, `T` | Mute the clip; write a title over it (`\|` starts a new line) |
+| `M`, `T` | Mute the chosen clips; write a title over the clip (`\|` starts a new line) |
+| `B` | Set or remove a marker at the playhead (a chapter) |
 | `Ctrl+T` | A title card: text on a colour |
 | `E` | Place the title and the camera on the picture |
-| `P` | Preview with effects and transitions |
+| `P` | Preview with titles, effects and transitions |
+| `R`, `N` | Loop the film or the marked part; snapping on or off |
+| `F`, `F11` | The picture full screen (`Esc` or a double click comes back) |
 | `Tab` | Timeline, settings panel, media list |
 | `Ctrl+O`, `Ctrl+I`, `Ctrl+M` | Open, import, add music |
 | `Ctrl+S`, `Ctrl+E`, `Ctrl+Z` | Save, export, undo (`Ctrl+Y` redo) |
@@ -348,14 +358,46 @@ With the mouse, drag media to the timeline, drag clips to reorder them and
 their edges to trim, and Shift+drag on the ruler to mark a part. The wheel
 scrolls the timeline; with Ctrl it zooms.
 
+**The lanes.** Each clip's title and camera are bars of their own above the
+picture. They belong to their clip, like connected clips, so they move
+with it when you cut, move or delete. Drag their ends to change when they
+come and go, and the middle to move them within the clip. A click shows
+their settings, a double click opens the placing view, and `Delete`
+removes the title or turns the camera off (a faint bar stays; double-click
+it to turn the camera on). A double click on the title lane over a clip
+writes a title. The switch at the start of each lane hides the titles or
+the camera, or mutes the sound or the music, in the preview and in the
+export.
+
+**Sound.** The line across a clip's sound is its volume: drag it up or
+down, and a double click sets 100 %. Drag where the sound changes over from
+one clip to the next off the cut for a J cut (the next clip's sound starts
+early, to the left) or an L cut (the previous clip's sound runs on, to the
+right); *Sound cut* in the panel does the same, and a double click puts it
+back on the cut. J and L cuts are heard in `P` and the export.
+
+**Markers.** `B` sets a marker at the playhead, shown as a flag on the
+ruler; `B` on a marker removes it, as does a right click. Click a flag to
+go there and double-click it to name it. Markers follow their clip. An
+export to MP4, MKV or WebM carries them as chapters, and a
+`.chapters.txt` beside the film lists them as `0:00 Intro` lines for a
+video description; each chapter is at least 10 seconds, as video sites
+ask.
+
 A clip has speed (0.25 to 4 times), volume and mute, fade in and out, a
 transition from the clip before (cross fade, dissolve, through black or
 white, wipes, slides, circle, pixelize), brightness, contrast, colour,
 blur, sharpen, rotation, mirroring, cropping, a zoom, a hidden part and a
 title. The panel shows only what applies; the rest of a group appears once
 its first setting is used. In the panel, `Enter` on a start or a length
-takes it from the playhead. The live preview plays every cut; `P` renders a
-few seconds around the playhead (or the marked part) with every effect,
+takes it from the playhead. With several clips chosen, a change in the
+panel applies to each of them that has the setting.
+
+The live preview plays every cut, with the camera where and when each clip
+shows it (as a plain rectangle). The camera plays from a copy of its track
+that is made once in the background, so it appears a moment after a
+recording is first opened. `P` renders a few seconds around the playhead
+(or the marked part) with titles, every effect and the camera's shape,
 exactly as it will be exported.
 
 **Titles.** Any installed font (the list shows each name in its own
