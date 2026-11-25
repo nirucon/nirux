@@ -2,6 +2,17 @@
 
 Earlier releases are described in their release notes and commit messages.
 
+## 0.12.362 (2026-11-25)
+
+- NIRUWM 0.37.12: an application's tray icon is never handled as a window.
+  A docked icon (NIRUPRODRIVE's, for one) could become a tile of its own,
+  so a window alone on its workspace took only half the screen, and the icon
+  vanished from the bar on other workspaces. Coming back to a workspace now
+  gives the keyboard to the window last used there, also after a click on
+  the bar, and not to whichever window the pointer rests over.
+- NIRUDISPLAY 0.4.1: the mouse pointer has its white outline again; it was a
+  black arrow, hard to see on a dark theme (for instance over Keep).
+
 ## 0.12.361 (2026-11-25)
 
 - NIRUCLIP 0.13.1, the editor works like a full video editor: the camera
