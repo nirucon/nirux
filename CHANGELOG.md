@@ -2,6 +2,13 @@
 
 Earlier releases are described in their release notes and commit messages.
 
+## 0.12.371 (2026-11-25)
+
+- A window that a program closes while its workspace is not in view (such as
+  NIRUPRODRIVE's) no longer comes back black on that workspace, taking half
+  of it: NIRUWM 0.37.14 honours the ICCCM withdrawal notice, and
+  NIRUPRODRIVE 0.1.5 sends it.
+
 ## 0.12.370 (2026-11-25)
 
 - NIRUSID 0.1.1: the installer makes NIRUSID the explicit default for SID
