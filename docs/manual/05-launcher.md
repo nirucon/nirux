@@ -30,7 +30,7 @@ The launcher is one process per opening. It has no daemon, no index service and 
 |---|---|
 | `apps` | The apps you use most (favourites first) with their icons; typing searches all of them |
 | `today` | Date and week, weather now and today's high and low, warnings and VMA, name day, sunrise and sunset, today's events (from NIRUTODAY, when it is installed) |
-| `system` | CPU, memory, free disk, temperature, battery and uptime, updated every two seconds while the panel is open |
+| `system` | CPU, memory, free disk, temperature, battery and uptime, updated every two seconds while the panel is open; a click opens NIRUSYS when it is installed, otherwise the health report |
 | `updates` | The installed NIRUX, a newer release and the system package updates NIRUBAR counted, with **Update…** |
 | `media` | What NIRUAMP plays, with previous, play or pause and next, or **Open NIRUAMP** |
 | `computers` | Your computers on Tailscale: online or offline, the system, "this computer", when an offline one was last seen, and whether an online one is reached directly or through a relay (dropped when Tailscale is not installed) |

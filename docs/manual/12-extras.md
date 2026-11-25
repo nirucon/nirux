@@ -23,6 +23,7 @@ A normal `nirux install` or `nirux update` never installs an extra. You ask for 
 | [niruprodrive](#niruprodrive-proton-drive-backup-and-sharing) | 0.1.5 | Proton Drive backups per computer, sending, fetching and links, with a tray cloud | alpha |
 | [nirutoday](#nirutoday-today-at-a-glance) | 0.1.1 | Today at a glance in a teletext look: SMHI weather, Sveriges Radio news, VMA, electricity price, name day and calendar | alpha |
 | [nirusid](#nirusid-sid-music-player) | 0.1.1 | SID music player with HVSC lengths and STIL, raster bars and a chip view; the default player for .sid files | alpha |
+| [nirusys](#nirusys-system-monitor) | 0.1.0 | Retro system monitor: CPU, memory, disks, network, GPU, sensors, battery, processes and system panels with phosphor graphs, 24-hour history and alerts; full window, desktop widget or mini strip | alpha |
 
 ### Install, update and remove
 
@@ -538,6 +539,28 @@ Put your SID files, or the whole HVSC, in `~/Music/SID` (or choose another folde
 Settings are in `~/.config/nirusid/config.toml`; playlists, favourites and history are in `~/.local/share/nirusid`.
 
 Full documentation: [github.com/nirucon/nirusid](https://github.com/nirucon/nirusid).
+
+## NIRUSYS: System monitor
+
+NIRUSYS is a retro, console-style system monitor in the NIRUX theme colours, made to stay on screen all day: one thread wakes once a second, reads a few kept-open files from /proc and /sys, redraws only what changed and draws nothing while hidden. Status: alpha.
+
+    nirux extras install nirusys   # builds it on this computer (installs cargo and gcc if missing)
+    nirusys                        # the full window
+    nirusys --widget               # a column on the desktop, below other windows, on every workspace
+    nirusys --mini                 # one strip: host, CPU, memory, network, temperature
+    nirusys --text                 # one sample as text, with every install-date witness
+
+The header shows the host, distribution, kernel, NIRUX version, window manager, uptime, load, the clock with the ISO week, and the day the system was installed with its age (hover it for the source: the root file system's birth time, the Debian installer log, the first pacman.log line or the oldest xbps package, whichever is earliest).
+
+- **Panels:** CPU (per core, frequency, governor, temperature), memory (swap, zram, pressure), disks (usage, read and write, temperature, SMART or the weekly checkup), network (Wi-Fi, Tailscale and your computers), GPU (Intel, AMD, NVIDIA), sensors, battery, top processes, and system (pending updates from NIRUBAR, failed services, the last NIRUX update).
+- **Graphs:** phosphor traces with a scale and peak marker; `h` shows the last 24 hours, kept in `~/.local/state/nirusys`.
+- **Alerts:** a notification when a file system reaches 95 % or the CPU 95 °C; more thresholds in the configuration.
+- `1` … `9` collapse panels, `?` shows every key, hover shows exact values.
+- NIRUBAR's pulse module (**System monitor…**) and the SYSTEM card in NIRUPANEL open NIRUSYS when it is installed.
+
+Settings are in `~/.config/nirusys/config.toml` (which panels, in which order, the widget corner, alerts).
+
+Full documentation: [github.com/nirucon/nirusys](https://github.com/nirucon/nirusys).
 
 ## Other suite tools
 

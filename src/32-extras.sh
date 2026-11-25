@@ -13,6 +13,7 @@ docker-stacks docker-stacks 1.0.1 e6abbfe0edb1c9424e52e691d54ca9bf409fbdc6845706
 niruprodrive niruprodrive 0.1.5 1dd7257a706aab837d74d7d0f5fa3de0ade161bcc74585a2bafeb4cfc5c5e041
 nirutoday nirutoday 0.1.1 04e795ef4e4098fd7f6eb6fe6fa3c723cd2f928449c5c6880fd504369989560f
 nirusid nirusid 0.1.1 437b1b257dcfcdfe2ea64ffd96c8cca8b17d340114ef9ee19a0845139b92b940
+nirusys nirusys 0.1.0 9566178199d5b839e6126d7ddfa371f88bcdd950f3019fdc19cf3f62ca53af78
 EOF
 }
 # Extras that left the suite. Each is removed once with the uninstaller of
