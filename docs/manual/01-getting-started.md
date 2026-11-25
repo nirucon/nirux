@@ -160,10 +160,17 @@ hundredths of a second, uses about 15 MB of memory and follows the theme. Press
 - **Rename:** `F2` selects the name without its extension, so typing
   replaces it; the field has a cursor, selection, word keys (`Ctrl+←` `→`),
   the mouse and the clipboard, and `Tab` goes on to the next item. A rename
-  never replaces another file. With several items selected, *Rename…* finds
-  and replaces in all the names, with `{n}` for a running number, and shows
-  the result first. The path bar (`Ctrl+L`), search (`Ctrl+F`) and the
-  Connect form edit the same way.
+  never replaces another file. The path bar (`Ctrl+L`), search (`Ctrl+F`)
+  and the Connect form edit the same way.
+- **Rename many:** `F2` with several items selected. *Find* (empty means the
+  whole name) and *Replace* take `{n}`, `{n:03}`, `{name}`, `{ext}` and `{date}`;
+  `Alt+R` makes Find a regular expression (`$1` for groups) and `Alt+C`
+  changes the case (lower, UPPER, Title). The preview shows every new name,
+  clashes are shown in red and refused, and one `Ctrl+Z` undoes it all.
+- **Type to filter:** typing in a folder shows only the names that contain
+  what you typed; case and accents do not matter. `Backspace` removes a
+  letter, `Esc` shows everything again and `/` starts typing a path. The first
+  match is selected, so `Enter` opens it.
 - **Mouse:** drag a band from blank space, or from beside a name, to select
   several files; `Ctrl` adds to the selection, `Shift` flips what the band
   covers and `Esc` puts it back. While files are dragged a label beside the
@@ -173,15 +180,24 @@ hundredths of a second, uses about 15 MB of memory and follows the theme. Press
 - **Look:** `Space` previews a picture, PDF or text; `Enter` on a photo (or
   `Ctrl+G`) opens the gallery with a film strip, slideshow and full screen.
 - **Find:** `Ctrl+F` searches the folder and everything below it.
-- **Work:** tabs (`Ctrl+T`), two panes (`F3`), properties (`Alt+Enter`, with
-  read, write and run boxes for owner, group and others, and `X` to make a
-  script executable), pack and unpack archives from the right-click menu, a
+- **Properties** (`Alt+Enter`): read, write and run boxes for owner, group
+  and others, and `X` to make a script executable. Nothing is counted by
+  itself: `C` (*Count size*) counts a folder, `S` computes the SHA-256 and
+  `Ctrl+C` copies it. `Alt+S` opens the sheet already counting.
+- **Two panes:** `F3` opens them, `Shift+F3` compares them (`+` only on this
+  side, an arrow for the newer copy, a bar for the older) and selects what
+  the other side lacks; `F6` copies the selection to the other pane.
+- **Send to** in the right-click menu: a NIRUSHARE device or all of them,
+  Proton Drive (upload, or copy a link) when NIRUPRODRIVE is installed, and
+  e-mail with the files attached.
+- **Work:** tabs (`Ctrl+T`), pack and unpack archives from the right-click menu, a
   terminal here (`F4`). *Open with…* lists every program for the type and can
   make one the default (*Always open … with it*, kept in
   `~/.config/mimeapps.list`).
 - **Drives and servers:** USB sticks appear under DEVICES; click to mount,
   ⏏ to eject. `Ctrl+K` connects to `sftp://`, `ftp://`, `smb://` or `davs://`
   servers; SSH hosts from `~/.ssh/config` complete with `Tab`.
+- **Recent** in the side panel lists the files and folders you used lately.
 - **Bookmarks:** `Ctrl+D` or "Add to bookmarks" on a folder. Drag them in the
   side panel to put them in order; right-click one to move it up or down,
   rename it, open it in a new tab or remove it.
@@ -214,8 +230,27 @@ follows the theme, uses a few tens of megabytes and shows every key with `?`.
 - **Simple edits:** `R` rotates, `H` mirrors, `C` crops (drag a frame,
   `Enter`), `P` pen, `A` arrow, `B` box, `T` text, `X` pixelates faces or
   number plates, `K` changes the ink, `Ctrl+R` resizes and `Ctrl+Z` undoes.
-  `Ctrl+S` saves a copy beside the original (`photo-edited.jpg`);
-  `Ctrl+Shift+S` replaces the original after asking.
+  `L` changes brightness (`Up`, `Down`) and contrast (`Left`, `Right`), and
+  `Z` straightens a photo (`Left`, `Right` turn it over a grid, `Enter` cuts it
+  straight); both can be undone. `Ctrl+S` saves a copy beside the original
+  (`photo-edited.jpg`); `Ctrl+Shift+S` replaces the original after asking.
+  `E` saves a copy as JPG with a quality (`jpg 85`), PNG or WebP.
+- **Privacy:** `I` warns in colour when a photo stores where it was taken
+  (GPS). `Ctrl+L` saves `photo-private.jpg` without the location and the
+  camera details; the picture itself is copied unchanged and stays upright.
+- **Wallpaper:** `Shift+W` makes the picture the desktop wallpaper through
+  NIRUWALLPAPER.
+- **Find and copy in a PDF:** `Ctrl+F` finds text: every match is highlighted,
+  `Enter` goes to the next and `Shift+Enter` to the one before. Hold `Shift`
+  and drag over text, then `Ctrl+C` copies it. Scanned PDFs have no text to
+  find.
+- **Fill in a PDF form:** `E` shows the form fields; click one or `Tab` to it,
+  and `Enter` or `Space` fills it in (check boxes tick, lists take a number or
+  a name). `Ctrl+S` saves `form-filled.pdf` beside the original.
+- **PDF pages:** `P` shows every page. `R` turns a page, `Delete` removes it,
+  `Shift` and the arrows move it, `M` adds another PDF at the end (or drop one
+  on the window), `E` saves some pages (`2-5`) as a new file, `Ctrl+Z` undoes
+  and `Ctrl+S` saves `form-pages.pdf`. The original is never changed.
 - **Sign a PDF:** `S` puts your signature on the page. The first time you
   draw it with the mouse or the touchpad (or drop a picture of it); it is
   kept in `~/.local/share/nirueditview/signature.png`. `T` adds text, `D`
@@ -236,7 +271,24 @@ keeps that choice.
 opens kitty. NIRUTERM opens in about 40 ms, uses 12 to 25 MB, follows the
 theme live and shows pictures with `niruterm icat FILE` (or `icat FILE`).
 Ctrl+Shift+C and Ctrl+Shift+V copy and paste, Ctrl+Shift+N opens a window in
-the same folder, Ctrl+click opens a link. To swap them back, set
+the same folder, Ctrl+click opens a link.
+
+- **Search the history:** `Ctrl+Shift+F` opens a search bar and highlights every
+  match; `Enter` (or `Up`) goes to the one above, `Shift+Enter` (or `Down`) to
+  the one below, `Esc` closes. Lower case matches either case.
+- **Jump between commands:** `Ctrl+Shift+Up` and `Ctrl+Shift+Down` go to the
+  previous and next prompt, and `Ctrl+Shift+G` copies the last command's
+  output. This works in fish, and in bash after `niruprompt install bash`.
+- **Open with the keyboard:** `Ctrl+Shift+E` puts a letter on every link and
+  file path on the screen; type it to open it. `file.rs:42` opens in your
+  editor at that line (`editor = "nvim"` in `~/.config/niruterm/config.toml`,
+  else `$VISUAL` or `$EDITOR`). A capital letter types the text at the prompt.
+- **Long commands:** a command that ran for 10 seconds or more and ends while
+  the window is not in focus sends a notification, "Command finished" or
+  "Command failed". `notify_after = 30` changes the time and `0` turns it off.
+  A bell in a window that is not in focus marks its workspace in the bar.
+
+To swap them back, set
 `terminal = ["kitty"]` and `terminal_alt = ["niruterm"]` under Programs in
 `~/.config/niruwm/config.toml`.
 

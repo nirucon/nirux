@@ -2,6 +2,26 @@
 
 Earlier releases are described in their release notes and commit messages.
 
+## 0.12.367 (2026-11-25)
+
+- NIRUTERM 0.2.0: search the history (`Ctrl+Shift+F`), jump between
+  commands (`Ctrl+Shift+Up`, `Ctrl+Shift+Down`) and copy the last command's
+  output (`Ctrl+Shift+G`) through NIRUPROMPT's shell marks, open links and
+  `file:line` paths with the keyboard (`Ctrl+Shift+E`), a notification when a
+  long command ends in a window that is not in focus (`notify_after`), and a
+  bell marks the workspace. Start-up time and memory are unchanged.
+- NIRUEDITVIEW 0.2.0: find and copy text in PDFs (`Ctrl+F`, `Shift`+drag),
+  fill in PDF forms (`E`), a pages view to turn, remove, move, merge and split
+  pages (`P`), a copy without location and camera details (`Ctrl+L`, and `I`
+  warns about GPS), save as JPG, PNG or WebP (`E`), make a picture the
+  wallpaper (`Shift+W`), brightness and contrast (`L`) and straighten (`Z`).
+- NIRUFM 0.7.0: rename many with patterns (`{n:03}`, `{name}`, `{ext}`,
+  `{date}`), regular expressions and case, type to filter a folder, folder
+  size and SHA-256 on demand in Properties (`Alt+S`), compare two panes
+  (`Shift+F3`) and copy across (`F6`), and *Send to* NIRUSHARE devices, Proton
+  Drive (with NIRUPRODRIVE) and e-mail. Letters now filter instead of jumping
+  to a name.
+
 ## 0.12.366 (2026-11-25)
 
 - NIRUFM 0.6.1: renaming you can edit (the name without its extension
