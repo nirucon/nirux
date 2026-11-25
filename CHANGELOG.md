@@ -2,6 +2,11 @@
 
 Earlier releases are described in their release notes and commit messages.
 
+## 0.12.365 (2026-11-25)
+
+- The NIRUTODAY 0.1.1 extra installs: 0.12.364 pinned it with the wrong
+  checksum, so `nirux extras update` refused it and nothing changed.
+
 ## 0.12.364 (2026-11-25)
 
 - **NIRUPANEL** (NIRULAUNCHER 0.21.1, NIRUWM 0.37.13): `Super+Space` opens a
