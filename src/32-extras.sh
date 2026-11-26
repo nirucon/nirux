@@ -76,7 +76,10 @@ extras_installed_version() {
   elif command -v "$name" >/dev/null 2>&1; then bin=$(command -v "$name")
   fi
   [ -n "$bin" ] || return 1
-  "$bin" --version 2>/dev/null | awk 'NF {v=$NF} END {print v}'
+  # The first non-empty line names the version ("NIRUSID 0.1.1"); later
+  # lines may describe libraries ("libsidplayfp 2.12.0 with reSIDfp"). The
+  # whole output is read so the program never sees a closed pipe.
+  "$bin" --version 2>/dev/null | awk 'NF && v == "" {v=$NF} END {print v}'
 }
 extras_list() {
   printf '%-12s %-9s %-12s %s\n' NAME PINNED INSTALLED SELECTED

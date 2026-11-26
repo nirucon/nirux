@@ -2,6 +2,13 @@
 
 Earlier releases are described in their release notes and commit messages.
 
+## 0.12.377 (2026-11-26)
+
+- `nirux extras list` and `nirux extras update` read an extra's version from
+  the first line of its `--version`. NIRUSID prints its library on a second
+  line, so it showed as "reSIDfp" or "SIDLite" and was rebuilt on every
+  `nirux extras update`.
+
 ## 0.12.376 (2026-11-26)
 
 - NIRULOCK 0.32.0: two new lock layouts, `attract` (an arcade cabinet in
