@@ -187,7 +187,7 @@ make_host golf 0.12.243; printf 'offline\n' > "$FAKE/hosts/golf/mode"
 row() { awk -v h="$1" '$1 == h' "$TEST/out"; }
 # --- status ------------------------------------------------------------------
 nirux fleet > "$TEST/out" 2>&1 || { cat "$TEST/out"; fail "fleet status failed"; }
-head -n 1 "$TEST/out" | grep -q '^HOST *STATE *NIRUX *BEHIND *RELOGIN *LOCKED *DISTRO *UP *UPDATED *HEALTH$' || fail "table header"
+grep -m 1 '^HOST' "$TEST/out" | grep -q '^HOST *STATE *NIRUX *BEHIND *RELOGIN *LOCKED *DISTRO *UP *UPDATED *HEALTH$' || { cat "$TEST/out"; fail "table header"; }
 row alpha | grep -q 'online *0\.12\.243 *no *no *yes ' || fail "alpha row: $(row alpha)"
 row bravo | grep -q 'online *0\.12\.242 *yes (0\.12\.243) *yes: niruwm *no ' || fail "bravo row: $(row bravo)"
 row alpha | grep -q ' ok$' || fail "alpha health: $(row alpha)"
