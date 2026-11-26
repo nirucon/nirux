@@ -118,7 +118,7 @@ The capture sound is switched with `nirux sounds toggle screenshot` (see [10-sou
 
 ## Record the screen
 
-NIRUCLIP is alpha: recording, pause/resume and recovery work, but `--window` records a fixed rectangle and camera/audio results depend a lot on the hardware.
+NIRUCLIP is alpha: recording, pause/resume and recovery work, but `--window` records a fixed rectangle (`--window-id` records one window's own content) and camera/audio results depend a lot on the hardware.
 
 NIRUWM has no default recording key. Start a recording from:
 
@@ -134,6 +134,8 @@ niruclip --full --audio mic               # full screen and microphone
 niruclip --region --audio both            # drag a region; microphone and desktop audio
 niruclip --full --webcam corner --corner bottom-right --webcam-size large
 niruclip --webcam-only --audio mic        # camera only
+niruclip --window-id 0x1a00003 --audio mic --webcam corner --webcam-size tiny
+                                          # one window's content, also when covered
 niruclip --profile screen-camera
 niruclip --pause
 niruclip --resume
@@ -158,13 +160,14 @@ Check that the key is free first with `Super+F1` and `Ctrl+R`.
 
 | Option | Values |
 |---|---|
-| Mode | `--full` (default), `--region`, `--window`, `--webcam-only` |
+| Mode | `--full` (default), `--region`, `--window`, `--window-id ID`, `--webcam-only` |
 | `--audio` | `none`, `mic` (default), `desktop`, `both` |
 | `--mic` | A source name, part of its description, or `default` |
 | `--mic-channels` | Inputs of a multichannel interface: `3` (mono), `1,2` (stereo pair) or `all` |
 | `--webcam` | `off`, `corner`, `only` |
 | `--corner` | `top-left`, `top-right`, `bottom-left`, `bottom-right` |
-| `--webcam-size` | `small`, `medium` (default), `large`: 20, 26 or 34 % of the video height |
+| `--webcam-size` | `tiny`, `small`, `medium` (default), `large`: 16, 20, 26 or 34 % of the video height |
+| `--camera-preview` | Keep a small live picture of the camera for a presenter view (NIRUPRES Talk mode) |
 | `--camera` | A device, or `auto` (a plugged-in camera, USB or dock, before the built-in one; infrared sensors skipped) |
 | `--camera-shape` | `rounded` (default), `circle`, `rect` |
 | `--camera-border` | `theme` (default), `none`, or `RRGGBB` |
@@ -179,6 +182,8 @@ Check that the key is free first with `Super+F1` and `Ctrl+R`.
 | `--no-notify` | No desktop notifications (also `NIRUCLIP_NOTIFY=0`) |
 
 `--audio both` mixes microphone and desktop audio at full level with a peak limiter that only acts when the sum would clip.
+
+`--window-id ID` *(NIRUCLIP 0.14)* records the content of one X window (the id as `xdotool` or `xwininfo` print it, decimal or `0x` hex) instead of a part of the screen. It uses the X Composite extension, so no compositor is needed, and it records the window's own picture also while other windows cover it, on a hidden workspace or outside every screen. Camera, microphone, pause and resume and the camera recovery work as with the screen, on the same clock. A window that is resized later is fitted into the size it had at the start, with black bars; when the window closes the recording stops and is saved. NIRUPRES Talk mode records its slides this way.
 
 ## Choose the microphone
 

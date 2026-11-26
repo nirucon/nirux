@@ -2,6 +2,19 @@
 
 Earlier releases are described in their release notes and commit messages.
 
+## 0.12.379 (2026-11-26)
+
+- NIRUPRES 3.1.0: Talk mode records only the presentation, the microphone
+  and, if you like, a small camera bottom right. Your notes, timer and next
+  slide stay in the presenter view and never reach the film, also on a
+  single laptop screen (the slides are recorded from their own window, at
+  1080p). A dialog picks slides + microphone + camera, slides + microphone,
+  or camera + microphone, optionally with the sound of videos; the
+  presenter view shows REC with the time and a live camera preview.
+- NIRUCLIP 0.14.0: `--window-id` records a window's own picture, also when
+  it is covered; `--webcam-size tiny`; the camera overlay costs about half
+  the CPU it did.
+
 ## 0.12.378 (2026-11-26)
 
 - NIRUWM 0.37.16: the idle lock can no longer be held off by a program.

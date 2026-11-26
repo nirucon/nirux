@@ -11,7 +11,7 @@ A normal `nirux install` or `nirux update` never installs an extra. You ask for 
 | Extra | Pinned | What it is | Status |
 |---|---|---|---|
 | [nirunote](#nirunote-markdown-editor) | 1.0.0 | Minimal Markdown editor and viewer | beta |
-| [nirupres](#nirupres-presentations) | 3.0.0 | Presentation studio | beta |
+| [nirupres](#nirupres-presentations) | 3.1.0 | Presentation studio | beta |
 | [nplay](#nplay-terminal-music-player) | 2.0.2 | Terminal music, radio and podcast player; also fully standalone | beta |
 | [niruamp](#niruamp-graphical-frontend-for-nplay) | 0.7.1 | Graphical frontend for NPLAY with three retro skins (Classic, Phosphor, Hi-Fi Deck) and a levelled spectrum (requires NPLAY) | alpha |
 | [niruflow](#niruflow-maintenance-and-cleanup) | 1.0.0 | Local maintenance and automation | alpha |
@@ -111,13 +111,13 @@ Full documentation: [github.com/nirucon/nirunote](https://github.com/nirucon/nir
 
 ## NIRUPRES: presentations
 
-A keyboard-oriented presentation studio: 25 slide layouts, 17 slide themes, speaker notes, a presenter window and an audience window on the screen you choose, PDF and image-based PPTX export, and Talk mode, which records the talk with NIRUCLIP and writes a chapter per slide. Every deck is one `.nirupres` file with its images inside. Status: beta.
+A keyboard-oriented presentation studio: 25 slide layouts, 17 slide themes, speaker notes, a presenter window and an audience window on the screen you choose, PDF and image-based PPTX export, and Talk mode, which records the slides, your voice and a small camera picture with NIRUCLIP and writes a chapter per slide. Every deck is one `.nirupres` file with its images inside. Status: beta.
 
 ```sh
 nirux extras install nirupres
 nirupres                                  # the editor
 nirupres --present deck.nirupres          # present from the start
-nirupres --talk deck.nirupres screen-mic  # present and record (screen-mic, screen-camera, camera-mic)
+nirupres --talk deck.nirupres             # present and record (slides-camera, slides, camera or auto)
 nirupres --export-pdf deck.nirupres out.pdf
 nirupres --check-config
 ```
@@ -167,6 +167,19 @@ has a red "PRIVATE · NOT FOR SHARING" bar, also in the dialog's thumbnail.
 - The presenter view shows the current and next slide, a large timer with
   pace, the clock, `x / y` and the speaker notes (at least a third of the
   height; `A−`/`A+` sizes are remembered).
+
+### Talk mode: record a talk
+
+*(NIRUPRES 3.1, NIRUCLIP 0.14)* **TALK** in the toolbar (or `Ctrl+K`, *Talk · record a talk…*) asks what to record and then presents from the first slide while NIRUCLIP records:
+
+- **Slides + microphone + small camera** (the default when a camera is connected): the camera sits in the bottom-right corner, 16 % of the picture height, rounded with a thin accent border, so it stays clear of the slide content.
+- **Slides + microphone.**
+- **Camera + microphone (no slides).**
+- **Include the sound of videos in the slides** also records the computer's sound (all of it; Do Not Disturb is on while you present).
+
+Only the slides are recorded, never the presenter view with your notes, timer and next slide. NIRUCLIP records the audience window by its window id, not the screen. On one screen your presenter view fills the screen and the slides go to an off-screen recording stage of 1080 lines in the deck's aspect, so the video is a clean 1080p whatever the laptop's resolution; with two screens the projector window is recorded. The presenter view shows a red **● REC** badge with the recording time (amber **NOT RECORDING** with the reason if it stops) and your live camera picture in CURRENT, where and as large as it is in the video. The presenter clock starts with the recording.
+
+**■ END AND SAVE TALK** or `Esc` ends the talk. The recording is `~/Videos/NIRUPRES-DECK-TIMESTAMP.mkv`, with a chapter per slide change (from 0:00) in `.chapters.json` and `.srt` beside it. Talk mode needs NIRUCLIP 0.14 or newer and refuses to record with an older one instead of recording the screen. From a terminal: `nirupres --talk deck.nirupres [slides-camera|slides|camera|auto] [--video-sound]` (the old names `screen-camera`, `screen-mic` and `camera-mic` still work).
 
 Text in a layout shrinks until it fits and is never drawn outside its box;
 when it still does not fit it ends with "…", and lists say "+N more". Deck
