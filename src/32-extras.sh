@@ -3,7 +3,7 @@ extras_table() {
 nirunote nirunote 1.0.0 b76c2c10a60ec1a5b9563372f356b3203d9ca04aa90c81b6a92d95466b51b988
 nirupres nirupres 3.0.0 e418e229236bfde4ecc3cacf5ecad36e1893ddf9dcfdd25a67c2dc4cc6c2b738
 nplay nplay 2.0.1 55070f6a57d89f863fbb56a27e3e1b56a54a14edabd17d7201b4d757a4c3c426
-niruamp niruamp 0.6.0 1ac76207c47a6080fe9b609a950893466cfad0fe116ac0e68590bd0727976d09
+niruamp niruamp 0.7.0 d570c8d4acb3fea6b7076df7a031b26332f4d3f63e3c3b769d31ff5f4422c198
 niruflow niruflow 1.0.0 288ea78a0b4b6945624d1529c5581b74d13be9269057698e7fa4d5832496746c
 nirusec nirusec 0.3.2 0d941c0bff02c6677b359ea31a7b54c62b5a93bde9c0e377001e314a48e40c5e
 nirugame nirugame 0.3.0 0f671d1272a3c1e5b8c8d935f015009f95145cfba44d32da28c72db7899e1356
@@ -14,6 +14,7 @@ niruprodrive niruprodrive 0.1.5 1dd7257a706aab837d74d7d0f5fa3de0ade161bcc74585a2
 nirutoday nirutoday 0.1.1 04e795ef4e4098fd7f6eb6fe6fa3c723cd2f928449c5c6880fd504369989560f
 nirusid nirusid 0.1.1 437b1b257dcfcdfe2ea64ffd96c8cca8b17d340114ef9ee19a0845139b92b940
 nirusys nirusys 0.1.0 9566178199d5b839e6126d7ddfa371f88bcdd950f3019fdc19cf3f62ca53af78
+nirusettings nirusettings 0.1.0 d191d10517feff01a0a621032122fd7d21a61c877603c69bda3d029f8e6d6743
 EOF
 }
 # Extras that left the suite. Each is removed once with the uninstaller of

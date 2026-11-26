@@ -2,6 +2,21 @@
 
 Earlier releases are described in their release notes and commit messages.
 
+## 0.12.374 (2026-11-26)
+
+- NIRULOCK 0.30.0: pause music is on by default for manual locks (idle,
+  suspend, lid and script locks stay silent) and plays shuffled; new
+  `layout = "demo"`, a C64 demo lock screen in the theme colours.
+- NIRUPANEL (NIRULAUNCHER 0.23.0): one search for everything (apps, key
+  bindings, settings and actions, computers, manual topics and files), and
+  new clipboard and notifications cards.
+- NIRUAMP 0.7.0: two new retro skins (Phosphor and Hi-Fi Deck) next to a
+  polished Classic, switched with `K` or in Settings; a livelier, levelled
+  spectrum; a quieter welcome sound (35 %, once per login, adjustable); a
+  round of UX fixes.
+- New extra NIRUSETTINGS 0.1.0: the NIRUX settings in one retro window.
+  `nirux extras install nirusettings`.
+
 ## 0.12.373 (2026-11-25)
 
 - New extra NIRUSYS 0.1.0: a retro, console-style system monitor in the

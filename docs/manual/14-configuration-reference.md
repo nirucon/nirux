@@ -76,21 +76,21 @@ These are not generated from an example file. The chapters describe them.
 
 <!-- generated: config (tools/manual-gen.sh; do not edit by hand) -->
 
-The example configuration files of NIRUX 0.12.373 and its components, with every
+The example configuration files of NIRUX 0.12.374 and its components, with every
 key they set or show. A value marked *commented example* is off by default:
 remove the `#` to use it. The full annotated file follows each table.
 
 | File | Read by | Example from |
 |---|---|---|
-| [`~/.config/niruwm/config.toml`](#configniruwmconfigtoml) | niruwm, nirubar, niruidle, niructl | nirux 0.12.373 `config.example.toml` |
-| [`~/.config/niruwm/appearance.toml`](#configniruwmappearancetoml) | the whole suite | nirux 0.12.373 `appearance.example.toml` |
-| [`~/.config/nirux/sounds.toml`](#configniruxsoundstoml) | nirux, nirunotify | nirux 0.12.373 `sounds.example.toml` |
-| [`~/.config/niruwm/displays.toml`](#configniruwmdisplaystoml) | niruwm, niructl, nirudisplay | nirux 0.12.373 `displays.example.toml` |
+| [`~/.config/niruwm/config.toml`](#configniruwmconfigtoml) | niruwm, nirubar, niruidle, niructl | nirux 0.12.374 `config.example.toml` |
+| [`~/.config/niruwm/appearance.toml`](#configniruwmappearancetoml) | the whole suite | nirux 0.12.374 `appearance.example.toml` |
+| [`~/.config/nirux/sounds.toml`](#configniruxsoundstoml) | nirux, nirunotify | nirux 0.12.374 `sounds.example.toml` |
+| [`~/.config/niruwm/displays.toml`](#configniruwmdisplaystoml) | niruwm, niructl, nirudisplay | nirux 0.12.374 `displays.example.toml` |
 | [`~/.config/nirubar/config.toml`](#confignirubarconfigtoml) | nirubar | nirubar 0.34.2 `weather.example.toml` |
-| [`~/.config/nirulauncher/config.toml`](#confignirulauncherconfigtoml) | nirulauncher | nirulauncher 0.22.3 `config.example.toml` |
+| [`~/.config/nirulauncher/config.toml`](#confignirulauncherconfigtoml) | nirulauncher | nirulauncher 0.23.0 `config.example.toml` |
 | [`~/.config/nirunotify/config.toml`](#confignirunotifyconfigtoml) | nirunotify | nirunotify 0.9.0 `config.example.toml` |
 | [`~/.config/nirufetch/config.toml`](#confignirufetchconfigtoml) | nirufetch | nirufetch 0.3.0 `config.example.toml` |
-| [`~/.config/niruui/lock.toml`](#configniruuilocktoml) | nirulock | nirulock 0.29.0 `config.example.toml` |
+| [`~/.config/niruui/lock.toml`](#configniruuilocktoml) | nirulock | nirulock 0.30.0 `config.example.toml` |
 | [`~/.config/niruui/screensaver.toml`](#configniruuiscreensavertoml) | niruscreensaver | niruscreensaver 0.18.0 `config.example.toml` |
 | [`~/.config/nirushare/webhooks.toml`](#confignirusharewebhookstoml) | nirushare | nirushare 0.4.0 `webhooks.example.toml` |
 
@@ -1582,8 +1582,9 @@ refresh_minutes = 30
 | `[files]` | `show_hidden` | `false` (commented example) |  |
 | `[files]` | `locate_db` | `"~/.cache/files.db"` (commented example) | A plocate/locate database to search instead of the system one (-d), e.g. |
 | `[files]` | `exclude` | `[".cache", ".local/share/Trash", ".git", "node_modules", ...` (commented example) | exclude replaces this built-in list: names anywhere, or paths below a root when they contain a slash; * and ? match like a shell glob. |
-| `[panel]` | `modules` | `["apps", "today", "system", "updates", "media", "computers",` (commented example) |  |
-| `[panel]` | `app_rows` | `2` (commented example) | "toggles", "power", "keys"] |
+| `[panel]` | `modules` | `["apps", "today", "system", "updates", "media", "clipboard",` (commented example) |  |
+| `[panel]` | `app_rows` | `2` (commented example) | "notifications", "computers", "toggles", "power", "keys"] |
+| `[panel]` | `search` | `["apps", "keys", "settings", "computers", "manual", "files"]` (commented example) |  |
 | `[panel.computers]` | `hosts` | `["othala", "niruxwork", "nirumac"]` (commented example) |  |
 | `[panel.computers]` | `hide` | `["homeassistant"]` (commented example) |  |
 | `[panel.computers]` | `rows` | `2` (commented example) |  |
@@ -1700,15 +1701,21 @@ terminal = ["kitty"]
 #            ".gradle", ".npm", ".cargo", ".rustup"]
 
 # NIRUPANEL (Super+Space, nirulauncher --panel): its modules, in order, out
-# of apps, today, system, updates, media, computers, toggles, power and keys,
-# and the rows of apps (1 to 4). `computers` lists your Tailscale computers
-# (only when `tailscale` is installed); `keys` lets the search find NIRUWM's
-# key bindings, which then show where the cards and computers are. A list
-# without a module leaves it out.
+# of apps, today, system, updates, media, clipboard, notifications,
+# computers, toggles, power and keys, and the rows of apps (1 to 4).
+# `clipboard` shows the newest NIRUCLIPBOARD entries (a click copies one
+# back), `notifications` what NIRUNOTIFY showed since it started,
+# `computers` your Tailscale computers (only when `tailscale` is installed);
+# `keys` lets the search find NIRUWM's key bindings. A list without a module
+# leaves it out. `search` is what the search field finds, shown in groups
+# where the cards and computers are: apps, keys, settings (the launcher's
+# settings and actions), computers, manual (topics of the NIRUX manual) and
+# files (the [files] search, from two letters on); [] finds apps only.
 # [panel]
-# modules = ["apps", "today", "system", "updates", "media", "computers",
-#            "toggles", "power", "keys"]
+# modules = ["apps", "today", "system", "updates", "media", "clipboard",
+#            "notifications", "computers", "toggles", "power", "keys"]
 # app_rows = 2
+# search = ["apps", "keys", "settings", "computers", "manual", "files"]
 #
 # The computers module. Without `hosts` it shows this computer and the
 # peers of the same Tailscale user (online first); `hosts` picks names and
@@ -1824,17 +1831,17 @@ palette = true
 |---|---|---|---|
 | `(top level)` | `font_path` | `"/usr/share/fonts/truetype/dejavu/DejaVuSansMono.ttf"` (commented example) | ~/.config/niruui/lock.toml; every setting is optional. |
 | `(top level)` | `font_size` | `22.0` |  |
-| `(top level)` | `layout` | `"cava".` | ascii-cava \| ascii \| cava \| minimal \| terminal \| runic \| corner ascii-cava (the default, "NIRUX ascii"): the NIRUX banner typed out slowl... |
-| `(top level)` | `layout` | `"ascii-cava"` |  |
+| `(top level)` | `layout` | `"ascii-cava"` | ascii-cava \| ascii \| demo \| cava \| minimal \| terminal \| runic \| corner ascii-cava (the default, "NIRUX ascii"): the NIRUX banner typed ou... |
 | `(top level)` | `visualizer` | `true` |  |
-| `(top level)` | `visual` | `"auto"` | What the cava and ascii-cava layouts show where the spectrum is drawn: "auto"   the CAVA spectrum only while music or radio plays, otherw... |
+| `(top level)` | `visual` | `"auto"` | What the cava and ascii-cava layouts show where the spectrum is drawn (demo: "auto" means quotes in the scroller and the beat flash): "au... |
 | `(top level)` | `quotes` | `["*"]` | Built-in: havamal-en, havamal-sv, stoic-en, stoic-sv. |
 | `(top level)` | `prompt_echo` | `"count"` | How the prompt echoes the password: "count" shows one * per character (the default); "pulse" shows a fixed row of eight cells with one li... |
 | `(top level)` | `show_hostname` | `false` | Show the machine's hostname under the clock. |
 | `(top level)` | `rune_font_path` | `"/usr/share/fonts/truetype/noto/NotoSansRunic-Regular.ttf"` (commented example) | Optional: use a specific runic font. |
-| `[pause_music]` | `enabled` | `false` |  |
-| `[pause_music]` | `folder` | `"~/Music/SID"` (commented example) | The default is NIRUX's own music (eleven chiptunes in Ogg Vorbis). |
+| `[pause_music]` | `enabled` | `true` |  |
+| `[pause_music]` | `folder` | `"~/Music/SID"          (a whole HVSC is fine)` (commented example) | Searched recursively (directory entries only, at most 1.5 s, in the background). |
 | `[pause_music]` | `folder` | `"~/.local/share/nirux/music"` |  |
+| `[pause_music]` | `shuffle` | `true` | true (the default): a random first tune, then every tune once in a random order, never the same one twice in a row; a SID tune plays its ... |
 | `[pause_music]` | `track_seconds` | `180` | DOCUMENTS directory) knows the length. |
 | `[pause_music]` | `stop_on_display_off` | `true` |  |
 | `[pause_music]` | `on` | `["manual"]` | Lock reasons that may play: manual (a key, the launcher, niructl lock in a terminal), idle (NIRUIDLE), suspend (lock before suspend), s... |
@@ -1852,17 +1859,21 @@ palette = true
 # font_path = "/usr/share/fonts/truetype/dejavu/DejaVuSansMono.ttf"
 font_size = 22.0
 
-# ascii-cava | ascii | cava | minimal | terminal | runic | corner
+# ascii-cava | ascii | demo | cava | minimal | terminal | runic | corner
 # ascii-cava (the default, "NIRUX ascii"): the NIRUX banner typed out slowly
 # on every screen like an old terminal, "A MINIMAL X11 DESKTOP" and a blinking
 # cursor under it, in the theme's accent colour; the CAVA spectrum, as wide as
 # the banner, while music plays; then the clock and the password prompt.
 # ascii: the same without the spectrum.
+# demo: a C64 demo on every screen: a chunky pixel NIRUX logo wobbling over
+# raster bars and stars, and a sine scroller with the time, the tune and a
+# quote along the bottom; the bars and logo flash on the beat while music
+# plays. The clock and the prompt stay in the calm black middle.
 # cava: a large clock above the spectrum or a quote.
-layout = "cava".
 layout = "ascii-cava"
 visualizer = true
-# What the cava and ascii-cava layouts show where the spectrum is drawn:
+# What the cava and ascii-cava layouts show where the spectrum is drawn
+# (demo: "auto" means quotes in the scroller and the beat flash):
 #   "auto"   the CAVA spectrum only while music or radio plays, otherwise a
 #            quote from ~/.config/niru/quotes/ in cava, nothing in ascii-cava
 #            (the default)
@@ -1892,19 +1903,25 @@ show_hostname = false
 # no rune font is available; it never draws missing-glyph boxes.
 # rune_font_path = "/usr/share/fonts/truetype/noto/NotoSansRunic-Regular.ttf"
 
-# Pause music while the screen is locked. Off by default. Starts only when no other audio plays in the first
-# seconds after locking; Esc, unlock, suspend and (by default) the display
-# going off stop it for the rest of the lock. Only plays for the lock reasons
-# in `on` (see `nirulock --help`): by default only when you lock by hand.
+# Pause music while the screen is locked. On by default, but only for the
+# lock reasons in `on` (see `nirulock --help`): by default only when you lock
+# by hand, never on idle, suspend or a script's lock. Starts only when no
+# other audio plays in the first seconds after locking; Esc, unlock, suspend
+# and (by default) the display going off stop it for the rest of the lock.
 [pause_music]
-enabled = false
-# Searched recursively and played in natural order (1-, 2-, 10-), looping.
-# The default is NIRUX's own music (eleven chiptunes in Ogg Vorbis). The folder
+enabled = true
+# Searched recursively (directory entries only, at most 1.5 s, in the
+# background). The default is NIRUX's own music (eleven chiptunes in Ogg
+# Vorbis). The folder
 # may hold .sid tunes (played by sidplayfp) and .ogg, .oga, .opus, .flac or
 # .wav files (played by pw-play, ffplay or mpv, whichever is installed first),
 # mixed; a tune without its player is skipped. For your own SID collection:
-# folder = "~/Music/SID"
+# folder = "~/Music/SID"          (a whole HVSC is fine)
 folder = "~/.local/share/nirux/music"
+# true (the default): a random first tune, then every tune once in a random
+# order, never the same one twice in a row; a SID tune plays its default
+# subtune. false: natural order (1-, 2-, 10-). Either way it loops.
+shuffle = true
 # Seconds per SID tune, unless the HVSC Songlengths.md5 in the folder (or its
 # DOCUMENTS directory) knows the length. Audio files play to their end.
 track_seconds = 180
@@ -1912,7 +1929,8 @@ stop_on_display_off = true
 # Lock reasons that may play: manual (a key, the launcher, `niructl lock` in a
 # terminal), idle (NIRUIDLE), suspend (lock before suspend), script
 # (`niructl lock --silent`, SSH), session, and unspecified (an older caller
-# that gives no reason). Leave it out for the default, ["manual"].
+# that gives no reason). Leave it out for the default, ["manual"]. To play
+# for automatic locks too: on = ["manual", "idle", "suspend"]
 on = ["manual"]
 
 [palette]

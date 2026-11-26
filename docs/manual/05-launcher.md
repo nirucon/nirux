@@ -33,12 +33,25 @@ The launcher is one process per opening. It has no daemon, no index service and 
 | `system` | CPU, memory, free disk, temperature, battery and uptime, updated every two seconds while the panel is open; a click opens NIRUSYS when it is installed, otherwise the health report |
 | `updates` | The installed NIRUX, a newer release and the system package updates NIRUBAR counted, with **Update…** |
 | `media` | What NIRUAMP plays, with previous, play or pause and next, or **Open NIRUAMP** |
+| `clipboard` | The newest clipboard entries from NIRUCLIPBOARD; a click or `Enter` copies one back, a click on the title opens the clipboard view |
+| `notifications` | What NIRUNOTIFY showed since it started, newest first, and whether do not disturb is on |
 | `computers` | Your computers on Tailscale: online or offline, the system, "this computer", when an offline one was last seen, and whether an online one is reached directly or through a relay (dropped when Tailscale is not installed) |
 | `toggles` | Do not disturb, night light, Wi-Fi and Bluetooth |
 | `power` | Lock, sleep, log out, restart and shut down; the last three ask once more |
-| `keys` | Makes the search find key bindings too |
+| `keys` | Lets the search find key bindings too |
 
-Type to search; Enter starts the chosen app (with no match, Enter hands the search to the launcher). Tab and the arrows move between apps and buttons, a click works too, and Esc clears the search or closes the panel. A click on Today opens NIRUTODAY, on System the launcher's Health view.
+**Search.** Type to search everything at once. The apps that match stay in
+the tiles at the top; below them, where the cards and computers are, the rest
+shows in groups: key bindings, settings and actions, computers and manual
+topics on the left, files on the right (from two letters on; they fill in as
+they are found). Words match in any order, without regard to case or accents.
+`Up` and `Down` move through a group and on to the next, `Left` and `Right`
+cross to the other column, a click works too. `Enter` opens what has the
+focus: an app, a setting's view or action, a manual topic, a file. On a file,
+`Shift+Enter` or a middle click opens its folder and `Ctrl+C` or a right click
+copies its path. With nothing found, `Enter` hands the search to the launcher.
+`Esc` clears the search, then closes the panel. A click on Today opens
+NIRUTODAY, on System NIRUSYS or the health report.
 
 **Computers.** The panel asks the local Tailscale daemon once when it opens;
 nothing runs at login and nothing connects in the background. It shows this
@@ -48,11 +61,10 @@ password there), `Shift+Enter` or a middle click opens `sftp://NAME/` in the
 file handler, `Ctrl+C` or a right click copies its Tailscale address and
 `Ctrl+Shift+C` its name.
 
-**Key bindings.** Typing also finds key bindings: words in any order, without
-regard to case or accents, or a combination such as `super+t`. They show
-where the cards are, the keys beside what they do. `Enter` or a click runs
-one, as if the key were pressed; ending the session, sleeping, or closing or
-killing a window asks once more. `Super+/` lists every key.
+**Key bindings.** A combination such as `super+t` finds its key, and the keys
+show beside what they do. `Enter` or a click runs one, as if the key were
+pressed; ending the session, sleeping, or closing or killing a window asks
+once more. `Super+/` lists every key.
 
 Long text wraps onto a second or third line and ends in "…" only when that
 is not enough.
@@ -62,7 +74,8 @@ Choose the modules and their order, and the rows of apps (1 to 4):
 ```toml
 # ~/.config/nirulauncher/config.toml
 [panel]
-modules = ["apps", "today", "system", "updates", "media", "computers", "toggles", "power", "keys"]
+modules = ["apps", "today", "system", "updates", "media", "clipboard", "notifications", "computers", "toggles", "power", "keys"]
+search = ["apps", "keys", "settings", "computers", "manual", "files"]   # what the search finds; [] finds apps only
 app_rows = 2
 
 [panel.computers]
@@ -72,7 +85,7 @@ rows = 2       # rows of computers, 1 to 4
 ```
 
 A `modules` list you wrote yourself keeps exactly its modules: add
-`computers` and `keys` to it to get them.
+`clipboard`, `notifications`, `computers` and `keys` to it to get them.
 
 Everything the panel shows is read on this computer; slow sources are read in the background, so it opens at once. App icons come from the icon themes (PNG and SVG), drawn once and kept in `~/.cache/nirulauncher/icons/`; an app without one gets a letter tile. The launcher itself is unchanged.
 

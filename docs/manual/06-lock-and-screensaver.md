@@ -1,6 +1,6 @@
 # Lock screen and screensaver
 
-NIRULOCK is the PAM lock screen and NIRUSCREENSAVER is the idle screen that comes before it. This chapter covers locking and unlocking, the idle timers, keeping the screen awake, the screensaver scenes, the five layouts, the CAVA spectrum and quotes, the optional pause music (the NIRUX music by default), and the NIRUX demo.
+NIRULOCK is the PAM lock screen and NIRUSCREENSAVER is the idle screen that comes before it. This chapter covers locking and unlocking, the idle timers, keeping the screen awake, the screensaver scenes, the layouts (including the C64 style `demo` lock screen), the CAVA spectrum and quotes, the pause music (the NIRUX music, shuffled, by default), and the NIRUX demo.
 
 ## Lock the screen
 
@@ -235,6 +235,7 @@ Set `layout` in `~/.config/niruui/lock.toml` (lock) or `~/.config/niruui/screens
 | `terminal` | Left-aligned monospace screen with a `~$ lock` / `~$ idle` line |
 | `runic` | The minimal composition with a discreet rune row when a runic font is available |
 | `corner` | Clock top-left, away time at the bottom (prompt centred on the lock) |
+| `demo` | Lock only (NIRULOCK 0.30.0 and later): the C64 demo lock screen, see [The demo layout](#the-demo-layout) |
 
 `show_hostname = true` shows the machine name under the clock (`hostname:~$ lock` in `terminal`); it is off by default. Colours always follow the active NIRUX theme on an opaque background; `[palette]` only overrides content colours.
 
@@ -291,17 +292,18 @@ The old single file `~/.config/niru/quotes.txt` (NIRULOCK 0.19 and NIRUSCREENSAV
 
 ## Pause music
 
-NIRULOCK can play music while the screen is locked. It is off by default and plays only for the lock reasons you allow (by default only a manual lock), so an idle lock, a suspend or a script never starts music.
+NIRULOCK plays music while the screen is locked. It is on by default (NIRULOCK 0.30.0 and later) but plays only for the lock reasons you allow, by default only a manual lock (Super+Escape, the launcher, Quick Settings or `niructl lock`), so an idle lock, a suspend, the lid or a script never starts music, and a laptop that locks itself during a meeting stays silent.
 
 By default it plays the NIRUX music: eleven original chiptunes in minor keys made for NIRUX by [NIRUDEMO](#the-nirux-demo-and-music), installed by NIRUX in `~/.local/share/nirux/music` as `nirux-1-ginnungagap.ogg` to `nirux-11-gimle.ogg` (NIRULOCK 0.29.0 and later; before that the default folder was `~/Music/SID`). They play with `pw-play`, `ffplay` or `mpv`, whichever is installed.
 
 To play your own C64 SID tunes instead, put the `.sid` files in a folder and name it as `folder`, for example `~/Music/SID`. They need `sidplayfp` (Debian and Void: `sidplayfp`; Arch: the AUR package `sidplayfp`). An HVSC `Songlengths.md5` in the folder (or its `DOCUMENTS` directory) gives each tune its real length. A folder may mix `.sid` files with `.ogg`, `.opus`, `.flac` and `.wav` files.
 
-Turn it on in `~/.config/niruui/lock.toml`:
+Change it in `~/.config/niruui/lock.toml`:
 
 ```toml
 [pause_music]
-enabled = true
+enabled = true               # false turns the music off
+shuffle = true               # false plays in natural order (1-, 2-, 10-)
 # folder = "~/Music/SID"     # your own tunes instead of the NIRUX music
 track_seconds = 180          # per SID tune without Songlengths.md5 (5 to 3600)
 stop_on_display_off = true
@@ -310,7 +312,8 @@ on = ["manual"]              # reasons that play: manual, idle, suspend, script,
 
 | Key | Default | Meaning |
 |---|---|---|
-| `enabled` | `false` | Master switch |
+| `enabled` | `true` | Master switch |
+| `shuffle` | `true` | Random order: a random first tune, every tune once per round, never the same twice in a row; SID tunes play their default subtune |
 | `folder` | `"~/.local/share/nirux/music"` | Where the tunes are |
 | `track_seconds` | `180` | SID tune length when `Songlengths.md5` does not know it; other files play to their end |
 | `stop_on_display_off` | `true` | Stop when the display goes off |
@@ -321,12 +324,18 @@ Both `enabled = true` and a matching reason in `on` are needed. `dbus-monitor` i
 How it behaves:
 
 - It waits 2 seconds after locking (up to 5 while a quiet stream exists) and starts only if no other audio played in that time.
-- Tunes play in natural order (`1-`, `2-`, `10-`) and loop. A line under the clock names the tune (for the NIRUX music "♪ Ginnungagap · NIRUX 1"; for SID tunes the title, author and year from the SID header) and reminds you that `Esc` stops the music.
+- Tunes play shuffled (or in natural order, `1-`, `2-`, `10-`, with `shuffle = false`) and loop. A large collection, even a whole HVSC, never delays the lock: the folder is listed in the background for at most 1.5 seconds. A line under the clock names the tune (for the NIRUX music "♪ Ginnungagap · NIRUX 1"; for SID tunes the title, author and year from the SID header) and reminds you that `Esc` stops the music.
 - With the spectrum shown, it visualises the tune.
 - `Escape`, unlocking, suspend and (by default) the display going off stop it for the rest of that lock. After `Escape` the lock returns to quotes.
 - The player is an ordinary child process with no input: nothing you type reaches it, and it cannot affect authentication.
 
 If it does not start, `~/.local/state/nirulock/trace.log` says why (for example "other audio is playing" or "lock reason idle"). `nirulock --config` prints the effective pause music setting.
+
+## The demo layout
+
+`layout = "demo"` in `lock.toml` turns the lock screen into a small Commodore 64 style demo: a big chunky NIRUX logo, built from NIRUSID's own 8x8 pixel font, wobbles over moving raster bars and a starfield, and a sine scroller along the bottom carries the time, how long the screen has been locked, the tune that plays and a quote (the hostname too with `show_hostname = true`). While music plays the bars and the logo flash on the beat. The colours come from the active NIRUX theme on a black background.
+
+The clock, the password prompt, the keyboard layout, Caps Lock and every failure message stay in the theme font in the calm black middle of the screen; a failed attempt also turns the bars to the warning colour. Every monitor shows the logo and the scroller. It animates at 25 frames a second (fewer on very large screens) and stops drawing when the display is off. The default layout is still `ascii-cava`.
 
 ## The NIRUX demo and music
 
@@ -351,7 +360,7 @@ The NIRUX music (the default pause music above) is eleven pieces, each about two
 
 | Key | Default | Meaning |
 |---|---|---|
-| `layout` | `"ascii-cava"` | `ascii-cava`, `ascii`, `cava`, `minimal`, `terminal`, `runic`, `corner` |
+| `layout` | `"ascii-cava"` | `ascii-cava`, `ascii`, `cava`, `minimal`, `terminal`, `runic`, `corner`, `demo` |
 | `visualizer` | `true` | `false` keeps the layout without the spectrum |
 | `visual` | `"auto"` | `auto`, `music`, `cava`, `quotes`, `none` (`auto` in `ascii-cava`: the spectrum while music plays, otherwise nothing) |
 | `quotes` | `["*"]` | Collections by name or pattern |
@@ -359,7 +368,7 @@ The NIRUX music (the default pause music above) is eleven pieces, each about two
 | `show_hostname` | `false` | Machine name under the clock |
 | `font_size` | `22.0` | Text size (the NIRUX appearance font size when unset) |
 | `font_path`, `rune_font_path` | unset | Specific font files |
-| `[pause_music]` | off | See above |
+| `[pause_music]` | on for manual locks | See above |
 | `[palette]` | theme | `background`, `foreground`, `muted`, `border`, `focus`, `warning` |
 
 ```sh

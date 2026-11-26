@@ -13,7 +13,7 @@ A normal `nirux install` or `nirux update` never installs an extra. You ask for 
 | [nirunote](#nirunote-markdown-editor) | 1.0.0 | Minimal Markdown editor and viewer | beta |
 | [nirupres](#nirupres-presentations) | 3.0.0 | Presentation studio | beta |
 | [nplay](#nplay-terminal-music-player) | 2.0.1 | Terminal music, radio and podcast player; also fully standalone | beta |
-| [niruamp](#niruamp-graphical-frontend-for-nplay) | 0.6.0 | Winamp-inspired graphical frontend for NPLAY (requires NPLAY) | alpha |
+| [niruamp](#niruamp-graphical-frontend-for-nplay) | 0.7.0 | Graphical frontend for NPLAY with three retro skins (Classic, Phosphor, Hi-Fi Deck) and a levelled spectrum (requires NPLAY) | alpha |
 | [niruflow](#niruflow-maintenance-and-cleanup) | 1.0.0 | Local maintenance and automation | alpha |
 | [nirusec](#nirusec-firewall-and-security-overview) | 0.3.2 | Firewall, ports, updates, firmware and security overview | alpha |
 | [nirugame](#nirugame-game-launcher) | 0.3.0 | Steam games, ROMs from your folders and RetroArch, and native games, with box art and optional SID music | alpha |
@@ -24,6 +24,7 @@ A normal `nirux install` or `nirux update` never installs an extra. You ask for 
 | [nirutoday](#nirutoday-today-at-a-glance) | 0.1.1 | Today at a glance in a teletext look: SMHI weather, Sveriges Radio news, VMA, electricity price, name day and calendar | alpha |
 | [nirusid](#nirusid-sid-music-player) | 0.1.1 | SID music player with HVSC lengths and STIL, raster bars and a chip view; the default player for .sid files | alpha |
 | [nirusys](#nirusys-system-monitor) | 0.1.0 | Retro system monitor: CPU, memory, disks, network, GPU, sensors, battery, processes and system panels with phosphor graphs, 24-hour history and alerts; full window, desktop widget or mini strip | alpha |
+| [nirusettings](#nirusettings-settings) | 0.1.0 | The NIRUX settings in one retro window: theme, window manager, bar, lock screen, screensaver, sounds, key bindings, extras and updates, checked before they are written | alpha |
 
 ### Install, update and remove
 
@@ -230,8 +231,22 @@ NIRUAMP connects to a running `nplay --serve`, or starts one itself. A second la
 | `1` to `5` | Playlist, queue, browse, settings, about |
 | `W` / `T` | Windowshade / always on top |
 | `F11` | Fullscreen visual mode (`Esc` leaves it) |
+| `K` | Next skin |
+| `V` | Spectrum on or off |
 
-The theme follows NIRUX live; **Settings → Theme → NIRUAMP Classic** is the standalone look. There is no equalizer. Preferences are in `~/.config/niruamp/`, window state in `~/.local/state/niruamp/`. Full documentation: [github.com/nirucon/niruamp](https://github.com/nirucon/niruamp).
+The theme follows NIRUX live; **Settings → Theme → NIRUAMP Classic** is the standalone look. There is no equalizer.
+
+**Skins.** NIRUAMP has three skins, all taking their colours from your NIRUX theme (the accent lights the LEDs, lamps and highlights, the foreground colours the text):
+
+- **Classic**: the hardware panel with an LED clock, a spectrum with peak caps, and shuffle and repeat lamps.
+- **Phosphor**: a green CRT operator console with scanlines, a glowing seven-segment clock and a monospaced readout. A colourful theme accent tints the phosphor; a grey accent leaves it green.
+- **Hi-Fi Deck**: a brushed-metal cassette deck. The cassette label shows the track, the reels follow the position, the display shows the time and a 16-band analyser, and two VU meters show the low and high halves of the spectrum.
+
+`K`, the skin button in the deck or **Settings → Appearance → Skin** switches; the choice is saved as `skin` (`classic`, `phosphor` or `hifi`) in `~/.config/niruamp/config.toml`.
+
+**Welcome sound.** A short welcome sound plays the first time NIRUAMP starts after you log in, at 35 % by default; later starts in the same login are silent. **Settings → Appearance → Welcome sound** sets Off, 20, 35, 50, 75 or 100 %, and **TRY** plays it. The keys are `startup_sound` and `startup_sound_volume`.
+
+**Visualiser.** The spectrum comes from CAVA through NPLAY. NIRUAMP shows it on a decibel scale around a level that adapts slowly to the music, so quiet and loud recordings both fill the display without sticking at the top; bars fall back smoothly and leave small peak caps. **Settings → Visualization** sets the frame rate (30, 20 or 15 fps) and whether the spectrum pauses while the window is hidden. Nothing is drawn while paused, silent or hidden. Preferences are in `~/.config/niruamp/`, window state in `~/.local/state/niruamp/`. Full documentation: [github.com/nirucon/niruamp](https://github.com/nirucon/niruamp).
 
 ## NIRUFLOW: maintenance and cleanup
 
@@ -561,6 +576,17 @@ The header shows the host, distribution, kernel, NIRUX version, window manager, 
 Settings are in `~/.config/nirusys/config.toml` (which panels, in which order, the widget corner, alerts).
 
 Full documentation: [github.com/nirucon/nirusys](https://github.com/nirucon/nirusys).
+
+## NIRUSETTINGS: settings
+
+The settings of the NIRUX desktop in one keyboard-driven window, in the theme colours: Appearance (theme, fonts, wallpaper, colour overrides), Window manager (gaps, borders, layouts, scratchpad, picture in picture, programs, night light), Bar (modules and their order, edge, height, transparency, clock), Lock screen (layout, pause music), Screensaver (the idle and lock timers, scenes), Sound (event sounds), plus Key bindings (read only), Extras and Updates. Status: alpha.
+
+    nirux extras install nirusettings
+    nirusettings            # or: nirusettings bar | lock | keys | extras | updates
+
+Arrows move, Left/Right or +/- change a value, Space toggles, Return edits, `r` resets, `u` undoes, `/` searches everything. A `*` marks a value that differs from the default; FILE or DEFAULT says where it comes from. Each value is checked like the program itself checks it (and by `niruwm --check-config` and `nirubar --check-config`) before only that line of the file changes; comments stay, and the old file is kept once per session as `FILE.bak`. NIRUWM and NIRUBAR apply it at once with `niructl reload`; the lock screen and screensaver use it the next time they start, and the window says so. `nirusettings --set bar.position bottom` does the same from a terminal. Its settings are described by schema files (`~/.local/share/nirusettings/schema/`), so new settings need no new program.
+
+Full documentation: [github.com/nirucon/nirusettings](https://github.com/nirucon/nirusettings).
 
 ## Other suite tools
 
