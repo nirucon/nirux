@@ -76,22 +76,22 @@ These are not generated from an example file. The chapters describe them.
 
 <!-- generated: config (tools/manual-gen.sh; do not edit by hand) -->
 
-The example configuration files of NIRUX 0.12.375 and its components, with every
+The example configuration files of NIRUX 0.12.376 and its components, with every
 key they set or show. A value marked *commented example* is off by default:
 remove the `#` to use it. The full annotated file follows each table.
 
 | File | Read by | Example from |
 |---|---|---|
-| [`~/.config/niruwm/config.toml`](#configniruwmconfigtoml) | niruwm, nirubar, niruidle, niructl | nirux 0.12.375 `config.example.toml` |
-| [`~/.config/niruwm/appearance.toml`](#configniruwmappearancetoml) | the whole suite | nirux 0.12.375 `appearance.example.toml` |
-| [`~/.config/nirux/sounds.toml`](#configniruxsoundstoml) | nirux, nirunotify | nirux 0.12.375 `sounds.example.toml` |
-| [`~/.config/niruwm/displays.toml`](#configniruwmdisplaystoml) | niruwm, niructl, nirudisplay | nirux 0.12.375 `displays.example.toml` |
+| [`~/.config/niruwm/config.toml`](#configniruwmconfigtoml) | niruwm, nirubar, niruidle, niructl | nirux 0.12.376 `config.example.toml` |
+| [`~/.config/niruwm/appearance.toml`](#configniruwmappearancetoml) | the whole suite | nirux 0.12.376 `appearance.example.toml` |
+| [`~/.config/nirux/sounds.toml`](#configniruxsoundstoml) | nirux, nirunotify | nirux 0.12.376 `sounds.example.toml` |
+| [`~/.config/niruwm/displays.toml`](#configniruwmdisplaystoml) | niruwm, niructl, nirudisplay | nirux 0.12.376 `displays.example.toml` |
 | [`~/.config/nirubar/config.toml`](#confignirubarconfigtoml) | nirubar | nirubar 0.34.2 `weather.example.toml` |
 | [`~/.config/nirulauncher/config.toml`](#confignirulauncherconfigtoml) | nirulauncher | nirulauncher 0.23.0 `config.example.toml` |
 | [`~/.config/nirunotify/config.toml`](#confignirunotifyconfigtoml) | nirunotify | nirunotify 0.9.0 `config.example.toml` |
 | [`~/.config/nirufetch/config.toml`](#confignirufetchconfigtoml) | nirufetch | nirufetch 0.3.0 `config.example.toml` |
-| [`~/.config/niruui/lock.toml`](#configniruuilocktoml) | nirulock | nirulock 0.30.0 `config.example.toml` |
-| [`~/.config/niruui/screensaver.toml`](#configniruuiscreensavertoml) | niruscreensaver | niruscreensaver 0.18.0 `config.example.toml` |
+| [`~/.config/niruui/lock.toml`](#configniruuilocktoml) | nirulock | nirulock 0.32.0 `config.example.toml` |
+| [`~/.config/niruui/screensaver.toml`](#configniruuiscreensavertoml) | niruscreensaver | niruscreensaver 0.19.0 `config.example.toml` |
 | [`~/.config/nirushare/webhooks.toml`](#confignirusharewebhookstoml) | nirushare | nirushare 0.4.0 `webhooks.example.toml` |
 
 ### ~/.config/niruwm/config.toml
@@ -1833,7 +1833,7 @@ palette = true
 | `(top level)` | `font_size` | `22.0` |  |
 | `(top level)` | `layout` | `"ascii-cava"` | ascii-cava \| ascii \| demo \| cava \| minimal \| terminal \| runic \| corner ascii-cava (the default, "NIRUX ascii"): the NIRUX banner typed ou... |
 | `(top level)` | `visualizer` | `true` |  |
-| `(top level)` | `visual` | `"auto"` | What the cava and ascii-cava layouts show where the spectrum is drawn (demo: "auto" means quotes in the scroller and the beat flash): "au... |
+| `(top level)` | `visual` | `"auto"` | What the cava and ascii-cava layouts show where the spectrum is drawn (demo: "auto" means quotes in the scroller and the beat flash; attr... |
 | `(top level)` | `quotes` | `["*"]` | Built-in: havamal-en, havamal-sv, stoic-en, stoic-sv. |
 | `(top level)` | `prompt_echo` | `"count"` | How the prompt echoes the password: "count" shows one * per character (the default); "pulse" shows a fixed row of eight cells with one li... |
 | `(top level)` | `show_hostname` | `false` | Show the machine's hostname under the clock. |
@@ -1869,11 +1869,19 @@ font_size = 22.0
 # raster bars and stars, and a sine scroller with the time, the tune and a
 # quote along the bottom; the bars and logo flash on the beat while music
 # plays. The clock and the prompt stay in the calm black middle.
+# attract: an arcade cabinet in attract mode: NIRUX RAID, an original C64
+# style shoot 'em up, plays itself in a framed 320x200 playfield (title,
+# high scores, a game, GAME OVER, again); the tune shows as ARTIST - TITLE
+# and explosions flash on the beat. The prompt stays on black below it.
+# satie: a C64 tape loading screen of Erik Satie: his portrait loads cell
+# by cell while loader stripes flicker in the border; NIRUX's Gymnopedie
+# No. 1 (nirux-12-gymnopedie.ogg) is the pause music when installed.
 # cava: a large clock above the spectrum or a quote.
 layout = "ascii-cava"
 visualizer = true
 # What the cava and ascii-cava layouts show where the spectrum is drawn
-# (demo: "auto" means quotes in the scroller and the beat flash):
+# (demo: "auto" means quotes in the scroller and the beat flash; attract and
+# satie: the beat flash only):
 #   "auto"   the CAVA spectrum only while music or radio plays, otherwise a
 #            quote from ~/.config/niru/quotes/ in cava, nothing in ascii-cava
 #            (the default)
@@ -1999,6 +2007,11 @@ focus = "5a5a60"
 #   "ascii-sid" as ascii, with the music like dark-sid
 #   "demo"      a realtime demoscene demo by NIRUDEMO on each screen,
 #               silent; dark where nirudemo is missing or fails
+#   "c64"       NIRUX as a Commodore 64 demo on each screen, silent: BASIC
+#               boot, then a bouncing logo with raster bars and a DYCP
+#               scroller, a dot sphere with Lissajous balls and runes, and
+#               Yggdrasil before a plasma; C64 colours picked by the theme
+#   "c64-sid"   as c64, with the music like dark-sid, effects on the beat
 #   "shuffle"   one of the scenes in `shuffle`, a new pick every time
 scene = "clock"
 shuffle = ["clock", "photos", "dark"]

@@ -2,6 +2,17 @@
 
 Earlier releases are described in their release notes and commit messages.
 
+## 0.12.376 (2026-11-26)
+
+- NIRULOCK 0.32.0: two new lock layouts, `attract` (an arcade cabinet in
+  attract mode: NIRUX RAID, an original C64 style shoot 'em up, plays itself)
+  and `satie` (a C64 tape loading screen of Erik Satie with Gymnopédie); the
+  `demo` scroller names the tune by artist and title only.
+- NIRUDEMO 0.2.0: Erik Satie's Gymnopédie No. 1 arranged for NIRUX in the
+  SID sound joins the NIRUX music (`nirux-12-gymnopedie.ogg`).
+- NIRUSCREENSAVER 0.19.0: new scenes `c64` and `c64-sid`, NIRUX as a
+  Commodore 64 demo.
+
 ## 0.12.375 (2026-11-26)
 
 - NIRUAMP's clock follows the music again: after a track change it started

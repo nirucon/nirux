@@ -217,12 +217,16 @@ Changes are written to `~/.config/niruui/screensaver.toml` with its comments kep
 | `dark-sid` | As `dark`, with the [pause music](#pause-music) (the NIRUX music by default) and the tune's name under the line |
 | `ascii` | "NIRUX ascii": black, with a large NIRUX banner in ASCII and "A MINIMAL X11 DESKTOP" under it, centred and sized for each screen. The banner takes the theme's accent colour (the text colour when the accent is too dark to read on black). It is typed out one character at a time behind a block cursor that blinks once a second when the text is done; after a minute it is erased backwards, the screen stays black for a few seconds, and it is typed again, shifted a little from the centre (NIRUSCREENSAVER 0.17.1 and later) |
 | `ascii-sid` | As `ascii`, with the pause music like `dark-sid` and the tune under the text |
+| `c64` | NIRUX as a Commodore 64 demo, silent: a BASIC boot, then a bouncing NIRUX logo with raster bars and a scroller that shows the time, a dot sphere with bouncing balls under the runes for NIRUX, and Yggdrasil before a plasma, in C64 colours picked by your theme (NIRUSCREENSAVER 0.19.0 and later) |
+| `c64-sid` | As `c64`, with the NIRUX music like `dark-sid`, the tune in the top border and the effects pulsing on the beat |
 | `demo` | The [NIRUX demo](#the-nirux-demo-and-music) on every screen, silent and in a loop. Without NIRUDEMO, or when it fails to start, that screen shows `dark` (NIRUSCREENSAVER 0.18.0 and later) |
 | `shuffle` | One of the scenes in `shuffle` (default `clock`, `photos`, `dark`), a new pick every time |
 
 `dark-sid` and `ascii-sid` use the lock's [pause music](#pause-music) player and folder (`[pause_music] folder` in `lock.toml`, default the NIRUX music in `~/.local/share/nirux/music`). It starts only when nothing else played during the first 2 seconds. Unlike the lock, it also plays when the screensaver starts by itself after the idle timeout, because choosing `dark-sid` or `ascii-sid` is the choice to play. The music stops when the display goes off, when a key or click ends the screensaver, and when the idle lock takes over.
 
 `photos` reads PNG and JPEG files two folder levels deep; when a wallpaper exists as `-4k` and `-8k`, the 4K one is used. With several monitors every scene draws on each one. `reduced_motion = true` stops the photo drift and crossfade and moves the dark line once a minute instead of gliding; `ascii` then shows the whole text at once, with a still cursor, shifted a little every minute.
+
+`c64` turns each screen into a Commodore 64: a 320x200 picture with sharp pixels inside a border that reaches the screen's edges. After a short BASIC boot (`LOAD"NIRUX",8,1` with loading stripes) it loops three parts, the border closing over the screen between them: NIRUX, with raster bars, a bouncing logo and a wavy scroller that greets you with the time; BIFROST, a spinning dot sphere among shaded balls under the runes for NIRUX; and YGGDRASIL, the world tree before a colour plasma. It uses only the sixteen C64 colours, picked from your theme. It costs about 2 % of one core on a 1080p screen, draws nothing while the display is off, and with `reduced_motion = true` shows a still part that changes every minute. `c64-sid` adds the music exactly like `dark-sid`. Try it with `niruscreensaver --preview c64`, choose it with `niruscreensaver --set scene c64`, or add it to the shuffle list with `niruscreensaver --shuffle add c64`.
 
 ## Choose a layout
 
@@ -236,6 +240,8 @@ Set `layout` in `~/.config/niruui/lock.toml` (lock) or `~/.config/niruui/screens
 | `runic` | The minimal composition with a discreet rune row when a runic font is available |
 | `corner` | Clock top-left, away time at the bottom (prompt centred on the lock) |
 | `demo` | Lock only (NIRULOCK 0.30.0 and later): the C64 demo lock screen, see [The demo layout](#the-demo-layout) |
+| `attract` | Lock only (NIRULOCK 0.32.0 and later): an arcade cabinet in attract mode, NIRUX RAID plays itself, see [The attract layout](#the-attract-layout) |
+| `satie` | Lock only (NIRULOCK 0.32.0 and later): a C64 tape loading screen of Erik Satie with Gymnopédie, see [The satie layout](#the-satie-layout) |
 
 `show_hostname = true` shows the machine name under the clock (`hostname:~$ lock` in `terminal`); it is off by default. Colours always follow the active NIRUX theme on an opaque background; `[palette]` only overrides content colours.
 
@@ -294,7 +300,7 @@ The old single file `~/.config/niru/quotes.txt` (NIRULOCK 0.19 and NIRUSCREENSAV
 
 NIRULOCK plays music while the screen is locked. It is on by default (NIRULOCK 0.30.0 and later) but plays only for the lock reasons you allow, by default only a manual lock (Super+Escape, the launcher, Quick Settings or `niructl lock`), so an idle lock, a suspend, the lid or a script never starts music, and a laptop that locks itself during a meeting stays silent.
 
-By default it plays the NIRUX music: eleven original chiptunes in minor keys made for NIRUX by [NIRUDEMO](#the-nirux-demo-and-music), installed by NIRUX in `~/.local/share/nirux/music` as `nirux-1-ginnungagap.ogg` to `nirux-11-gimle.ogg` (NIRULOCK 0.29.0 and later; before that the default folder was `~/Music/SID`). They play with `pw-play`, `ffplay` or `mpv`, whichever is installed.
+By default it plays the NIRUX music: eleven original chiptunes in minor keys made for NIRUX by [NIRUDEMO](#the-nirux-demo-and-music) and an arrangement of Erik Satie's Gymnopédie No. 1, installed by NIRUX in `~/.local/share/nirux/music` as `nirux-1-ginnungagap.ogg` to `nirux-12-gymnopedie.ogg` (NIRULOCK 0.29.0 and later; before that the default folder was `~/Music/SID`). They play with `pw-play`, `ffplay` or `mpv`, whichever is installed.
 
 To play your own C64 SID tunes instead, put the `.sid` files in a folder and name it as `folder`, for example `~/Music/SID`. They need `sidplayfp` (Debian and Void: `sidplayfp`; Arch: the AUR package `sidplayfp`). An HVSC `Songlengths.md5` in the folder (or its `DOCUMENTS` directory) gives each tune its real length. A folder may mix `.sid` files with `.ogg`, `.opus`, `.flac` and `.wav` files.
 
@@ -337,6 +343,16 @@ If it does not start, `~/.local/state/nirulock/trace.log` says why (for example 
 
 The clock, the password prompt, the keyboard layout, Caps Lock and every failure message stay in the theme font in the calm black middle of the screen; a failed attempt also turns the bars to the warning colour. Every monitor shows the logo and the scroller. It animates at 25 frames a second (fewer on very large screens) and stops drawing when the display is off. The default layout is still `ascii-cava`.
 
+The scroller names the tune by artist and title only (`NOW PLAYING  NIRUX - GIMLE`), as its own segment after the quote, and the quote is in quotation marks with its source.
+
+## The attract layout
+
+`layout = "attract"` makes the lock screen an arcade cabinet nobody is playing. Like a Commodore 64 game left alone it shows its title screen, the high scores and a game that plays itself until GAME OVER, then starts again with a new game. NIRUX RAID is NIRULOCK's own shoot 'em up: a rune craft flown by a small AI over a river through a Norse forest, against wisps, drones, rune towers and longships. The picture is 320x200 pixels in 16 colours from the active theme, scaled up with sharp pixels inside a frame. The clock, password prompt and messages stay on black below it, and a failed attempt turns the frame to the warning colour. Typing never reaches the game. While pause music plays, the tune shows as `NOW PLAYING  ARTIST - TITLE` and explosions flash on the beat. It costs about 1 % of one core and draws nothing with the display off.
+
+## The satie layout
+
+`layout = "satie"` is a C64 game loading from tape, except that the game is Erik Satie. PRESS PLAY ON TAPE, SEARCHING, FOUND ERIK SATIE, and his portrait loads cell by cell while coloured loader stripes flicker in the border, until READY. It loads again every five minutes. The portrait is Henri Manuel's public domain photograph from about 1920, coloured from the active theme (the `niru-satie` theme gives it sepia). When NIRUX's Gymnopédie (`nirux-12-gymnopedie.ogg`) is installed it is this layout's pause music, played again and again, under the usual pause music rules. The prompt and messages stay on black below the picture.
+
 ## The NIRUX demo and music
 
 NIRUDEMO is the NIRUX easter egg: a demoscene demo in the spirit of the home computer and console intros of the 1980s and 1990s, drawn at 320 by 180 pixels and scaled up with sharp pixels, in the colours of the active theme, with its own music.
@@ -352,7 +368,7 @@ NIRUDEMO is the NIRUX easter egg: a demoscene demo in the spirit of the home com
 
 Demo 1 is **Ginnungagap**: stars out of the void, the title, raster bars, a low-poly N turning over a grid in fog, plasma with a sine scroller, a tunnel and greetings from the machine it runs on. Every demo is named after its song. The music stays off while Do Not Disturb is on, and the demo ends at once if the screen locks.
 
-The NIRUX music (the default pause music above) is eleven pieces, each about two minutes: Ginnungagap, Yggdrasil, Hel, Fimbulvetr, Mimir, Surtr, Norns, Nidhogg, Vanaheim, Ragnarok and Gimle. They are in minor keys, between dark ambient, the C64 sound (fast arpeggios, pulse bass, vibrato and echo) and calm pieces in the spirit of Erik Satie. Any music player plays the files in `~/.local/share/nirux/music`.
+The NIRUX music (the default pause music above) is twelve pieces. Eleven are originals of about two minutes each: Ginnungagap, Yggdrasil, Hel, Fimbulvetr, Mimir, Surtr, Norns, Nidhogg, Vanaheim, Ragnarok and Gimle, in minor keys, between dark ambient, the C64 sound (fast arpeggios, pulse bass, vibrato and echo) and calm pieces in the spirit of Erik Satie. The twelfth is Gymnopédie: Erik Satie's Gymnopédie No. 1 (1888, public domain) arranged for NIRUX in the SID sound as a seamless loop of about three and a half minutes (`nirux-12-gymnopedie.ogg`, NIRUDEMO 0.2.0 and later). Any music player plays the files in `~/.local/share/nirux/music`.
 
 ## Lock settings
 
@@ -360,7 +376,7 @@ The NIRUX music (the default pause music above) is eleven pieces, each about two
 
 | Key | Default | Meaning |
 |---|---|---|
-| `layout` | `"ascii-cava"` | `ascii-cava`, `ascii`, `cava`, `minimal`, `terminal`, `runic`, `corner`, `demo` |
+| `layout` | `"ascii-cava"` | `ascii-cava`, `ascii`, `cava`, `minimal`, `terminal`, `runic`, `corner`, `demo`, `attract`, `satie` |
 | `visualizer` | `true` | `false` keeps the layout without the spectrum |
 | `visual` | `"auto"` | `auto`, `music`, `cava`, `quotes`, `none` (`auto` in `ascii-cava`: the spectrum while music plays, otherwise nothing) |
 | `quotes` | `["*"]` | Collections by name or pattern |
