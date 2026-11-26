@@ -24,7 +24,7 @@ A normal `nirux install` or `nirux update` never installs an extra. You ask for 
 | [nirutoday](#nirutoday-today-at-a-glance) | 0.1.1 | Today at a glance in a teletext look: SMHI weather, Sveriges Radio news, VMA, electricity price, name day and calendar | alpha |
 | [nirusid](#nirusid-sid-music-player) | 0.1.1 | SID music player with HVSC lengths and STIL, raster bars and a chip view; the default player for .sid files | alpha |
 | [nirusys](#nirusys-system-monitor) | 0.1.0 | Retro system monitor: CPU, memory, disks, network, GPU, sensors, battery, processes and system panels with phosphor graphs, 24-hour history and alerts; full window, desktop widget or mini strip | alpha |
-| [nirusettings](#nirusettings-settings) | 0.1.0 | The NIRUX settings in one retro window: theme, window manager, bar, lock screen, screensaver, sounds, key bindings, extras and updates, checked before they are written | alpha |
+| [nirusettings](#nirusettings-settings) | 0.1.1 | The NIRUX settings in one retro window: theme, window manager, bar, lock screen, screensaver, sounds, key bindings, extras and updates, checked before they are written | alpha |
 
 ### Install, update and remove
 
@@ -584,7 +584,7 @@ The settings of the NIRUX desktop in one keyboard-driven window, in the theme co
     nirux extras install nirusettings
     nirusettings            # or: nirusettings bar | lock | keys | extras | updates
 
-Arrows move, Left/Right or +/- change a value, Space toggles, Return edits, `r` resets, `u` undoes, `/` searches everything. A `*` marks a value that differs from the default; FILE or DEFAULT says where it comes from. Each value is checked like the program itself checks it (and by `niruwm --check-config` and `nirubar --check-config`) before only that line of the file changes; comments stay, and the old file is kept once per session as `FILE.bak`. NIRUWM and NIRUBAR apply it at once with `niructl reload`; the lock screen and screensaver use it the next time they start, and the window says so. `nirusettings --set bar.position bottom` does the same from a terminal. Its settings are described by schema files (`~/.local/share/nirusettings/schema/`), so new settings need no new program.
+Arrows move, Left/Right or +/- change a value, Space toggles, Return edits, `r` resets, `u` undoes, `/` searches everything. A `*` marks a value that differs from the default; FILE or DEFAULT says where it comes from. Each value is checked like the program itself checks it (and by `niruwm --check-config` and `nirubar --check-config`) before only that line of the file changes; comments stay, and the old file is kept once per session as `FILE.bak`. NIRUWM and NIRUBAR apply it at once with `niructl reload`; the lock screen and screensaver use it the next time they start, and the window says so. `nirusettings --set bar.position bottom` does the same from a terminal. Its settings are described by schema files (`~/.local/share/nirusettings/schema/`), so new settings need no new program. Version 0.1.1 has 224 settings, including every lock screen layout (`attract`, `satie` and `bbs` too) and the `c64` and `c64-sid` screensaver scenes; a choice newer than the installed program is refused.
 
 Full documentation: [github.com/nirucon/nirusettings](https://github.com/nirucon/nirusettings).
 

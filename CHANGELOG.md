@@ -2,6 +2,22 @@
 
 Earlier releases are described in their release notes and commit messages.
 
+## 0.12.378 (2026-11-26)
+
+- NIRUWM 0.37.16: the idle lock can no longer be held off by a program.
+  NIRUIDLE counts idle time from real input only (keys, buttons, pointer
+  movement and touch, as raw XInput 2 events, plus pointer movement between
+  polls). A program that resets the X server's idle clock, such as a browser
+  window driven by a Playwright script, kept the screensaver and the lock
+  away; programs that should keep the screen on still ask over D-Bus and
+  show in `niructl idle status`.
+- NIRULOCK 0.33.0: new lock layout `bbs`, NIRUX BBS: a dial-up bulletin
+  board in ANSI art with a SID style modem handshake before the pause
+  music.
+- NIRUSETTINGS 0.1.1: the `attract`, `satie` and `bbs` lock layouts and the
+  `c64` screensaver scenes can be picked, and every schema was checked
+  against the current programs (224 settings).
+
 ## 0.12.377 (2026-11-26)
 
 - `nirux extras list` and `nirux extras update` read an extra's version from

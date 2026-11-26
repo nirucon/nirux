@@ -76,21 +76,21 @@ These are not generated from an example file. The chapters describe them.
 
 <!-- generated: config (tools/manual-gen.sh; do not edit by hand) -->
 
-The example configuration files of NIRUX 0.12.377 and its components, with every
+The example configuration files of NIRUX 0.12.378 and its components, with every
 key they set or show. A value marked *commented example* is off by default:
 remove the `#` to use it. The full annotated file follows each table.
 
 | File | Read by | Example from |
 |---|---|---|
-| [`~/.config/niruwm/config.toml`](#configniruwmconfigtoml) | niruwm, nirubar, niruidle, niructl | nirux 0.12.377 `config.example.toml` |
-| [`~/.config/niruwm/appearance.toml`](#configniruwmappearancetoml) | the whole suite | nirux 0.12.377 `appearance.example.toml` |
-| [`~/.config/nirux/sounds.toml`](#configniruxsoundstoml) | nirux, nirunotify | nirux 0.12.377 `sounds.example.toml` |
-| [`~/.config/niruwm/displays.toml`](#configniruwmdisplaystoml) | niruwm, niructl, nirudisplay | nirux 0.12.377 `displays.example.toml` |
+| [`~/.config/niruwm/config.toml`](#configniruwmconfigtoml) | niruwm, nirubar, niruidle, niructl | nirux 0.12.378 `config.example.toml` |
+| [`~/.config/niruwm/appearance.toml`](#configniruwmappearancetoml) | the whole suite | nirux 0.12.378 `appearance.example.toml` |
+| [`~/.config/nirux/sounds.toml`](#configniruxsoundstoml) | nirux, nirunotify | nirux 0.12.378 `sounds.example.toml` |
+| [`~/.config/niruwm/displays.toml`](#configniruwmdisplaystoml) | niruwm, niructl, nirudisplay | nirux 0.12.378 `displays.example.toml` |
 | [`~/.config/nirubar/config.toml`](#confignirubarconfigtoml) | nirubar | nirubar 0.34.2 `weather.example.toml` |
 | [`~/.config/nirulauncher/config.toml`](#confignirulauncherconfigtoml) | nirulauncher | nirulauncher 0.23.0 `config.example.toml` |
 | [`~/.config/nirunotify/config.toml`](#confignirunotifyconfigtoml) | nirunotify | nirunotify 0.9.0 `config.example.toml` |
 | [`~/.config/nirufetch/config.toml`](#confignirufetchconfigtoml) | nirufetch | nirufetch 0.3.0 `config.example.toml` |
-| [`~/.config/niruui/lock.toml`](#configniruuilocktoml) | nirulock | nirulock 0.32.0 `config.example.toml` |
+| [`~/.config/niruui/lock.toml`](#configniruuilocktoml) | nirulock | nirulock 0.33.0 `config.example.toml` |
 | [`~/.config/niruui/screensaver.toml`](#configniruuiscreensavertoml) | niruscreensaver | niruscreensaver 0.19.0 `config.example.toml` |
 | [`~/.config/nirushare/webhooks.toml`](#confignirusharewebhookstoml) | nirushare | nirushare 0.4.0 `webhooks.example.toml` |
 
@@ -1831,7 +1831,7 @@ palette = true
 |---|---|---|---|
 | `(top level)` | `font_path` | `"/usr/share/fonts/truetype/dejavu/DejaVuSansMono.ttf"` (commented example) | ~/.config/niruui/lock.toml; every setting is optional. |
 | `(top level)` | `font_size` | `22.0` |  |
-| `(top level)` | `layout` | `"ascii-cava"` | ascii-cava \| ascii \| demo \| cava \| minimal \| terminal \| runic \| corner ascii-cava (the default, "NIRUX ascii"): the NIRUX banner typed ou... |
+| `(top level)` | `layout` | `"ascii-cava"` | ascii-cava \| ascii \| demo \| attract \| satie \| bbs \| cava \| minimal \| terminal \| runic \| corner ascii-cava (the default, "NIRUX ascii"): t... |
 | `(top level)` | `visualizer` | `true` |  |
 | `(top level)` | `visual` | `"auto"` | What the cava and ascii-cava layouts show where the spectrum is drawn (demo: "auto" means quotes in the scroller and the beat flash; attr... |
 | `(top level)` | `quotes` | `["*"]` | Built-in: havamal-en, havamal-sv, stoic-en, stoic-sv. |
@@ -1859,7 +1859,7 @@ palette = true
 # font_path = "/usr/share/fonts/truetype/dejavu/DejaVuSansMono.ttf"
 font_size = 22.0
 
-# ascii-cava | ascii | demo | cava | minimal | terminal | runic | corner
+# ascii-cava | ascii | demo | attract | satie | bbs | cava | minimal | terminal | runic | corner
 # ascii-cava (the default, "NIRUX ascii"): the NIRUX banner typed out slowly
 # on every screen like an old terminal, "A MINIMAL X11 DESKTOP" and a blinking
 # cursor under it, in the theme's accent colour; the CAVA spectrum, as wide as
@@ -1876,12 +1876,17 @@ font_size = 22.0
 # satie: a C64 tape loading screen of Erik Satie: his portrait loads cell
 # by cell while loader stripes flicker in the border; NIRUX's Gymnopedie
 # No. 1 (nirux-12-gymnopedie.ogg) is the pause music when installed.
+# bbs: NIRUX BBS, a dial-up bulletin board: the modem dials and the board's
+# ANSI screen arrives (Yggdrasil, the NIRUX logo, the system box, a quote as
+# the message of the day, the tune), with a LOGIN:/PASSWORD: prompt; the
+# pause music starts with a SID style modem handshake. [motion] reduced in
+# ~/.config/niruwm/appearance.toml shows the board at once.
 # cava: a large clock above the spectrum or a quote.
 layout = "ascii-cava"
 visualizer = true
 # What the cava and ascii-cava layouts show where the spectrum is drawn
 # (demo: "auto" means quotes in the scroller and the beat flash; attract and
-# satie: the beat flash only):
+# satie: the beat flash only; bbs: the message of the day and the RD light):
 #   "auto"   the CAVA spectrum only while music or radio plays, otherwise a
 #            quote from ~/.config/niru/quotes/ in cava, nothing in ascii-cava
 #            (the default)

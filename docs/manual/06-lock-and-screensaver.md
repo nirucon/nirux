@@ -63,13 +63,13 @@ With external monitors connected (docked), logind ignores the lid (`HandleLidSwi
 
 ## The idle ladder
 
-`niruidle` (part of NIRUWM) watches X idle time and runs three steps:
+`niruidle` (part of NIRUWM) watches how long since the last real input and runs three steps:
 
 1. After `screensaver_timeout` idle minutes: the screensaver (a blank screen when NIRUSCREENSAVER is missing).
 2. After `lock_after_screensaver` more minutes: the lock (reason `idle`).
 3. After `dpms_off_after_lock` more minutes, only while locked: display off.
 
-Any input before the lock resets the ladder. NIRUIDLE keeps the X server's own blank and DPMS timers (`xset q`) at zero, so the display is not turned off before the ladder gets there; before NIRUWM 0.23.1 the server's defaults switched the display off after 10 minutes, which looked like a lock but was not one. The timers live in `[idle]` in `~/.config/niruwm/config.toml`:
+Any input before the lock resets the ladder. Only real input counts: keys, buttons, pointer movement and touch, from any device (including `xdotool` and remote desktop input). Since NIRUWM 0.37.16 a program cannot keep the screen unlocked by resetting the X server's idle clock (`XResetScreenSaver`, `xset s reset`), which a browser window opened by a script, such as Playwright's Chromium, can do every few minutes; before that, such a program kept the screensaver and the lock away. A program that should keep the screen on asks for it the documented way (below), and `niructl idle status` shows it. NIRUIDLE keeps the X server's own blank and DPMS timers (`xset q`) at zero, so the display is not turned off before the ladder gets there; before NIRUWM 0.23.1 the server's defaults switched the display off after 10 minutes, which looked like a lock but was not one. The timers live in `[idle]` in `~/.config/niruwm/config.toml`:
 
 ```toml
 [idle]
@@ -240,8 +240,9 @@ Set `layout` in `~/.config/niruui/lock.toml` (lock) or `~/.config/niruui/screens
 | `runic` | The minimal composition with a discreet rune row when a runic font is available |
 | `corner` | Clock top-left, away time at the bottom (prompt centred on the lock) |
 | `demo` | Lock only (NIRULOCK 0.30.0 and later): the C64 demo lock screen, see [The demo layout](#the-demo-layout) |
-| `attract` | Lock only (NIRULOCK 0.32.0 and later): an arcade cabinet in attract mode, NIRUX RAID plays itself, see [The attract layout](#the-attract-layout) |
+| `attract` | Lock only (NIRULOCK 0.31.0 and later): an arcade cabinet in attract mode, NIRUX RAID plays itself, see [The attract layout](#the-attract-layout) |
 | `satie` | Lock only (NIRULOCK 0.32.0 and later): a C64 tape loading screen of Erik Satie with Gymnopédie, see [The satie layout](#the-satie-layout) |
+| `bbs` | Lock only (NIRULOCK 0.33.0 and later): NIRUX BBS, a dial-up bulletin board in ANSI art, see [The bbs layout](#the-bbs-layout) |
 
 `show_hostname = true` shows the machine name under the clock (`hostname:~$ lock` in `terminal`); it is off by default. Colours always follow the active NIRUX theme on an opaque background; `[palette]` only overrides content colours.
 
@@ -353,6 +354,10 @@ The scroller names the tune by artist and title only (`NOW PLAYING  NIRUX - GIML
 
 `layout = "satie"` is a C64 game loading from tape, except that the game is Erik Satie. PRESS PLAY ON TAPE, SEARCHING, FOUND ERIK SATIE, and his portrait loads cell by cell while coloured loader stripes flicker in the border, until READY. It loads again every five minutes. The portrait is Henri Manuel's public domain photograph from about 1920, coloured from the active theme (the `niru-satie` theme gives it sepia). When NIRUX's Gymnopédie (`nirux-12-gymnopedie.ogg`) is installed it is this layout's pause music, played again and again, under the usual pause music rules. The prompt and messages stay on black below the picture.
 
+## The bbs layout
+
+`layout = "bbs"` makes the lock screen a bulletin board from the dial-up modem days. The terminal resets the modem, dials (`ATDT`), and after RINGING and CONNECT 14400/ARQ/V42BIS the board streams in at 14400 bps: an ANSI Yggdrasil under the moon, the NIRUX logo over BULLETIN BOARD, a SYSTEM box (node, connection, date, time, time online, status), the MESSAGE OF THE DAY from the quotes, the playing tune as `NOW PLAYING  ARTIST - TITLE`, and a `LOGIN: SYSOP` / `PASSWORD:` prompt that follows `prompt_echo`. A status bar at the bottom has modem lights that blink as you type. A wrong password shows ACCESS DENIED. Any key skips the call. Every five minutes the line drops (NO CARRIER) and it calls again with a new message, unless you are typing or a login failed. When pause music plays (by default only for a manual lock), a quiet SID style modem handshake plays first, then the music. The 16 ANSI colours come from the active theme, nothing private is shown (the login is always SYSOP), and with reduced motion on (`[motion] reduced` in the NIRUX appearance) the board shows at once without blinking or redialling. It costs well under 1 % of one core.
+
 ## The NIRUX demo and music
 
 NIRUDEMO is the NIRUX easter egg: a demoscene demo in the spirit of the home computer and console intros of the 1980s and 1990s, drawn at 320 by 180 pixels and scaled up with sharp pixels, in the colours of the active theme, with its own music.
@@ -376,7 +381,7 @@ The NIRUX music (the default pause music above) is twelve pieces. Eleven are ori
 
 | Key | Default | Meaning |
 |---|---|---|
-| `layout` | `"ascii-cava"` | `ascii-cava`, `ascii`, `cava`, `minimal`, `terminal`, `runic`, `corner`, `demo`, `attract`, `satie` |
+| `layout` | `"ascii-cava"` | `ascii-cava`, `ascii`, `cava`, `minimal`, `terminal`, `runic`, `corner`, `demo`, `attract`, `satie`, `bbs` |
 | `visualizer` | `true` | `false` keeps the layout without the spectrum |
 | `visual` | `"auto"` | `auto`, `music`, `cava`, `quotes`, `none` (`auto` in `ascii-cava`: the spectrum while music plays, otherwise nothing) |
 | `quotes` | `["*"]` | Collections by name or pattern |
