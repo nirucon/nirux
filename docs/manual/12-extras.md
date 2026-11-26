@@ -12,8 +12,8 @@ A normal `nirux install` or `nirux update` never installs an extra. You ask for 
 |---|---|---|---|
 | [nirunote](#nirunote-markdown-editor) | 1.0.0 | Minimal Markdown editor and viewer | beta |
 | [nirupres](#nirupres-presentations) | 3.0.0 | Presentation studio | beta |
-| [nplay](#nplay-terminal-music-player) | 2.0.1 | Terminal music, radio and podcast player; also fully standalone | beta |
-| [niruamp](#niruamp-graphical-frontend-for-nplay) | 0.7.0 | Graphical frontend for NPLAY with three retro skins (Classic, Phosphor, Hi-Fi Deck) and a levelled spectrum (requires NPLAY) | alpha |
+| [nplay](#nplay-terminal-music-player) | 2.0.2 | Terminal music, radio and podcast player; also fully standalone | beta |
+| [niruamp](#niruamp-graphical-frontend-for-nplay) | 0.7.1 | Graphical frontend for NPLAY with three retro skins (Classic, Phosphor, Hi-Fi Deck) and a levelled spectrum (requires NPLAY) | alpha |
 | [niruflow](#niruflow-maintenance-and-cleanup) | 1.0.0 | Local maintenance and automation | alpha |
 | [nirusec](#nirusec-firewall-and-security-overview) | 0.3.2 | Firewall, ports, updates, firmware and security overview | alpha |
 | [nirugame](#nirugame-game-launcher) | 0.3.0 | Steam games, ROMs from your folders and RetroArch, and native games, with box art and optional SID music | alpha |

@@ -2,6 +2,13 @@
 
 Earlier releases are described in their release notes and commit messages.
 
+## 0.12.375 (2026-11-26)
+
+- NIRUAMP's clock follows the music again: after a track change it started
+  at the previous track's position (NPLAY 2.0.2), and NIRUAMP 0.7.1 now
+  checks the position with NPLAY after a change and every 10 seconds.
+- NIRUAMP 0.7.1: the Hi-Fi Deck VU meters fill their faces.
+
 ## 0.12.374 (2026-11-26)
 
 - NIRULOCK 0.30.0: pause music is on by default for manual locks (idle,
