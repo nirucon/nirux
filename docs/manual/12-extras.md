@@ -26,7 +26,7 @@ A normal `nirux install` or `nirux update` never installs an extra. You ask for 
 | [nirusys](#nirusys-system-monitor) | 0.1.0 | Retro system monitor: CPU, memory, disks, network, GPU, sensors, battery, processes and system panels with phosphor graphs, 24-hour history and alerts; full window, desktop widget or mini strip | alpha |
 | [nirusettings](#nirusettings-settings) | 0.2.1 | The NIRUX settings in one retro window: theme, window manager, bar, lock screen, screensaver, sounds, key bindings, extras and updates, checked before they are written | alpha |
 | [nirux-thegame](#nirux-the-game) | 0.3.0 | NIRUX, the game: an original C64-style shooter in eight sectors, starring the silent guardian NIRUX, with SID-style music, three play modes, gamepad support and crisp scaling on any screen | alpha |
-| [nirux-ii](#nirux-ii-night-of-the-daemons) | 0.1.1 | NIRUX II - Night of the Daemons: the second NIRUX game, a gothic C64-style action platformer where NIRUX follows NULL into the Undercroft; stages 1 and 2 so far | alpha |
+| [nirux-ii](#nirux-ii-night-of-the-daemons) | 0.2.0 | NIRUX II - Night of the Daemons: the second NIRUX game, a gothic C64-style action platformer in seven stages where NIRUX follows NULL into the Undercroft | alpha |
 
 ### Install, update and remove
 
@@ -639,7 +639,7 @@ Full documentation: [github.com/nirucon/nirux-thegame](https://github.com/niruco
 
 ## NIRUX II: Night of the Daemons
 
-The second NIRUX game, and the story goes on: NULL fled into the Undercroft, where the deleted things go, and NIRUX follows. A side-view action platformer in the same C64 style, with rain, lightning, raster bars and a gothic soundtrack from the same SID-style synthesiser. 0.1.1 has the prologue and two stages: The Process Graveyard (the Gravedigger) and The Swap Marsh (the Bog Daemon); more stages follow in later versions. Status: alpha.
+The second NIRUX game, and the story goes on: NULL fled into the Undercroft, where the deleted things go, and NIRUX follows. A side-view action platformer in the same C64 style, with rain, lightning, raster bars and a gothic soundtrack from the same SID-style synthesiser. The whole game has seven stages, each with its boss: The Process Graveyard, The Swap Marsh, The Archive Cathedral (a climb), The Cron Tower (clockwork ledges that come and go), The Frozen Cache (slippery ice, icicles), The Kernel Crypt (lava, and the Reaper at your side) and NULL's Keep, where NULL waits, then the ending. About 30 to 45 minutes when it goes well; every stage reached stays in Level select. Status: alpha.
 
     nirux extras install nirux-ii   # builds it on this computer (installs cargo if missing)
     nirux-ii                        # fullscreen; --windowed, --level N, --demo

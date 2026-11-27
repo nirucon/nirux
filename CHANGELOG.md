@@ -2,6 +2,13 @@
 
 Earlier releases are described in their release notes and commit messages.
 
+## 0.12.388 (2026-11-27)
+
+- nirux-ii 0.2.0: NIRUX II is complete. Stages 3 to 7 (The Archive
+  Cathedral, The Cron Tower, The Frozen Cache, The Kernel Crypt and NULL's
+  Keep) with five new bosses, the Reaper taking NIRUX's side, NULL in three
+  phases, the ending and seven new songs.
+
 ## 0.12.387 (2026-11-27)
 
 - New extra `nirux-ii`: NIRUX II - Night of the Daemons, the second NIRUX
