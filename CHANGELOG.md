@@ -2,6 +2,14 @@
 
 Earlier releases are described in their release notes and commit messages.
 
+## 0.12.387 (2026-11-27)
+
+- New extra `nirux-ii`: NIRUX II - Night of the Daemons, the second NIRUX
+  game. A gothic C64-style action platformer where NIRUX follows NULL into
+  the Undercroft: the scarf is your life, the visor is a lamp, the cron
+  bells ring. 0.1.1 has the prologue and stages 1 and 2 with their bosses.
+  `nirux extras install nirux-ii`.
+
 ## 0.12.386 (2026-11-27)
 
 - nirux-thegame 0.3.0: the hero. You are NIRUX, the silent guardian with
