@@ -20,11 +20,11 @@ A normal `nirux install` or `nirux update` never installs an extra. You ask for 
 | [niruremote](#niruremote-remote-desktop) | 0.2.0 | Graphical remote desktop over Tailscale and SSH | alpha |
 | [nirudictate](#nirudictate-local-dictation) | 0.4.0 | Local speech-to-text dictation, voice commands, and voice messages to opencode | alpha |
 | [docker-stacks](#docker-stacks-docker-in-the-terminal) | 1.0.1 | Docker Compose stacks, containers, images, volumes and networks in the terminal | beta |
-| [niruprodrive](#niruprodrive-proton-drive-backup-and-sharing) | 0.1.5 | Proton Drive backups per computer, sending, fetching and links, with a tray cloud | alpha |
+| [niruprodrive](#niruprodrive-proton-drive-backup-and-sharing) | 0.1.6 | Proton Drive backups per computer, sending, fetching and links, with a tray cloud | alpha |
 | [nirutoday](#nirutoday-today-at-a-glance) | 0.1.1 | Today at a glance in a teletext look: SMHI weather, Sveriges Radio news, VMA, electricity price, name day and calendar | alpha |
 | [nirusid](#nirusid-sid-music-player) | 0.1.1 | SID music player with HVSC lengths and STIL, raster bars and a chip view; the default player for .sid files | alpha |
 | [nirusys](#nirusys-system-monitor) | 0.1.0 | Retro system monitor: CPU, memory, disks, network, GPU, sensors, battery, processes and system panels with phosphor graphs, 24-hour history and alerts; full window, desktop widget or mini strip | alpha |
-| [nirusettings](#nirusettings-settings) | 0.2.0 | The NIRUX settings in one retro window: theme, window manager, bar, lock screen, screensaver, sounds, key bindings, extras and updates, checked before they are written | alpha |
+| [nirusettings](#nirusettings-settings) | 0.2.1 | The NIRUX settings in one retro window: theme, window manager, bar, lock screen, screensaver, sounds, key bindings, extras and updates, checked before they are written | alpha |
 
 ### Install, update and remove
 

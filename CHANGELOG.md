@@ -2,6 +2,19 @@
 
 Earlier releases are described in their release notes and commit messages.
 
+## 0.12.382 (2026-11-27)
+
+- NIRUWM 0.37.19: windows from tray icons (Nextcloud, NIRUPRODRIVE and
+  other hide-to-tray programs) behave. A window closed to the tray leaves
+  the window lists and its workspace, so the bar no longer marks the
+  workspace as occupied and a window manager crash no longer brings closed
+  windows back as empty ghosts. A tray click opens the window on the
+  workspace and screen you are on and focuses it, instead of the one it was
+  closed on. A click on the empty desktop closes a tray popup. Moving to an
+  empty second screen makes it the current one at once.
+- NIRUPRODRIVE 0.1.6: a tray click or Escape is never missed (about one in
+  ten was).
+
 ## 0.12.381 (2026-11-27)
 
 - NIRUBAR 0.35.0: the weather module shows an icon (sun, moon at night,

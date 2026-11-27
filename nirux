@@ -2,7 +2,7 @@
 # NIRUX: install a complete X11 desktop, or maintain an existing installation.
 set -eu
 
-VERSION=0.12.381
+VERSION=0.12.382
 PREFIX=${NIRUX_PREFIX:-$HOME/.local}
 BIN=$PREFIX/bin
 STATE=$PREFIX/share/nirux
@@ -3537,7 +3537,7 @@ nirugame nirugame 0.3.0 0f671d1272a3c1e5b8c8d935f015009f95145cfba44d32da28c72db7
 niruremote niruremote 0.2.0 64571f661be436c1fb69b72439f7af69802d87c83ac1652c49b84f0cfd80f784
 nirudictate nirudictate 0.4.0 759cd574286b97291ac7f35cc923a1596deac0de3f92c9515e408fb8c46e7b21
 docker-stacks docker-stacks 1.0.1 e6abbfe0edb1c9424e52e691d54ca9bf409fbdc6845706e83a8ccd95456a87e6
-niruprodrive niruprodrive 0.1.5 1dd7257a706aab837d74d7d0f5fa3de0ade161bcc74585a2bafeb4cfc5c5e041
+niruprodrive niruprodrive 0.1.6 b541754b2355e3c693a6d243a0b16d68e1d0e97185ae67ad5211a33301d44594
 nirutoday nirutoday 0.1.1 04e795ef4e4098fd7f6eb6fe6fa3c723cd2f928449c5c6880fd504369989560f
 nirusid nirusid 0.1.1 437b1b257dcfcdfe2ea64ffd96c8cca8b17d340114ef9ee19a0845139b92b940
 nirusys nirusys 0.1.0 9566178199d5b839e6126d7ddfa371f88bcdd950f3019fdc19cf3f62ca53af78
