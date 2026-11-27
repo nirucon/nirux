@@ -1990,7 +1990,7 @@ cp "$fd/config.toml" "$fd/original.toml"
   follow_default_bar_modules "$fd/config.toml" "$SOURCE/config.example.toml" "$fd/original.toml"
 ) > "$fd/log"
 [ "$(bar_modules_line "$fd/config.toml")" = "$(bar_modules_line "$SOURCE/config.example.toml")" ] || fail 'bar modules did not follow the default list'
-grep -q '"disk", "drives", "quicksettings"' "$fd/config.toml" || fail 'followed list lacks the disk and drives modules'
+grep -q '"disk", "drives", "share", "weather"' "$fd/config.toml" || fail 'followed list lacks the disk, drives and weather modules'
 [ "$(find "$fd/state/niruwm/config-history" -name '*-[0-9][0-9].toml' | wc -l)" = 1 ] || fail 'the old configuration was not kept exactly once'
 # Arch's base image has no `cmp`: compare by checksum.
 [ "$(sha256sum "$fd/original.toml" | cut -d ' ' -f1)" = \

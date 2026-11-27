@@ -2,7 +2,7 @@
 # NIRUX: install a complete X11 desktop, or maintain an existing installation.
 set -eu
 
-VERSION=0.12.380
+VERSION=0.12.381
 PREFIX=${NIRUX_PREFIX:-$HOME/.local}
 BIN=$PREFIX/bin
 STATE=$PREFIX/share/nirux
@@ -1184,7 +1184,9 @@ upgrade_default_bar_modules() {
   mig_add=""
   mig_tail=0
   mig_restart=
-  for mig_module in layout display quicksettings niruxupdate scratchpad dictation; do
+  # quicksettings left the default list in NIRUX 0.12.381, so a list without
+  # it is no longer extended (nirulauncher --quick still opens the view).
+  for mig_module in layout display niruxupdate scratchpad dictation; do
     case "$mig_modules" in
       *"\"$mig_module\""*) continue ;;
     esac
@@ -3539,7 +3541,7 @@ niruprodrive niruprodrive 0.1.5 1dd7257a706aab837d74d7d0f5fa3de0ade161bcc74585a2
 nirutoday nirutoday 0.1.1 04e795ef4e4098fd7f6eb6fe6fa3c723cd2f928449c5c6880fd504369989560f
 nirusid nirusid 0.1.1 437b1b257dcfcdfe2ea64ffd96c8cca8b17d340114ef9ee19a0845139b92b940
 nirusys nirusys 0.1.0 9566178199d5b839e6126d7ddfa371f88bcdd950f3019fdc19cf3f62ca53af78
-nirusettings nirusettings 0.2.0 4835a3f67e3c3b81df2750405dd239c5b90ff17600e8a659e5cefd280d6c8303
+nirusettings nirusettings 0.2.1 36d7d44adb88abc43e3e626437355b809f320f4c84d8e49b7e872eb04dfbac1d
 EOF
 }
 # Extras that left the suite. Each is removed once with the uninstaller of

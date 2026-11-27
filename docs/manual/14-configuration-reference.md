@@ -76,17 +76,17 @@ These are not generated from an example file. The chapters describe them.
 
 <!-- generated: config (tools/manual-gen.sh; do not edit by hand) -->
 
-The example configuration files of NIRUX 0.12.380 and its components, with every
+The example configuration files of NIRUX 0.12.381 and its components, with every
 key they set or show. A value marked *commented example* is off by default:
 remove the `#` to use it. The full annotated file follows each table.
 
 | File | Read by | Example from |
 |---|---|---|
-| [`~/.config/niruwm/config.toml`](#configniruwmconfigtoml) | niruwm, nirubar, niruidle, niructl | nirux 0.12.380 `config.example.toml` |
-| [`~/.config/niruwm/appearance.toml`](#configniruwmappearancetoml) | the whole suite | nirux 0.12.380 `appearance.example.toml` |
-| [`~/.config/nirux/sounds.toml`](#configniruxsoundstoml) | nirux, nirunotify | nirux 0.12.380 `sounds.example.toml` |
-| [`~/.config/niruwm/displays.toml`](#configniruwmdisplaystoml) | niruwm, niructl, nirudisplay | nirux 0.12.380 `displays.example.toml` |
-| [`~/.config/nirubar/config.toml`](#confignirubarconfigtoml) | nirubar | nirubar 0.34.3 `weather.example.toml` |
+| [`~/.config/niruwm/config.toml`](#configniruwmconfigtoml) | niruwm, nirubar, niruidle, niructl | nirux 0.12.381 `config.example.toml` |
+| [`~/.config/niruwm/appearance.toml`](#configniruwmappearancetoml) | the whole suite | nirux 0.12.381 `appearance.example.toml` |
+| [`~/.config/nirux/sounds.toml`](#configniruxsoundstoml) | nirux, nirunotify | nirux 0.12.381 `sounds.example.toml` |
+| [`~/.config/niruwm/displays.toml`](#configniruwmdisplaystoml) | niruwm, niructl, nirudisplay | nirux 0.12.381 `displays.example.toml` |
+| [`~/.config/nirubar/config.toml`](#confignirubarconfigtoml) | nirubar | nirubar 0.35.0 `weather.example.toml` |
 | [`~/.config/nirulauncher/config.toml`](#confignirulauncherconfigtoml) | nirulauncher | nirulauncher 0.23.0 `config.example.toml` |
 | [`~/.config/nirunotify/config.toml`](#confignirunotifyconfigtoml) | nirunotify | nirunotify 0.9.0 `config.example.toml` |
 | [`~/.config/nirufetch/config.toml`](#confignirufetchconfigtoml) | nirufetch | nirufetch 0.3.0 `config.example.toml` |
@@ -184,7 +184,7 @@ remove the `#` to use it. The full annotated file follows each table.
 | `[bar]` | `workspace_layout` | `1` (commented example) | Workspace label preset. |
 | `[bar]` | `transparent` | `true` (commented example) | Bar transparency. |
 | `[bar]` | `opacity` | `94` (commented example) |  |
-| `[bar]` | `title` | `false` | Show the focused window title between the workspaces and the status. |
+| `[bar]` | `title` | `true` | Show the focused window title between the workspaces and the status. |
 | `[bar]` | `title_max` | `20` |  |
 | `[bar]` | `title_delay_seconds` | `0` | Seconds before the title appears. |
 | `[bar]` | `show_date` | `true` | Date and time. |
@@ -194,7 +194,7 @@ remove the `#` to use it. The full annotated file follows each table.
 | `[bar]` | `separator` | `"\|"` | Separator between status modules. |
 | `[bar]` | `icons` | `true` | Use Nerd Font glyphs for battery and network. |
 | `[bar]` | `popups` | `true` | Clicking a module opens a small panel with more detail. |
-| `[bar]` | `popup_timeout_seconds` | `4` | Seconds before an open panel closes itself. |
+| `[bar]` | `popup_timeout_seconds` | `6` | Seconds before an open panel closes itself. |
 | `[bar]` | `media_width` | `32` | Characters kept from the media title before an ellipsis. |
 | `[bar]` | `graph_width` | `24` | Width of the graph in the pulse panel, in characters. |
 | `[bar]` | `update_check_minutes` | `30` | Minutes between package update checks. |
@@ -587,7 +587,7 @@ position = "top"
 # "timer" is a focus/egg timer: scroll sets minutes, right-click starts/pauses,
 # middle-click resets; [timer] in ~/.config/nirubar/config.toml.
 # Weather settings live in ~/.config/nirubar/config.toml; see weather.example.toml.
-modules = ["workspaces", "dictation", "privacy", "recording", "scratchpad", "layout", "media", "volume", "microphone", "headset", "brightness", "display", "tailscale", "network", "wifi", "bluetooth", "mode", "battery", "updates", "niruxupdate", "restart", "agent", "nirusec", "dnd", "timer", "disk", "drives", "quicksettings", "share", "clock"]
+modules = ["workspaces", "dictation", "privacy", "recording", "scratchpad", "layout", "media", "volume", "microphone", "headset", "brightness", "display", "tailscale", "network", "wifi", "bluetooth", "mode", "battery", "updates", "niruxupdate", "restart", "nirusec", "timer", "disk", "drives", "share", "weather", "clock"]
 # true (default): `nirux update` keeps `modules` on the default list above, so
 # new modules arrive by themselves (your old file is kept in the config history:
 # `niructl config undo`). false: your own `modules` list is never changed.
@@ -641,7 +641,7 @@ cell_width = 30
 # transparent = true
 # opacity = 94
 # Show the focused window title between the workspaces and the status.
-title = false
+title = true
 title_max = 20
 # Seconds before the title appears. With 2, switching through windows shows no
 # titles at all and the one you settle on appears. 0 shows it at once. Only
@@ -659,7 +659,7 @@ icons = true
 # Clicking a module opens a small panel with more detail.
 popups = true
 # Seconds before an open panel closes itself. 0 waits for a click or Escape.
-popup_timeout_seconds = 4
+popup_timeout_seconds = 6
 # Characters kept from the media title before an ellipsis.
 media_width = 32
 # Width of the graph in the pulse panel, in characters.

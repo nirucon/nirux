@@ -14,7 +14,7 @@ niruprodrive niruprodrive 0.1.5 1dd7257a706aab837d74d7d0f5fa3de0ade161bcc74585a2
 nirutoday nirutoday 0.1.1 04e795ef4e4098fd7f6eb6fe6fa3c723cd2f928449c5c6880fd504369989560f
 nirusid nirusid 0.1.1 437b1b257dcfcdfe2ea64ffd96c8cca8b17d340114ef9ee19a0845139b92b940
 nirusys nirusys 0.1.0 9566178199d5b839e6126d7ddfa371f88bcdd950f3019fdc19cf3f62ca53af78
-nirusettings nirusettings 0.2.0 4835a3f67e3c3b81df2750405dd239c5b90ff17600e8a659e5cefd280d6c8303
+nirusettings nirusettings 0.2.1 36d7d44adb88abc43e3e626437355b809f320f4c84d8e49b7e872eb04dfbac1d
 EOF
 }
 # Extras that left the suite. Each is removed once with the uninstaller of

@@ -33,7 +33,7 @@ The mouse works the same way in every module:
 
 Volume steps from the wheel stop at 100 % and unmute on the way up, and quick wheel turns are added up rather than lost.
 
-Only one panel is open at a time. `Escape`, a click elsewhere or a second click on the same module closes it. Quick-glance panels (volume, microphone, network, battery, Bluetooth, media, power profile, brightness, updates, uptime, display and the rest) also close by themselves after `popup_timeout_seconds` (default 4); a panel with actions waits at least 10 seconds, counted from the last move of the pointer in it. Panels you read stay open until you close them: the calendar (clock), weather, tasks, pulse and notifications. See [Panel timeouts](#panel-timeouts). A panel without actions says in its footer whether it is informational or has controls; press `Enter` or click the footer to open the control view (usually a NIRU Launcher view).
+Only one panel is open at a time. `Escape`, a click elsewhere or a second click on the same module closes it. Quick-glance panels (volume, microphone, network, battery, Bluetooth, media, power profile, brightness, updates, uptime, display and the rest) also close by themselves after `popup_timeout_seconds` (default 6); a panel with actions waits at least 10 seconds, counted from the last move of the pointer in it. Panels you read stay open until you close them: the calendar (clock), weather, tasks, pulse and notifications. See [Panel timeouts](#panel-timeouts). A panel without actions says in its footer whether it is informational or has controls; press `Enter` or click the footer to open the control view (usually a NIRU Launcher view).
 
 A few modules skip the panel and act on a left click: `wifi`, `agent`, `share`, `nirusec`, `dnd` and `quicksettings` (one click opens Quick Settings). A right click on `wifi` shows the connection's details.
 
@@ -81,7 +81,7 @@ Choose and order the modules with `[bar] modules`. A module without a provider h
 | `pulse` | CPU and memory; the accent from 80 °C and red from 90 °C CPU temperature | CPU temperature, graph of the last minute, a system monitor | |
 | `uptime` | Uptime | Memory use and the fullest file system | |
 | `sun` | Sunrise and sunset for the top-level coordinates | Details | |
-| `weather` | Cached temperature, condition and rain | Eight-hour timeline | |
+| `weather` | Icon for the sky and the temperature | Place, conditions, wind and an eight-hour rain timeline | |
 | `timer` | An hourglass; `MM:SS` while it runs, a pause mark while paused | State and actions: start 5, 15, 25, 45 or 60 minutes; pause or resume, more or less time, reset. Type minutes and press `Enter` to start that long; `Space` pauses | Scroll: set the length (25 minutes by default; while running, add or take a minute). Right: start, pause, resume. Middle: reset |
 | `disk` | Hidden until `/` or your home folder is `disk_warn` percent full (default 90); then a red disk icon with the percentage | Used and free space; `Enter` or a click opens a terminal with `nirux clean`, which shows what it would remove and asks first | |
 | `drives` | Removable USB sticks, SD cards and external disks: the label, or a count for several; hidden when none is attached. A disk in `/etc/fstab` or `crypttab`, or mounted outside `/media`, is never shown | Label, size, mount point and free space; `Enter` opens the first drive | Right: unmount and power off every drive, then a notice that it can be removed (or why not, for example in use). Middle: mount if needed and open in the file manager |
@@ -96,7 +96,7 @@ The `wifi` module is added automatically after `network` when a Wi-Fi adapter ex
 
 ```toml
 [bar]
-modules = ["workspaces", "dictation", "privacy", "recording", "scratchpad", "layout", "media", "volume", "microphone", "headset", "brightness", "display", "tailscale", "network", "wifi", "mode", "battery", "updates", "niruxupdate", "agent", "nirusec", "dnd", "timer", "disk", "drives", "quicksettings", "share", "clock"]
+modules = ["workspaces", "dictation", "privacy", "recording", "scratchpad", "layout", "media", "volume", "microphone", "headset", "brightness", "display", "tailscale", "network", "wifi", "bluetooth", "mode", "battery", "updates", "niruxupdate", "restart", "nirusec", "timer", "disk", "drives", "share", "weather", "clock"]
 follow_default_modules = true
 ```
 
@@ -244,7 +244,7 @@ Options go in a `[calendar]` table in `~/.config/nirubar/config.toml`:
 
 ### Panel timeouts
 
-Quick-glance panels close after `popup_timeout_seconds` in `[bar]` of `~/.config/niruwm/config.toml` (default 4; 0 keeps them open). The calendar, weather, tasks, pulse and notifications panels stay open until you close them. To give any panel its own timeout, add a table to NIRUBAR's own file `~/.config/nirubar/config.toml`, not the shared NIRUWM file:
+Quick-glance panels close after `popup_timeout_seconds` in `[bar]` of `~/.config/niruwm/config.toml` (default 6; 0 keeps them open). The calendar, weather, tasks, pulse and notifications panels stay open until you close them. To give any panel its own timeout, add a table to NIRUBAR's own file `~/.config/nirubar/config.toml`, not the shared NIRUWM file:
 
 ```toml
 [popup_timeout]
@@ -270,9 +270,11 @@ Set `tray = false` if another tray program runs.
 
 ## Show the weather
 
-Weather is opt-in and comes from Open-Meteo, fetched in the background and cached in `~/.cache/nirubar/weather-v1.json`. The last good result stays visible when a refresh fails.
+The weather comes from Open-Meteo, fetched in the background and cached in `~/.cache/nirubar/weather-v1.json`. The last good result stays visible when a refresh fails. The bar shows an icon for the sky (sun, moon at night, cloud, rain, snow or storm) and the temperature; with `icons = false`, or a font without the glyphs, the condition is written out instead. Click it for the place, the conditions, wind and an eight-hour rain timeline.
 
-1. Add `"weather"` to `[bar] modules`.
+`weather` is in the NIRUX default module list since NIRUX 0.12.381, and a new installation starts at the example coordinates (Stockholm). To set your own place, open NIRUSETTINGS, **Bar**, and fill in **Weather place name**, **Weather latitude** and **Weather longitude**, or:
+
+1. Make sure `"weather"` is in `[bar] modules`.
 2. Create `~/.config/nirubar/config.toml`:
 
 ```toml
@@ -285,13 +287,13 @@ refresh_minutes = 30   # default 30; at most one day
 
 3. Press `Super+R`.
 
-The `sun` module does not use this file. It reads the top-level `weather_latitude` and `weather_longitude` in `~/.config/niruwm/config.toml` (north and east are positive). They stay at the top level, not under `[bar]`. Without a `[weather]` table, the weather module also falls back to these coordinates.
+The `sun` module does not use this file. It reads the top-level `weather_latitude` and `weather_longitude` in `~/.config/niruwm/config.toml` (north and east are positive). They stay at the top level, not under `[bar]`. Without a `[weather]` table, the weather module also falls back to these coordinates, and its panel shows the coordinates where the place name would be.
 
 ## Quick Settings
 
 Quick Settings is one launcher view with the everyday switches. Open it with:
 
-- the `quicksettings` gear in the bar (click it, then `Enter` or click the panel);
+- the `quicksettings` gear in the bar (click it, then `Enter` or click the panel); since NIRUX 0.12.381 the gear and the `dnd` bell are not in the default list, so add them in the launcher's **Bar** view if you want them;
 - a right click on the `dnd` bell;
 - `nirulauncher --quick` from a terminal or a key binding.
 

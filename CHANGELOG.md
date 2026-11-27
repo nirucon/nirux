@@ -2,6 +2,20 @@
 
 Earlier releases are described in their release notes and commit messages.
 
+## 0.12.381 (2026-11-27)
+
+- NIRUBAR 0.35.0: the weather module shows an icon (sun, moon at night,
+  cloud, rain, snow or storm) and the temperature instead of words, and its
+  panel names the place (NIRUSETTINGS, Bar, Weather place name) or says
+  where to set it.
+- The default bar is now the one niruxwork uses: the focused window's title
+  is shown, quick panels stay 6 seconds, and the module list has `weather`
+  before the clock while `agent`, `dnd` and `quicksettings` are opt-in (add
+  them in the launcher's Bar view). A bar that follows the default list
+  (`follow_default_modules = true`) gets the new list with this update.
+- NIRUWM 0.37.18 bundles NIRUBAR 0.35.0 and carries the same defaults.
+- NIRUSETTINGS 0.2.1 shows the new defaults.
+
 ## 0.12.380 (2026-11-27)
 
 - NIRUWM 0.37.17: Qt programs show all their windows again. 0.37.12 to

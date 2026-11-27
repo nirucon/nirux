@@ -362,7 +362,9 @@ upgrade_default_bar_modules() {
   mig_add=""
   mig_tail=0
   mig_restart=
-  for mig_module in layout display quicksettings niruxupdate scratchpad dictation; do
+  # quicksettings left the default list in NIRUX 0.12.381, so a list without
+  # it is no longer extended (nirulauncher --quick still opens the view).
+  for mig_module in layout display niruxupdate scratchpad dictation; do
     case "$mig_modules" in
       *"\"$mig_module\""*) continue ;;
     esac
