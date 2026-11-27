@@ -25,7 +25,7 @@ A normal `nirux install` or `nirux update` never installs an extra. You ask for 
 | [nirusid](#nirusid-sid-music-player) | 0.1.1 | SID music player with HVSC lengths and STIL, raster bars and a chip view; the default player for .sid files | alpha |
 | [nirusys](#nirusys-system-monitor) | 0.1.0 | Retro system monitor: CPU, memory, disks, network, GPU, sensors, battery, processes and system panels with phosphor graphs, 24-hour history and alerts; full window, desktop widget or mini strip | alpha |
 | [nirusettings](#nirusettings-settings) | 0.2.1 | The NIRUX settings in one retro window: theme, window manager, bar, lock screen, screensaver, sounds, key bindings, extras and updates, checked before they are written | alpha |
-| [nirux-thegame](#nirux-the-game) | 0.2.0 | NIRUX, the game: an original C64-style shooter in eight sectors with SID-style music, three play modes, gamepad support and crisp scaling on any screen | alpha |
+| [nirux-thegame](#nirux-the-game) | 0.3.0 | NIRUX, the game: an original C64-style shooter in eight sectors, starring the silent guardian NIRUX, with SID-style music, three play modes, gamepad support and crisp scaling on any screen | alpha |
 
 ### Install, update and remove
 
@@ -611,7 +611,9 @@ Full documentation: [github.com/nirucon/nirusettings](https://github.com/nirucon
 
 ## NIRUX: the game
 
-NIRUX is an original shooter in the Commodore 64 style: a 320x200 picture in the 16 C64 colours with raster bars, parallax and explosions, and 14 original songs from its own three-voice SID-style synthesiser. The campaign has eight sectors in three kinds of play, about 30 to 60 minutes to beat: side-scrolling space (The Outer Rim, The Shipyards, The Gauntlet), isometric flight where up and down change your altitude (Glass Dunes, Ice Pylons) and on foot with eight-way fire and grenades (Iron Jungle, Burning City). Sector 8, The NIRUX Core, goes through all three before the final boss, and an ending with credits follows. Every sector has a mid-boss and a boss. Status: alpha.
+NIRUX is an original shooter in the Commodore 64 style: a 320x200 picture in the 16 C64 colours with raster bars, parallax and explosions, and 15 original songs from its own three-voice SID-style synthesiser. The campaign has eight sectors in three kinds of play, about 30 to 60 minutes to beat: side-scrolling space (The Outer Rim, The Shipyards, The Gauntlet), isometric flight where up and down change your altitude (Glass Dunes, Ice Pylons) and on foot with eight-way fire and grenades (Iron Jungle, Burning City). Sector 8, The NIRUX Core, goes through all three before the final boss, and an ending with credits follows. Every sector has a mid-boss and a boss. Status: alpha.
+
+You play **NIRUX**, the faceless guardian the Core woke when NULL took it. A prologue tells the story when a game starts (fire turns the pages, Esc skips it), ECHO, the voice of the Core, briefs you before every sector, and the ending tells where NULL fled: the setting of the next game, NIRUX II - NIGHT OF THE DAEMONS. The canon for the hero and the world is `docs/LORE.md` in the game's repository.
 
     nirux extras install nirux-thegame   # builds it on this computer (installs cargo if missing)
     nirux-thegame                        # fullscreen; --windowed, --level N, --demo

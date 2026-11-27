@@ -2,6 +2,14 @@
 
 Earlier releases are described in their release notes and commit messages.
 
+## 0.12.386 (2026-11-27)
+
+- nirux-thegame 0.3.0: the hero. You are NIRUX, the silent guardian with
+  the green chevron visor and the red scarf. A prologue when a game starts
+  (Esc skips it), ECHO's briefing on every sector intro, a new song
+  (Legend of Nirux), and an ending that tells where NULL fled and teases
+  NIRUX II - NIGHT OF THE DAEMONS.
+
 ## 0.12.385 (2026-11-27)
 
 - nirux-thegame 0.2.0: the full campaign. Eight sectors with mid-bosses, a
