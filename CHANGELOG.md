@@ -2,6 +2,14 @@
 
 Earlier releases are described in their release notes and commit messages.
 
+## 0.12.385 (2026-11-27)
+
+- nirux-thegame 0.2.0: the full campaign. Eight sectors with mid-bosses, a
+  three-stage finale through all three kinds of play and an ending with
+  credits, 14 original songs, a Controls screen in the title and pause
+  menus, and gamepads (PS3, PS4/PS5, Xbox, 8BitDo and ordinary USB pads),
+  plugged in at any time. On foot, holding fire keeps your aim.
+
 ## 0.12.384 (2026-11-27)
 
 - nirux-thegame 0.1.1: the game no longer ends the X session on AMD

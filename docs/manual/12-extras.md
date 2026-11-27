@@ -25,7 +25,7 @@ A normal `nirux install` or `nirux update` never installs an extra. You ask for 
 | [nirusid](#nirusid-sid-music-player) | 0.1.1 | SID music player with HVSC lengths and STIL, raster bars and a chip view; the default player for .sid files | alpha |
 | [nirusys](#nirusys-system-monitor) | 0.1.0 | Retro system monitor: CPU, memory, disks, network, GPU, sensors, battery, processes and system panels with phosphor graphs, 24-hour history and alerts; full window, desktop widget or mini strip | alpha |
 | [nirusettings](#nirusettings-settings) | 0.2.1 | The NIRUX settings in one retro window: theme, window manager, bar, lock screen, screensaver, sounds, key bindings, extras and updates, checked before they are written | alpha |
-| [nirux-thegame](#nirux-the-game) | 0.1.1 | NIRUX, the game: an original C64-style shooter with SID-style music, three play modes and crisp scaling on any screen (playable demo, three sectors) | alpha |
+| [nirux-thegame](#nirux-the-game) | 0.2.0 | NIRUX, the game: an original C64-style shooter in eight sectors with SID-style music, three play modes, gamepad support and crisp scaling on any screen | alpha |
 
 ### Install, update and remove
 
@@ -611,13 +611,24 @@ Full documentation: [github.com/nirucon/nirusettings](https://github.com/nirucon
 
 ## NIRUX: the game
 
-NIRUX is an original shooter in the Commodore 64 style: a 320x200 picture in the 16 C64 colours with raster bars, parallax and explosions, and music and effects from its own three-voice SID-style synthesiser. Version 0.1.1 is a playable demo with three sectors, each its own kind of game: The Outer Rim (a side-scrolling space shooter over a capital ship), Glass Dunes (an isometric flight over a fortress, up and down change your altitude) and Iron Jungle (on foot with eight-way fire and grenades). Every sector ends with a boss. Status: alpha.
+NIRUX is an original shooter in the Commodore 64 style: a 320x200 picture in the 16 C64 colours with raster bars, parallax and explosions, and 14 original songs from its own three-voice SID-style synthesiser. The campaign has eight sectors in three kinds of play, about 30 to 60 minutes to beat: side-scrolling space (The Outer Rim, The Shipyards, The Gauntlet), isometric flight where up and down change your altitude (Glass Dunes, Ice Pylons) and on foot with eight-way fire and grenades (Iron Jungle, Burning City). Sector 8, The NIRUX Core, goes through all three before the final boss, and an ending with credits follows. Every sector has a mid-boss and a boss. Status: alpha.
 
     nirux extras install nirux-thegame   # builds it on this computer (installs cargo if missing)
     nirux-thegame                        # fullscreen; --windowed, --level N, --demo
 
-- **Keys:** arrows or WASD move, Space or Ctrl fire (hold for auto fire), X or Shift the bomb or grenade, Esc or P pause, F11 fullscreen, M mute. A gamepad works through `/dev/input/js*`.
-- **Any screen:** the picture is scaled by the largest whole number that fits, so pixels stay sharp on a laptop, a widescreen or a HiDPI screen, and the area around it is the C64 border in each sector's colour. The CRT scanlines can be switched off in Options. It uses about a tenth of one core.
+| Action | Keyboard | Gamepad |
+|---|---|---|
+| Move | arrows or WASD | left stick or D-pad |
+| Fire (hold for auto fire) | Space, Ctrl or Z | A / cross (or right trigger) |
+| Special: smart bomb, altitude or grenade | X or Shift | B / circle (or left trigger) |
+| Pause | Esc or P | Start |
+| Back | Esc | Select |
+| Fullscreen, mute | F11, M | |
+
+The **Controls** entry in the title and pause menus shows the same table and the name of a connected pad. On foot, holding fire keeps your aim so you can strafe.
+
+- **Gamepads:** PS3, PS4 and PS5, Xbox, 8BitDo and ordinary USB pads work through the kernel's input devices, and a pad can be plugged in at any time. The menus work with the pad too. If a pad is found but cannot be read, the Controls screen says so.
+- **Any screen:** the picture is scaled by the largest whole number that fits, so pixels stay sharp on a laptop, a widescreen or a HiDPI screen, and the area around it is the C64 border in each sector's colour. The CRT scanlines can be switched off in Options. It uses about a tenth of one core, less in quiet scenes.
 - **A level now and then:** progress is saved after each sector, and Level select starts any sector you have reached. Easy, Normal and Hard, and a high score table.
 - Settings are in `~/.config/nirux-thegame/config.toml`, progress and scores in `~/.local/share/nirux-thegame/save.toml`.
 
