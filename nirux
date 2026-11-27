@@ -2,7 +2,7 @@
 # NIRUX: install a complete X11 desktop, or maintain an existing installation.
 set -eu
 
-VERSION=0.12.383
+VERSION=0.12.384
 PREFIX=${NIRUX_PREFIX:-$HOME/.local}
 BIN=$PREFIX/bin
 STATE=$PREFIX/share/nirux
@@ -3542,7 +3542,7 @@ nirutoday nirutoday 0.1.1 04e795ef4e4098fd7f6eb6fe6fa3c723cd2f928449c5c6880fd504
 nirusid nirusid 0.1.1 437b1b257dcfcdfe2ea64ffd96c8cca8b17d340114ef9ee19a0845139b92b940
 nirusys nirusys 0.1.0 9566178199d5b839e6126d7ddfa371f88bcdd950f3019fdc19cf3f62ca53af78
 nirusettings nirusettings 0.2.1 36d7d44adb88abc43e3e626437355b809f320f4c84d8e49b7e872eb04dfbac1d
-nirux-thegame nirux-thegame 0.1.0 e3aca23125d41ef5e1b14fee1e6e391b4bfa0117480d705b9225b4c388a2f52f
+nirux-thegame nirux-thegame 0.1.1 2f9737653d1cb2db06e3d9044c177eb041fa13dd77e0c587e6ece94e9a277d81
 EOF
 }
 # Extras that left the suite. Each is removed once with the uninstaller of

@@ -25,7 +25,7 @@ A normal `nirux install` or `nirux update` never installs an extra. You ask for 
 | [nirusid](#nirusid-sid-music-player) | 0.1.1 | SID music player with HVSC lengths and STIL, raster bars and a chip view; the default player for .sid files | alpha |
 | [nirusys](#nirusys-system-monitor) | 0.1.0 | Retro system monitor: CPU, memory, disks, network, GPU, sensors, battery, processes and system panels with phosphor graphs, 24-hour history and alerts; full window, desktop widget or mini strip | alpha |
 | [nirusettings](#nirusettings-settings) | 0.2.1 | The NIRUX settings in one retro window: theme, window manager, bar, lock screen, screensaver, sounds, key bindings, extras and updates, checked before they are written | alpha |
-| [nirux-thegame](#nirux-the-game) | 0.1.0 | NIRUX, the game: an original C64-style shooter with SID-style music, three play modes and crisp scaling on any screen (playable demo, three sectors) | alpha |
+| [nirux-thegame](#nirux-the-game) | 0.1.1 | NIRUX, the game: an original C64-style shooter with SID-style music, three play modes and crisp scaling on any screen (playable demo, three sectors) | alpha |
 
 ### Install, update and remove
 
@@ -611,13 +611,13 @@ Full documentation: [github.com/nirucon/nirusettings](https://github.com/nirucon
 
 ## NIRUX: the game
 
-NIRUX is an original shooter in the Commodore 64 style: a 320x200 picture in the 16 C64 colours with raster bars, parallax and explosions, and music and effects from its own three-voice SID-style synthesiser. Version 0.1.0 is a playable demo with three sectors, each its own kind of game: The Outer Rim (a side-scrolling space shooter over a capital ship), Glass Dunes (an isometric flight over a fortress, up and down change your altitude) and Iron Jungle (on foot with eight-way fire and grenades). Every sector ends with a boss. Status: alpha.
+NIRUX is an original shooter in the Commodore 64 style: a 320x200 picture in the 16 C64 colours with raster bars, parallax and explosions, and music and effects from its own three-voice SID-style synthesiser. Version 0.1.1 is a playable demo with three sectors, each its own kind of game: The Outer Rim (a side-scrolling space shooter over a capital ship), Glass Dunes (an isometric flight over a fortress, up and down change your altitude) and Iron Jungle (on foot with eight-way fire and grenades). Every sector ends with a boss. Status: alpha.
 
     nirux extras install nirux-thegame   # builds it on this computer (installs cargo if missing)
     nirux-thegame                        # fullscreen; --windowed, --level N, --demo
 
 - **Keys:** arrows or WASD move, Space or Ctrl fire (hold for auto fire), X or Shift the bomb or grenade, Esc or P pause, F11 fullscreen, M mute. A gamepad works through `/dev/input/js*`.
-- **Any screen:** the picture is scaled by the largest whole number that fits, so pixels stay sharp on a laptop, a widescreen or a HiDPI screen, and the area around it is the C64 border in each sector's colour. The CRT scanlines can be switched off in Options. It uses a few percent of one core.
+- **Any screen:** the picture is scaled by the largest whole number that fits, so pixels stay sharp on a laptop, a widescreen or a HiDPI screen, and the area around it is the C64 border in each sector's colour. The CRT scanlines can be switched off in Options. It uses about a tenth of one core.
 - **A level now and then:** progress is saved after each sector, and Level select starts any sector you have reached. Easy, Normal and Hard, and a high score table.
 - Settings are in `~/.config/nirux-thegame/config.toml`, progress and scores in `~/.local/share/nirux-thegame/save.toml`.
 

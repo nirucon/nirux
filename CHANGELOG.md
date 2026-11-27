@@ -2,6 +2,13 @@
 
 Earlier releases are described in their release notes and commit messages.
 
+## 0.12.384 (2026-11-27)
+
+- nirux-thegame 0.1.1: the game no longer ends the X session on AMD
+  laptops. Its X server scaling (RENDER) made the amdgpu driver fault after
+  about a minute; it now scales the picture itself and sends it with
+  MIT-SHM like the rest of NIRUX.
+
 ## 0.12.383 (2026-11-27)
 
 - New extra `nirux-thegame`: NIRUX, the game, an original C64-style
