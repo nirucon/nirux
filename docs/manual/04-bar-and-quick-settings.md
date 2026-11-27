@@ -262,6 +262,10 @@ With `tray = true` (default) the bar is the session's system tray, on the primar
 - Right click opens its menu in a bar panel, where you select an entry. Items without a menu get their secondary action.
 - Middle click gives the item its secondary action.
 
+A tray program that hangs or quits cannot freeze the tray (NIRUBAR 0.34.3): every call to an icon gives up after two seconds, an icon goes away as soon as its program leaves the session, and a restarted program's new icon replaces the old one.
+
+A left click on an icon always opens the program's own window, such as the Nextcloud client's panel, and a dialog the program opens from it (Settings) is shown. A popup or dialog of a tray program that nobody asked for is not shown; the program is asked to close it, so the next click opens it again. A tray popup left behind on another workspace closes the same way, while an ordinary dialog stays on its workspace (NIRUWM 0.37.17). `niructl debug windows` lists what the window manager knows about every window if something does not appear.
+
 Set `tray = false` if another tray program runs.
 
 ## Show the weather

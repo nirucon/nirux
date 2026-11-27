@@ -271,7 +271,20 @@ keeps that choice.
 opens kitty. NIRUTERM opens in about 40 ms, uses 12 to 25 MB, follows the
 theme live and shows pictures with `niruterm icat FILE` (or `icat FILE`).
 Ctrl+Shift+C and Ctrl+Shift+V copy and paste, Ctrl+Shift+N opens a window in
-the same folder, Ctrl+click opens a link.
+the same folder (the folder the shell or the program in front is in), Ctrl+click
+opens a link.
+
+- **Paste protection:** a paste that would run at once (it has a line break and
+  the program does not take bracketed paste) or that contains `sudo`, `su`,
+  `doas`, `pkexec`, `run0` or a download piped into a shell waits in a box that
+  shows its first lines: `Enter` pastes, `Esc` (or `Ctrl+C`) cancels. Ordinary
+  single lines paste at once. `paste_protection = false` in
+  `~/.config/niruterm/config.toml` turns it off.
+- **Ligatures:** `ligatures = true` joins operators such as `->`, `!=` and `=>`
+  in programming fonts that have them (off by default; letters are never joined).
+- **The scratchpad terminal remembers its folder** across restarts and logins
+  (`remember_folder = false` turns it off; only the path is kept, in
+  `~/.local/state/niruterm/scratchpad-folder`).
 
 - **Search the history:** `Ctrl+Shift+F` opens a search bar and highlights every
   match; `Enter` (or `Up`) goes to the one above, `Shift+Enter` (or `Down`) to

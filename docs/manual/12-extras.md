@@ -24,7 +24,7 @@ A normal `nirux install` or `nirux update` never installs an extra. You ask for 
 | [nirutoday](#nirutoday-today-at-a-glance) | 0.1.1 | Today at a glance in a teletext look: SMHI weather, Sveriges Radio news, VMA, electricity price, name day and calendar | alpha |
 | [nirusid](#nirusid-sid-music-player) | 0.1.1 | SID music player with HVSC lengths and STIL, raster bars and a chip view; the default player for .sid files | alpha |
 | [nirusys](#nirusys-system-monitor) | 0.1.0 | Retro system monitor: CPU, memory, disks, network, GPU, sensors, battery, processes and system panels with phosphor graphs, 24-hour history and alerts; full window, desktop widget or mini strip | alpha |
-| [nirusettings](#nirusettings-settings) | 0.1.1 | The NIRUX settings in one retro window: theme, window manager, bar, lock screen, screensaver, sounds, key bindings, extras and updates, checked before they are written | alpha |
+| [nirusettings](#nirusettings-settings) | 0.2.0 | The NIRUX settings in one retro window: theme, window manager, bar, lock screen, screensaver, sounds, key bindings, extras and updates, checked before they are written | alpha |
 
 ### Install, update and remove
 
@@ -592,12 +592,19 @@ Full documentation: [github.com/nirucon/nirusys](https://github.com/nirucon/niru
 
 ## NIRUSETTINGS: settings
 
-The settings of the NIRUX desktop in one keyboard-driven window, in the theme colours: Appearance (theme, fonts, wallpaper, colour overrides), Window manager (gaps, borders, layouts, scratchpad, picture in picture, programs, night light), Bar (modules and their order, edge, height, transparency, clock), Lock screen (layout, pause music), Screensaver (the idle and lock timers, scenes), Sound (event sounds), plus Key bindings (read only), Extras and Updates. Status: alpha.
+The settings of the NIRUX desktop in one keyboard-driven window, in the theme colours: Appearance (theme, fonts, wallpaper, colour overrides), Window manager (gaps, borders, layouts, scratchpad, picture in picture, programs, night light), Bar (modules and their order, edge, height, transparency, clock), Lock screen (layout, pause music), Screensaver (the idle and lock timers, scenes), Sound (event sounds), plus Key bindings, Extras and Updates. Status: alpha.
 
     nirux extras install nirusettings
     nirusettings            # or: nirusettings bar | lock | keys | extras | updates
 
-Arrows move, Left/Right or +/- change a value, Space toggles, Return edits, `r` resets, `u` undoes, `/` searches everything. A `*` marks a value that differs from the default; FILE or DEFAULT says where it comes from. Each value is checked like the program itself checks it (and by `niruwm --check-config` and `nirubar --check-config`) before only that line of the file changes; comments stay, and the old file is kept once per session as `FILE.bak`. NIRUWM and NIRUBAR apply it at once with `niructl reload`; the lock screen and screensaver use it the next time they start, and the window says so. `nirusettings --set bar.position bottom` does the same from a terminal. Its settings are described by schema files (`~/.local/share/nirusettings/schema/`), so new settings need no new program. Version 0.1.1 has 224 settings, including every lock screen layout (`attract`, `satie` and `bbs` too) and the `c64` and `c64-sid` screensaver scenes; a choice newer than the installed program is refused.
+Arrows move, Left/Right or +/- change a value, Space toggles, Return edits, `r` resets, `u` undoes, `/` searches everything. A `*` marks a value that differs from the default; FILE or DEFAULT says where it comes from. Each value is checked like the program itself checks it (and by `niruwm --check-config` and `nirubar --check-config`) before only that line of the file changes; comments stay, and the old file is kept once per session as `FILE.bak`. NIRUWM and NIRUBAR apply it at once with `niructl reload`; the lock screen and screensaver use it the next time they start, and the window says so. `nirusettings --set bar.position bottom` does the same from a terminal. Its settings are described by schema files (`~/.local/share/nirusettings/schema/`), so new settings need no new program. Version 0.2.0 has 273 settings and 4 lists, including every lock screen layout (`attract`, `satie`, `bbs` and `hacker` too) and the `c64` and `c64-sid` screensaver scenes; a choice newer than the installed program is refused.
+
+- **Scratchpads 1 to 9** (Window manager, Scratchpads): each slot shows its keys (Super+Alt+N shows or hides it, Super+Alt+Shift+N sends a window there) and its program. `Return` edits a slot, `p` picks a program from the installed ones (with a filter), `Delete` clears it. The window class NIRUWM needs is filled in, and marked "guessed" when it is a guess (check it with `xprop WM_CLASS`).
+- **Programs at login** (autostart) with their workspace, and **Window rules** (class, workspace counted from 1, floating, centred, on every workspace, opacity; the first match wins). `Shift+Up`/`Shift+Down` reorder.
+- **Key bindings are editable:** `Return` changes one (type the keys or press them), `a` adds, `Delete` removes (a built-in one is released), `r` puts NIRUWM's own back. It asks before taking a key that is in use and marks with `!` two bindings that are the same key on your keyboard layout.
+- **Screensaver preview:** `p` on a scene (also in the picker and the shuffle list) shows it with `niruscreensaver --preview`.
+- **Bar:** Weather, Timer, Calendar and Panel timeouts from NIRUBAR's own `~/.config/nirubar/config.toml`.
+- In lists and forms: `Return` opens, `a` adds, `Delete` removes, `Ctrl+S` saves, `Esc` cancels, `?` shows the keys. From a terminal: `nirusettings --add niruwm:scratchpad.slot number=9 "command=sh -c 'exec nirusys' --class nirusys"`, `--remove ID WHICH`, and `--get`, `--set`, `--reset` and `--list` for `niruwm:scratchpad.slot`, `niruwm:autostart.apps`, `niruwm:rules` and `niruwm:keys`.
 
 Full documentation: [github.com/nirucon/nirusettings](https://github.com/nirucon/nirusettings).
 

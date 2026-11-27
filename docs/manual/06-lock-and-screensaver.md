@@ -243,6 +243,7 @@ Set `layout` in `~/.config/niruui/lock.toml` (lock) or `~/.config/niruui/screens
 | `attract` | Lock only (NIRULOCK 0.31.0 and later): an arcade cabinet in attract mode, NIRUX RAID plays itself, see [The attract layout](#the-attract-layout) |
 | `satie` | Lock only (NIRULOCK 0.32.0 and later): a C64 tape loading screen of Erik Satie with Gymnopédie, see [The satie layout](#the-satie-layout) |
 | `bbs` | Lock only (NIRULOCK 0.33.0 and later): NIRUX BBS, a dial-up bulletin board in ANSI art, see [The bbs layout](#the-bbs-layout) |
+| `hacker` | Lock only (NIRULOCK 0.34.0 and later): the NIRUX intrusion console, a retro hacker's terminal left running, see [The hacker layout](#the-hacker-layout) |
 
 `show_hostname = true` shows the machine name under the clock (`hostname:~$ lock` in `terminal`); it is off by default. Colours always follow the active NIRUX theme on an opaque background; `[palette]` only overrides content colours.
 
@@ -358,6 +359,12 @@ The scroller names the tune by artist and title only (`NOW PLAYING  NIRUX - GIML
 
 `layout = "bbs"` makes the lock screen a bulletin board from the dial-up modem days. The terminal resets the modem, dials (`ATDT`), and after RINGING and CONNECT 14400/ARQ/V42BIS the board streams in at 14400 bps: an ANSI Yggdrasil under the moon, the NIRUX logo over BULLETIN BOARD, a SYSTEM box (node, connection, date, time, time online, status), the MESSAGE OF THE DAY from the quotes, the playing tune as `NOW PLAYING  ARTIST - TITLE`, and a `LOGIN: SYSOP` / `PASSWORD:` prompt that follows `prompt_echo`. A status bar at the bottom has modem lights that blink as you type. A wrong password shows ACCESS DENIED. Any key skips the call. Every five minutes the line drops (NO CARRIER) and it calls again with a new message, unless you are typing or a login failed. When pause music plays (by default only for a manual lock), a quiet SID style modem handshake plays first, then the music. The 16 ANSI colours come from the active theme, nothing private is shown (the login is always SYSOP), and with reduced motion on (`[motion] reduced` in the NIRUX appearance) the board shows at once without blinking or redialling. It costs well under 1 % of one core.
 
+## The hacker layout
+
+`layout = "hacker"` makes the lock screen a hacker's terminal that was left running. On lock it boots the NIRUX intrusion console: `[ OK ]` lines for ICE BREAKER, KEYRING and CLOAK, `> HANDSHAKE BIFROST/7`, `> TRACE YGGDRASIL --DEEP`, a burst of hex dump and the DECRYPTING and UPLINK bars, then `PASSPHRASE REQUIRED.` Then the panes open: MEMORY (a scrolling hex dump), TRACE (a turning wire-frame globe of the nine realms with a trace hopping between them), PACKET SNIFFER (made-up traffic between the realms), CLOCK (dot-matrix digits and how long the console has been sealed), INTERCEPT (a quote as the message of the day, a new one every five minutes unless you are typing) and SIGNAL (a carrier wave, or a spectrum that follows the pause music, with `NOW PLAYING  ARTIST - TITLE`). You type at `ENTER PASSPHRASE:`, which follows `prompt_echo`; typing skips the boot. A wrong passphrase shows a big ACCESS DENIED box with a short glitch in the warning colour, and the failed attempts are counted. Everything is drawn in the theme's colours (a green theme gives green phosphor, `niru-satie` sepia) with light CRT scanlines. The node names are Norse and made up; nothing private is shown. It has no sound of its own; the pause music plays under the usual rules. With reduced motion (`[motion] reduced` in the NIRUX appearance) it is a still console that changes once a minute. It costs well under 1 % of one core.
+
+The bbs and hacker screens show Å, Ä and Ö (and É and Ü) in quotes and song titles since NIRULOCK 0.34.0.
+
 ## The NIRUX demo and music
 
 NIRUDEMO is the NIRUX easter egg: a demoscene demo in the spirit of the home computer and console intros of the 1980s and 1990s, drawn at 320 by 180 pixels and scaled up with sharp pixels, in the colours of the active theme, with its own music.
@@ -381,7 +388,7 @@ The NIRUX music (the default pause music above) is twelve pieces. Eleven are ori
 
 | Key | Default | Meaning |
 |---|---|---|
-| `layout` | `"ascii-cava"` | `ascii-cava`, `ascii`, `cava`, `minimal`, `terminal`, `runic`, `corner`, `demo`, `attract`, `satie`, `bbs` |
+| `layout` | `"ascii-cava"` | `ascii-cava`, `ascii`, `cava`, `minimal`, `terminal`, `runic`, `corner`, `demo`, `attract`, `satie`, `bbs`, `hacker` |
 | `visualizer` | `true` | `false` keeps the layout without the spectrum |
 | `visual` | `"auto"` | `auto`, `music`, `cava`, `quotes`, `none` (`auto` in `ascii-cava`: the spectrum while music plays, otherwise nothing) |
 | `quotes` | `["*"]` | Collections by name or pattern |

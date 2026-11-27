@@ -2,6 +2,28 @@
 
 Earlier releases are described in their release notes and commit messages.
 
+## 0.12.380 (2026-11-27)
+
+- NIRUWM 0.37.17: Qt programs show all their windows again. 0.37.12 to
+  0.37.16 took every new Qt window for a tray icon, so the Nextcloud
+  client's panel and Settings never opened. A tray click always opens the
+  program's window; a tray popup or dialog nobody asked for is asked to
+  close instead of being hidden behind the program's back; windows closed
+  to the tray stay closed across `niructl restart-wm`; new
+  `niructl debug windows`.
+- NIRUBAR 0.34.3: a tray program that hangs or quits can no longer freeze
+  the system tray, and two bars that start together never both read
+  PipeWire.
+- NIRULOCK 0.34.0: new lock layout `hacker`, the NIRUX intrusion console; the
+  bbs and hacker screens show Å, Ä and Ö.
+- NIRUTERM 0.3.0: paste protection (a paste that would run at once or uses
+  sudo waits for Enter), Ctrl+Shift+N opens in the folder you are in,
+  optional ligatures, and the scratchpad terminal remembers its folder.
+- NIRUSETTINGS 0.2.0: scratchpads 1 to 9 picked from the installed
+  programs, programs at login, window rules, editable key bindings with
+  conflict warnings, screensaver preview and NIRUBAR's weather, timer,
+  calendar and panel settings (273 settings and 4 lists).
+
 ## 0.12.379 (2026-11-26)
 
 - NIRUPRES 3.1.0: Talk mode records only the presentation, the microphone
