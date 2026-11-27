@@ -2,6 +2,14 @@
 
 Earlier releases are described in their release notes and commit messages.
 
+## 0.12.383 (2026-11-27)
+
+- New extra `nirux-thegame`: NIRUX, the game, an original C64-style
+  shooter with SID-style music. 0.1.0 is a playable demo with three sectors
+  (space shooter, isometric flight, on foot) and bosses, sharp whole-number
+  scaling with a C64 border on any screen, saved progress and level select.
+  `nirux extras install nirux-thegame`.
+
 ## 0.12.382 (2026-11-27)
 
 - NIRUWM 0.37.19: windows from tray icons (Nextcloud, NIRUPRODRIVE and
