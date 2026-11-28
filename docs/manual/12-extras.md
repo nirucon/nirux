@@ -27,7 +27,7 @@ A normal `nirux install` or `nirux update` never installs an extra. You ask for 
 | [nirusettings](#nirusettings-settings) | 0.2.1 | The NIRUX settings in one retro window: theme, window manager, bar, lock screen, screensaver, sounds, key bindings, extras and updates, checked before they are written | alpha |
 | [nirux-thegame](#nirux-the-game) | 0.3.0 | NIRUX, the game: an original C64-style shooter in eight sectors, starring the silent guardian NIRUX, with SID-style music, three play modes, gamepad support and crisp scaling on any screen | alpha |
 | [nirux-ii](#nirux-ii-night-of-the-daemons) | 0.2.0 | NIRUX II - Night of the Daemons: the second NIRUX game, a gothic C64-style action platformer in seven stages where NIRUX follows NULL into the Undercroft | alpha |
-| [nirux-audio](#nirux-audio-audio-plugins) | 0.3.0 | NIRUX AUDIO: eleven audio plugins for REAPER and every Linux DAW (CLAP, VST3, LV2) with the NIRUX look: tape, reverb, delay, EQ, modulation, vocal chain, NAM amp modeler, mastering, dark effects, a synthesizer and a drum machine | alpha |
+| [nirux-audio](#nirux-audio-audio-plugins) | 0.4.0 | NIRUX AUDIO: thirteen audio plugins for REAPER and every Linux DAW (CLAP, VST3, LV2) with the NIRUX look: tape, reverb, delay, EQ, modulation, vocal chain, NAM amp modeler, mastering, dark effects, a synthesizer, a drum machine, pitch correction and a mix assistant | alpha |
 
 ### Install, update and remove
 
@@ -663,7 +663,7 @@ Full documentation: [github.com/nirucon/nirux-ii](https://github.com/nirucon/nir
 
 ## NIRUX AUDIO: audio plugins
 
-Audio plugins for REAPER and every other Linux DAW, in one package. They are native CLAP, VST3 and LV2 (NIRUNAM, NIRUSYNTH and NIRUBEAT: CLAP and VST3), light on the CPU, and share one editor with the NIRUX look: a retro LCD preset display, A/B, your own presets and VU meters, in the colours of the current NIRUX theme (or Omarchy theme). They are made for dark, heavy music (doom, death, dark ambient, death industrial, ritual percussion) and work just as well on ordinary tracks and mixes. Status: alpha.
+Audio plugins for REAPER and every other Linux DAW, in one package. They are native CLAP, VST3 and LV2 (NIRUNAM, NIRUSYNTH, NIRUBEAT, NIRUTUNE and NIRUMIX: CLAP and VST3), light on the CPU, and share one editor with the NIRUX look: a retro LCD preset display, A/B, your own presets and VU meters, in the colours of the current NIRUX theme (or Omarchy theme). They are made for dark, heavy music (doom, death, dark ambient, death industrial, ritual percussion) and work just as well on ordinary tracks and mixes. Status: alpha.
 
     nirux extras install nirux-audio   # builds the plugins on this computer (installs cargo if missing)
     nirux-audio list                   # the installed plugins and their formats
@@ -683,11 +683,14 @@ The plugins go to `~/.clap`, `~/.vst3` and `~/.lv2`, the folders every Linux DAW
 | NIRUNAM | Neural Amp Modeler (`.nam`) player with cabinet impulse responses and an amp-style EQ |
 | NIRUMASTER | Mastering chain: EQ (minimum or linear phase), multiband, glue, saturation, stereo with mono bass, true-peak limiter, dither, and BS.1770 loudness meters with targets and a level-matched compare; 16 presets |
 | NIRUDARK | Obscure dark effects in four slots (grain cloud, smear, abyss pitch, metal resonators, catacombs, rust, ritual voice, reverse swell, static, tremor) with Darkness and Mutate; 20 presets |
-| NIRUSYNTH | Instrument: a dark synthesizer with wavetables, FM, ladder/vowel/comb filters, a modulation matrix, drone hold and built-in effects; 32 presets |
-| NIRUBEAT | Instrument: a ritual drum machine with 12 synthesised voices or your own WAVs, 8 patterns locked to the DAW's position, MIDI triggering and seven extra outputs; 12 kits |
+| NIRUSYNTH | Instrument: a dark synthesizer with wavetables (incl. throat singing, bowed lyre, hurdy-gurdy, horns, tape choir, cathedral organ), FM, ladder/vowel/comb filters, a modulation matrix, drone hold and built-in effects; 65 presets |
+| NIRUBEAT | Instrument: a ritual drum machine with 12 synthesised voices or your own WAVs, 8 patterns locked to the DAW's position, MIDI triggering and seven extra outputs; 22 kits from ritual and industrial to old school goth and lofi noir |
+| NIRUTUNE | Natural pitch correction: Live (key and scale or auto, amount, speed, humanize, vibrato, Natural/Tight/Hard) and Edit (capture a take, move and straighten notes in a piano roll, saved with the project) |
+| NIRUMIX | Mix assistant: put it last on each track; every instance shows all tracks' spectra, masking and balance against a genre profile, with one-click fixes, Unmask and optional AI advice |
 
 - **The editor:** drag a knob up or down (Shift for fine steps), scroll, double click for the default, right click to type a value. Click the LCD for the presets, SAVE for your own; A/B compares two settings. The gear menu sets the size (100 to 200 %), a fixed NIRUX theme instead of the desktop's, and the reel animation.
 - **Instruments:** put NIRUSYNTH or NIRUBEAT on a track and send it MIDI. NIRUBEAT's sequencer plays when the DAW plays; to use its separate outputs in REAPER, give the track more channels and route them (Track > Build multichannel routing for output of selected tracks).
+- **NIRUMIX and AI:** ASK AI is optional. Put your key in `~/.config/nirux-audio/ai.toml` (provider anthropic, openai, deepseek or openai-compatible; the plugin writes `ai.example.toml` to start from). Only a text summary of the mix is sent, never audio, and only after you have seen it and pressed SEND.
 - **NIRUNAM and TONE3000:** download models and impulse responses from [tone3000.com](https://www.tone3000.com), then click the model or cabinet field in NIRUNAM: *Import files or a zip* adds a `.nam`, a `.wav` or a whole zip to the library, and the list picks one. The menu also opens tone3000.com and the library folder (`~/.local/share/nirux-audio/nam` and `.../ir`).
 - Your presets are in `~/.local/share/nirux-audio/presets/`, the editor settings (shared by every plugin) in `~/.config/nirux-audio/config.toml`. `nirux extras uninstall nirux-audio --purge` also removes your presets and libraries.
 - Studio mode (chapter 10) goes well with it: `niructl studio on` before a recording session.

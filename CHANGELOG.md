@@ -2,6 +2,13 @@
 
 Earlier releases are described in their release notes and commit messages.
 
+## 0.12.392 (2026-11-28)
+
+- nirux-audio 0.4.0: thirteen plugins. New are NIRUTUNE (natural pitch
+  correction with Live and Edit modes) and NIRUMIX (a mix assistant across
+  tracks with optional AI advice). NIRUBEAT gets 10 add-on kits and NIRUSYNTH
+  33 new sounds with ten new wavetables. `nirux extras update` brings it.
+
 ## 0.12.391 (2026-11-28)
 
 - nirux-audio 0.3.0: eleven plugins. New are NIRUMASTER (mastering chain
