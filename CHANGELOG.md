@@ -2,6 +2,16 @@
 
 Earlier releases are described in their release notes and commit messages.
 
+## 0.12.390 (2026-11-28)
+
+- nirux-audio 0.2.0: seven plugins. New are NIRUVERB (dark reverb from
+  rooms to the abyss), NIRUDELAY (tape, multi-head, BBD and digital echo),
+  NIRUEQ (vintage and modern EQ with an analyser), NIRUFX (nine modulation
+  modes), NIRUVOC (vocal chain with a resonance suppressor and a de-esser
+  for hard S and T sounds) and NIRUNAM (NAM amp models and cabinet IRs with
+  a TONE3000 library). NIRUTAPE's menus stay on top of the reels and its
+  presets are stronger. `nirux extras update` brings it.
+
 ## 0.12.389 (2026-11-28)
 
 - New extra `nirux-audio`: NIRUX AUDIO, audio plugins for REAPER and every
