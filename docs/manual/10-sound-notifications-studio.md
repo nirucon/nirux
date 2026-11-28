@@ -439,7 +439,7 @@ With `auto_enable = true`, studio mode turns on when a window whose class is in 
 
 Studio mode needs NIRUWM 0.20 or newer in the running session; after an update, log out and in once. The power profile step needs power-profiles-daemon; without it, `status` notes that the profile was skipped.
 
-For plugins, the `nirux-audio` extra installs the NIRUX audio plugins (CLAP, VST3 and LV2): tape, reverb, delay, EQ, modulation, a vocal chain and a NAM amp modeler; see [12-extras.md](12-extras.md#nirux-audio-audio-plugins).
+For plugins, the `nirux-audio` extra installs the NIRUX audio plugins (CLAP, VST3 and LV2): tape, reverb, delay, EQ, modulation, a vocal chain, a NAM amp modeler, mastering, dark effects, a synthesizer and a drum machine; see [12-extras.md](12-extras.md#nirux-audio-audio-plugins).
 
 ## Bluetooth audio
 

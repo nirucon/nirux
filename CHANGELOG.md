@@ -2,6 +2,14 @@
 
 Earlier releases are described in their release notes and commit messages.
 
+## 0.12.391 (2026-11-28)
+
+- nirux-audio 0.3.0: eleven plugins. New are NIRUMASTER (mastering chain
+  with loudness meters and a true-peak limiter), NIRUDARK (obscure dark
+  ambient and death industrial effects), NIRUSYNTH (a dark synthesizer) and
+  NIRUBEAT (a ritual drum machine with its own sequencer, MIDI and separate
+  outputs). `nirux extras update` brings it.
+
 ## 0.12.390 (2026-11-28)
 
 - nirux-audio 0.2.0: seven plugins. New are NIRUVERB (dark reverb from
