@@ -17,7 +17,7 @@ nirusys nirusys 0.1.0 9566178199d5b839e6126d7ddfa371f88bcdd950f3019fdc19cf3f62ca
 nirusettings nirusettings 0.2.1 36d7d44adb88abc43e3e626437355b809f320f4c84d8e49b7e872eb04dfbac1d
 nirux-thegame nirux-thegame 0.3.0 4f1a99d1c292bffa1515d34537aa1a0ac912ed049c09680640f7054284131dcc
 nirux-ii nirux-ii 0.2.0 e9d2821323458a5ec850d51df410c0dd8647a7f0df143bd277c838dd062a4dae
-nirux-audio nirux-audio 0.4.0 746d02109ad959016f037a4ee6134acd20a267153892d82676c729da877aa523
+nirux-audio nirux-audio 0.5.0 9e14e66cfc8151d18514e581d3eee06b28d3aad1eb785f236c11c1d1310f731a
 EOF
 }
 # Extras that left the suite. Each is removed once with the uninstaller of

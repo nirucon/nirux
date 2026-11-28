@@ -2,6 +2,15 @@
 
 Earlier releases are described in their release notes and commit messages.
 
+## 0.12.393 (2026-11-28)
+
+- nirux-audio 0.5.0: seventeen plugins. New are NIRUSAMPLE (sampler and
+  granular instrument), NIRUSPACE (convolution reverb with capture),
+  NIRUGATE (gate, transients, ducker with sidechain) and NIRUTUNER. NIRUBEAT
+  gets MIDI note names for REAPER, a mixer, MIDI export and a song chain;
+  NIRUSYNTH an arpeggiator; every control a help line. `nirux extras update`
+  brings it.
+
 ## 0.12.392 (2026-11-28)
 
 - nirux-audio 0.4.0: thirteen plugins. New are NIRUTUNE (natural pitch
