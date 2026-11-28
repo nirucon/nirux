@@ -27,6 +27,7 @@ A normal `nirux install` or `nirux update` never installs an extra. You ask for 
 | [nirusettings](#nirusettings-settings) | 0.2.1 | The NIRUX settings in one retro window: theme, window manager, bar, lock screen, screensaver, sounds, key bindings, extras and updates, checked before they are written | alpha |
 | [nirux-thegame](#nirux-the-game) | 0.3.0 | NIRUX, the game: an original C64-style shooter in eight sectors, starring the silent guardian NIRUX, with SID-style music, three play modes, gamepad support and crisp scaling on any screen | alpha |
 | [nirux-ii](#nirux-ii-night-of-the-daemons) | 0.2.0 | NIRUX II - Night of the Daemons: the second NIRUX game, a gothic C64-style action platformer in seven stages where NIRUX follows NULL into the Undercroft | alpha |
+| [nirux-audio](#nirux-audio-audio-plugins) | 0.1.0 | NIRUX AUDIO: audio plugins for REAPER and every Linux DAW (CLAP, VST3 and LV2) with the NIRUX look and theme colours; first NIRUTAPE, warm vintage tape saturation and compression | alpha |
 
 ### Install, update and remove
 
@@ -659,6 +660,25 @@ The second NIRUX game, and the story goes on: NULL fled into the Undercroft, whe
 - Settings are in `~/.config/nirux-ii/config.toml`, progress and scores in `~/.local/share/nirux-ii/save.toml`.
 
 Full documentation: [github.com/nirucon/nirux-ii](https://github.com/nirucon/nirux-ii).
+
+## NIRUX AUDIO: audio plugins
+
+Audio plugins for REAPER and every other Linux DAW, in one package that grows with new plugins. They are native CLAP, VST3 and LV2, light on the CPU, and share one editor with the NIRUX look: a retro LCD preset display, A/B, VU meters and turning tape reels, in the colours of the current NIRUX theme (or Omarchy theme). Status: alpha.
+
+    nirux extras install nirux-audio   # builds the plugins on this computer (installs cargo if missing)
+    nirux-audio list                   # the installed plugins and their formats
+    nirux-audio doctor                 # check that a DAW will find them
+    nirux-audio presets                # open the folder with your own presets
+
+The plugins go to `~/.clap`, `~/.vst3` and `~/.lv2`, the folders every Linux DAW scans. Let the DAW rescan afterwards (REAPER: Options > Preferences > Plug-ins > Re-scan); they are listed under the vendor NIRUX.
+
+**NIRUTAPE** is a tape machine for single instruments, vocals and the mix bus: Input, Drive, Bias, Compression, Tape (Warm, Hot, Clean), Speed (7.5, 15, 30 ips), Age, Wow, Hiss, Mix, Output, Auto gain and Quality (Eco, Mix, Render), with 16 factory presets for vocals, drums, instruments, the mix bus and lo-fi character. It has no latency and costs under 1 % of a CPU core per instance.
+
+- **The editor:** drag a knob up or down (Shift for fine steps), scroll, double click for the default, right click to type a value. Click the LCD for the presets, SAVE for your own; A/B compares two settings. The gear menu sets the size (100 to 200 %), a fixed NIRUX theme instead of the desktop's, and whether the reels turn.
+- Your presets are in `~/.local/share/nirux-audio/presets/`, the editor settings (shared by every plugin) in `~/.config/nirux-audio/config.toml`.
+- Studio mode (chapter 10) goes well with it: `niructl studio on` before a recording session.
+
+Full documentation: [github.com/nirucon/nirux-audio](https://github.com/nirucon/nirux-audio).
 
 ## Other suite tools
 

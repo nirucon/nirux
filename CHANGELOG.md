@@ -2,6 +2,14 @@
 
 Earlier releases are described in their release notes and commit messages.
 
+## 0.12.389 (2026-11-28)
+
+- New extra `nirux-audio`: NIRUX AUDIO, audio plugins for REAPER and every
+  Linux DAW as CLAP, VST3 and LV2, with one shared NIRUX editor that follows
+  the theme colours. The first plugin is NIRUTAPE, warm vintage tape
+  saturation and compression with 16 presets and no latency.
+  `nirux extras install nirux-audio`.
+
 ## 0.12.388 (2026-11-27)
 
 - nirux-ii 0.2.0: NIRUX II is complete. Stages 3 to 7 (The Archive
